@@ -614,7 +614,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         <div style={{ textAlign:"center", marginBottom:28 }}>
           <div style={{ width:52, height:52, background:"linear-gradient(135deg,#00e5a0,#00b4ff)", borderRadius:14, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, margin:"0 auto 12px" }}>⛽</div>
           <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:20, color:"#dff0f8" }}>BUNKERSGEST</div>
-          <div style={{ fontSize:9, color:"#6b8fa8", marginTop:3, letterSpacing:2 }}>QBS · COMBUSTIBLE MARINO</div>
+          <div style={{ fontSize:9, color:"#6b8fa8", marginTop:3, letterSpacing:2 }}>COMBUSTIBLE MARINO</div>
         </div>
 
         {authError && <div style={{ background:authError.includes("creada")?"#00e5a018":"#ff4d4d18", border:`1px solid ${authError.includes("creada")?"#00e5a0":"#ff4d4d"}`, borderRadius:8, padding:"10px 14px", fontSize:12, color:authError.includes("creada")?"#00e5a0":"#ff4d4d", marginBottom:16 }}>{authError}</div>}
