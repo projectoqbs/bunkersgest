@@ -219,6 +219,10 @@ export default function App() {
   const [pbsParaCarro, setPbsParaCarro] = useState(null);
   const [cmtDespues, setCmtDespues] = useState([{tanque:"",producto:"",sonda:"",galones:""}]);
   const [cmtRecepcion, setCmtRecepcion] = useState([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
+  const [cmtBusqueda, setCmtBusqueda] = useState("");
+  const [cmtFiltroTipo, setCmtFiltroTipo] = useState("");
+  const [cmtFiltroFechaD, setCmtFiltroFechaD] = useState("");
+  const [cmtFiltroFechaH, setCmtFiltroFechaH] = useState("");
 
   // Gestión de usuarios
   const [editUsuario, setEditUsuario] = useState(null);
@@ -970,10 +974,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               )}
 
               {(()=>{
-                const [cmtBusqueda, setCmtBusqueda] = React.useState("");
-                const [cmtFiltroTipo, setCmtFiltroTipo] = React.useState("");
-                const [cmtFiltroFechaD, setCmtFiltroFechaD] = React.useState("");
-                const [cmtFiltroFechaH, setCmtFiltroFechaH] = React.useState("");
                 const tiposUnicos = [...new Set(cmts.map(c=>c.tipo_operacion).filter(Boolean))];
                 const cmtsFinal = cmtsFiltrados.filter(c=>{
                   const q = cmtBusqueda.toUpperCase();
