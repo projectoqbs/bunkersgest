@@ -223,6 +223,7 @@ export default function App() {
   const [cmtFiltroTipo, setCmtFiltroTipo] = useState("");
   const [cmtFiltroFechaD, setCmtFiltroFechaD] = useState("");
   const [cmtFiltroFechaH, setCmtFiltroFechaH] = useState("");
+  const [cmtExpandido, setCmtExpandido] = useState(null);
 
   // Gestión de usuarios
   const [editUsuario, setEditUsuario] = useState(null);
@@ -1031,8 +1032,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {cmtsFinal.map(c=>{
                           const tanquesNombres = [...new Set([...(c.tanques_antes||[]).map(t=>t.tanque), ...(c.tanques_despues||[]).map(t=>t.tanque)].filter(Boolean))].join(", ");
                           const movido = Number(c.total_movido||0);
+                          const expandido = cmtExpandido===c.id;
                           return (
-                          <tr key={c.id} style={{transition:"background 0.15s"}} onMouseEnter={e=>e.currentTarget.style.background="#162535"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                          <React.Fragment key={c.id}>
+                          <tr onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{cursor:"pointer",background:expandido?"#162535":"transparent",transition:"background 0.15s"}} onMouseEnter={e=>{if(!expandido)e.currentTarget.style.background="#162535"}} onMouseLeave={e=>{if(!expandido)e.currentTarget.style.background="transparent"}}>
                             <td style={tdStyle}><span style={{color:"#00e5a0",fontWeight:700,letterSpacing:0.5}}>{c.numero_cmt||c.id}</span></td>
                             <td style={tdStyle}><span style={{color:"#6b8fa8"}}>{c.fecha}</span></td>
                             <td style={tdStyle}><Badge label={c.tipo_operacion||"—"} color="#00e5a0"/></td>
@@ -1040,23 +1043,85 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={tdStyle}><span style={{color:"#dff0f8",fontSize:11}}>{tanquesNombres||"—"}</span></td>
                             <td style={tdStyle}><span style={{color:"#dff0f8"}}>{fmt(c.total_antes)}</span></td>
                             <td style={tdStyle}><span style={{color:"#dff0f8"}}>{fmt(c.total_despues)}</span></td>
-                            <td style={tdStyle}><span style={{color: movido>=0?"#00e5a0":"#ff4d4d",fontWeight:700}}>{movido>=0?"+":""}{fmt(movido)}</span></td>
+                            <td style={tdStyle}><span style={{color:movido>=0?"#00e5a0":"#ff4d4d",fontWeight:700}}>{movido>=0?"+":""}{fmt(movido)}</span></td>
                             <td style={tdStyle}><span style={{color:"#6b8fa8",fontSize:11}}>{c.operador||"—"}</span></td>
-                            <td style={tdStyle}>
-                              {puedeEditar("cmt",c.creado_por,c.created_at) && (
-                                <button onClick={()=>{
-                                  setForm({...c});
-                                  setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||"");
-                                  setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]);
-                                  setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]);
-                                  setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
-                                  setModal("cmt");
-                                }} style={{background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:6,color:"#00e5a0",padding:"4px 12px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700,whiteSpace:"nowrap"}}>
-                                  ✏ Corregir
+                            <td style={{...tdStyle,whiteSpace:"nowrap"}} onClick={e=>e.stopPropagation()}>
+                              <div style={{display:"flex",gap:6}}>
+                                <button onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{background:"#00b4ff22",border:"1px solid #00b4ff55",borderRadius:6,color:"#00b4ff",padding:"4px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700}}>
+                                  {expandido?"▲ Cerrar":"▼ Ver"}
                                 </button>
-                              )}
+                                {puedeEditar("cmt",c.creado_por,c.created_at) && (
+                                  <button onClick={()=>{
+                                    setForm({...c});
+                                    setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||"");
+                                    setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]);
+                                    setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]);
+                                    setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
+                                    setModal("cmt");
+                                  }} style={{background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:6,color:"#00e5a0",padding:"4px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700}}>
+                                    ✏ Corregir
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
+                          {expandido && (
+                            <tr>
+                              <td colSpan={10} style={{padding:"0 0 2px 0",background:"#0a1829",borderBottom:"2px solid #00e5a033"}}>
+                                <div style={{padding:"16px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                                  <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #00b4ff"}}>
+                                    <div style={{fontSize:10,color:"#00b4ff",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Inicial</div>
+                                    {(c.tanques_antes||[]).map((t,i)=>(
+                                      <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:"1px solid #ffffff08"}}>
+                                        <span style={{color:"#dff0f8",fontWeight:700}}>{t.tanque||"—"}</span>
+                                        <span style={{color:"#6b8fa8"}}>Sonda: {t.sonda||"—"}</span>
+                                        <span style={{color:"#f59e0b",fontWeight:700}}>{fmt(t.galones)} Gls</span>
+                                      </div>
+                                    ))}
+                                    <div style={{fontSize:11,color:"#6b8fa8",marginTop:4}}>Total: <b style={{color:"#dff0f8"}}>{fmt(c.total_antes)} Gls</b></div>
+                                  </div>
+                                  <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #c084fc"}}>
+                                    <div style={{fontSize:10,color:"#c084fc",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Final</div>
+                                    {(c.tanques_despues||[]).map((t,i)=>(
+                                      <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:"1px solid #ffffff08"}}>
+                                        <span style={{color:"#dff0f8",fontWeight:700}}>{t.tanque||"—"}</span>
+                                        <span style={{color:"#6b8fa8"}}>Sonda: {t.sonda||"—"}</span>
+                                        <span style={{color:"#f59e0b",fontWeight:700}}>{fmt(t.galones)} Gls</span>
+                                      </div>
+                                    ))}
+                                    <div style={{fontSize:11,color:"#6b8fa8",marginTop:4}}>Total: <b style={{color:"#dff0f8"}}>{fmt(c.total_despues)} Gls</b></div>
+                                  </div>
+                                  {(c.carros||[]).length>0 && (c.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && (
+                                    <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #6b8fa8",gridColumn:"1/-1"}}>
+                                      <div style={{fontSize:10,color:"#6b8fa8",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Carros Descargados</div>
+                                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
+                                        {(c.carros||[]).map((cr,i)=>(
+                                          <div key={i} style={{background:"#162535",borderRadius:8,padding:"8px 10px",fontSize:11}}>
+                                            <div style={{color:"#dff0f8",fontWeight:700,marginBottom:3}}>{cr.placa||"Sin placa"}</div>
+                                            {cr.tiquete&&<div style={{color:"#00b4ff"}}>Tiquete: {cr.tiquete}</div>}
+                                            {cr.guia&&<div style={{color:"#6b8fa8"}}>Guía: {cr.guia}</div>}
+                                            {cr.pbs_id&&<div style={{color:"#fb923c"}}>PBS: {cr.pbs_id}</div>}
+                                            {cr.hora_inicio&&<div style={{color:"#6b8fa8"}}>Inicio: {cr.hora_inicio} — Fin: {cr.hora_final||"—"}</div>}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div style={{gridColumn:"1/-1",display:"flex",gap:20,fontSize:11,color:"#6b8fa8",flexWrap:"wrap",paddingTop:4}}>
+                                    {c.sede&&<span>Sede: <b style={{color:"#dff0f8"}}>{c.sede}{c.planta?` · ${c.planta}`:""}</b></span>}
+                                    {c.operador&&<span>Operador: <b style={{color:"#dff0f8"}}>{c.operador}</b></span>}
+                                    {c.placa&&<span>Placa: <b style={{color:"#dff0f8"}}>{c.placa}</b></span>}
+                                    {c.guia&&<span>Guía: <b style={{color:"#dff0f8"}}>{c.guia}</b></span>}
+                                    {c.tiquete_entrada&&<span>Tiquete: <b style={{color:"#00b4ff"}}>{c.tiquete_entrada}</b></span>}
+                                    <span style={{marginLeft:"auto",color: movido>=0?"#00e5a0":"#ff4d4d",fontWeight:700,fontSize:13}}>
+                                      {movido>=0?"▲ Recibido:":"▼ Despachado:"} {fmt(Math.abs(movido))} Gls
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          </React.Fragment>
                           );
                         })}
                       </tbody>
