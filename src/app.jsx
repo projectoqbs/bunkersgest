@@ -706,7 +706,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </div>
           <div>
             <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:14, letterSpacing:1 }}>BUNKERSGEST</div>
-            <div style={{ fontSize:9, color:"#6b8fa8", letterSpacing:1 }}>QBS · Combustible Marino</div>
+            <div style={{ fontSize:9, color:"#6b8fa8", letterSpacing:1 }}>Combustible Marino</div>
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
