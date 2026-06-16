@@ -612,7 +612,12 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet" />
       <div style={{ width:400, background:"#0c1a28", borderRadius:24, padding:40, border:"1px solid #ffffff12" }}>
         <div style={{ textAlign:"center", marginBottom:28 }}>
-          <div style={{ width:52, height:52, background:"linear-gradient(135deg,#00e5a0,#00b4ff)", borderRadius:14, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, margin:"0 auto 12px" }}>⛽</div>
+          <div style={{ width:52, height:52, background:"#071422", border:"1px solid #ffffff14", borderRadius:14, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", overflow:"hidden" }}>
+            <svg width="46" height="46" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <text x="8" y="44" fontFamily="Arial,sans-serif" fontSize="40" fontWeight="900" fill="#00e5a0">B</text>
+              <text x="29" y="44" fontFamily="Arial,sans-serif" fontSize="40" fontWeight="900" fill="none" stroke="#00b4ff" strokeWidth="2">G</text>
+            </svg>
+          </div>
           <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:20, color:"#dff0f8" }}>BUNKERSGEST</div>
           <div style={{ fontSize:9, color:"#6b8fa8", marginTop:3, letterSpacing:2 }}>COMBUSTIBLE MARINO</div>
         </div>
@@ -689,7 +694,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       {/* Header */}
       <div style={{ background:"#0c1a28", borderBottom:"1px solid #ffffff0a", padding:"0 22px", height:58, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:30, height:30, background:"linear-gradient(135deg,#00e5a0,#00b4ff)", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>⛽</div>
+          <div style={{ width:30, height:30, background:"#071422", border:"1px solid #ffffff14", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+            <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <text x="8" y="44" fontFamily="Arial,sans-serif" fontSize="40" fontWeight="900" fill="#00e5a0">B</text>
+              <text x="29" y="44" fontFamily="Arial,sans-serif" fontSize="40" fontWeight="900" fill="none" stroke="#00b4ff" strokeWidth="2">G</text>
+            </svg>
+          </div>
           <div>
             <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:14, letterSpacing:1 }}>BUNKERSGEST</div>
             <div style={{ fontSize:9, color:"#6b8fa8", letterSpacing:1 }}>QBS · Combustible Marino</div>
