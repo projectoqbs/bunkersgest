@@ -221,6 +221,11 @@ export default function App() {
   const [pbsEsTrasiego, setPbsEsTrasiego] = useState(false);
   const [cmtDespues, setCmtDespues] = useState([{tanque:"",producto:"",sonda:"",galones:""}]);
   const [cmtRecepcion, setCmtRecepcion] = useState([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
+  const [viajesBusqueda, setViajesBusqueda] = useState("");
+  const [viajesFiltroEstado, setViajesFiltroEstado] = useState("");
+  const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
+  const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
+  const [viajesFiltroFechaH, setViajesFiltroFechaH] = useState("");
   const [cmtBusqueda, setCmtBusqueda] = useState("");
   const [cmtFiltroTipo, setCmtFiltroTipo] = useState("");
   const [cmtFiltroFechaD, setCmtFiltroFechaD] = useState("");
@@ -828,28 +833,58 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           )}
 
           {/* VIAJES */}
-          {nav==="viajes" && (
+          {nav==="viajes" && (()=>{
+            const selStyle = {background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"6px 10px",color:"#dff0f8",fontSize:11,fontFamily:"monospace",outline:"none"};
+            const productosUnicos = [...new Set(viajesFiltrados.map(v=>v.producto).filter(Boolean))].sort();
+            const viajesFinal = viajesFiltrados.filter(v=>{
+              const q = viajesBusqueda.toLowerCase();
+              if (q && ![(v.placa||""),(v.guia||""),(v.transportadora||""),(v.producto||""),(v.id||"")].some(x=>x.toLowerCase().includes(q))) return false;
+              if (viajesFiltroEstado && v.estado !== viajesFiltroEstado) return false;
+              if (viajesFiltroProducto && v.producto !== viajesFiltroProducto) return false;
+              if (viajesFiltroFechaD && v.fecha < viajesFiltroFechaD) return false;
+              if (viajesFiltroFechaH && v.fecha > viajesFiltroFechaH) return false;
+              return true;
+            });
+            return (
             <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16, flexShrink:0 }}>
-                <div>
-                  <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Logística — Viajes</div>
-                  <div style={{ fontSize:11, color:"#6b8fa8" }}>Registro de carros tanque</div>
+              <div style={{flexShrink:0,marginBottom:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <div>
+                    <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Logística — Viajes</div>
+                    <div style={{ fontSize:11, color:"#6b8fa8" }}>Registro de carros tanque · <b style={{color:"#f59e0b"}}>{viajesFinal.length}</b> resultado(s)</div>
+                  </div>
+                  {puedeCrear("viajes") && <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>}
                 </div>
-                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                  <input value={viajesBusqueda} onChange={e=>setViajesBusqueda(e.target.value)} placeholder="🔍 Buscar placa, guía, transportadora..." style={{...selStyle,width:240,padding:"6px 12px"}}/>
                   {["administrador","gerencia"].includes(perfil.rol) && (
-                    <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)}
-                      style={{background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"6px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none"}}>
-                      <option value="TODAS">Todas</option>
+                    <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)} style={selStyle}>
+                      <option value="TODAS">Todas las sedes</option>
                       {SEDES.map(s=><option key={s}>{s}</option>)}
                     </select>
                   )}
-                  {puedeCrear("viajes") && <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>}
+                  <select value={viajesFiltroEstado} onChange={e=>setViajesFiltroEstado(e.target.value)} style={selStyle}>
+                    <option value="">Todos los estados</option>
+                    <option>En Ruta</option>
+                    <option>En Planta</option>
+                    <option>Descargado</option>
+                    <option>Rechazado</option>
+                  </select>
+                  <select value={viajesFiltroProducto} onChange={e=>setViajesFiltroProducto(e.target.value)} style={selStyle}>
+                    <option value="">Todos los productos</option>
+                    {productosUnicos.map(p=><option key={p}>{p}</option>)}
+                  </select>
+                  <input type="date" value={viajesFiltroFechaD} onChange={e=>setViajesFiltroFechaD(e.target.value)} style={selStyle} title="Fecha cargue desde"/>
+                  <input type="date" value={viajesFiltroFechaH} onChange={e=>setViajesFiltroFechaH(e.target.value)} style={selStyle} title="Fecha cargue hasta"/>
+                  {(viajesBusqueda||viajesFiltroEstado||viajesFiltroProducto||viajesFiltroFechaD||viajesFiltroFechaH) && (
+                    <button onClick={()=>{setViajesBusqueda("");setViajesFiltroEstado("");setViajesFiltroProducto("");setViajesFiltroFechaD("");setViajesFiltroFechaH("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"monospace"}}>✕ Limpiar</button>
+                  )}
                 </div>
               </div>
               <div style={{flex:1,overflow:"auto",borderRadius:12,border:"1px solid #ffffff0a"}}>
               <Table
                 cols={["ID","Sede","F. Cargue","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Gls Recib.","Faltantes","Stand By","Estado",""]}
-                rows={viajesFiltrados.map(v=>{
+                rows={viajesFinal.map(v=>{
                   const faltantes = Math.max(0, Number(v.gls_netos_guia||v.volumen_guia||0) - Number(v.gls_recibidos||0));
                   return [
                     <span style={{color:"#f59e0b"}}>{v.id}</span>,
@@ -870,7 +905,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               />
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* TIQUETES */}
           {nav==="tiquetes" && (
