@@ -1024,26 +1024,94 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{display:"flex",alignItems:"center",gap:10,paddingBottom:6}}>
                       <span style={{fontSize:11,color:"#6b8fa8"}}>{cmtsFinal.length} registro(s)</span>
                       <button onClick={()=>{
-                        const filas = cmtsFinal.map(c=>({
+                        const wb = XLSX.utils.book_new();
+                        // Hoja 1: Resumen general
+                        const resumen = cmtsFinal.map(c=>({
                           "N° CMT": c.numero_cmt||c.id,
                           "Fecha": c.fecha||"",
                           "Tipo Operación": c.tipo_operacion||"",
                           "Producto": c.producto||"",
                           "Sede": c.sede||"",
                           "Planta": c.planta||"",
-                          "Tanques": [...new Set([...(c.tanques_antes||[]).map(t=>t.tanque),...(c.tanques_despues||[]).map(t=>t.tanque)].filter(Boolean))].join(", "),
                           "Gls Iniciales": Number(c.total_antes||0),
                           "Gls Finales": Number(c.total_despues||0),
                           "Gls Movidos": Math.abs(Number(c.total_movido||0)),
-                          "Placa": c.placa||"",
-                          "Guía": c.guia||"",
                           "Tiquete Entrada": c.tiquete_entrada||"",
                           "Operador": c.operador||"",
                         }));
-                        const ws = XLSX.utils.json_to_sheet(filas);
-                        const wb = XLSX.utils.book_new();
-                        XLSX.utils.book_append_sheet(wb, ws, "CMT");
-                        ws["!cols"] = [{wch:18},{wch:12},{wch:24},{wch:14},{wch:14},{wch:12},{wch:20},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:16},{wch:18}];
+                        const wsRes = XLSX.utils.json_to_sheet(resumen);
+                        wsRes["!cols"] = [{wch:18},{wch:12},{wch:24},{wch:14},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:16},{wch:18}];
+                        XLSX.utils.book_append_sheet(wb, wsRes, "Resumen");
+                        // Hoja 2: Medidas por tanque
+                        const medidas = [];
+                        cmtsFinal.forEach(c=>{
+                          (c.tanques_antes||[]).forEach((t,i)=>{
+                            const td = (c.tanques_despues||[])[i]||{};
+                            medidas.push({
+                              "N° CMT": c.numero_cmt||c.id,
+                              "Fecha": c.fecha||"",
+                              "Tipo Operación": c.tipo_operacion||"",
+                              "Producto": c.producto||"",
+                              "Tanque": t.tanque||"",
+                              "Sonda Inicial": t.sonda||"",
+                              "Temp Inicial": t.temp||"",
+                              "API Inicial": t.api||"",
+                              "Gls Iniciales": Number(t.galones||0),
+                              "Sonda Final": td.sonda||"",
+                              "Temp Final": td.temp||"",
+                              "API Final": td.api||"",
+                              "Gls Finales": Number(td.galones||0),
+                              "Diferencia Gls": Math.abs(Number(td.galones||0)-Number(t.galones||0)),
+                            });
+                          });
+                          // Tanques recepción (trasiego)
+                          (c.tanques_recepcion||[]).forEach(r=>{
+                            medidas.push({
+                              "N° CMT": c.numero_cmt||c.id,
+                              "Fecha": c.fecha||"",
+                              "Tipo Operación": c.tipo_operacion||"",
+                              "Producto": c.producto||"",
+                              "Tanque": (r.tanque||"")+" (Recepción)",
+                              "Sonda Inicial": r.sondaInicial||"",
+                              "Temp Inicial": r.tempInicial||"",
+                              "API Inicial": r.apiInicial||"",
+                              "Gls Iniciales": Number(r.galonesInicial||0),
+                              "Sonda Final": r.sondaFinal||"",
+                              "Temp Final": r.tempFinal||"",
+                              "API Final": r.apiFinal||"",
+                              "Gls Finales": Number(r.galonesFinal||0),
+                              "Diferencia Gls": Math.abs(Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),
+                            });
+                          });
+                        });
+                        const wsMed = XLSX.utils.json_to_sheet(medidas);
+                        wsMed["!cols"] = [{wch:18},{wch:12},{wch:22},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:14},{wch:12},{wch:12},{wch:10},{wch:14},{wch:14}];
+                        XLSX.utils.book_append_sheet(wb, wsMed, "Medidas por Tanque");
+                        // Hoja 3: Carros descargados
+                        const carros = [];
+                        cmtsFinal.forEach(c=>{
+                          (c.carros||[]).forEach(cr=>{
+                            carros.push({
+                              "N° CMT": c.numero_cmt||c.id,
+                              "Fecha": c.fecha||"",
+                              "Sede": c.sede||"",
+                              "Planta": c.planta||"",
+                              "Producto": c.producto||"",
+                              "Placa": cr.placa||"",
+                              "Guía": cr.guia||"",
+                              "Tiquete": cr.tiquete||"",
+                              "Hora Inicio": cr.hora_inicio||"",
+                              "Hora Final": cr.hora_final||"",
+                              "Peso Neto (Kg)": cr.peso_neto||"",
+                              "PBS": cr.pbs_id||"",
+                            });
+                          });
+                        });
+                        if (carros.length>0) {
+                          const wsCar = XLSX.utils.json_to_sheet(carros);
+                          wsCar["!cols"] = [{wch:18},{wch:12},{wch:14},{wch:12},{wch:14},{wch:10},{wch:14},{wch:14},{wch:12},{wch:12},{wch:14},{wch:14}];
+                          XLSX.utils.book_append_sheet(wb, wsCar, "Carros Descargados");
+                        }
                         XLSX.writeFile(wb, `CMT_${new Date().toISOString().slice(0,10)}.xlsx`);
                       }} style={{background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:8,color:"#00e5a0",padding:"6px 14px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700,display:"flex",alignItems:"center",gap:6}}>
                         ⬇ Exportar Excel
