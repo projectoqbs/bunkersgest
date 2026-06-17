@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as XLSX from "xlsx";
 
 // CSS global: todos los inputs de texto en mayúsculas
 const _style = document.createElement("style");
@@ -1007,7 +1008,34 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{fontSize:10,color:"#6b8fa8",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Hasta</div>
                       <input type="date" value={cmtFiltroFechaH} onChange={e=>setCmtFiltroFechaH(e.target.value)} style={{background:"#0f1e2e",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none"}}/>
                     </div>
-                    <div style={{fontSize:11,color:"#6b8fa8",paddingBottom:6}}>{cmtsFinal.length} registro(s)</div>
+                    <div style={{display:"flex",alignItems:"center",gap:10,paddingBottom:6}}>
+                      <span style={{fontSize:11,color:"#6b8fa8"}}>{cmtsFinal.length} registro(s)</span>
+                      <button onClick={()=>{
+                        const filas = cmtsFinal.map(c=>({
+                          "N° CMT": c.numero_cmt||c.id,
+                          "Fecha": c.fecha||"",
+                          "Tipo Operación": c.tipo_operacion||"",
+                          "Producto": c.producto||"",
+                          "Sede": c.sede||"",
+                          "Planta": c.planta||"",
+                          "Tanques": [...new Set([...(c.tanques_antes||[]).map(t=>t.tanque),...(c.tanques_despues||[]).map(t=>t.tanque)].filter(Boolean))].join(", "),
+                          "Gls Iniciales": Number(c.total_antes||0),
+                          "Gls Finales": Number(c.total_despues||0),
+                          "Gls Movidos": Math.abs(Number(c.total_movido||0)),
+                          "Placa": c.placa||"",
+                          "Guía": c.guia||"",
+                          "Tiquete Entrada": c.tiquete_entrada||"",
+                          "Operador": c.operador||"",
+                        }));
+                        const ws = XLSX.utils.json_to_sheet(filas);
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "CMT");
+                        ws["!cols"] = [{wch:18},{wch:12},{wch:24},{wch:14},{wch:14},{wch:12},{wch:20},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:16},{wch:18}];
+                        XLSX.writeFile(wb, `CMT_${new Date().toISOString().slice(0,10)}.xlsx`);
+                      }} style={{background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:8,color:"#00e5a0",padding:"6px 14px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700,display:"flex",alignItems:"center",gap:6}}>
+                        ⬇ Exportar Excel
+                      </button>
+                    </div>
                   </div>
                   <div style={{overflowX:"auto"}}>
                     <table style={{width:"100%",borderCollapse:"collapse",background:"#0f1e2e",borderRadius:10,overflow:"hidden"}}>
