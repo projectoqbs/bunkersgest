@@ -174,7 +174,7 @@ function Stat({ label, value, color, sub }) {
 }
 function Table({ cols, rows, emptyMsg }) {
   return (
-    <div style={{ background:"#0f1e2e", borderRadius:12, border:"1px solid #ffffff0d", overflowX:"auto" }}>
+    <div style={{ background:"#0f1e2e", borderRadius:12, border:"1px solid #ffffff0d" }}>
       <table style={{ width:"100%", borderCollapse:"collapse", minWidth:500 }}>
         <thead><tr style={{ background:"#162535" }}>{cols.map(c=><th key={c} style={{ padding:"10px 14px", textAlign:"left", fontSize:10, color:"#6b8fa8", letterSpacing:1, textTransform:"uppercase", fontFamily:"monospace", whiteSpace:"nowrap" }}>{c}</th>)}</tr></thead>
         <tbody>
@@ -829,8 +829,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
           {/* VIAJES */}
           {nav==="viajes" && (
-            <div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
+            <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16, flexShrink:0 }}>
                 <div>
                   <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Logística — Viajes</div>
                   <div style={{ fontSize:11, color:"#6b8fa8" }}>Registro de carros tanque</div>
@@ -846,6 +846,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {puedeCrear("viajes") && <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>}
                 </div>
               </div>
+              <div style={{flex:1,overflow:"auto",borderRadius:12,border:"1px solid #ffffff0a"}}>
               <Table
                 cols={["ID","Sede","F. Cargue","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Gls Recib.","Faltantes","Stand By","Estado",""]}
                 rows={viajesFiltrados.map(v=>{
@@ -867,6 +868,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   ];
                 })}
               />
+              </div>
             </div>
           )}
 
