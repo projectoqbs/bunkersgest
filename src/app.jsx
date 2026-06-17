@@ -686,7 +686,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   if (!permisos[modulo]?.crear) return false;
   if (creado_por !== session.user.id) return false;
   const horas = (new Date() - new Date(created_at)) / 1000 / 3600;
-  return horas <= 8;
+  return horas <= 72;
 };
   const navItems = NAV_ROL[perfil.rol] || [];
 
@@ -1211,6 +1211,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                             {cr.guia&&<div style={{color:"#6b8fa8"}}>Guía: {cr.guia}</div>}
                                             {cr.pbs_id&&<div style={{color:"#fb923c"}}>PBS: {cr.pbs_id}</div>}
                                             {cr.hora_inicio&&<div style={{color:"#6b8fa8"}}>Inicio: {cr.hora_inicio} — Fin: {cr.hora_final||"—"}</div>}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {(c.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && (c.tanques_recepcion||[]).length>0 && (
+                                    <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #00e5a0",gridColumn:"1/-1"}}>
+                                      <div style={{fontSize:10,color:"#00e5a0",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Tanque de Recepción</div>
+                                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:8}}>
+                                        {(c.tanques_recepcion||[]).map((r,i)=>(
+                                          <div key={i} style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:11}}>
+                                            <div style={{color:"#00e5a0",fontWeight:700,marginBottom:6,fontSize:12}}>{r.tanque||"—"}</div>
+                                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+                                              <div style={{color:"#00b4ff",fontSize:10,fontWeight:700,marginBottom:2}}>INICIAL</div>
+                                              <div style={{color:"#c084fc",fontSize:10,fontWeight:700,marginBottom:2}}>FINAL</div>
+                                              <div style={{color:"#6b8fa8"}}>Sonda: <b style={{color:"#dff0f8"}}>{r.sondaInicial||"—"}</b></div>
+                                              <div style={{color:"#6b8fa8"}}>Sonda: <b style={{color:"#dff0f8"}}>{r.sondaFinal||"—"}</b></div>
+                                              <div style={{color:"#6b8fa8"}}>Temp: <b style={{color:"#dff0f8"}}>{r.tempInicial||"—"}</b></div>
+                                              <div style={{color:"#6b8fa8"}}>Temp: <b style={{color:"#dff0f8"}}>{r.tempFinal||"—"}</b></div>
+                                              <div style={{color:"#f59e0b",fontWeight:700}}>{fmt(r.galonesInicial||0)} Gls</div>
+                                              <div style={{color:"#f59e0b",fontWeight:700}}>{fmt(r.galonesFinal||0)} Gls</div>
+                                            </div>
                                           </div>
                                         ))}
                                       </div>
