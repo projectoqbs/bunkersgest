@@ -218,6 +218,7 @@ export default function App() {
   const [cmtAntes, setCmtAntes] = useState([{tanque:"",sonda:"",galones:""}]);
   const [cmtCarros, setCmtCarros] = useState([{placa:"", guia:"", tiquete:"", pbs_id:""}]);
   const [pbsParaCarro, setPbsParaCarro] = useState(null);
+  const [pbsEsTrasiego, setPbsEsTrasiego] = useState(false);
   const [cmtDespues, setCmtDespues] = useState([{tanque:"",producto:"",sonda:"",galones:""}]);
   const [cmtRecepcion, setCmtRecepcion] = useState([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
   const [cmtBusqueda, setCmtBusqueda] = useState("");
@@ -434,24 +435,33 @@ export default function App() {
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
       await loadData(); setPbsChecklist(Array(27).fill(""));
-      if (pbsParaCarro !== null) {
+      if (pbsParaCarro !== null || pbsEsTrasiego) {
         const snap = cmtSnapshot;
         if (snap) {
-          setForm({...snap.form});
+          if (pbsEsTrasiego) {
+            setForm({...snap.form, pbs_id: id});
+          } else {
+            setForm({...snap.form});
+            setCmtCarros(snap.cmtCarros.map((c,j)=> j===pbsParaCarro ? {...c, pbs_id:id} : c));
+          }
           setCmtAntes(snap.cmtAntes);
           setCmtDespues(snap.cmtDespues);
-          setCmtCarros(snap.cmtCarros.map((c,j)=> j===pbsParaCarro ? {...c, pbs_id:id} : c));
           setCmtProducto(snap.cmtProducto);
           setCmtRecepcion(snap.cmtRecepcion);
           setCmtSnapshot(null);
         } else {
-          const n = [...cmtCarros];
-          n[pbsParaCarro].pbs_id = id;
-          setCmtCarros(n);
+          if (pbsEsTrasiego) {
+            setForm(prev=>({...prev, pbs_id: id}));
+          } else {
+            const n = [...cmtCarros];
+            n[pbsParaCarro].pbs_id = id;
+            setCmtCarros(n);
+          }
         }
         setPbsParaCarro(null);
+        setPbsEsTrasiego(false);
         setModal("cmt");
-        showToast(`PBS ${id} creado y vinculado al carro`);
+        showToast(`PBS ${id} creado y vinculado al trasiego`);
       } else {
         setModal(null); setForm({});
         showToast(`PBS ${id} registrado correctamente`);
@@ -1245,6 +1255,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                     {c.placa&&<span>Placa: <b style={{color:"#dff0f8"}}>{c.placa}</b></span>}
                                     {c.guia&&<span>Guía: <b style={{color:"#dff0f8"}}>{c.guia}</b></span>}
                                     {c.tiquete_entrada&&<span>Tiquete: <b style={{color:"#00b4ff"}}>{c.tiquete_entrada}</b></span>}
+                                    {(c.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"&&c.pbs_id&&<span>PBS: <b style={{color:"#fb923c"}}>{c.pbs_id}</b></span>}
                                     <span style={{marginLeft:"auto",color: movido>=0?"#00e5a0":"#ff4d4d",fontWeight:700,fontSize:13}}>
                                       {movido>=0?"▲ Recibido:":"▼ Despachado:"} {fmt(Math.abs(movido))} Gls
                                     </span>
@@ -1837,6 +1848,33 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
             )}
           </Section>}
+          {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && (
+            <Section title="Permiso de Bombeo Seguro" color="#fb923c">
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <div style={{flex:1,background:"#162535",border:`1px solid ${form.pbs_id?"#fb923c44":"#ffffff14"}`,borderRadius:8,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  {form.pbs_id
+                    ? <span style={{fontSize:12,color:"#fb923c",fontFamily:"monospace",fontWeight:700}}>{form.pbs_id}</span>
+                    : <span style={{fontSize:12,color:"#6b8fa8"}}>Sin PBS vinculado</span>}
+                  <button onClick={()=>{
+                    const tanquesDespacho = cmtAntes.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
+                    const tanquesRecibe = cmtRecepcion.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
+                    setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
+                    setPbsEsTrasiego(true);
+                    setPbsParaCarro(null);
+                    setForm({
+                      tipo_operacion: form.tipo_operacion||"",
+                      bodega_despacha: tanquesDespacho,
+                      bodega_recibe: tanquesRecibe,
+                    });
+                    setPbsChecklist(Array(27).fill(""));
+                    setModal("pbs");
+                  }} style={{background:"#fb923c",border:"none",borderRadius:6,color:"#071422",padding:"5px 12px",cursor:"pointer",fontSize:11,fontWeight:700}}>
+                    {form.pbs_id ? "↺ Cambiar PBS" : "+ Generar PBS"}
+                  </button>
+                </div>
+              </div>
+            </Section>
+          )}
           {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" ? (()=>{
             const galonesDespachoInicial = cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0);
             const galonesDespachoFinal = cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0);
