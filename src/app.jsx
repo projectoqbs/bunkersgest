@@ -349,6 +349,12 @@ export default function App() {
         placa:form.placa, conductor:form.conductor, cedula:form.cedula,
         guia:form.guia, volumen_guia:Number(form.volumen_guia||0),
         planta:form.planta, standby:Number(form.standby||0), flete:Number(form.flete||0),
+        bono:Number(form.bono||0), barriles_nsv:Number(form.barriles_nsv||0),
+        gls_netos_guia:Number(form.gls_netos_guia||0), gls_recibidos:Number(form.gls_recibidos||0),
+        fecha_llegada:form.fecha_llegada||null, fecha_aprox_llegada:form.fecha_aprox_llegada||null,
+        hora_ingreso:form.hora_ingreso||null, hora_salida:form.hora_salida||null,
+        horas_espera:Number(form.horas_espera||0), horas_a_pagar:Number(form.horas_a_pagar||0),
+        valor_standby:Number(form.valor_standby||0), observacion:form.observacion||null,
       }).eq("id", form.id);
       setSaving(false);
       if (error) return showToast("Error: "+error.message, false);
@@ -359,6 +365,10 @@ export default function App() {
       const {error} = await supabase.from("viajes").insert([{
         id, ...form, volumen_guia:Number(form.volumen_guia||0),
         standby:Number(form.standby||0), flete:Number(form.flete||0),
+        bono:Number(form.bono||0), barriles_nsv:Number(form.barriles_nsv||0),
+        gls_netos_guia:Number(form.gls_netos_guia||0), gls_recibidos:Number(form.gls_recibidos||0),
+        horas_espera:Number(form.horas_espera||0), horas_a_pagar:Number(form.horas_a_pagar||0),
+        valor_standby:Number(form.valor_standby||0),
         estado:"En Ruta", creado_por:session.user.id
       }]);
       setSaving(false);
@@ -839,17 +849,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               </div>
               <Table
-                cols={["ID","Sede","Fecha","Producto","Transportadora","Placa","Guía","Vol. Gls","Stand By","Estado",""]}
-                rows={viajesFiltrados.map(v=>[
-                  <span style={{color:"#f59e0b"}}>{v.id}</span>,
-                  <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?"#c084fc":v.sede==="CARTAGENA"?"#fb923c":"#00b4ff"}/>,
-                  v.fecha, v.producto, v.transportadora, v.placa, v.guia, fmt(v.volumen_guia),
-                  v.standby>0?<Badge label={`${v.standby}d`} color="#ff4d4d"/>:<Badge label="OK" color="#00e5a0"/>,
-                  <Badge label={v.estado} color={v.estado==="Descargado"?"#00e5a0":v.estado==="En Ruta"?"#f59e0b":v.estado==="Rechazado"?"#ff4d4d":"#00b4ff"}/>,
-                  puedeEditar("viajes",v.creado_por,v.created_at)
-                    ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:"#f59e0b22",border:"1px solid #f59e0b55",borderRadius:6,color:"#f59e0b",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
-                    : null,
-                ])}
+                cols={["ID","Sede","F. Cargue","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Gls Recib.","Faltantes","Stand By","Estado",""]}
+                rows={viajesFiltrados.map(v=>{
+                  const faltantes = Math.max(0, Number(v.gls_netos_guia||v.volumen_guia||0) - Number(v.gls_recibidos||0));
+                  return [
+                    <span style={{color:"#f59e0b"}}>{v.id}</span>,
+                    <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?"#c084fc":v.sede==="CARTAGENA"?"#fb923c":"#00b4ff"}/>,
+                    v.fecha,
+                    v.fecha_llegada||<span style={{color:"#6b8fa8",fontSize:10}}>—</span>,
+                    v.producto, v.transportadora, v.placa, v.guia,
+                    fmt(v.gls_netos_guia||v.volumen_guia||0),
+                    v.gls_recibidos>0?<span style={{color:"#00e5a0",fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:"#6b8fa8",fontSize:10}}>—</span>,
+                    faltantes>0?<span style={{color:"#ff4d4d",fontWeight:700}}>{fmt(faltantes)}</span>:<span style={{color:"#00e5a0"}}>OK</span>,
+                    v.standby>0?<Badge label={`${v.standby}d`} color="#ff4d4d"/>:<Badge label="OK" color="#00e5a0"/>,
+                    <Badge label={v.estado} color={v.estado==="Descargado"?"#00e5a0":v.estado==="En Ruta"?"#f59e0b":v.estado==="Rechazado"?"#ff4d4d":"#00b4ff"}/>,
+                    puedeEditar("viajes",v.creado_por,v.created_at)
+                      ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:"#f59e0b22",border:"1px solid #f59e0b55",borderRadius:6,color:"#f59e0b",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                      : null,
+                  ];
+                })}
               />
             </div>
           )}
@@ -1431,35 +1449,73 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       {modal==="viaje" && (
         <Modal title={form.id ? `Editar Viaje ${form.id}` : "Registrar Nuevo Viaje"} onClose={()=>setModal(null)} wide>
-          <Grid cols={3}>
-            <Sel label="Sede de Destino" value={form.sede||"MALAMBO"} onChange={f("sede")}>
-              {SEDES.map(s=><option key={s}>{s}</option>)}
-            </Sel>
-            {(form.sede||"MALAMBO")==="MALAMBO" && (
-              <Sel label="Planta de Recibo" value={form.planta||"PLANTA 1"} onChange={f("planta")}>
-                {PLANTAS.map(p=><option key={p}>{p}</option>)}
+          <Section title="Identificación del Viaje" color="#f59e0b">
+            <Grid cols={3}>
+              <Sel label="Sede de Destino" value={form.sede||"MALAMBO"} onChange={f("sede")}>
+                {SEDES.map(s=><option key={s}>{s}</option>)}
               </Sel>
-            )}
-            <Inp label="Fecha de Cargue" type="date" value={form.fecha||""} onChange={f("fecha")}/>
-          </Grid>
-          <Grid cols={2}>
-            <Sel label="Producto" value={form.producto||""} onChange={f("producto")}>
-              <option value="">Seleccionar...</option>
-              {MATERIAS_PRIMAS.map(p=><option key={p}>{p}</option>)}
-              <option value="MGO">MGO</option>
-            </Sel>
-            <Sel label="Transportadora" value={form.transportadora||""} onChange={f("transportadora")}>
-              <option value="">Seleccionar...</option>
-              {TRANSPORTADORAS.map(t=><option key={t}>{t}</option>)}
-            </Sel>
-            <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")}/>
-            <Inp label="Conductor" type="text" value={form.conductor||""} onChange={f("conductor")}/>
-            <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")}/>
-            <Inp label="Número de Guía" type="text" value={form.guia||""} onChange={f("guia")}/>
-            <Inp label="Volumen Guía (Gls)" type="number" value={form.volumen_guia||""} onChange={f("volumen_guia")}/>
-            <Inp label="Stand By (días)" type="number" min="0" value={form.standby||0} onChange={f("standby")}/>
-            <Inp label="Flete ($)" type="number" value={form.flete||""} onChange={f("flete")}/>
-          </Grid>
+              {(form.sede||"MALAMBO")==="MALAMBO" && (
+                <Sel label="Planta de Recibo" value={form.planta||"PLANTA 1"} onChange={f("planta")}>
+                  {PLANTAS.map(p=><option key={p}>{p}</option>)}
+                </Sel>
+              )}
+              <Inp label="Fecha de Cargue" type="date" value={form.fecha||""} onChange={f("fecha")}/>
+              <Inp label="Fecha Aprox. Llegada" type="date" value={form.fecha_aprox_llegada||""} onChange={f("fecha_aprox_llegada")}/>
+            </Grid>
+            <Grid cols={2}>
+              <Sel label="Producto" value={form.producto||""} onChange={f("producto")}>
+                <option value="">Seleccionar...</option>
+                {MATERIAS_PRIMAS.map(p=><option key={p}>{p}</option>)}
+                <option value="MGO">MGO</option>
+              </Sel>
+              <Sel label="Transportadora" value={form.transportadora||""} onChange={f("transportadora")}>
+                <option value="">Seleccionar...</option>
+                {TRANSPORTADORAS.map(t=><option key={t}>{t}</option>)}
+              </Sel>
+              <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")}/>
+              <Inp label="Número de Guía" type="text" value={form.guia||""} onChange={f("guia")}/>
+              <Inp label="Conductor" type="text" value={form.conductor||""} onChange={f("conductor")}/>
+              <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")}/>
+            </Grid>
+          </Section>
+          <Section title="Volúmenes y Financiero" color="#00b4ff">
+            <Grid cols={3}>
+              <Inp label="Barriles NSV (campo)" type="number" value={form.barriles_nsv||""} onChange={f("barriles_nsv")}/>
+              <Inp label="Gls Netos Guía" type="number" value={form.gls_netos_guia||""} onChange={f("gls_netos_guia")}/>
+              <Inp label="Volumen Guía (Gls)" type="number" value={form.volumen_guia||""} onChange={f("volumen_guia")}/>
+              <Inp label="Gls Recibidos" type="number" value={form.gls_recibidos||""} onChange={f("gls_recibidos")}/>
+              <div>
+                <Lbl>Gls Faltantes</Lbl>
+                <div style={{background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:Number(form.gls_netos_guia||0)-Number(form.gls_recibidos||0)>0?"#ff4d4d":"#00e5a0",fontWeight:700}}>
+                  {fmt(Math.max(0, Number(form.gls_netos_guia||0)-Number(form.gls_recibidos||0)))} Gls
+                </div>
+              </div>
+            </Grid>
+            <Grid cols={3}>
+              <Inp label="Flete ($ x Gal)" type="number" value={form.flete||""} onChange={f("flete")}/>
+              <Inp label="Bono ($)" type="number" value={form.bono||""} onChange={f("bono")}/>
+              <div>
+                <Lbl>Total Flete ($)</Lbl>
+                <div style={{background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:"#00e5a0",fontWeight:700}}>
+                  {fmt(Number(form.gls_netos_guia||0)*Number(form.flete||0)+Number(form.bono||0))}
+                </div>
+              </div>
+            </Grid>
+          </Section>
+          <Section title="Logística en Planta" color="#c084fc">
+            <Grid cols={3}>
+              <Inp label="Fecha de Llegada" type="date" value={form.fecha_llegada||""} onChange={f("fecha_llegada")}/>
+              <Inp label="Hora Ingreso" type="time" value={form.hora_ingreso||""} onChange={f("hora_ingreso")}/>
+              <Inp label="Hora Salida" type="time" value={form.hora_salida||""} onChange={f("hora_salida")}/>
+              <Inp label="Stand By (días)" type="number" min="0" value={form.standby||0} onChange={f("standby")}/>
+              <Inp label="Horas Espera Total" type="number" step="0.01" value={form.horas_espera||""} onChange={f("horas_espera")}/>
+              <Inp label="Horas a Pagar" type="number" step="0.01" value={form.horas_a_pagar||""} onChange={f("horas_a_pagar")}/>
+              <Inp label="Valor Stand By ($)" type="number" value={form.valor_standby||""} onChange={f("valor_standby")}/>
+            </Grid>
+            <Grid cols={1}>
+              <Inp label="Observación" type="text" value={form.observacion||""} onChange={f("observacion")}/>
+            </Grid>
+          </Section>
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:12 }}>
             <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
             <Btn color="#f59e0b" onClick={guardarViaje} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Viaje":"Registrar Viaje"}</Btn>
