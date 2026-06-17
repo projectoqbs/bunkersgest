@@ -1480,7 +1480,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <Section title="Volúmenes y Financiero" color="#00b4ff">
             <Grid cols={3}>
               <Inp label="Gls Netos Guía" type="number" value={form.gls_netos_guia||""} onChange={f("gls_netos_guia")}/>
-              <Inp label="Volumen Guía (Gls)" type="number" value={form.volumen_guia||""} onChange={f("volumen_guia")}/>
               <Inp label="Gls Recibidos" type="number" value={form.gls_recibidos||""} onChange={f("gls_recibidos")}/>
               <div>
                 <Lbl>Gls Faltantes</Lbl>
