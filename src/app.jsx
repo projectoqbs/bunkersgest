@@ -225,6 +225,7 @@ export default function App() {
   const [cmtFiltroFechaD, setCmtFiltroFechaD] = useState("");
   const [cmtFiltroFechaH, setCmtFiltroFechaH] = useState("");
   const [cmtExpandido, setCmtExpandido] = useState(null);
+  const [cmtSnapshot, setCmtSnapshot] = useState(null);
 
   // Gestión de usuarios
   const [editUsuario, setEditUsuario] = useState(null);
@@ -432,15 +433,27 @@ export default function App() {
       }]);
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
-      await loadData(); setModal(null); setForm({}); setPbsChecklist(Array(27).fill(""));
+      await loadData(); setPbsChecklist(Array(27).fill(""));
       if (pbsParaCarro !== null) {
-        const n = [...cmtCarros];
-        n[pbsParaCarro].pbs_id = id;
-        setCmtCarros(n);
+        const snap = cmtSnapshot;
+        if (snap) {
+          setForm({...snap.form});
+          setCmtAntes(snap.cmtAntes);
+          setCmtDespues(snap.cmtDespues);
+          setCmtCarros(snap.cmtCarros.map((c,j)=> j===pbsParaCarro ? {...c, pbs_id:id} : c));
+          setCmtProducto(snap.cmtProducto);
+          setCmtRecepcion(snap.cmtRecepcion);
+          setCmtSnapshot(null);
+        } else {
+          const n = [...cmtCarros];
+          n[pbsParaCarro].pbs_id = id;
+          setCmtCarros(n);
+        }
         setPbsParaCarro(null);
         setModal("cmt");
         showToast(`PBS ${id} creado y vinculado al carro`);
       } else {
+        setModal(null); setForm({});
         showToast(`PBS ${id} registrado correctamente`);
       }
     }
@@ -1706,6 +1719,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div><Lbl>Peso Neto</Lbl><input type="text" placeholder="Kg" value={carro.peso_neto||""} onChange={e=>{const n=[...cmtCarros];n[i].peso_neto=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
                   <div><Lbl>PBS</Lbl><div style={{background:"#162535",border:`1px solid ${carro.pbs_id?"#fb923c44":"#ffffff14"}`,borderRadius:8,padding:"8px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>{carro.pbs_id?<span style={{fontSize:11,color:"#fb923c",fontFamily:"monospace"}}>{carro.pbs_id}</span>:<span style={{fontSize:11,color:"#6b8fa8"}}>Sin PBS</span>}<button onClick={()=>{
                     const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
+                    setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
                     setPbsParaCarro(i);
                     setForm({
                       tipo_operacion: form.tipo_operacion||"",
