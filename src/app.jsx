@@ -488,7 +488,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     const totalAntes = cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0);
     const totalDespues = cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0);
     const totalMovido = totalDespues - totalAntes;
-    if ((form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
+    if (!form.id && (form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
 
     if (form.id) {
       // EDICIÓN: revertir impacto original y aplicar nuevo
@@ -499,6 +499,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         tipo_operacion:form.tipo_operacion, tanques_antes:cmtAntes,
         tanques_despues:cmtDespues, tanques_recepcion:cmtRecepcion, total_antes:totalAntes,
         total_despues:totalDespues, total_movido:totalMovido,
+        sede:form.sede||"", planta:form.planta||"", operador:form.operador||"",
         placa:form.placa||"", carros:cmtCarros, guia:form.guia||"",
         nombre_motonave:form.nombre_motonave||"",
         peso_neto_salida:form.peso_neto_salida||"",
