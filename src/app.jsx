@@ -1043,7 +1043,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={tdStyle}><span style={{color:"#dff0f8",fontSize:11}}>{tanquesNombres||"—"}</span></td>
                             <td style={tdStyle}><span style={{color:"#dff0f8"}}>{fmt(c.total_antes)}</span></td>
                             <td style={tdStyle}><span style={{color:"#dff0f8"}}>{fmt(c.total_despues)}</span></td>
-                            <td style={tdStyle}><span style={{color:movido>=0?"#00e5a0":"#ff4d4d",fontWeight:700}}>{movido>=0?"+":""}{fmt(movido)}</span></td>
+                            <td style={tdStyle}><span style={{color:"#00e5a0",fontWeight:700}}>{fmt(Math.abs(movido))}</span></td>
                             <td style={tdStyle}><span style={{color:"#6b8fa8",fontSize:11}}>{c.operador||"—"}</span></td>
                             <td style={{...tdStyle,whiteSpace:"nowrap"}} onClick={e=>e.stopPropagation()}>
                               <div style={{display:"flex",gap:6}}>
