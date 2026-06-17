@@ -352,8 +352,7 @@ export default function App() {
         bono:Number(form.bono||0), barriles_nsv:Number(form.barriles_nsv||0),
         gls_netos_guia:Number(form.gls_netos_guia||0), gls_recibidos:Number(form.gls_recibidos||0),
         fecha_llegada:form.fecha_llegada||null, fecha_aprox_llegada:form.fecha_aprox_llegada||null,
-        hora_ingreso:form.hora_ingreso||null, hora_salida:form.hora_salida||null,
-        horas_espera:Number(form.horas_espera||0), horas_a_pagar:Number(form.horas_a_pagar||0),
+        fecha_descargue:form.fecha_descargue||null,
         valor_standby:Number(form.valor_standby||0), observacion:form.observacion||null,
       }).eq("id", form.id);
       setSaving(false);
@@ -367,8 +366,7 @@ export default function App() {
         standby:Number(form.standby||0), flete:Number(form.flete||0),
         bono:Number(form.bono||0), barriles_nsv:Number(form.barriles_nsv||0),
         gls_netos_guia:Number(form.gls_netos_guia||0), gls_recibidos:Number(form.gls_recibidos||0),
-        horas_espera:Number(form.horas_espera||0), horas_a_pagar:Number(form.horas_a_pagar||0),
-        valor_standby:Number(form.valor_standby||0),
+        valor_standby:Number(form.valor_standby||0), fecha_descargue:form.fecha_descargue||null,
         estado:"En Ruta", creado_por:session.user.id
       }]);
       setSaving(false);
@@ -1501,11 +1499,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <Grid cols={3}>
               <Inp label="Fecha Aprox. Llegada" type="date" value={form.fecha_aprox_llegada||""} onChange={f("fecha_aprox_llegada")}/>
               <Inp label="Fecha de Llegada" type="date" value={form.fecha_llegada||""} onChange={f("fecha_llegada")}/>
-              <Inp label="Hora Ingreso" type="time" value={form.hora_ingreso||""} onChange={f("hora_ingreso")}/>
-              <Inp label="Hora Salida" type="time" value={form.hora_salida||""} onChange={f("hora_salida")}/>
+              <Inp label="Fecha de Descargue" type="date" value={form.fecha_descargue||""} onChange={f("fecha_descargue")}/>
               <Inp label="Stand By (días)" type="number" min="0" value={form.standby||0} onChange={f("standby")}/>
-              <Inp label="Horas Espera Total" type="number" step="0.01" value={form.horas_espera||""} onChange={f("horas_espera")}/>
-              <Inp label="Horas a Pagar" type="number" step="0.01" value={form.horas_a_pagar||""} onChange={f("horas_a_pagar")}/>
               <Inp label="Valor Stand By ($)" type="number" value={form.valor_standby||""} onChange={f("valor_standby")}/>
             </Grid>
             <Grid cols={1}>
