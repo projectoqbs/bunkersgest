@@ -1454,13 +1454,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Sel label="Sede de Destino" value={form.sede||"MALAMBO"} onChange={f("sede")}>
                 {SEDES.map(s=><option key={s}>{s}</option>)}
               </Sel>
-              {(form.sede||"MALAMBO")==="MALAMBO" && (
-                <Sel label="Planta de Recibo" value={form.planta||"PLANTA 1"} onChange={f("planta")}>
-                  {PLANTAS.map(p=><option key={p}>{p}</option>)}
-                </Sel>
-              )}
+              <Sel label="Planta de Recibo" value={form.planta||""} onChange={f("planta")}>
+                <option value="">Seleccionar...</option>
+                {SEDES.map(s=><option key={s}>{s}</option>)}
+              </Sel>
               <Inp label="Fecha de Cargue" type="date" value={form.fecha||""} onChange={f("fecha")}/>
-              <Inp label="Fecha Aprox. Llegada" type="date" value={form.fecha_aprox_llegada||""} onChange={f("fecha_aprox_llegada")}/>
             </Grid>
             <Grid cols={2}>
               <Sel label="Producto" value={form.producto||""} onChange={f("producto")}>
@@ -1476,11 +1474,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Número de Guía" type="text" value={form.guia||""} onChange={f("guia")}/>
               <Inp label="Conductor" type="text" value={form.conductor||""} onChange={f("conductor")}/>
               <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")}/>
+              <Inp label="Barriles NSV (campo)" type="number" value={form.barriles_nsv||""} onChange={f("barriles_nsv")}/>
             </Grid>
           </Section>
           <Section title="Volúmenes y Financiero" color="#00b4ff">
             <Grid cols={3}>
-              <Inp label="Barriles NSV (campo)" type="number" value={form.barriles_nsv||""} onChange={f("barriles_nsv")}/>
               <Inp label="Gls Netos Guía" type="number" value={form.gls_netos_guia||""} onChange={f("gls_netos_guia")}/>
               <Inp label="Volumen Guía (Gls)" type="number" value={form.volumen_guia||""} onChange={f("volumen_guia")}/>
               <Inp label="Gls Recibidos" type="number" value={form.gls_recibidos||""} onChange={f("gls_recibidos")}/>
@@ -1490,8 +1488,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {fmt(Math.max(0, Number(form.gls_netos_guia||0)-Number(form.gls_recibidos||0)))} Gls
                 </div>
               </div>
-            </Grid>
-            <Grid cols={3}>
               <Inp label="Flete ($ x Gal)" type="number" value={form.flete||""} onChange={f("flete")}/>
               <Inp label="Bono ($)" type="number" value={form.bono||""} onChange={f("bono")}/>
               <div>
@@ -1504,6 +1500,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </Section>
           <Section title="Logística en Planta" color="#c084fc">
             <Grid cols={3}>
+              <Inp label="Fecha Aprox. Llegada" type="date" value={form.fecha_aprox_llegada||""} onChange={f("fecha_aprox_llegada")}/>
               <Inp label="Fecha de Llegada" type="date" value={form.fecha_llegada||""} onChange={f("fecha_llegada")}/>
               <Inp label="Hora Ingreso" type="time" value={form.hora_ingreso||""} onChange={f("hora_ingreso")}/>
               <Inp label="Hora Salida" type="time" value={form.hora_salida||""} onChange={f("hora_salida")}/>
