@@ -1005,28 +1005,94 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
           {/* LISTADO PLANTA */}
           {nav==="listado_planta" && (()=>{
-            const enPlanta = viajesFiltrados.filter(v=>v.estado==="En Planta");
+            // Carros en ruta con fecha_llegada registrada, o cualquier carro en planta
+            const enPlanta = viajesFiltrados
+              .filter(v => v.fecha_llegada || v.estado === "En Planta")
+              .filter(v => v.estado !== "Descargado" && v.estado !== "Rechazado")
+              .sort((a,b) => {
+                if (!a.fecha_llegada && !b.fecha_llegada) return 0;
+                if (!a.fecha_llegada) return 1;
+                if (!b.fecha_llegada) return -1;
+                return new Date(a.fecha_llegada) - new Date(b.fecha_llegada);
+              });
+            const COLOR = "#00b4ff";
             return (
-            <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}}>
-              <div style={{flexShrink:0,marginBottom:16}}>
-                <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Listado Planta</div>
-                <div style={{ fontSize:11, color:"#6b8fa8" }}>Carros actualmente en planta · <b style={{color:"#00b4ff"}}>{enPlanta.length}</b> unidad(es)</div>
+            <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 100px)"}}>
+              {/* Header */}
+              <div style={{flexShrink:0,marginBottom:18,display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+                <div>
+                  <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,letterSpacing:0.5}}>Listado Planta</div>
+                  <div style={{fontSize:11,color:"#6b8fa8",marginTop:2}}>
+                    Enturne de carros para descargue ·{" "}
+                    <b style={{color:COLOR}}>{enPlanta.filter(v=>v.fecha_llegada).length}</b> en planta ·{" "}
+                    <b style={{color:"#f59e0b"}}>{enPlanta.filter(v=>!v.fecha_llegada).length}</b> pendientes de llegada
+                  </div>
+                </div>
               </div>
-              <div style={{flex:1,overflow:"auto",borderRadius:12,border:"1px solid #ffffff0a"}}>
-                <Table
-                  cols={["ID","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Stand By","Estado",""]}
-                  rows={enPlanta.map(v=>[
-                    <span style={{color:"#f59e0b"}}>{v.id}</span>,
-                    v.fecha_llegada||"—",
-                    v.producto, v.transportadora, v.placa, v.guia,
-                    fmt(v.gls_netos_guia||v.volumen_guia||0),
-                    v.standby>0?<Badge label={`${v.standby}d`} color="#ff4d4d"/>:<Badge label="OK" color="#00e5a0"/>,
-                    <Badge label={v.estado} color="#00b4ff"/>,
-                    puedeEditar("viajes",v.creado_por,v.created_at)
-                      ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:"#f59e0b22",border:"1px solid #f59e0b55",borderRadius:6,color:"#f59e0b",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
-                      : null,
-                  ])}
-                />
+
+              {/* Tabla */}
+              <div style={{flex:1,overflow:"auto",borderRadius:14,border:"1px solid #ffffff0a",background:"#0a1826"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:"monospace"}}>
+                  <thead>
+                    <tr style={{background:"#0d1f30",position:"sticky",top:0,zIndex:2}}>
+                      {["#","FECHA LLEGADA","FECHA CARGUE","PLACA","PRODUCTO","OBSERVACIONES",""].map((h,i)=>(
+                        <th key={i} style={{padding:"11px 14px",textAlign:"left",fontSize:10,color:"#6b8fa8",fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",borderBottom:"1px solid #ffffff0a",whiteSpace:"nowrap"}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {enPlanta.length===0 && (
+                      <tr><td colSpan={7} style={{padding:40,textAlign:"center",color:"#6b8fa8",fontSize:13}}>No hay carros en planta</td></tr>
+                    )}
+                    {enPlanta.map((v,i)=>{
+                      const llegó = !!v.fecha_llegada;
+                      const turno = llegó ? i+1 : null;
+                      return (
+                        <tr key={v.id} style={{borderBottom:"1px solid #ffffff06",transition:"background 0.12s"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="#ffffff05"}
+                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                          {/* Número de turno */}
+                          <td style={{padding:"12px 14px"}}>
+                            {turno
+                              ? <div style={{width:28,height:28,borderRadius:"50%",background:turno===1?"#00e5a044":COLOR+"22",border:`2px solid ${turno===1?"#00e5a0":COLOR}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,color:turno===1?"#00e5a0":COLOR}}>{turno}</div>
+                              : <div style={{width:28,height:28,borderRadius:"50%",background:"#f59e0b22",border:"2px solid #f59e0b66",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#f59e0b"}}>—</div>
+                            }
+                          </td>
+                          {/* Fecha llegada */}
+                          <td style={{padding:"12px 14px"}}>
+                            {llegó
+                              ? <span style={{color:"#00e5a0",fontWeight:700}}>{v.fecha_llegada}</span>
+                              : <span style={{color:"#f59e0b",fontSize:11}}>Pendiente</span>
+                            }
+                          </td>
+                          {/* Fecha cargue */}
+                          <td style={{padding:"12px 14px",color:"#8aacbf"}}>{v.fecha||"—"}</td>
+                          {/* Placa */}
+                          <td style={{padding:"12px 14px"}}>
+                            <span style={{background:"#f59e0b18",border:"1px solid #f59e0b44",borderRadius:6,padding:"3px 9px",color:"#f59e0b",fontWeight:700,letterSpacing:1}}>{v.placa||"—"}</span>
+                          </td>
+                          {/* Producto */}
+                          <td style={{padding:"12px 14px",color:"#c8dce8",maxWidth:160}}>
+                            <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.producto||"—"}</div>
+                          </td>
+                          {/* Observaciones */}
+                          <td style={{padding:"12px 14px",color:"#6b8fa8",maxWidth:200}}>
+                            <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.observacion||<span style={{color:"#ffffff22",fontStyle:"italic"}}>Sin observaciones</span>}</div>
+                          </td>
+                          {/* Acción */}
+                          <td style={{padding:"12px 14px"}}>
+                            <button onClick={()=>{setForm({...v});setModal("viaje");}}
+                              style={{background:COLOR+"18",border:`1px solid ${COLOR}44`,borderRadius:7,color:COLOR,padding:"5px 12px",fontSize:11,cursor:"pointer",fontFamily:"monospace",transition:"background 0.12s",whiteSpace:"nowrap"}}
+                              onMouseEnter={e=>e.currentTarget.style.background=COLOR+"30"}
+                              onMouseLeave={e=>e.currentTarget.style.background=COLOR+"18"}>
+                              {llegó ? "✏ Editar" : "📍 Registrar llegada"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
             );
