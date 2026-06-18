@@ -761,76 +761,83 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       <div style={{ display:"flex", minHeight:"calc(100vh - 58px)" }}>
         {/* Sidebar */}
-        <div style={{ width:180, background:"#0a1826", borderRight:"1px solid #ffffff08", padding:"18px 0", flexShrink:0 }}>
-          {navItems.map(id=>{
-            if (id === "viajes") {
-              const logActive = nav==="viajes" || nav==="listado_planta";
-              const open = logOpen || logActive;
-              return (
-                <div key="logistica">
-                  <button onClick={()=>{ setLogOpen(o=>!o); if(!open) setNav("viajes"); }} style={{ width:"100%", textAlign:"left", background:logActive?rol.color+"18":"none", border:"none", borderLeft:`3px solid ${logActive?rol.color:"transparent"}`, padding:"10px 16px", color:logActive?rol.color:"#6b8fa8", fontSize:12, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <span style={{ display:"flex", alignItems:"center", gap:8 }}><span>🚛</span>LOGÍSTICA</span>
-                    <span style={{fontSize:10}}>{open?"▾":"▸"}</span>
-                  </button>
-                  {open && (
-                    <div style={{background:"#060f1a"}}>
-                      {[
-                        {id:"viajes", label:"LISTADO TRÁNSITO"},
-                        {id:"listado_planta", label:"LISTADO PLANTA"},
-                      ].map(sub=>{
-                        const subActive = nav===sub.id;
-                        return (
-                          <button key={sub.id} onClick={()=>setNav(sub.id)} style={{ width:"100%", textAlign:"left", background:subActive?rol.color+"22":"none", border:"none", borderLeft:`3px solid ${subActive?rol.color:"transparent"}`, padding:"8px 16px 8px 36px", color:subActive?rol.color:"#6b8fa8", fontSize:11, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                            <span>{sub.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-            if (id === "tiquetes") {
-              const labActive = nav==="tiquetes" || nav==="resultados";
-              const open = labOpen || labActive;
-              return (
-                <div key="laboratorio">
-                  <button onClick={()=>{ setLabOpen(o=>!o); if(!open) setNav("tiquetes"); }} style={{ width:"100%", textAlign:"left", background:labActive?rol.color+"18":"none", border:"none", borderLeft:`3px solid ${labActive?rol.color:"transparent"}`, padding:"10px 16px", color:labActive?rol.color:"#6b8fa8", fontSize:12, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <span style={{ display:"flex", alignItems:"center", gap:8 }}><span>🧪</span>LABORATORIO</span>
-                    <span style={{fontSize:10}}>{open?"▾":"▸"}</span>
-                  </button>
-                  {open && (
-                    <div style={{background:"#060f1a"}}>
-                      {[
-                        {id:"tiquetes", label:"Tiquetes MP", badge:pendTiquetes},
-                        {id:"resultados", label:"Resultados"},
-                      ].map(sub=>{
-                        const subActive = nav===sub.id;
-                        return (
-                          <button key={sub.id} onClick={()=>setNav(sub.id)} style={{ width:"100%", textAlign:"left", background:subActive?rol.color+"22":"none", border:"none", borderLeft:`3px solid ${subActive?rol.color:"transparent"}`, padding:"8px 16px 8px 36px", color:subActive?rol.color:"#6b8fa8", fontSize:11, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                            <span>{sub.label}</span>
-                            {sub.badge>0 && <span style={{ background:"#ff4d4d", color:"#fff", fontSize:9, fontWeight:700, borderRadius:10, padding:"1px 6px" }}>{sub.badge}</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-            const m = NAV_META[id];
-            const active = nav===id;
+        <div style={{ width:56, background:"#0a1826", borderRight:"1px solid #ffffff08", padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+          {(()=>{
+            const GRUPOS = {
+              viajes:   { icon:"🚛", label:"LOGÍSTICA",   subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
+              tiquetes: { icon:"🧪", label:"LABORATORIO",  subs:[{id:"tiquetes",label:"Tiquetes MP",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
+            };
             const badges = { pbs:pendPBS, cmt:pendCMT };
-            return (
-              <button key={id} onClick={()=>setNav(id)} style={{ width:"100%", textAlign:"left", background:active?rol.color+"18":"none", border:"none", borderLeft:`3px solid ${active?rol.color:"transparent"}`, padding:"10px 16px", color:active?rol.color:"#6b8fa8", fontSize:12, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                <span style={{ display:"flex", alignItems:"center", gap:8 }}><span>{m.icon}</span>{m.label}</span>
-                {badges[id]>0 && <span style={{ background:"#ff4d4d", color:"#fff", fontSize:9, fontWeight:700, borderRadius:10, padding:"1px 6px" }}>{badges[id]}</span>}
-              </button>
+            const [hovered, setHovered] = React.useState(null);
+
+            const itemBase = (active, color) => ({
+              width:40, height:40, border:"none", borderRadius:10, cursor:"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
+              transition:"all 0.18s ease",
+              background: active ? color+"33" : "transparent",
+              boxShadow: active ? `0 0 0 2px ${color}55` : "none",
+            });
+
+            return navItems.map(id => {
+              const grupo = GRUPOS[id];
+              if (grupo) {
+                const active = grupo.subs.some(s=>s.id===nav);
+                const isHov = hovered===id;
+                return (
+                  <div key={id} style={{position:"relative"}}
+                    onMouseEnter={()=>setHovered(id)}
+                    onMouseLeave={()=>setHovered(null)}>
+                    <button style={{...itemBase(active, rol.color), ...(isHov&&!active?{background:"#ffffff12",transform:"scale(1.08)"}:{})}} title={grupo.label}>
+                      {grupo.icon}
+                    </button>
+                    {(isHov) && (
+                      <div style={{position:"fixed",left:58,zIndex:999,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:10,padding:"6px 0",minWidth:180,boxShadow:"4px 4px 24px #000a"}}>
+                        <div style={{padding:"6px 14px 8px",fontSize:10,color:"#6b8fa8",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",borderBottom:"1px solid #ffffff0a",marginBottom:4}}>{grupo.label}</div>
+                        {grupo.subs.map(sub=>{
+                          const subActive = nav===sub.id;
+                          return (
+                            <button key={sub.id} onClick={()=>{setNav(sub.id);setHovered(null);}}
+                              style={{width:"100%",textAlign:"left",background:subActive?rol.color+"22":"none",border:"none",borderLeft:`3px solid ${subActive?rol.color:"transparent"}`,padding:"9px 16px",color:subActive?rol.color:"#dff0f8",fontSize:12,fontFamily:"monospace",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.12s"}}
+                              onMouseEnter={e=>{ if(!subActive) e.currentTarget.style.background="#ffffff0e"; }}
+                              onMouseLeave={e=>{ if(!subActive) e.currentTarget.style.background="none"; }}>
+                              <span>{sub.label}</span>
+                              {sub.badge>0&&<span style={{background:"#ff4d4d",color:"#fff",fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{sub.badge}</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              const m = NAV_META[id];
+              const active = nav===id;
+              const badge = badges[id]||0;
+              const isHov = hovered===id;
+              return (
+                <div key={id} style={{position:"relative"}}
+                  onMouseEnter={()=>setHovered(id)}
+                  onMouseLeave={()=>setHovered(null)}>
+                  <button onClick={()=>setNav(id)} style={{...itemBase(active,rol.color),...(isHov&&!active?{background:"#ffffff12",transform:"scale(1.08)"}:{})}} title={m.label}>
+                    {m.icon}
+                    {badge>0&&<span style={{position:"absolute",top:2,right:2,background:"#ff4d4d",color:"#fff",fontSize:8,fontWeight:700,borderRadius:8,padding:"1px 4px",lineHeight:1}}>{badge}</span>}
+                  </button>
+                  {isHov&&(
+                    <div style={{position:"fixed",left:58,zIndex:999,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 14px",fontSize:11,color:"#dff0f8",whiteSpace:"nowrap",boxShadow:"4px 4px 16px #000a",fontFamily:"monospace",pointerEvents:"none"}}>
+                      {m.label}
+                    </div>
+                  )}
+                </div>
+              );
+            }).concat(
+              <div key="reload" style={{position:"relative",marginTop:"auto"}}
+                onMouseEnter={()=>setHovered("reload")}
+                onMouseLeave={()=>setHovered(null)}>
+                <button onClick={loadData} style={{...itemBase(false,"#6b8fa8"),...(hovered==="reload"?{background:"#ffffff12",transform:"scale(1.08)"}:{})}} title="Actualizar">🔄</button>
+                {hovered==="reload"&&<div style={{position:"fixed",left:58,zIndex:999,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 14px",fontSize:11,color:"#dff0f8",whiteSpace:"nowrap",boxShadow:"4px 4px 16px #000a",fontFamily:"monospace",pointerEvents:"none"}}>Actualizar</div>}
+              </div>
             );
-          })}
-          <button onClick={loadData} style={{ width:"100%", textAlign:"left", background:"none", border:"none", borderLeft:"3px solid transparent", padding:"10px 16px", color:"#6b8fa8", fontSize:12, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", gap:8, marginTop:8 }}>
-            <span>🔄</span> Actualizar
-          </button>
+          })()}
         </div>
 
         {/* Content */}
