@@ -2239,15 +2239,39 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const selViaje = enRuta.find(v=>v.id===form.viaje_id);
   return (
     <Modal title="Registrar Llegada a Planta" onClose={()=>{setModal(null);setForm({});}}>
-      <div style={{marginBottom:14}}>
-        <Lbl>Seleccionar Carro (En Tránsito)</Lbl>
-        <select value={form.viaje_id||""} onChange={e=>setForm(p=>({...p,viaje_id:e.target.value}))}
-          style={{width:"100%",background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"10px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none"}}>
-          <option value="">— Seleccionar carro —</option>
-          {enRuta.map(v=>(
-            <option key={v.id} value={v.id}>{v.placa} · {v.producto} · {v.id}</option>
-          ))}
-        </select>
+      <div style={{marginBottom:14,position:"relative"}}>
+        <Lbl>Buscar Carro por Placa, Guía o Producto</Lbl>
+        <input
+          autoFocus
+          value={form._busqueda !== undefined ? form._busqueda : (selViaje ? `${selViaje.placa} · ${selViaje.producto}` : "")}
+          onChange={e=>setForm(p=>({...p,_busqueda:e.target.value,viaje_id:""}))}
+          placeholder="Ej: WOM853, FRONTERA, guía 123..."
+          style={{width:"100%",background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"10px 12px",color:"#dff0f8",fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}
+        />
+        {form._busqueda && !form.viaje_id && (()=>{
+          const q = form._busqueda.toLowerCase();
+          const matches = enRuta.filter(v=>
+            (v.placa||"").toLowerCase().includes(q) ||
+            (v.producto||"").toLowerCase().includes(q) ||
+            (v.guia||"").toLowerCase().includes(q) ||
+            (v.conductor||"").toLowerCase().includes(q)
+          ).slice(0,8);
+          if(!matches.length) return <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:"0 0 10px 10px",padding:"10px 14px",fontSize:12,color:"#6b8fa8",zIndex:50}}>Sin resultados</div>;
+          return (
+            <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#0d1f30",border:"1px solid #ffffff14",borderTop:"none",borderRadius:"0 0 10px 10px",zIndex:50,overflow:"hidden",boxShadow:"0 8px 24px #000c"}}>
+              {matches.map(v=>(
+                <div key={v.id} onClick={()=>setForm(p=>({...p,viaje_id:v.id,_busqueda:undefined}))}
+                  style={{padding:"10px 14px",cursor:"pointer",display:"grid",gridTemplateColumns:"auto 1fr auto",gap:"0 12px",alignItems:"center",borderBottom:"1px solid #ffffff08",transition:"background 0.1s"}}
+                  onMouseEnter={e=>e.currentTarget.style.background="#ffffff0d"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                  <span style={{background:"#f59e0b18",border:"1px solid #f59e0b44",borderRadius:6,padding:"3px 9px",color:"#f59e0b",fontWeight:700,fontSize:12,letterSpacing:1}}>{v.placa}</span>
+                  <span style={{color:"#c8dce8",fontSize:12}}>{v.producto}</span>
+                  <span style={{color:"#6b8fa8",fontSize:11}}>{v.fecha}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
       {selViaje && (
         <div style={{background:"#0d1f30",borderRadius:10,padding:"12px 16px",marginBottom:14,fontSize:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
