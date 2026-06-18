@@ -199,6 +199,7 @@ export default function App() {
   const [nav, setNav] = useState("dashboard");
   const [labOpen, setLabOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  const [navHovered, setNavHovered] = useState(null);
 
   // Data
   const [tanques, setTanques] = useState([]);
@@ -764,11 +765,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <div style={{ width:56, background:"#0a1826", borderRight:"1px solid #ffffff08", padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
           {(()=>{
             const GRUPOS = {
-              viajes:   { icon:"🚛", label:"LOGÍSTICA",   subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
-              tiquetes: { icon:"🧪", label:"LABORATORIO",  subs:[{id:"tiquetes",label:"Tiquetes MP",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
+              viajes:   { icon:"🚛", label:"LOGÍSTICA",  subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
+              tiquetes: { icon:"🧪", label:"LABORATORIO", subs:[{id:"tiquetes",label:"Tiquetes MP",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
             };
             const badges = { pbs:pendPBS, cmt:pendCMT };
-            const [hovered, setHovered] = React.useState(null);
+            const hovered = navHovered;
+            const setHovered = setNavHovered;
 
             const itemBase = (active, color) => ({
               width:40, height:40, border:"none", borderRadius:10, cursor:"pointer",
@@ -778,7 +780,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               boxShadow: active ? `0 0 0 2px ${color}55` : "none",
             });
 
-            return navItems.map(id => {
+            const items = navItems.map(id => {
               const grupo = GRUPOS[id];
               if (grupo) {
                 const active = grupo.subs.some(s=>s.id===nav);
@@ -790,7 +792,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <button style={{...itemBase(active, rol.color), ...(isHov&&!active?{background:"#ffffff12",transform:"scale(1.08)"}:{})}} title={grupo.label}>
                       {grupo.icon}
                     </button>
-                    {(isHov) && (
+                    {isHov && (
                       <div style={{position:"fixed",left:58,zIndex:999,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:10,padding:"6px 0",minWidth:180,boxShadow:"4px 4px 24px #000a"}}>
                         <div style={{padding:"6px 14px 8px",fontSize:10,color:"#6b8fa8",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",borderBottom:"1px solid #ffffff0a",marginBottom:4}}>{grupo.label}</div>
                         {grupo.subs.map(sub=>{
@@ -829,7 +831,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   )}
                 </div>
               );
-            }).concat(
+            });
+            items.push(
               <div key="reload" style={{position:"relative",marginTop:"auto"}}
                 onMouseEnter={()=>setHovered("reload")}
                 onMouseLeave={()=>setHovered(null)}>
@@ -837,6 +840,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {hovered==="reload"&&<div style={{position:"fixed",left:58,zIndex:999,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 14px",fontSize:11,color:"#dff0f8",whiteSpace:"nowrap",boxShadow:"4px 4px 16px #000a",fontFamily:"monospace",pointerEvents:"none"}}>Actualizar</div>}
               </div>
             );
+            return items;
           })()}
         </div>
 
