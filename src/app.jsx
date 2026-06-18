@@ -983,11 +983,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 cols={["ID","Sede","F. Cargue","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Gls Recib.","Faltantes","Stand By","Estado",""]}
                 rows={viajesFinal.map(v=>{
                   const faltantes = Math.max(0, Number(v.gls_netos_guia||v.volumen_guia||0) - Number(v.gls_recibidos||0));
-                  // Stand by: corre desde fecha_llegada. Si ya descargó usa fecha_descargue, si no usa hoy.
-                  const diasStandby = v.fecha_llegada
-                    ? Math.floor((new Date(v.fecha_descargue||today()) - new Date(v.fecha_llegada)) / 86400000)
-                    : null;
+                  // Stand by en horas desde llegada. Verde <8h, Amarillo 8-16h, Rojo 16-24h, luego días.
                   const sbFinalizado = !!(v.fecha_llegada && v.fecha_descargue);
+                  const horasStandby = v.fecha_llegada
+                    ? (new Date(v.fecha_descargue||new Date()) - new Date(v.fecha_llegada)) / 3600000
+                    : null;
+                  const diasStandby = horasStandby !== null ? Math.floor(horasStandby / 24) : null;
+                  const horasRestantes = horasStandby !== null ? Math.floor(horasStandby % 24) : null;
+                  const sbLabel = horasStandby === null ? null
+                    : horasStandby < 24
+                      ? `${Math.floor(horasStandby)}h`
+                      : diasStandby === 1 ? `1d ${horasRestantes}h` : `${diasStandby}d ${horasRestantes}h`;
+                  const sbColor = horasStandby === null ? null
+                    : horasStandby < 8   ? "#00e5a0"
+                    : horasStandby < 16  ? "#f59e0b"
+                    : "#ff4d4d";
                   return [
                     <span style={{color:"#f59e0b"}}>{v.id}</span>,
                     <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?"#c084fc":v.sede==="CARTAGENA"?"#fb923c":"#00b4ff"}/>,
@@ -997,13 +1007,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     fmt(v.gls_netos_guia||v.volumen_guia||0),
                     v.gls_recibidos>0?<span style={{color:"#00e5a0",fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:"#6b8fa8",fontSize:10}}>—</span>,
                     faltantes>0?<span style={{color:"#ff4d4d",fontWeight:700}}>{fmt(faltantes)}</span>:<span style={{color:"#00e5a0"}}>OK</span>,
-                    diasStandby !== null
+                    sbLabel !== null
                       ? <span style={{display:"inline-flex",alignItems:"center",gap:4}}>
-                          <Badge
-                            label={`${diasStandby}d`}
-                            color={diasStandby>=3?"#ff4d4d":diasStandby>=1?"#f59e0b":"#00e5a0"}
-                          />
-                          {!sbFinalizado && <span style={{fontSize:9,color:"#6b8fa8",fontStyle:"italic"}}>en curso</span>}
+                          <Badge label={sbLabel} color={sbColor}/>
+                          {!sbFinalizado && horasStandby>=24 && <span style={{fontSize:9,color:"#ff4d4d",fontWeight:700}}>COBRO</span>}
+                          {!sbFinalizado && horasStandby<24 && <span style={{fontSize:9,color:"#6b8fa8",fontStyle:"italic"}}>en curso</span>}
                         </span>
                       : <span style={{color:"#ffffff18"}}>—</span>,
                     <Badge label={v.estado} color={v.estado==="Descargado"?"#00e5a0":v.estado==="En Ruta"?"#f59e0b":v.estado==="Rechazado"?"#ff4d4d":"#00b4ff"}/>,
