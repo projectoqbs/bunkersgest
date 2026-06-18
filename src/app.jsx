@@ -1007,7 +1007,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {nav==="listado_planta" && (()=>{
             // Carros en ruta con fecha_llegada registrada, o cualquier carro en planta
             const enPlanta = viajesFiltrados
-              .filter(v => v.fecha_llegada || v.estado === "En Planta")
+              .filter(v => v.fecha_llegada)
               .filter(v => v.estado !== "Descargado" && v.estado !== "Rechazado")
               .sort((a,b) => {
                 if (!a.fecha_llegada && !b.fecha_llegada) return 0;
@@ -1024,8 +1024,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,letterSpacing:0.5}}>Listado Planta</div>
                   <div style={{fontSize:11,color:"#6b8fa8",marginTop:2}}>
                     Enturne de carros para descargue ·{" "}
-                    <b style={{color:COLOR}}>{enPlanta.filter(v=>v.fecha_llegada).length}</b> en planta ·{" "}
-                    <b style={{color:"#f59e0b"}}>{enPlanta.filter(v=>!v.fecha_llegada).length}</b> pendientes de llegada
+                    <b style={{color:COLOR}}>{enPlanta.length}</b> carro(s) registrado(s) en planta
                   </div>
                 </div>
               </div>
