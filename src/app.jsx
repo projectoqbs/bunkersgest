@@ -732,7 +732,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
   return (
     <div style={{ fontFamily:"monospace", background:"#071422", minHeight:"100vh", color:"#dff0f8" }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeSlideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}`}</style>
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet" />
 
       {toast && <div style={{ position:"fixed", top:18, right:18, zIndex:9999, background:toast.ok?"#00e5a018":"#ff4d4d18", border:`1px solid ${toast.ok?"#00e5a0":"#ff4d4d"}`, borderRadius:12, padding:"12px 18px", color:toast.ok?"#00e5a0":"#ff4d4d", fontSize:13, fontWeight:700, backdropFilter:"blur(12px)", maxWidth:360 }}>{toast.msg}</div>}
@@ -773,28 +773,44 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const btnStyle = (active, isHov, color) => ({
               width:40, height:40, border:"none", borderRadius:10, cursor:"pointer",
               display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
-              transition:"background 0.15s, transform 0.15s",
+              transition:"background 0.2s, transform 0.2s, color 0.2s",
               background: active ? color+"44" : isHov ? color+"22" : "transparent",
-              transform: isHov ? "scale(1.1)" : "scale(1)",
-              color: active||isHov ? color : "#6b8fa8",
-              position:"relative",
+              transform: isHov ? "scale(1.12)" : "scale(1)",
+              color: active||isHov ? color : "#4a6a82",
+              position:"relative", outline:"none",
             });
 
-            const flyoutPanel = {
-              position:"absolute", left:"calc(100% + 8px)", top:0,
-              background:"#0d1f30", border:"1px solid #ffffff14", borderRadius:10,
-              padding:"6px 0", minWidth:190, boxShadow:"6px 6px 28px #000c",
-              zIndex:9999,
+            /* El flyout ocupa left:100% sin gap — así el mouse pasa directo del ícono al panel.
+               Un padding-left invisible de 8px al inicio del panel crea el espacio visual. */
+            const flyoutBase = {
+              position:"absolute", left:"100%", top:"-4px",
+              paddingLeft:8, zIndex:9999, pointerEvents:"auto",
+            };
+            const flyoutInner = {
+              background:"#0d1f30",
+              border:"1px solid #ffffff18",
+              borderLeft:"2px solid",
+              borderRadius:"0 10px 10px 0",
+              padding:"6px 0", minWidth:190,
+              boxShadow:"8px 8px 32px #000d",
+              animation:"fadeSlideIn 0.15s ease",
             };
 
-            const tooltipStyle = {
-              position:"absolute", left:"calc(100% + 8px)", top:"50%",
-              transform:"translateY(-50%)",
-              background:"#0d1f30", border:"1px solid #ffffff14", borderRadius:7,
-              padding:"6px 12px", fontSize:11, color:"#dff0f8",
-              whiteSpace:"nowrap", boxShadow:"4px 4px 16px #000a",
-              fontFamily:"monospace", pointerEvents:"none", zIndex:9999,
+            const tooltipBase = {
+              position:"absolute", left:"100%", top:"50%",
+              paddingLeft:8, zIndex:9999, pointerEvents:"none",
             };
+            const tooltipInner = {
+              background:"#0d1f30", border:"1px solid #ffffff18", borderRadius:7,
+              padding:"5px 11px", fontSize:11, color:"#dff0f8",
+              whiteSpace:"nowrap", boxShadow:"4px 4px 16px #000a",
+              fontFamily:"monospace", transform:"translateY(-50%)",
+              animation:"fadeSlideIn 0.12s ease",
+            };
+
+            const leaveTimer = {current:null};
+            const onEnter = id => { clearTimeout(leaveTimer.current); setNavHovered(id); };
+            const onLeave = ()  => { leaveTimer.current = setTimeout(()=>setNavHovered(null), 80); };
 
             const items = navItems.map(id => {
               const grupo = GRUPOS[id];
@@ -803,26 +819,27 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const isHov = navHovered===id;
                 return (
                   <div key={id} style={{position:"relative", width:40}}
-                    onMouseEnter={()=>setNavHovered(id)}
-                    onMouseLeave={()=>setNavHovered(null)}>
-                    <button style={btnStyle(active, isHov, rol.color)}>
-                      <span style={{fontSize:18}}>{grupo.icon}</span>
+                    onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
+                    <button style={{...btnStyle(active, isHov, rol.color)}}>
+                      {grupo.icon}
                     </button>
                     {isHov && (
-                      <div style={flyoutPanel}>
-                        <div style={{padding:"7px 14px 8px",fontSize:10,color:"#6b8fa8",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",borderBottom:"1px solid #ffffff0a",marginBottom:4}}>{grupo.label}</div>
-                        {grupo.subs.map(sub=>{
-                          const subActive = nav===sub.id;
-                          return (
-                            <button key={sub.id} onClick={()=>{setNav(sub.id);setNavHovered(null);}}
-                              style={{width:"100%",textAlign:"left",background:subActive?rol.color+"22":"transparent",border:"none",borderLeft:`3px solid ${subActive?rol.color:"transparent"}`,padding:"9px 16px",color:subActive?rol.color:"#c8dce8",fontSize:12,fontFamily:"monospace",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.1s, color 0.1s",boxSizing:"border-box"}}
-                              onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background="#ffffff12"; e.currentTarget.style.color="#fff";} }}
-                              onMouseLeave={e=>{ if(!subActive){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="#c8dce8";} }}>
-                              <span>{sub.label}</span>
-                              {sub.badge>0&&<span style={{background:"#ff4d4d",color:"#fff",fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{sub.badge}</span>}
-                            </button>
-                          );
-                        })}
+                      <div style={flyoutBase} onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
+                        <div style={{...flyoutInner, borderLeftColor: rol.color+"88"}}>
+                          <div style={{padding:"7px 14px 8px",fontSize:10,color:"#6b8fa8",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",borderBottom:"1px solid #ffffff0a",marginBottom:4}}>{grupo.label}</div>
+                          {grupo.subs.map(sub=>{
+                            const subActive = nav===sub.id;
+                            return (
+                              <button key={sub.id} onClick={()=>{setNav(sub.id);setNavHovered(null);}}
+                                style={{width:"100%",textAlign:"left",background:subActive?rol.color+"22":"transparent",border:"none",borderLeft:`3px solid ${subActive?rol.color:"transparent"}`,padding:"9px 16px",color:subActive?rol.color:"#b8ccd8",fontSize:12,fontFamily:"monospace",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.12s, color 0.12s, border-color 0.12s",boxSizing:"border-box"}}
+                                onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background=rol.color+"14"; e.currentTarget.style.color="#fff"; e.currentTarget.style.borderLeftColor=rol.color+"66";} }}
+                                onMouseLeave={e=>{ if(!subActive){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="#b8ccd8"; e.currentTarget.style.borderLeftColor="transparent";} }}>
+                                <span>{sub.label}</span>
+                                {sub.badge>0&&<span style={{background:"#ff4d4d",color:"#fff",fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{sub.badge}</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -834,22 +851,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const isHov = navHovered===id;
               return (
                 <div key={id} style={{position:"relative", width:40}}
-                  onMouseEnter={()=>setNavHovered(id)}
-                  onMouseLeave={()=>setNavHovered(null)}>
+                  onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
                   <button onClick={()=>setNav(id)} style={btnStyle(active, isHov, rol.color)}>
-                    <span style={{fontSize:18}}>{m.icon}</span>
+                    {m.icon}
                     {badge>0&&<span style={{position:"absolute",top:2,right:2,background:"#ff4d4d",color:"#fff",fontSize:8,fontWeight:700,borderRadius:8,padding:"1px 4px",lineHeight:1}}>{badge}</span>}
                   </button>
-                  {isHov && <div style={tooltipStyle}>{m.label}</div>}
+                  {isHov && <div style={tooltipBase}><div style={tooltipInner}>{m.label}</div></div>}
                 </div>
               );
             });
             items.push(
               <div key="reload" style={{position:"relative", width:40, marginTop:"auto"}}
-                onMouseEnter={()=>setNavHovered("reload")}
-                onMouseLeave={()=>setNavHovered(null)}>
+                onMouseEnter={()=>onEnter("reload")} onMouseLeave={onLeave}>
                 <button onClick={loadData} style={btnStyle(false, navHovered==="reload", "#6b8fa8")}>🔄</button>
-                {navHovered==="reload" && <div style={tooltipStyle}>Actualizar</div>}
+                {navHovered==="reload" && <div style={tooltipBase}><div style={tooltipInner}>Actualizar</div></div>}
               </div>
             );
             return items;
