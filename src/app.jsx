@@ -983,6 +983,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 cols={["ID","Sede","F. Cargue","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Gls Recib.","Faltantes","Stand By","Estado",""]}
                 rows={viajesFinal.map(v=>{
                   const faltantes = Math.max(0, Number(v.gls_netos_guia||v.volumen_guia||0) - Number(v.gls_recibidos||0));
+                  // Stand by: días entre llegada a planta y descargue (solo cuando ambas fechas existen)
+                  const diasStandby = (v.fecha_llegada && v.fecha_descargue)
+                    ? Math.round((new Date(v.fecha_descargue) - new Date(v.fecha_llegada)) / 86400000)
+                    : null;
                   return [
                     <span style={{color:"#f59e0b"}}>{v.id}</span>,
                     <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?"#c084fc":v.sede==="CARTAGENA"?"#fb923c":"#00b4ff"}/>,
@@ -992,7 +996,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     fmt(v.gls_netos_guia||v.volumen_guia||0),
                     v.gls_recibidos>0?<span style={{color:"#00e5a0",fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:"#6b8fa8",fontSize:10}}>—</span>,
                     faltantes>0?<span style={{color:"#ff4d4d",fontWeight:700}}>{fmt(faltantes)}</span>:<span style={{color:"#00e5a0"}}>OK</span>,
-                    v.standby>0?<Badge label={`${v.standby}d`} color="#ff4d4d"/>:<Badge label="OK" color="#00e5a0"/>,
+                    diasStandby !== null
+                      ? <Badge label={`${diasStandby}d`} color={diasStandby>2?"#ff4d4d":diasStandby>0?"#f59e0b":"#00e5a0"}/>
+                      : <span style={{color:"#ffffff18"}}>—</span>,
                     <Badge label={v.estado} color={v.estado==="Descargado"?"#00e5a0":v.estado==="En Ruta"?"#f59e0b":v.estado==="Rechazado"?"#ff4d4d":"#00b4ff"}/>,
                     puedeEditar("viajes",v.creado_por,v.created_at)
                       ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:"#f59e0b22",border:"1px solid #f59e0b55",borderRadius:6,color:"#f59e0b",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
