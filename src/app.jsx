@@ -1033,10 +1033,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               .filter(v => v.fecha_llegada)
               .filter(v => v.estado !== "Descargado" && v.estado !== "Rechazado")
               .sort((a,b) => {
-                if (!a.fecha_llegada && !b.fecha_llegada) return 0;
-                if (!a.fecha_llegada) return 1;
-                if (!b.fecha_llegada) return -1;
-                return new Date(a.fecha_llegada) - new Date(b.fecha_llegada);
+                // Primero por fecha de llegada, luego por el momento exacto en que se registró (updated_at)
+                const d = new Date(a.fecha_llegada) - new Date(b.fecha_llegada);
+                if (d !== 0) return d;
+                return new Date(a.updated_at||a.created_at||0) - new Date(b.updated_at||b.created_at||0);
               });
             const COLOR = "#00b4ff";
             return (
