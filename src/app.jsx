@@ -197,6 +197,7 @@ export default function App() {
   const [perfil, setPerfil] = useState(null);
   const [loading, setLoading] = useState(true);
   const [nav, setNav] = useState("dashboard");
+  const [labOpen, setLabOpen] = useState(false);
 
   // Data
   const [tanques, setTanques] = useState([]);
@@ -761,9 +762,37 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         {/* Sidebar */}
         <div style={{ width:180, background:"#0a1826", borderRight:"1px solid #ffffff08", padding:"18px 0", flexShrink:0 }}>
           {navItems.map(id=>{
+            if (id === "tiquetes") {
+              const labActive = nav==="tiquetes" || nav==="resultados";
+              const open = labOpen || labActive;
+              return (
+                <div key="laboratorio">
+                  <button onClick={()=>{ setLabOpen(o=>!o); if(!open) setNav("tiquetes"); }} style={{ width:"100%", textAlign:"left", background:labActive?rol.color+"18":"none", border:"none", borderLeft:`3px solid ${labActive?rol.color:"transparent"}`, padding:"10px 16px", color:labActive?rol.color:"#6b8fa8", fontSize:12, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <span style={{ display:"flex", alignItems:"center", gap:8 }}><span>🧪</span>LABORATORIO</span>
+                    <span style={{fontSize:10}}>{open?"▾":"▸"}</span>
+                  </button>
+                  {open && (
+                    <div style={{background:"#060f1a"}}>
+                      {[
+                        {id:"tiquetes", label:"Tiquetes MP", badge:pendTiquetes},
+                        {id:"resultados", label:"Resultados"},
+                      ].map(sub=>{
+                        const subActive = nav===sub.id;
+                        return (
+                          <button key={sub.id} onClick={()=>setNav(sub.id)} style={{ width:"100%", textAlign:"left", background:subActive?rol.color+"22":"none", border:"none", borderLeft:`3px solid ${subActive?rol.color:"transparent"}`, padding:"8px 16px 8px 36px", color:subActive?rol.color:"#6b8fa8", fontSize:11, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                            <span>{sub.label}</span>
+                            {sub.badge>0 && <span style={{ background:"#ff4d4d", color:"#fff", fontSize:9, fontWeight:700, borderRadius:10, padding:"1px 6px" }}>{sub.badge}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
             const m = NAV_META[id];
             const active = nav===id;
-            const badges = { tiquetes:pendTiquetes, pbs:pendPBS, cmt:pendCMT };
+            const badges = { pbs:pendPBS, cmt:pendCMT };
             return (
               <button key={id} onClick={()=>setNav(id)} style={{ width:"100%", textAlign:"left", background:active?rol.color+"18":"none", border:"none", borderLeft:`3px solid ${active?rol.color:"transparent"}`, padding:"10px 16px", color:active?rol.color:"#6b8fa8", fontSize:12, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                 <span style={{ display:"flex", alignItems:"center", gap:8 }}><span>{m.icon}</span>{m.label}</span>
@@ -953,6 +982,29 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   puedeEditar("tiquetes",t.creado_por,t.created_at)
                     ? <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:"#00b4ff22",border:"1px solid #00b4ff55",borderRadius:6,color:"#00b4ff",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
                     : null,
+                ])}
+              />
+            </div>
+          )}
+
+          {/* RESULTADOS LABORATORIO */}
+          {nav==="resultados" && (
+            <div>
+              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800, marginBottom:4 }}>Resultados de Laboratorio</div>
+              <div style={{ fontSize:11, color:"#6b8fa8", marginBottom:22 }}>Consolidado de análisis por tiquete</div>
+              <Table
+                cols={["No. Tiquete","Fecha","Producto","Placa","API Corr.","Flash °C","Agua %","Viscosidad","Gls Recibidos","Resultado"]}
+                rows={tiquetesFiltrados.map(t=>[
+                  <span style={{color:"#00b4ff",fontFamily:"monospace"}}>{t.id}</span>,
+                  t.fecha_llegada||"—",
+                  t.producto,
+                  t.placa,
+                  <span style={{color:"#f59e0b",fontWeight:700}}>{t.api_corregido}°</span>,
+                  <span style={{color:Number(t.flash_point)>=60?"#00e5a0":"#ff4d4d",fontWeight:700}}>{t.flash_point}°C</span>,
+                  <span style={{color:Number(t.agua_destilacion)<=1?"#00e5a0":"#ff4d4d",fontWeight:700}}>{t.agua_destilacion}%</span>,
+                  t.viscosidad||"—",
+                  <span style={{color:"#00e5a0",fontWeight:700}}>{fmt(t.galones_recibidos)}</span>,
+                  <Badge label={t.resultado} color={t.resultado==="APROBADO"?"#00e5a0":"#ff4d4d"}/>,
                 ])}
               />
             </div>
