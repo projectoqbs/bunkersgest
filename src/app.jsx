@@ -198,6 +198,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [nav, setNav] = useState("dashboard");
   const [labOpen, setLabOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
 
   // Data
   const [tanques, setTanques] = useState([]);
@@ -762,6 +763,33 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         {/* Sidebar */}
         <div style={{ width:180, background:"#0a1826", borderRight:"1px solid #ffffff08", padding:"18px 0", flexShrink:0 }}>
           {navItems.map(id=>{
+            if (id === "viajes") {
+              const logActive = nav==="viajes" || nav==="listado_planta";
+              const open = logOpen || logActive;
+              return (
+                <div key="logistica">
+                  <button onClick={()=>{ setLogOpen(o=>!o); if(!open) setNav("viajes"); }} style={{ width:"100%", textAlign:"left", background:logActive?rol.color+"18":"none", border:"none", borderLeft:`3px solid ${logActive?rol.color:"transparent"}`, padding:"10px 16px", color:logActive?rol.color:"#6b8fa8", fontSize:12, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <span style={{ display:"flex", alignItems:"center", gap:8 }}><span>🚛</span>LOGÍSTICA</span>
+                    <span style={{fontSize:10}}>{open?"▾":"▸"}</span>
+                  </button>
+                  {open && (
+                    <div style={{background:"#060f1a"}}>
+                      {[
+                        {id:"viajes", label:"LISTADO TRÁNSITO"},
+                        {id:"listado_planta", label:"LISTADO PLANTA"},
+                      ].map(sub=>{
+                        const subActive = nav===sub.id;
+                        return (
+                          <button key={sub.id} onClick={()=>setNav(sub.id)} style={{ width:"100%", textAlign:"left", background:subActive?rol.color+"22":"none", border:"none", borderLeft:`3px solid ${subActive?rol.color:"transparent"}`, padding:"8px 16px 8px 36px", color:subActive?rol.color:"#6b8fa8", fontSize:11, fontFamily:"monospace", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                            <span>{sub.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
             if (id === "tiquetes") {
               const labActive = nav==="tiquetes" || nav==="resultados";
               const open = labOpen || labActive;
@@ -879,8 +907,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{flexShrink:0,marginBottom:12}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                   <div>
-                    <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Logística — Viajes</div>
-                    <div style={{ fontSize:11, color:"#6b8fa8" }}>Registro de carros tanque · <b style={{color:"#f59e0b"}}>{viajesFinal.length}</b> resultado(s)</div>
+                    <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Listado Tránsito</div>
+                    <div style={{ fontSize:11, color:"#6b8fa8" }}>Carros en ruta · <b style={{color:"#f59e0b"}}>{viajesFinal.length}</b> resultado(s)</div>
                   </div>
                   {puedeCrear("viajes") && <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>}
                 </div>
@@ -932,6 +960,35 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   ];
                 })}
               />
+              </div>
+            </div>
+            );
+          })()}
+
+          {/* LISTADO PLANTA */}
+          {nav==="listado_planta" && (()=>{
+            const enPlanta = viajesFiltrados.filter(v=>v.estado==="En Planta");
+            return (
+            <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}}>
+              <div style={{flexShrink:0,marginBottom:16}}>
+                <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Listado Planta</div>
+                <div style={{ fontSize:11, color:"#6b8fa8" }}>Carros actualmente en planta · <b style={{color:"#00b4ff"}}>{enPlanta.length}</b> unidad(es)</div>
+              </div>
+              <div style={{flex:1,overflow:"auto",borderRadius:12,border:"1px solid #ffffff0a"}}>
+                <Table
+                  cols={["ID","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Stand By","Estado",""]}
+                  rows={enPlanta.map(v=>[
+                    <span style={{color:"#f59e0b"}}>{v.id}</span>,
+                    v.fecha_llegada||"—",
+                    v.producto, v.transportadora, v.placa, v.guia,
+                    fmt(v.gls_netos_guia||v.volumen_guia||0),
+                    v.standby>0?<Badge label={`${v.standby}d`} color="#ff4d4d"/>:<Badge label="OK" color="#00e5a0"/>,
+                    <Badge label={v.estado} color="#00b4ff"/>,
+                    puedeEditar("viajes",v.creado_por,v.created_at)
+                      ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:"#f59e0b22",border:"1px solid #f59e0b55",borderRadius:6,color:"#f59e0b",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                      : null,
+                  ])}
+                />
               </div>
             </div>
             );
