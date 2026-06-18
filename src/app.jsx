@@ -762,46 +762,62 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       <div style={{ display:"flex", minHeight:"calc(100vh - 58px)" }}>
         {/* Sidebar */}
-        <div style={{ width:56, background:"#0a1826", borderRight:"1px solid #ffffff08", padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+        <div style={{ width:56, background:"#0a1826", borderRight:"1px solid #ffffff08", padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100 }}>
           {(()=>{
             const GRUPOS = {
               viajes:   { icon:"🚛", label:"LOGÍSTICA",  subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
               tiquetes: { icon:"🧪", label:"LABORATORIO", subs:[{id:"tiquetes",label:"Tiquetes MP",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
             };
             const badges = { pbs:pendPBS, cmt:pendCMT };
-            const hovered = navHovered;
-            const setHovered = setNavHovered;
 
-            const itemBase = (active, color) => ({
+            const btnStyle = (active, isHov, color) => ({
               width:40, height:40, border:"none", borderRadius:10, cursor:"pointer",
               display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
-              transition:"all 0.18s ease",
-              background: active ? color+"33" : "transparent",
-              boxShadow: active ? `0 0 0 2px ${color}55` : "none",
+              transition:"background 0.15s, transform 0.15s",
+              background: active ? color+"44" : isHov ? color+"22" : "transparent",
+              transform: isHov ? "scale(1.1)" : "scale(1)",
+              color: active||isHov ? color : "#6b8fa8",
+              position:"relative",
             });
+
+            const flyoutPanel = {
+              position:"absolute", left:"calc(100% + 8px)", top:0,
+              background:"#0d1f30", border:"1px solid #ffffff14", borderRadius:10,
+              padding:"6px 0", minWidth:190, boxShadow:"6px 6px 28px #000c",
+              zIndex:9999,
+            };
+
+            const tooltipStyle = {
+              position:"absolute", left:"calc(100% + 8px)", top:"50%",
+              transform:"translateY(-50%)",
+              background:"#0d1f30", border:"1px solid #ffffff14", borderRadius:7,
+              padding:"6px 12px", fontSize:11, color:"#dff0f8",
+              whiteSpace:"nowrap", boxShadow:"4px 4px 16px #000a",
+              fontFamily:"monospace", pointerEvents:"none", zIndex:9999,
+            };
 
             const items = navItems.map(id => {
               const grupo = GRUPOS[id];
               if (grupo) {
                 const active = grupo.subs.some(s=>s.id===nav);
-                const isHov = hovered===id;
+                const isHov = navHovered===id;
                 return (
-                  <div key={id} style={{position:"relative"}}
-                    onMouseEnter={()=>setHovered(id)}
-                    onMouseLeave={()=>setHovered(null)}>
-                    <button style={{...itemBase(active, rol.color), ...(isHov&&!active?{background:"#ffffff12",transform:"scale(1.08)"}:{})}} title={grupo.label}>
-                      {grupo.icon}
+                  <div key={id} style={{position:"relative", width:40}}
+                    onMouseEnter={()=>setNavHovered(id)}
+                    onMouseLeave={()=>setNavHovered(null)}>
+                    <button style={btnStyle(active, isHov, rol.color)}>
+                      <span style={{fontSize:18}}>{grupo.icon}</span>
                     </button>
                     {isHov && (
-                      <div style={{position:"fixed",left:58,zIndex:999,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:10,padding:"6px 0",minWidth:180,boxShadow:"4px 4px 24px #000a"}}>
-                        <div style={{padding:"6px 14px 8px",fontSize:10,color:"#6b8fa8",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",borderBottom:"1px solid #ffffff0a",marginBottom:4}}>{grupo.label}</div>
+                      <div style={flyoutPanel}>
+                        <div style={{padding:"7px 14px 8px",fontSize:10,color:"#6b8fa8",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",borderBottom:"1px solid #ffffff0a",marginBottom:4}}>{grupo.label}</div>
                         {grupo.subs.map(sub=>{
                           const subActive = nav===sub.id;
                           return (
-                            <button key={sub.id} onClick={()=>{setNav(sub.id);setHovered(null);}}
-                              style={{width:"100%",textAlign:"left",background:subActive?rol.color+"22":"none",border:"none",borderLeft:`3px solid ${subActive?rol.color:"transparent"}`,padding:"9px 16px",color:subActive?rol.color:"#dff0f8",fontSize:12,fontFamily:"monospace",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.12s"}}
-                              onMouseEnter={e=>{ if(!subActive) e.currentTarget.style.background="#ffffff0e"; }}
-                              onMouseLeave={e=>{ if(!subActive) e.currentTarget.style.background="none"; }}>
+                            <button key={sub.id} onClick={()=>{setNav(sub.id);setNavHovered(null);}}
+                              style={{width:"100%",textAlign:"left",background:subActive?rol.color+"22":"transparent",border:"none",borderLeft:`3px solid ${subActive?rol.color:"transparent"}`,padding:"9px 16px",color:subActive?rol.color:"#c8dce8",fontSize:12,fontFamily:"monospace",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.1s, color 0.1s",boxSizing:"border-box"}}
+                              onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background="#ffffff12"; e.currentTarget.style.color="#fff";} }}
+                              onMouseLeave={e=>{ if(!subActive){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="#c8dce8";} }}>
                               <span>{sub.label}</span>
                               {sub.badge>0&&<span style={{background:"#ff4d4d",color:"#fff",fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{sub.badge}</span>}
                             </button>
@@ -815,29 +831,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const m = NAV_META[id];
               const active = nav===id;
               const badge = badges[id]||0;
-              const isHov = hovered===id;
+              const isHov = navHovered===id;
               return (
-                <div key={id} style={{position:"relative"}}
-                  onMouseEnter={()=>setHovered(id)}
-                  onMouseLeave={()=>setHovered(null)}>
-                  <button onClick={()=>setNav(id)} style={{...itemBase(active,rol.color),...(isHov&&!active?{background:"#ffffff12",transform:"scale(1.08)"}:{})}} title={m.label}>
-                    {m.icon}
+                <div key={id} style={{position:"relative", width:40}}
+                  onMouseEnter={()=>setNavHovered(id)}
+                  onMouseLeave={()=>setNavHovered(null)}>
+                  <button onClick={()=>setNav(id)} style={btnStyle(active, isHov, rol.color)}>
+                    <span style={{fontSize:18}}>{m.icon}</span>
                     {badge>0&&<span style={{position:"absolute",top:2,right:2,background:"#ff4d4d",color:"#fff",fontSize:8,fontWeight:700,borderRadius:8,padding:"1px 4px",lineHeight:1}}>{badge}</span>}
                   </button>
-                  {isHov&&(
-                    <div style={{position:"fixed",left:58,zIndex:999,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 14px",fontSize:11,color:"#dff0f8",whiteSpace:"nowrap",boxShadow:"4px 4px 16px #000a",fontFamily:"monospace",pointerEvents:"none"}}>
-                      {m.label}
-                    </div>
-                  )}
+                  {isHov && <div style={tooltipStyle}>{m.label}</div>}
                 </div>
               );
             });
             items.push(
-              <div key="reload" style={{position:"relative",marginTop:"auto"}}
-                onMouseEnter={()=>setHovered("reload")}
-                onMouseLeave={()=>setHovered(null)}>
-                <button onClick={loadData} style={{...itemBase(false,"#6b8fa8"),...(hovered==="reload"?{background:"#ffffff12",transform:"scale(1.08)"}:{})}} title="Actualizar">🔄</button>
-                {hovered==="reload"&&<div style={{position:"fixed",left:58,zIndex:999,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 14px",fontSize:11,color:"#dff0f8",whiteSpace:"nowrap",boxShadow:"4px 4px 16px #000a",fontFamily:"monospace",pointerEvents:"none"}}>Actualizar</div>}
+              <div key="reload" style={{position:"relative", width:40, marginTop:"auto"}}
+                onMouseEnter={()=>setNavHovered("reload")}
+                onMouseLeave={()=>setNavHovered(null)}>
+                <button onClick={loadData} style={btnStyle(false, navHovered==="reload", "#6b8fa8")}>🔄</button>
+                {navHovered==="reload" && <div style={tooltipStyle}>Actualizar</div>}
               </div>
             );
             return items;
