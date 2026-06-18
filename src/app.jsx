@@ -1024,9 +1024,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,letterSpacing:0.5}}>Listado Planta</div>
                   <div style={{fontSize:11,color:"#6b8fa8",marginTop:2}}>
                     Enturne de carros para descargue ·{" "}
-                    <b style={{color:COLOR}}>{enPlanta.length}</b> carro(s) registrado(s) en planta
+                    <b style={{color:COLOR}}>{enPlanta.length}</b> carro(s) en planta
                   </div>
                 </div>
+                <Btn onClick={()=>{setForm({fecha_llegada:today()});setModal("turno_carro");}}>+ TURNO CARRO</Btn>
               </div>
 
               {/* Tabla */}
@@ -2230,6 +2231,67 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </div>
         </Modal>
       )}
+
+{/* TURNO CARRO */}
+{modal==="turno_carro" && (()=>{
+  const enRuta = viajes.filter(v=>v.estado==="En Ruta"&&!v.fecha_llegada)
+    .sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  const selViaje = enRuta.find(v=>v.id===form.viaje_id);
+  return (
+    <Modal title="Registrar Llegada a Planta" onClose={()=>{setModal(null);setForm({});}}>
+      <div style={{marginBottom:14}}>
+        <Lbl>Seleccionar Carro (En Tránsito)</Lbl>
+        <select value={form.viaje_id||""} onChange={e=>setForm(p=>({...p,viaje_id:e.target.value}))}
+          style={{width:"100%",background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"10px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none"}}>
+          <option value="">— Seleccionar carro —</option>
+          {enRuta.map(v=>(
+            <option key={v.id} value={v.id}>{v.placa} · {v.producto} · {v.id}</option>
+          ))}
+        </select>
+      </div>
+      {selViaje && (
+        <div style={{background:"#0d1f30",borderRadius:10,padding:"12px 16px",marginBottom:14,fontSize:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          <div><span style={{color:"#6b8fa8"}}>Placa: </span><b style={{color:"#f59e0b"}}>{selViaje.placa}</b></div>
+          <div><span style={{color:"#6b8fa8"}}>Producto: </span>{selViaje.producto}</div>
+          <div><span style={{color:"#6b8fa8"}}>Transportadora: </span>{selViaje.transportadora}</div>
+          <div><span style={{color:"#6b8fa8"}}>F. Cargue: </span>{selViaje.fecha}</div>
+          <div><span style={{color:"#6b8fa8"}}>Guía: </span>{selViaje.guia||"—"}</div>
+          <div><span style={{color:"#6b8fa8"}}>Conductor: </span>{selViaje.conductor||"—"}</div>
+        </div>
+      )}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+        <div>
+          <Lbl>Fecha de Llegada</Lbl>
+          <Inp type="date" value={form.fecha_llegada||""} onChange={e=>setForm(p=>({...p,fecha_llegada:e.target.value}))}/>
+        </div>
+        <div>
+          <Lbl>Hora de Llegada</Lbl>
+          <Inp type="time" value={form.hora_llegada||""} onChange={e=>setForm(p=>({...p,hora_llegada:e.target.value}))}/>
+        </div>
+      </div>
+      <div style={{marginBottom:18}}>
+        <Lbl>Observaciones</Lbl>
+        <textarea value={form.observacion||""} onChange={e=>setForm(p=>({...p,observacion:e.target.value}))}
+          rows={2} placeholder="Ej: llegó con sello roto, carro en buen estado..."
+          style={{width:"100%",background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"10px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",resize:"vertical",boxSizing:"border-box"}}/>
+      </div>
+      <Btn disabled={!form.viaje_id||!form.fecha_llegada||saving} onClick={async()=>{
+        setSaving(true);
+        const obs = form.observacion||(selViaje?.observacion||null);
+        const {error} = await supabase.from("viajes").update({
+          fecha_llegada: form.fecha_llegada,
+          observacion: obs,
+          estado: "En Planta",
+        }).eq("id", form.viaje_id);
+        setSaving(false);
+        if(error) return showToast("Error: "+error.message,false);
+        await loadData();
+        setModal(null); setForm({});
+        showToast(`✅ ${selViaje?.placa} registrado en planta`,true);
+      }}>{saving?"Registrando...":"Registrar en Planta"}</Btn>
+    </Modal>
+  );
+})()}
 
 {/* GESTIONAR USUARIO — modal completo */}
 {editUsuario && (()=>{
