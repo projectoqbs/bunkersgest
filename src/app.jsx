@@ -983,10 +983,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 cols={["ID","Sede","F. Cargue","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Gls Recib.","Faltantes","Stand By","Estado",""]}
                 rows={viajesFinal.map(v=>{
                   const faltantes = Math.max(0, Number(v.gls_netos_guia||v.volumen_guia||0) - Number(v.gls_recibidos||0));
-                  // Stand by: días entre llegada a planta y descargue (solo cuando ambas fechas existen)
-                  const diasStandby = (v.fecha_llegada && v.fecha_descargue)
-                    ? Math.round((new Date(v.fecha_descargue) - new Date(v.fecha_llegada)) / 86400000)
+                  // Stand by: corre desde fecha_llegada. Si ya descargó usa fecha_descargue, si no usa hoy.
+                  const diasStandby = v.fecha_llegada
+                    ? Math.floor((new Date(v.fecha_descargue||today()) - new Date(v.fecha_llegada)) / 86400000)
                     : null;
+                  const sbFinalizado = !!(v.fecha_llegada && v.fecha_descargue);
                   return [
                     <span style={{color:"#f59e0b"}}>{v.id}</span>,
                     <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?"#c084fc":v.sede==="CARTAGENA"?"#fb923c":"#00b4ff"}/>,
@@ -997,7 +998,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     v.gls_recibidos>0?<span style={{color:"#00e5a0",fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:"#6b8fa8",fontSize:10}}>—</span>,
                     faltantes>0?<span style={{color:"#ff4d4d",fontWeight:700}}>{fmt(faltantes)}</span>:<span style={{color:"#00e5a0"}}>OK</span>,
                     diasStandby !== null
-                      ? <Badge label={`${diasStandby}d`} color={diasStandby>2?"#ff4d4d":diasStandby>0?"#f59e0b":"#00e5a0"}/>
+                      ? <span style={{display:"inline-flex",alignItems:"center",gap:4}}>
+                          <Badge
+                            label={`${diasStandby}d`}
+                            color={diasStandby>=3?"#ff4d4d":diasStandby>=1?"#f59e0b":"#00e5a0"}
+                          />
+                          {!sbFinalizado && <span style={{fontSize:9,color:"#6b8fa8",fontStyle:"italic"}}>en curso</span>}
+                        </span>
                       : <span style={{color:"#ffffff18"}}>—</span>,
                     <Badge label={v.estado} color={v.estado==="Descargado"?"#00e5a0":v.estado==="En Ruta"?"#f59e0b":v.estado==="Rechazado"?"#ff4d4d":"#00b4ff"}/>,
                     puedeEditar("viajes",v.creado_por,v.created_at)
