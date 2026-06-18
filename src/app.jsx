@@ -934,12 +934,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const viajesFinal = viajesFiltrados.filter(v=>{
               const q = viajesBusqueda.toLowerCase();
               if (q && ![(v.placa||""),(v.guia||""),(v.transportadora||""),(v.producto||""),(v.id||"")].some(x=>x.toLowerCase().includes(q))) return false;
-              if (viajesFiltroEstado && v.estado !== viajesFiltroEstado) return false;
+              // Por defecto solo mostrar En Ruta (carros aún en tránsito)
+              const estadoFiltro = viajesFiltroEstado || "En Ruta";
+              if (v.estado !== estadoFiltro) return false;
               if (viajesFiltroProducto && v.producto !== viajesFiltroProducto) return false;
               if (viajesFiltroFechaD && v.fecha < viajesFiltroFechaD) return false;
               if (viajesFiltroFechaH && v.fecha > viajesFiltroFechaH) return false;
               return true;
-            });
+            }).sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
             return (
             <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}}>
               <div style={{flexShrink:0,marginBottom:12}}>
@@ -2300,18 +2302,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           style={{width:"100%",background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"10px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",resize:"vertical",boxSizing:"border-box"}}/>
       </div>
       <Btn disabled={!form.viaje_id||!form.fecha_llegada||saving} onClick={async()=>{
+        if(!form.viaje_id){showToast("Selecciona un carro primero",false);return;}
         setSaving(true);
-        const obs = form.observacion||(selViaje?.observacion||null);
-        const {error} = await supabase.from("viajes").update({
+        const viajeTarget = enRuta.find(v=>v.id===form.viaje_id);
+        const {error, data} = await supabase.from("viajes").update({
           fecha_llegada: form.fecha_llegada,
-          observacion: obs,
+          observacion: form.observacion||null,
           estado: "En Planta",
-        }).eq("id", form.viaje_id);
+        }).eq("id", form.viaje_id).select();
         setSaving(false);
-        if(error) return showToast("Error: "+error.message,false);
+        if(error){showToast("Error: "+error.message,false);return;}
+        if(!data||data.length===0){showToast("No se pudo actualizar. Verifica permisos.",false);return;}
         await loadData();
         setModal(null); setForm({});
-        showToast(`✅ ${selViaje?.placa} registrado en planta`,true);
+        showToast(`✅ ${viajeTarget?.placa} registrado en planta`,true);
       }}>{saving?"Registrando...":"Registrar en Planta"}</Btn>
     </Modal>
   );
