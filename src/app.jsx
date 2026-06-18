@@ -1030,14 +1030,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {nav==="listado_planta" && (()=>{
             // Carros en ruta con fecha_llegada registrada, o cualquier carro en planta
             const enPlanta = viajesFiltrados
-              .filter(v => v.fecha_llegada)
+              .filter(v => v.fecha_llegada && v.turno_planta)
               .filter(v => v.estado !== "Descargado" && v.estado !== "Rechazado")
-              .sort((a,b) => {
-                // Primero por fecha de llegada, luego por el momento exacto en que se registró (updated_at)
-                const d = new Date(a.fecha_llegada) - new Date(b.fecha_llegada);
-                if (d !== 0) return d;
-                return new Date(a.updated_at||a.created_at||0) - new Date(b.updated_at||b.created_at||0);
-              });
+              .sort((a,b) => (a.turno_planta||0) - (b.turno_planta||0));
             const COLOR = "#00b4ff";
             return (
             <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 100px)"}}>
@@ -1067,9 +1062,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {enPlanta.length===0 && (
                       <tr><td colSpan={7} style={{padding:40,textAlign:"center",color:"#6b8fa8",fontSize:13}}>No hay carros en planta</td></tr>
                     )}
-                    {enPlanta.map((v,i)=>{
+                    {enPlanta.map((v)=>{
                       const llegó = !!v.fecha_llegada;
-                      const turno = llegó ? i+1 : null;
+                      const turno = v.turno_planta||null;
                       return (
                         <tr key={v.id} style={{borderBottom:"1px solid #ffffff06",transition:"background 0.12s"}}
                           onMouseEnter={e=>e.currentTarget.style.background="#ffffff05"}
@@ -2326,17 +2321,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         if(!form.viaje_id){showToast("Selecciona un carro primero",false);return;}
         setSaving(true);
         const viajeTarget = enRuta.find(v=>v.id===form.viaje_id);
+        // Calcular siguiente turno: máximo turno_planta actual + 1
+        const {data:turnos} = await supabase.from("viajes").select("turno_planta").not("turno_planta","is",null);
+        const maxTurno = turnos&&turnos.length>0 ? Math.max(...turnos.map(t=>t.turno_planta||0)) : 0;
         const {error, data} = await supabase.from("viajes").update({
           fecha_llegada: form.fecha_llegada,
           observacion: form.observacion||null,
           estado: "En Planta",
+          turno_planta: maxTurno + 1,
         }).eq("id", form.viaje_id).select();
         setSaving(false);
         if(error){showToast("Error: "+error.message,false);return;}
         if(!data||data.length===0){showToast("No se pudo actualizar. Verifica permisos.",false);return;}
         await loadData();
         setModal(null); setForm({});
-        showToast(`✅ ${viajeTarget?.placa} registrado en planta`,true);
+        showToast(`✅ ${viajeTarget?.placa} · Turno #${maxTurno+1}`,true);
       }}>{saving?"Registrando...":"Registrar en Planta"}</Btn>
     </Modal>
   );
