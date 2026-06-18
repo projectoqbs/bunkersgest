@@ -1030,9 +1030,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {nav==="listado_planta" && (()=>{
             // Carros en ruta con fecha_llegada registrada, o cualquier carro en planta
             const enPlanta = viajesFiltrados
-              .filter(v => v.fecha_llegada && v.turno_planta)
+              .filter(v => v.fecha_llegada)
               .filter(v => v.estado !== "Descargado" && v.estado !== "Rechazado")
-              .sort((a,b) => (a.turno_planta||0) - (b.turno_planta||0));
+              .sort((a,b) => {
+                // Si ambos tienen turno_planta, usarlo; si no, por updated_at
+                if (a.turno_planta && b.turno_planta) return a.turno_planta - b.turno_planta;
+                if (a.turno_planta) return -1;
+                if (b.turno_planta) return 1;
+                return new Date(a.updated_at||0) - new Date(b.updated_at||0);
+              });
             const COLOR = "#00b4ff";
             return (
             <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 100px)"}}>
