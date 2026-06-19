@@ -14,6 +14,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 const MATERIAS_PRIMAS = ["FRONTERA","PENDARE","ALBERTA","CARRIZALES NORTE P","CARRIZALES NORTE B","OMI","VIGIA","KIMBO","CUERVA","SOGAMOSO","TK205","RUMBA","MATEGUAFA","DESTILADO REFISAMAG"];
+const TABLA13 = {1:4.0346,2:4.0043,3:3.9745,4:3.9451,5:3.9162,6:3.8877,7:3.8596,8:3.8319,9:3.8046,10:3.7777,11:3.7511,12:3.7249,13:3.6991,14:3.6737,15:3.6486,16:3.6238,17:3.5994,18:3.5753,19:3.5515,20:3.528,21:3.5048,22:3.482,23:3.4594,24:3.4371,25:3.4151,26:3.3934,27:3.372,28:3.3508,29:3.3299,30:3.3093,31:3.2888,32:3.2687,33:3.2489,34:3.2292,35:3.2097,36:3.1906,37:3.1716,38:3.1529,39:3.1343,40:3.116,41:3.0979,42:3.0801,43:3.0624,44:3.0449,45:3.0276,46:3.0105,47:2.9937,48:2.9769,49:2.9604,50:2.9441};
+const tabla13Factor = api => {
+  if (!api || api <= 0) return "";
+  const lo = Math.floor(api), hi = Math.ceil(api);
+  if (lo === hi) return (TABLA13[lo]||"").toString();
+  if (!TABLA13[lo] || !TABLA13[hi]) return (TABLA13[lo]||TABLA13[hi]||"").toString();
+  const t = api - lo;
+  return (TABLA13[lo] + t*(TABLA13[hi]-TABLA13[lo])).toFixed(4);
+};
 const SEDES = ["MALAMBO","SANTA MARTA","CARTAGENA"];
 const PLANTAS = ["PLANTA 1","PLANTA 2"];
 const TRANSPORTADORAS = ["COTRASUR","COVOLCO","LOGISTCARGA","TSCASANARE","TTC","TRUCKSOIL","INLOP","OXITRANS","RH GROUP","TRANSPORTES GAYCO","TRANSPORTES TMC","COPETRAN","TRANS AELLA","ICEBERG","OPL CARGA","LIMA TRANSPORTES","MOVITRANSAS","ECOPLANTA","TODOTER RENO","PUERTO PIMSA","CARGOANINA","TGCARGAS","INVERZAS"];
@@ -393,7 +402,7 @@ export default function App() {
         ...form,
         peso_neto_qbs:pesoNetoQBS,
         api_reportado:Number(form.api_reportado), api_observado:Number(form.api_observado),
-        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion),
+        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion), factor_tabla13:Number(form.factor_tabla13||0),
         temp_observada:Number(form.temp_observada||0),
         peso_ingreso:Number(form.peso_ingreso), peso_salida:Number(form.peso_salida),
         galones_reportados:Number(form.galones_reportados), galones_recibidos:Number(form.galones_recibidos),
@@ -414,7 +423,7 @@ export default function App() {
         id, viaje_id:form.viaje_id, fecha:today(), ...form,
         peso_neto_qbs:pesoNetoQBS,
         api_reportado:Number(form.api_reportado), api_observado:Number(form.api_observado),
-        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion),
+        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion), factor_tabla13:Number(form.factor_tabla13||0),
         temp_observada:Number(form.temp_observada||0),
         peso_ingreso:Number(form.peso_ingreso), peso_salida:Number(form.peso_salida),
         galones_reportados:Number(form.galones_reportados), galones_recibidos:Number(form.galones_recibidos),
@@ -1804,7 +1813,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </Grid>
           </Section>
           <Section title="Análisis API" color="#00b4ff">
-            <Grid cols={5}>
+            <Grid cols={6}>
               <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={f("api_reportado")}/>
               <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={f("api_observado")}/>
               <Inp label="Temperatura Obs. (°C)" type="number" step="0.1" value={form.temp_observada||""} onChange={e=>{
@@ -1832,10 +1841,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const vcf = Math.exp(-alpha*(temp-15)*(1+0.8*alpha*(temp-15)));
                     next.factor_conversion = vcf.toFixed(4);
                   }
+                  if (api > 0) next.factor_tabla13 = tabla13Factor(api);
                   return next;
                 });
               }}/>
-              <Inp label="Factor VCF (Tabla 13)" type="number" step="0.0001" value={form.factor_conversion||""} onChange={f("factor_conversion")}/>
+              <Inp label="Factor VCF" type="number" step="0.0001" value={form.factor_conversion||""} onChange={f("factor_conversion")}/>
+              <Inp label="Factor Tabla 13" type="number" step="0.0001" value={form.factor_tabla13||""} onChange={f("factor_tabla13")}/>
             </Grid>
           </Section>
           <Section title="Pesos y Galones" color="#00b4ff">
