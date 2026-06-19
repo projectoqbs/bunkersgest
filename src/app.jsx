@@ -1804,20 +1804,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </Grid>
           </Section>
           <Section title="Análisis API" color="#00b4ff">
-            <Grid cols={4}>
+            <Grid cols={5}>
               <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={f("api_reportado")}/>
               <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={f("api_observado")}/>
-              <Inp label="Temperatura Observada (°C)" type="number" step="0.1" value={form.temp_observada||""} onChange={e=>{
+              <Inp label="Temperatura Obs. (°C)" type="number" step="0.1" value={form.temp_observada||""} onChange={e=>{
                 const temp = e.target.value;
                 const api = Number(form.api_corregido||0);
                 setForm(prev=>{
                   const next = {...prev, temp_observada: temp};
                   if (api > 0 && temp !== "") {
-                    // ASTM Tabla 13 — crudos: K0=613.9723, densidad en kg/m³, ΔT en °C respecto a 15.56°C (60°F)
-                    const rho15 = 141500 / (131.5 + api);
-                    const alpha = 631.2283 / (rho15 * rho15);
-                    const deltaT = Number(temp) - 15;
-                    const vcf = Math.exp(-alpha * deltaT * (1 + 0.8 * alpha * deltaT));
+                    const rho15 = 141500/(131.5+api);
+                    const alpha = 631.2283/(rho15*rho15);
+                    const vcf = Math.exp(-alpha*(Number(temp)-15)*(1+0.8*alpha*(Number(temp)-15)));
                     next.factor_conversion = vcf.toFixed(4);
                   }
                   return next;
@@ -1829,38 +1827,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 setForm(prev=>{
                   const next = {...prev, api_corregido: e.target.value};
                   if (api > 0 && form.temp_observada) {
-                    const sg = 141.5 / (131.5 + api);
-                    const rho60 = sg * 999.012;
-                    const alpha = 613.9723 / (rho60 * rho60);
-                    const deltaT = temp - 15.56;
-                    const vcf = Math.exp(-alpha * deltaT * (1 + 0.8 * alpha * deltaT));
+                    const rho15 = 141500/(131.5+api);
+                    const alpha = 631.2283/(rho15*rho15);
+                    const vcf = Math.exp(-alpha*(temp-15)*(1+0.8*alpha*(temp-15)));
                     next.factor_conversion = vcf.toFixed(4);
                   }
                   return next;
                 });
               }}/>
-            </Grid>
-            <Grid cols={2}>
-              <div style={{background:"#0d1f30",borderRadius:10,padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div>
-                  <div style={{fontSize:10,color:"#6b8fa8",letterSpacing:1,textTransform:"uppercase",marginBottom:4}}>Factor de Conversión (VCF)</div>
-                  <div style={{fontSize:26,fontWeight:800,fontFamily:"'Syne',sans-serif",color: form.factor_conversion ? "#00e5a0" : "#ffffff22"}}>
-                    {form.factor_conversion || "—"}
-                  </div>
-                  <div style={{fontSize:10,color:"#6b8fa8",marginTop:2}}>ASTM · calculado automático</div>
-                </div>
-                <div style={{fontSize:32,opacity:0.3}}>⚗️</div>
-              </div>
-              <div style={{background:"#0d1f30",borderRadius:10,padding:"14px 18px"}}>
-                <div style={{fontSize:10,color:"#6b8fa8",letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Parámetros usados</div>
-                <div style={{fontSize:11,fontFamily:"monospace",display:"grid",gap:4}}>
-                  <div><span style={{color:"#6b8fa8"}}>API Corregido: </span><b style={{color:"#00b4ff"}}>{form.api_corregido||"—"} °API</b></div>
-                  <div><span style={{color:"#6b8fa8"}}>Temperatura: </span><b style={{color:"#f59e0b"}}>{form.temp_observada||"—"} °C</b></div>
-                  <div><span style={{color:"#6b8fa8"}}>ΔT respecto a 15°C: </span><b style={{color:"#c084fc"}}>
-                    {form.temp_observada ? `${(Number(form.temp_observada)-15).toFixed(2)} °C` : "—"}
-                  </b></div>
-                </div>
-              </div>
+              <Inp label="Factor VCF (Tabla 13)" type="number" step="0.0001" value={form.factor_conversion||""} onChange={f("factor_conversion")}/>
             </Grid>
           </Section>
           <Section title="Pesos y Galones" color="#00b4ff">
