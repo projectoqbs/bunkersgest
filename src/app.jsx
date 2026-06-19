@@ -394,6 +394,7 @@ export default function App() {
         peso_neto_qbs:pesoNetoQBS,
         api_reportado:Number(form.api_reportado), api_observado:Number(form.api_observado),
         api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion),
+        temp_observada:Number(form.temp_observada||0),
         peso_ingreso:Number(form.peso_ingreso), peso_salida:Number(form.peso_salida),
         galones_reportados:Number(form.galones_reportados), galones_recibidos:Number(form.galones_recibidos),
         agua_destilacion:Number(form.agua_destilacion), flash_point:Number(form.flash_point),
@@ -414,6 +415,7 @@ export default function App() {
         peso_neto_qbs:pesoNetoQBS,
         api_reportado:Number(form.api_reportado), api_observado:Number(form.api_observado),
         api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion),
+        temp_observada:Number(form.temp_observada||0),
         peso_ingreso:Number(form.peso_ingreso), peso_salida:Number(form.peso_salida),
         galones_reportados:Number(form.galones_reportados), galones_recibidos:Number(form.galones_recibidos),
         agua_destilacion:Number(form.agua_destilacion), flash_point:Number(form.flash_point),
@@ -1805,8 +1807,63 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <Grid cols={4}>
               <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={f("api_reportado")}/>
               <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={f("api_observado")}/>
-              <Inp label="API Corregido 60°F" type="number" step="0.1" value={form.api_corregido||""} onChange={f("api_corregido")}/>
-              <Inp label="Factor Conversión" type="number" step="0.0001" value={form.factor_conversion||""} onChange={f("factor_conversion")}/>
+              <Inp label="Temperatura Observada (°C)" type="number" step="0.1" value={form.temp_observada||""} onChange={e=>{
+                const temp = e.target.value;
+                const api = Number(form.api_corregido||form.api_observado||0);
+                setForm(prev=>{
+                  const next = {...prev, temp_observada: temp};
+                  if (api > 0 && temp !== "") {
+                    // ASTM VCF: misma fórmula que CMT
+                    const tempF = Number(temp) * 9/5 + 32;
+                    const deltaT = tempF - 60;
+                    const k0 = api < 40 ? 103.872 : 330.301;
+                    const k1 = api < 40 ? 0.2701  : 0.6;
+                    const alpha = k0/(api*api) + k1/api;
+                    const vcf = Math.exp(-alpha * deltaT * (1 + 0.8 * alpha * deltaT));
+                    next.factor_conversion = vcf.toFixed(4);
+                  }
+                  return next;
+                });
+              }}/>
+              <Inp label="API Corregido 60°F" type="number" step="0.1" value={form.api_corregido||""} onChange={e=>{
+                const api = Number(e.target.value||0);
+                const temp = Number(form.temp_observada||0);
+                setForm(prev=>{
+                  const next = {...prev, api_corregido: e.target.value};
+                  if (api > 0 && form.temp_observada) {
+                    const tempF = temp * 9/5 + 32;
+                    const deltaT = tempF - 60;
+                    const k0 = api < 40 ? 103.872 : 330.301;
+                    const k1 = api < 40 ? 0.2701  : 0.6;
+                    const alpha = k0/(api*api) + k1/api;
+                    const vcf = Math.exp(-alpha * deltaT * (1 + 0.8 * alpha * deltaT));
+                    next.factor_conversion = vcf.toFixed(4);
+                  }
+                  return next;
+                });
+              }}/>
+            </Grid>
+            <Grid cols={2}>
+              <div style={{background:"#0d1f30",borderRadius:10,padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <div style={{fontSize:10,color:"#6b8fa8",letterSpacing:1,textTransform:"uppercase",marginBottom:4}}>Factor de Conversión (VCF)</div>
+                  <div style={{fontSize:26,fontWeight:800,fontFamily:"'Syne',sans-serif",color: form.factor_conversion ? "#00e5a0" : "#ffffff22"}}>
+                    {form.factor_conversion || "—"}
+                  </div>
+                  <div style={{fontSize:10,color:"#6b8fa8",marginTop:2}}>ASTM · calculado automático</div>
+                </div>
+                <div style={{fontSize:32,opacity:0.3}}>⚗️</div>
+              </div>
+              <div style={{background:"#0d1f30",borderRadius:10,padding:"14px 18px"}}>
+                <div style={{fontSize:10,color:"#6b8fa8",letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Parámetros usados</div>
+                <div style={{fontSize:11,fontFamily:"monospace",display:"grid",gap:4}}>
+                  <div><span style={{color:"#6b8fa8"}}>API Corregido: </span><b style={{color:"#00b4ff"}}>{form.api_corregido||"—"} °API</b></div>
+                  <div><span style={{color:"#6b8fa8"}}>Temperatura: </span><b style={{color:"#f59e0b"}}>{form.temp_observada||"—"} °C</b></div>
+                  <div><span style={{color:"#6b8fa8"}}>ΔT respecto a 60°F: </span><b style={{color:"#c084fc"}}>
+                    {form.temp_observada ? `${(Number(form.temp_observada)*9/5+32-60).toFixed(1)} °F` : "—"}
+                  </b></div>
+                </div>
+              </div>
             </Grid>
           </Section>
           <Section title="Pesos y Galones" color="#00b4ff">
