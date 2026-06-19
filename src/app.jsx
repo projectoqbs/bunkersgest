@@ -1809,16 +1809,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={f("api_observado")}/>
               <Inp label="Temperatura Observada (°C)" type="number" step="0.1" value={form.temp_observada||""} onChange={e=>{
                 const temp = e.target.value;
-                const api = Number(form.api_corregido||form.api_observado||0);
+                const api = Number(form.api_corregido||0);
                 setForm(prev=>{
                   const next = {...prev, temp_observada: temp};
                   if (api > 0 && temp !== "") {
-                    // ASTM VCF: misma fórmula que CMT
-                    const tempF = Number(temp) * 9/5 + 32;
-                    const deltaT = tempF - 60;
-                    const k0 = api < 40 ? 103.872 : 330.301;
-                    const k1 = api < 40 ? 0.2701  : 0.6;
-                    const alpha = k0/(api*api) + k1/api;
+                    // ASTM Tabla 13 — crudos: K0=613.9723, densidad en kg/m³, ΔT en °C respecto a 15.56°C (60°F)
+                    const sg = 141.5 / (131.5 + api);
+                    const rho60 = sg * 999.012;
+                    const alpha = 613.9723 / (rho60 * rho60);
+                    const deltaT = Number(temp) - 15.56;
                     const vcf = Math.exp(-alpha * deltaT * (1 + 0.8 * alpha * deltaT));
                     next.factor_conversion = vcf.toFixed(4);
                   }
@@ -1831,11 +1830,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 setForm(prev=>{
                   const next = {...prev, api_corregido: e.target.value};
                   if (api > 0 && form.temp_observada) {
-                    const tempF = temp * 9/5 + 32;
-                    const deltaT = tempF - 60;
-                    const k0 = api < 40 ? 103.872 : 330.301;
-                    const k1 = api < 40 ? 0.2701  : 0.6;
-                    const alpha = k0/(api*api) + k1/api;
+                    const sg = 141.5 / (131.5 + api);
+                    const rho60 = sg * 999.012;
+                    const alpha = 613.9723 / (rho60 * rho60);
+                    const deltaT = temp - 15.56;
                     const vcf = Math.exp(-alpha * deltaT * (1 + 0.8 * alpha * deltaT));
                     next.factor_conversion = vcf.toFixed(4);
                   }
@@ -1859,8 +1857,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{fontSize:11,fontFamily:"monospace",display:"grid",gap:4}}>
                   <div><span style={{color:"#6b8fa8"}}>API Corregido: </span><b style={{color:"#00b4ff"}}>{form.api_corregido||"—"} °API</b></div>
                   <div><span style={{color:"#6b8fa8"}}>Temperatura: </span><b style={{color:"#f59e0b"}}>{form.temp_observada||"—"} °C</b></div>
-                  <div><span style={{color:"#6b8fa8"}}>ΔT respecto a 60°F: </span><b style={{color:"#c084fc"}}>
-                    {form.temp_observada ? `${(Number(form.temp_observada)*9/5+32-60).toFixed(1)} °F` : "—"}
+                  <div><span style={{color:"#6b8fa8"}}>ΔT respecto a 15.56°C: </span><b style={{color:"#c084fc"}}>
+                    {form.temp_observada ? `${(Number(form.temp_observada)-15.56).toFixed(2)} °C` : "—"}
                   </b></div>
                 </div>
               </div>
