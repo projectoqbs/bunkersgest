@@ -1814,10 +1814,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const next = {...prev, temp_observada: temp};
                   if (api > 0 && temp !== "") {
                     // ASTM Tabla 13 — crudos: K0=613.9723, densidad en kg/m³, ΔT en °C respecto a 15.56°C (60°F)
-                    const sg = 141.5 / (131.5 + api);
-                    const rho60 = sg * 999.012;
-                    const alpha = 613.9723 / (rho60 * rho60);
-                    const deltaT = Number(temp) - 15.56;
+                    const rho15 = 141500 / (131.5 + api);
+                    const alpha = 631.2283 / (rho15 * rho15);
+                    const deltaT = Number(temp) - 15;
                     const vcf = Math.exp(-alpha * deltaT * (1 + 0.8 * alpha * deltaT));
                     next.factor_conversion = vcf.toFixed(4);
                   }
@@ -1857,8 +1856,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{fontSize:11,fontFamily:"monospace",display:"grid",gap:4}}>
                   <div><span style={{color:"#6b8fa8"}}>API Corregido: </span><b style={{color:"#00b4ff"}}>{form.api_corregido||"—"} °API</b></div>
                   <div><span style={{color:"#6b8fa8"}}>Temperatura: </span><b style={{color:"#f59e0b"}}>{form.temp_observada||"—"} °C</b></div>
-                  <div><span style={{color:"#6b8fa8"}}>ΔT respecto a 15.56°C: </span><b style={{color:"#c084fc"}}>
-                    {form.temp_observada ? `${(Number(form.temp_observada)-15.56).toFixed(2)} °C` : "—"}
+                  <div><span style={{color:"#6b8fa8"}}>ΔT respecto a 15°C: </span><b style={{color:"#c084fc"}}>
+                    {form.temp_observada ? `${(Number(form.temp_observada)-15).toFixed(2)} °C` : "—"}
                   </b></div>
                 </div>
               </div>
