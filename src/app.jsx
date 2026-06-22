@@ -1164,12 +1164,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           </td>
                           {/* Acción */}
                           <td style={{padding:"12px 14px"}}>
-                            <button onClick={()=>{setForm({...v});setModal("viaje");}}
-                              style={{background:T.navy,border:"none",borderRadius:6,color:"#ffffff",padding:"5px 14px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}
-                              onMouseEnter={e=>e.currentTarget.style.background=T.orange}
-                              onMouseLeave={e=>e.currentTarget.style.background=T.navy}>
-                              {llegó ? "✏ Editar" : "📍 Registrar llegada"}
-                            </button>
+                            <div style={{display:"flex",gap:6}}>
+                              <button onClick={()=>{setForm({...v});setModal("viaje");}}
+                                style={{background:T.navy,border:"none",borderRadius:6,color:"#ffffff",padding:"5px 14px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}
+                                onMouseEnter={e=>e.currentTarget.style.background=T.orange}
+                                onMouseLeave={e=>e.currentTarget.style.background=T.navy}>
+                                {llegó ? "✏ Editar" : "📍 Registrar llegada"}
+                              </button>
+                              {perfil.rol==="administrador" && (
+                                <button onClick={async()=>{
+                                  if (!confirm(`¿Eliminar carro ${v.placa} del listado? Esta acción no se puede deshacer.`)) return;
+                                  const {error} = await supabase.from("viajes").delete().eq("id",v.id);
+                                  if (error) return showToast("Error: "+error.message, false);
+                                  await loadData();
+                                  showToast(`Carro ${v.placa} eliminado del listado`);
+                                }}
+                                style={{background:"#ff4d4d22",border:"1px solid #ff4d4d55",borderRadius:6,color:"#ff4d4d",padding:"5px 10px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}
+                                onMouseEnter={e=>e.currentTarget.style.background="#ff4d4d44"}
+                                onMouseLeave={e=>e.currentTarget.style.background="#ff4d4d22"}>
+                                  🗑
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
