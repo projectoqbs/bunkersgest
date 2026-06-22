@@ -1175,11 +1175,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                 <button onClick={async()=>{
                                   if (!confirm(`¿Eliminar carro ${v.placa} del listado? Esta acción no se puede deshacer.`)) return;
                                   // Eliminar registros relacionados primero (FK constraints)
-                                  await supabaseAdmin.from("tiquetes").delete().eq("viaje_id",v.id);
-                                  await supabaseAdmin.from("pbs").delete().eq("viaje_id",v.id);
-                                  await supabaseAdmin.from("cmts").delete().eq("viaje_id",v.id);
-                                  const {error} = await supabaseAdmin.from("viajes").delete().eq("id",v.id);
-                                  if (error) return showToast("Error: "+error.message, false);
+                                  const r1 = await supabaseAdmin.from("tiquetes").delete().eq("viaje_id",v.id);
+                                  const r2 = await supabaseAdmin.from("pbs").delete().eq("viaje_id",v.id);
+                                  const r3 = await supabaseAdmin.from("cmts").delete().eq("viaje_id",v.id);
+                                  if(r1.error) return showToast("Error tiquetes: "+r1.error.message, false);
+                                  if(r2.error) return showToast("Error pbs: "+r2.error.message, false);
+                                  if(r3.error) return showToast("Error cmts: "+r3.error.message, false);
+                                  const {error, data} = await supabaseAdmin.from("viajes").delete().eq("id",v.id).select();
+                                  console.log("delete viaje result:", {error, data});
+                                  if (error) return showToast("Error viaje: "+error.message, false);
+                                  if (!data || data.length===0) return showToast("No se pudo eliminar: verifique permisos o FK pendientes", false);
                                   await loadData();
                                   showToast(`Carro ${v.placa} eliminado del listado`);
                                 }}
