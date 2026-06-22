@@ -1847,8 +1847,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 });
               }}/>
               <Inp label="Temperatura Obs. (°F)" type="number" step="0.1" value={form.temp_observada_f||""} onChange={f("temp_observada_f")} readOnly/>
-              <Inp label="Factor VCF" type="number" step="0.0001" value={form.factor_conversion||""} onChange={f("factor_conversion")}/>
-              <Inp label="Factor Tabla 13" type="number" step="0.0001" value={form.factor_tabla13||""} onChange={f("factor_tabla13")}/>
+              <Inp label="Factor VCF" type="number" step="0.0001" value={form.factor_conversion||""} onChange={f("factor_conversion")} readOnly/>
+              <Inp label="Factor Tabla 13" type="number" step="0.0001" value={form.factor_tabla13||""} onChange={f("factor_tabla13")} readOnly/>
             </Grid>
           </Section>
           <Section title="Pesos y Galones" color="#00b4ff">
