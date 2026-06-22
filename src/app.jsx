@@ -109,14 +109,21 @@ const genIdCMT = (cmts, sede, planta) => {
 };
 
 // ─── UI COMPONENTS ─────────────────────────────────────────────────────────────
+// ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
+const T = {
+  navy:"#003D5C", sidebar:"#2D3142", orange:"#FF6B35", success:"#00B894",
+  danger:"#D63031", bg:"#f5f6fa", text:"#1E1E24", card:"#ffffff",
+  border:"#e0e0e0", muted:"#6b7a99",
+};
+
 function Badge({ label, color }) {
-  return <span style={{ fontSize:10, fontWeight:700, color, background:color+"22", padding:"2px 10px", borderRadius:20, whiteSpace:"nowrap" }}>{label}</span>;
+  return <span style={{ fontSize:10, fontWeight:700, color, background:color+"22", padding:"2px 10px", borderRadius:20, whiteSpace:"nowrap", letterSpacing:0.5 }}>{label}</span>;
 }
 function Card({ children, style }) {
-  return <div style={{ background:"#0f1e2e", border:"1px solid #ffffff0d", borderRadius:16, padding:20, ...style }}>{children}</div>;
+  return <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:8, padding:20, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", ...style }}>{children}</div>;
 }
 function Lbl({ children }) {
-  return <div style={{ fontSize:10, color:"#6b8fa8", textTransform:"uppercase", letterSpacing:1.2, marginBottom:5, fontFamily:"monospace", minHeight:24, display:"flex", alignItems:"flex-end" }}>{children}</div>;
+  return <div style={{ fontSize:10, color:T.navy, textTransform:"uppercase", letterSpacing:1.2, marginBottom:5, fontWeight:700, minHeight:24, display:"flex", alignItems:"flex-end" }}>{children}</div>;
 }
 function Inp({ label, type="text", onChange, readOnly, ...p }) {
   const isText = !["date","time","number","email","password"].includes(type);
@@ -128,7 +135,7 @@ function Inp({ label, type="text", onChange, readOnly, ...p }) {
     <div style={{ marginBottom:12 }}>
       <style>{`input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}`}</style>
       {label && <Lbl>{label}</Lbl>}
-      <input type={type} onChange={handleChange} {...p} readOnly={readOnly} tabIndex={readOnly ? -1 : undefined} style={{ width:"100%", background: readOnly ? "#0a1520" : "#162535", border: readOnly ? "1px solid #ffffff08" : "1px solid #ffffff14", borderRadius:8, padding:"8px 12px", color: readOnly ? "#4a7a9b" : "#dff0f8", fontSize:13, fontFamily:"monospace", outline:"none", boxSizing:"border-box", textTransform: isText?"uppercase":"none", cursor: readOnly ? "default" : "text", MozAppearance:"textfield", appearance:"textfield" }} />
+      <input type={type} onChange={handleChange} {...p} readOnly={readOnly} tabIndex={readOnly ? -1 : undefined} style={{ width:"100%", background: readOnly ? "#f9fafb" : T.card, border:`1px solid ${readOnly?"#e8e8e8":T.border}`, borderRadius:6, padding:"10px 12px", color: readOnly ? "#aab4c0" : T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box", textTransform: isText?"uppercase":"none", cursor: readOnly ? "default" : "text", MozAppearance:"textfield", appearance:"textfield", opacity: readOnly ? 0.8 : 1 }} />
     </div>
   );
 }
@@ -136,28 +143,30 @@ function Sel({ label, children, ...p }) {
   return (
     <div style={{ marginBottom:12 }}>
       {label && <Lbl>{label}</Lbl>}
-      <select {...p} style={{ width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 12px", color:"#dff0f8", fontSize:13, fontFamily:"monospace", outline:"none", boxSizing:"border-box" }}>
+      <select {...p} style={{ width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"10px 12px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" }}>
         {children}
       </select>
     </div>
   );
 }
-function Btn({ children, color="#00e5a0", outline, sm, onClick, disabled, type="button" }) {
+function Btn({ children, color, variant, sm, onClick, disabled, type="button" }) {
+  const bg = color || T.orange;
+  const isDanger = bg === T.danger || bg === "#D63031" || bg === "#ff4d4d" || bg === "#D63031";
   return (
-    <button type={type} disabled={disabled} onClick={onClick} style={{ background:outline?"transparent":color, color:outline?color:"#071422", border:`1.5px solid ${color}`, borderRadius:8, padding:sm?"6px 14px":"10px 20px", fontFamily:"monospace", fontWeight:700, fontSize:sm?11:13, cursor:disabled?"not-allowed":"pointer", opacity:disabled?0.5:1, whiteSpace:"nowrap" }}>
+    <button type={type} disabled={disabled} onClick={onClick} style={{ background: variant==="outline" ? "transparent" : bg, color: variant==="outline" ? bg : "#ffffff", border:`2px solid ${bg}`, borderRadius:6, padding:sm?"5px 14px":"9px 20px", fontFamily:"system-ui,sans-serif", fontWeight:700, fontSize:sm?11:13, cursor:disabled?"not-allowed":"pointer", opacity:disabled?0.5:1, whiteSpace:"nowrap", letterSpacing:0.3 }}>
       {children}
     </button>
   );
 }
 function Modal({ title, onClose, children, wide }) {
   return (
-    <div style={{ position:"fixed", inset:0, background:"#000000e0", zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center", padding:20, overflowY:"auto" }}>
-      <div style={{ background:"#0c1a28", border:"1px solid #ffffff18", borderRadius:20, padding:28, width:"100%", maxWidth:wide?780:520, margin:"auto" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:22 }}>
-          <span style={{ fontSize:16, fontWeight:800, color:"#dff0f8", fontFamily:"'Syne',sans-serif" }}>{title}</span>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:"#6b8fa8", fontSize:20, cursor:"pointer" }}>✕</button>
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center", padding:20, overflowY:"auto" }}>
+      <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:10, width:"100%", maxWidth:wide?860:560, margin:"auto", overflow:"hidden", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+        <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <span style={{ fontSize:15, fontWeight:800, color:"#ffffff", letterSpacing:1, textTransform:"uppercase" }}>{title}</span>
+          <button onClick={onClose} style={{ background:"rgba(255,255,255,0.1)", border:"none", color:"#ffffff", fontSize:18, cursor:"pointer", borderRadius:6, width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
         </div>
-        {children}
+        <div style={{ padding:24 }}>{children}</div>
       </div>
     </div>
   );
@@ -165,32 +174,32 @@ function Modal({ title, onClose, children, wide }) {
 function Grid({ cols=2, children }) {
   return <div style={{ display:"grid", gridTemplateColumns:`repeat(${cols},1fr)`, gap:12, alignItems:"end" }}>{children}</div>;
 }
-function Section({ title, color="#6b8fa8", children }) {
+function Section({ title, children }) {
   return (
-    <div style={{ marginBottom:18 }}>
-      <div style={{ fontSize:11, fontWeight:700, color, letterSpacing:1, textTransform:"uppercase", marginBottom:10, paddingBottom:6, borderBottom:`1px solid ${color}33` }}>{title}</div>
+    <div style={{ marginBottom:20 }}>
+      <div style={{ fontSize:11, fontWeight:800, color:T.orange, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10, paddingBottom:6, borderBottom:`2px solid ${T.orange}22` }}>{title}</div>
       {children}
     </div>
   );
 }
 function Stat({ label, value, color, sub }) {
   return (
-    <Card style={{ borderLeft:`3px solid ${color}` }}>
-      <Lbl>{label}</Lbl>
-      <div style={{ fontSize:22, fontWeight:800, color, fontFamily:"'Syne',sans-serif" }}>{value}</div>
-      {sub && <div style={{ fontSize:10, color:"#6b8fa8", marginTop:2 }}>{sub}</div>}
-    </Card>
+    <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:8, padding:"16px 18px", borderLeft:`4px solid ${color||T.orange}`, boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
+      <div style={{ fontSize:10, color:T.navy, textTransform:"uppercase", letterSpacing:1.2, fontWeight:700, marginBottom:6 }}>{label}</div>
+      <div style={{ fontSize:24, fontWeight:800, color:color||T.orange, fontFamily:"system-ui,sans-serif" }}>{value}</div>
+      {sub && <div style={{ fontSize:10, color:T.muted, marginTop:3 }}>{sub}</div>}
+    </div>
   );
 }
 function Table({ cols, rows, emptyMsg }) {
   return (
-    <div style={{ background:"#0f1e2e", borderRadius:12, border:"1px solid #ffffff0d" }}>
+    <div style={{ background:T.card, borderRadius:8, border:`1px solid ${T.border}`, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
       <table style={{ width:"100%", borderCollapse:"collapse", minWidth:500 }}>
-        <thead><tr style={{ background:"#162535" }}>{cols.map(c=><th key={c} style={{ padding:"10px 14px", textAlign:"left", fontSize:10, color:"#6b8fa8", letterSpacing:1, textTransform:"uppercase", fontFamily:"monospace", whiteSpace:"nowrap" }}>{c}</th>)}</tr></thead>
+        <thead><tr style={{ background:T.bg }}>{cols.map(c=><th key={c} style={{ padding:"10px 14px", textAlign:"left", fontSize:10, color:T.navy, letterSpacing:1, textTransform:"uppercase", fontWeight:700, whiteSpace:"nowrap", borderBottom:`2px solid ${T.border}` }}>{c}</th>)}</tr></thead>
         <tbody>
           {rows.length===0
-            ? <tr><td colSpan={cols.length} style={{ padding:20, textAlign:"center", color:"#6b8fa8", fontSize:12 }}>{emptyMsg||"Sin registros"}</td></tr>
-            : rows.map((r,i)=><tr key={i} style={{ borderTop:"1px solid #ffffff07" }}>{r.map((cell,j)=><td key={j} style={{ padding:"9px 14px", fontSize:12, color:"#cde4f0", fontFamily:"monospace", whiteSpace:"nowrap" }}>{cell}</td>)}</tr>)
+            ? <tr><td colSpan={cols.length} style={{ padding:24, textAlign:"center", color:T.muted, fontSize:12 }}>{emptyMsg||"Sin registros"}</td></tr>
+            : rows.map((r,i)=><tr key={i} style={{ borderTop:`1px solid ${T.border}`, background: i%2===0 ? T.card : "#fafbfc" }}>{r.map((cell,j)=><td key={j} style={{ padding:"9px 14px", fontSize:12, color:T.text, whiteSpace:"nowrap" }}>{cell}</td>)}</tr>)
           }
         </tbody>
       </table>
@@ -198,7 +207,7 @@ function Table({ cols, rows, emptyMsg }) {
   );
 }
 function Spinner() {
-  return <div style={{ width:28, height:28, border:"3px solid #ffffff18", borderTop:"3px solid #00e5a0", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />;
+  return <div style={{ width:28, height:28, border:`3px solid ${T.border}`, borderTop:`3px solid ${T.orange}`, borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />;
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
@@ -655,66 +664,60 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
 
   // ── LOADING ──
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:"#071422", display:"flex", alignItems:"center", justifyContent:"center" }}>
+    <div style={{ minHeight:"100vh", background:T.navy, display:"flex", alignItems:"center", justifyContent:"center" }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{ textAlign:"center" }}>
         <Spinner />
-        <div style={{ color:"#6b8fa8", fontSize:12, marginTop:12, fontFamily:"monospace" }}>Cargando...</div>
+        <div style={{ color:"#ffffff99", fontSize:12, marginTop:12 }}>Cargando...</div>
       </div>
     </div>
   );
 
   // ── LOGIN / REGISTRO ──
   if (!session) return (
-    <div style={{ minHeight:"100vh", background:"#071422", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"monospace" }}>
+    <div style={{ minHeight:"100vh", background:T.navy, display:"flex", alignItems:"center", justifyContent:"center" }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet" />
-      <div style={{ width:400, background:"#0c1a28", borderRadius:24, padding:40, border:"1px solid #ffffff12" }}>
-        <div style={{ textAlign:"center", marginBottom:28 }}>
-          <div style={{ width:52, height:52, background:"#071422", border:"1px solid #ffffff14", borderRadius:14, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", overflow:"hidden" }}>
-            <svg width="46" height="46" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <text x="8" y="44" fontFamily="Arial,sans-serif" fontSize="40" fontWeight="900" fill="#00e5a0">B</text>
-              <text x="29" y="44" fontFamily="Arial,sans-serif" fontSize="40" fontWeight="900" fill="none" stroke="#00b4ff" strokeWidth="2">G</text>
-            </svg>
-          </div>
-          <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:20, color:"#dff0f8" }}>BUNKERSGEST</div>
-          <div style={{ fontSize:9, color:"#6b8fa8", marginTop:3, letterSpacing:2 }}>COMBUSTIBLE MARINO</div>
+      <div style={{ width:420, background:T.card, borderRadius:12, overflow:"hidden", boxShadow:"0 24px 64px rgba(0,0,0,0.4)" }}>
+        <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"28px 32px", textAlign:"center" }}>
+          <div style={{ fontSize:32, marginBottom:8 }}>🚢</div>
+          <div style={{ fontWeight:800, fontSize:22, color:"#ffffff", letterSpacing:2 }}>BUNKERSGEST</div>
+          <div style={{ fontSize:10, color:"#ffffff88", marginTop:4, letterSpacing:3 }}>SISTEMA DE GESTIÓN OPERATIVA · COMBUSTIBLE MARINO</div>
         </div>
-
-        {authError && <div style={{ background:authError.includes("creada")?"#00e5a018":"#ff4d4d18", border:`1px solid ${authError.includes("creada")?"#00e5a0":"#ff4d4d"}`, borderRadius:8, padding:"10px 14px", fontSize:12, color:authError.includes("creada")?"#00e5a0":"#ff4d4d", marginBottom:16 }}>{authError}</div>}
-
-        {authMode==="login" ? (
-          <>
-            <Inp label="Cédula o Usuario" type="text" placeholder="Ej: 1234567890" value={authForm.cedula||""} onChange={af("cedula")} />
-            <Inp label="Contraseña" type="password" placeholder="••••••••" value={authForm.password||""} onChange={af("password")} />
-            <Btn color="#00e5a0" onClick={handleLogin} style={{ width:"100%" }}>Iniciar Sesión</Btn>
-          </>
-        ) : (
-          <>
-            <Inp label="Nombre completo" type="text" placeholder="Tu nombre" value={authForm.nombre||""} onChange={af("nombre")} />
-            <Inp label="Cédula" type="text" placeholder="Número de cédula" value={authForm.cedula||""} onChange={af("cedula")} />
-            <Inp label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={authForm.password||""} onChange={af("password")} />
-            <Sel label="Rol" value={authForm.rol||""} onChange={af("rol")}>
-              <option value="">Seleccionar rol...</option>
-              {Object.entries(ROLES).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
-            </Sel>
-            <Sel label="Planta" value={authForm.planta||"QBS"} onChange={af("planta")}>
-              {PLANTAS.map(p=><option key={p}>{p}</option>)}
-            </Sel>
-            <Btn color="#00b4ff" onClick={handleRegister}>Crear Cuenta</Btn>
-            <div style={{ textAlign:"center", marginTop:14, fontSize:12, color:"#6b8fa8" }}>
-              ¿Ya tienes cuenta?{" "}
-              <span onClick={()=>{setAuthMode("login");setAuthError("");}} style={{ color:"#00e5a0", cursor:"pointer" }}>Inicia sesión</span>
-            </div>
-          </>
-        )}
+        <div style={{ padding:32 }}>
+          {authError && <div style={{ background:authError.includes("creada")?`${T.success}18`:`${T.danger}18`, border:`1px solid ${authError.includes("creada")?T.success:T.danger}`, borderRadius:6, padding:"10px 14px", fontSize:12, color:authError.includes("creada")?T.success:T.danger, marginBottom:16 }}>{authError}</div>}
+          {authMode==="login" ? (
+            <>
+              <Inp label="Cédula o Usuario" type="text" placeholder="Ej: 1234567890" value={authForm.cedula||""} onChange={af("cedula")} />
+              <Inp label="Contraseña" type="password" placeholder="••••••••" value={authForm.password||""} onChange={af("password")} />
+              <div style={{marginTop:4}}><Btn color={T.orange} onClick={handleLogin}>Iniciar Sesión</Btn></div>
+            </>
+          ) : (
+            <>
+              <Inp label="Nombre completo" type="text" placeholder="Tu nombre" value={authForm.nombre||""} onChange={af("nombre")} />
+              <Inp label="Cédula" type="text" placeholder="Número de cédula" value={authForm.cedula||""} onChange={af("cedula")} />
+              <Inp label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={authForm.password||""} onChange={af("password")} />
+              <Sel label="Rol" value={authForm.rol||""} onChange={af("rol")}>
+                <option value="">Seleccionar rol...</option>
+                {Object.entries(ROLES).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
+              </Sel>
+              <Sel label="Planta" value={authForm.planta||"QBS"} onChange={af("planta")}>
+                {PLANTAS.map(p=><option key={p}>{p}</option>)}
+              </Sel>
+              <Btn color={T.navy} onClick={handleRegister}>Crear Cuenta</Btn>
+              <div style={{ textAlign:"center", marginTop:14, fontSize:12, color:T.muted }}>
+                ¿Ya tienes cuenta?{" "}
+                <span onClick={()=>{setAuthMode("login");setAuthError("");}} style={{ color:T.orange, cursor:"pointer", fontWeight:700 }}>Inicia sesión</span>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 
   if (!perfil) return (
-    <div style={{ minHeight:"100vh", background:"#071422", display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ color:"#6b8fa8", fontSize:13, fontFamily:"monospace" }}>Cargando perfil...</div>
+    <div style={{ minHeight:"100vh", background:T.navy, display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <div style={{ color:"#ffffff88", fontSize:13 }}>Cargando perfil...</div>
     </div>
   );
 
@@ -744,38 +747,32 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const pendCMT = pbsList.filter(p=>!cmtsFiltrados.find(c=>c.pbs_id===p.id)).length;
 
   return (
-    <div style={{ fontFamily:"monospace", background:"#071422", minHeight:"100vh", color:"#dff0f8" }}>
+    <div style={{ fontFamily:"system-ui,sans-serif", background:T.bg, minHeight:"100vh", color:T.text }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeSlideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}`}</style>
-      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet" />
 
-      {toast && <div style={{ position:"fixed", top:18, right:18, zIndex:9999, background:toast.ok?"#00e5a018":"#ff4d4d18", border:`1px solid ${toast.ok?"#00e5a0":"#ff4d4d"}`, borderRadius:12, padding:"12px 18px", color:toast.ok?"#00e5a0":"#ff4d4d", fontSize:13, fontWeight:700, backdropFilter:"blur(12px)", maxWidth:360 }}>{toast.msg}</div>}
+      {toast && <div style={{ position:"fixed", top:18, right:18, zIndex:9999, background:toast.ok?T.success:T.danger, borderRadius:8, padding:"12px 20px", color:"#ffffff", fontSize:13, fontWeight:700, boxShadow:"0 4px 16px rgba(0,0,0,0.25)", maxWidth:360 }}>{toast.msg}</div>}
 
       {/* Header */}
-      <div style={{ background:"#0c1a28", borderBottom:"1px solid #ffffff0a", padding:"0 22px", height:58, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:30, height:30, background:"#071422", border:"1px solid #ffffff14", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
-            <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <text x="8" y="44" fontFamily="Arial,sans-serif" fontSize="40" fontWeight="900" fill="#00e5a0">B</text>
-              <text x="29" y="44" fontFamily="Arial,sans-serif" fontSize="40" fontWeight="900" fill="none" stroke="#00b4ff" strokeWidth="2">G</text>
-            </svg>
-          </div>
+      <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"0 24px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+          <span style={{ fontSize:28 }}>🚢</span>
           <div>
-            <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:14, letterSpacing:1 }}>BUNKERSGEST</div>
-            <div style={{ fontSize:9, color:"#6b8fa8", letterSpacing:1 }}>Combustible Marino</div>
+            <div style={{ fontWeight:800, fontSize:18, color:"#ffffff", letterSpacing:2 }}>BUNKERSGEST <span style={{color:T.orange, fontSize:12, fontWeight:700}}>v2.0</span></div>
+            <div style={{ fontSize:9, color:"#ffffff66", letterSpacing:2, textTransform:"uppercase" }}>Sistema de Gestión Operativa · Combustible Marino</div>
           </div>
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
           <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:12, fontWeight:700 }}>{perfil.nombre}</div>
-            <div style={{ fontSize:10, color:rol.color }}>{rol.icon} {rol.label}</div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#ffffff" }}>{perfil.nombre}</div>
+            <div style={{ fontSize:10, color:T.orange }}>{rol.icon} {rol.label} · {perfil.sede||"MALAMBO"} · <span style={{color:T.success}}>● EN VIVO</span></div>
           </div>
-          <Btn sm outline color="#ff4d4d" onClick={handleLogout}>Salir</Btn>
+          <Btn sm color={T.danger} onClick={handleLogout}>Salir</Btn>
         </div>
       </div>
 
-      <div style={{ display:"flex", minHeight:"calc(100vh - 58px)" }}>
+      <div style={{ display:"flex", minHeight:"calc(100vh - 67px)" }}>
         {/* Sidebar */}
-        <div style={{ width:56, background:"#0a1826", borderRight:"1px solid #ffffff08", padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100 }}>
+        <div style={{ width:58, background:T.sidebar, borderRight:`1px solid rgba(255,255,255,0.06)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100 }}>
           {(()=>{
             const GRUPOS = {
               viajes:   { icon:"🚛", label:"LOGÍSTICA",  subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
@@ -784,28 +781,26 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const badges = { pbs:pendPBS, cmt:pendCMT };
 
             const btnStyle = (active, isHov, color) => ({
-              width:40, height:40, border:"none", borderRadius:10, cursor:"pointer",
+              width:42, height:42, border:"none", borderRadius:8, cursor:"pointer",
               display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
-              transition:"background 0.2s, transform 0.2s, color 0.2s",
-              background: active ? color+"44" : isHov ? color+"22" : "transparent",
-              transform: isHov ? "scale(1.12)" : "scale(1)",
-              color: active||isHov ? color : "#4a6a82",
+              transition:"background 0.15s, transform 0.15s",
+              background: active ? T.orange : isHov ? "rgba(255,107,53,0.2)" : "transparent",
+              transform: isHov ? "scale(1.08)" : "scale(1)",
+              color: active ? "#ffffff" : isHov ? T.orange : "rgba(255,255,255,0.45)",
               position:"relative", outline:"none",
             });
 
-            /* El flyout ocupa left:100% sin gap — así el mouse pasa directo del ícono al panel.
-               Un padding-left invisible de 8px al inicio del panel crea el espacio visual. */
             const flyoutBase = {
               position:"absolute", left:"100%", top:"-4px",
-              paddingLeft:8, zIndex:9999, pointerEvents:"auto",
+              paddingLeft:6, zIndex:9999, pointerEvents:"auto",
             };
             const flyoutInner = {
-              background:"#0d1f30",
-              border:"1px solid #ffffff18",
-              borderLeft:"2px solid",
-              borderRadius:"0 10px 10px 0",
-              padding:"6px 0", minWidth:190,
-              boxShadow:"8px 8px 32px #000d",
+              background:T.sidebar,
+              border:`1px solid rgba(255,255,255,0.1)`,
+              borderLeft:`3px solid ${T.orange}`,
+              borderRadius:"0 8px 8px 0",
+              padding:"6px 0", minWidth:200,
+              boxShadow:"8px 8px 32px rgba(0,0,0,0.4)",
               animation:"fadeSlideIn 0.15s ease",
             };
 
@@ -814,10 +809,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               paddingLeft:8, zIndex:9999, pointerEvents:"none",
             };
             const tooltipInner = {
-              background:"#0d1f30", border:"1px solid #ffffff18", borderRadius:7,
-              padding:"5px 11px", fontSize:11, color:"#dff0f8",
-              whiteSpace:"nowrap", boxShadow:"4px 4px 16px #000a",
-              fontFamily:"monospace", transform:"translateY(-50%)",
+              background:T.sidebar, border:`1px solid rgba(255,255,255,0.1)`, borderRadius:6,
+              padding:"5px 12px", fontSize:11, color:"#ffffff",
+              whiteSpace:"nowrap", boxShadow:"4px 4px 16px rgba(0,0,0,0.3)",
+              transform:"translateY(-50%)",
               animation:"fadeSlideIn 0.12s ease",
             };
 
@@ -839,16 +834,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {isHov && (
                       <div style={flyoutBase} onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
                         <div style={{...flyoutInner, borderLeftColor: rol.color+"88"}}>
-                          <div style={{padding:"7px 14px 8px",fontSize:10,color:"#6b8fa8",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",borderBottom:"1px solid #ffffff0a",marginBottom:4}}>{grupo.label}</div>
+                          <div style={{padding:"8px 16px 8px",fontSize:10,color:T.orange,fontWeight:800,letterSpacing:2,textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.08)",marginBottom:4}}>{grupo.label}</div>
                           {grupo.subs.map(sub=>{
                             const subActive = nav===sub.id;
                             return (
                               <button key={sub.id} onClick={()=>{setNav(sub.id);setNavHovered(null);}}
-                                style={{width:"100%",textAlign:"left",background:subActive?rol.color+"22":"transparent",border:"none",borderLeft:`3px solid ${subActive?rol.color:"transparent"}`,padding:"9px 16px",color:subActive?rol.color:"#b8ccd8",fontSize:12,fontFamily:"monospace",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.12s, color 0.12s, border-color 0.12s",boxSizing:"border-box"}}
-                                onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background=rol.color+"14"; e.currentTarget.style.color="#fff"; e.currentTarget.style.borderLeftColor=rol.color+"66";} }}
-                                onMouseLeave={e=>{ if(!subActive){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="#b8ccd8"; e.currentTarget.style.borderLeftColor="transparent";} }}>
+                                style={{width:"100%",textAlign:"left",background:subActive?T.orange:"transparent",border:"none",borderLeft:`3px solid ${subActive?T.orange:"transparent"}`,padding:"9px 16px",color:subActive?"#ffffff":"rgba(255,255,255,0.65)",fontSize:12,fontFamily:"system-ui,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.12s, color 0.12s",boxSizing:"border-box",fontWeight:subActive?700:400}}
+                                onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background="rgba(255,107,53,0.15)"; e.currentTarget.style.color="#ffffff";} }}
+                                onMouseLeave={e=>{ if(!subActive){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(255,255,255,0.65)";} }}>
                                 <span>{sub.label}</span>
-                                {sub.badge>0&&<span style={{background:"#ff4d4d",color:"#fff",fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{sub.badge}</span>}
+                                {sub.badge>0&&<span style={{background:T.danger,color:"#fff",fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{sub.badge}</span>}
                               </button>
                             );
                           })}
@@ -885,64 +880,68 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </div>
 
         {/* Content */}
-        <div style={{ flex:1, padding:24, overflowY:"auto" }}>
+        <div style={{ flex:1, padding:24, overflowY:"auto", background:T.bg }}>
 
           {/* DASHBOARD */}
           {nav==="dashboard" && (
             <div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4,flexWrap:"wrap",gap:8}}>
-                <div style={{ fontFamily:"'Syne',sans-serif", fontSize:22, fontWeight:800 }}>Panel Operativo</div>
+                <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Panel Operativo</div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   {(sedeFiltro==="TODAS"||["administrador","gerencia"].includes(perfil.rol)) && (
                     <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)}
-                      style={{background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"6px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",cursor:"pointer"}}>
+                      style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,outline:"none",cursor:"pointer"}}>
                       <option value="TODAS">Todas las sedes</option>
                       {SEDES.map(s=><option key={s}>{s}</option>)}
                     </select>
                   )}
                   {!["administrador","gerencia"].includes(perfil.rol) && (
-                    <div style={{background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"6px 12px",color:"#00e5a0",fontSize:12,fontFamily:"monospace"}}>
+                    <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.navy,fontSize:12,fontWeight:700}}>
                       📍 {sedeFiltro}
                     </div>
                   )}
                 </div>
               </div>
-              <div style={{ fontSize:11, color:"#6b8fa8", marginBottom:22 }}>QBS · {new Date().toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
+              <div style={{ fontSize:11, color:T.muted, marginBottom:22 }}>QBS · {new Date().toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:12, marginBottom:22 }}>
-                <Stat label="Carros en Ruta" value={enRuta} color="#f59e0b" sub="hacia planta" />
-                <Stat label="Tiquetes Pend." value={pendTiquetes} color="#00b4ff" sub="esperan laboratorio" />
-                <Stat label="PBS Pendientes" value={pendPBS} color="#fb923c" sub="esperan operaciones" />
-                <Stat label="CMT Pendientes" value={pendCMT} color="#00e5a0" sub="esperan coordinador" />
-                <Stat label="Stock VLSFO" value={`${fmt(tanques.filter(t=>t.producto==="VLSFO").reduce((a,t)=>a+t.nivel,0))} Gls`} color="#00e5a0" />
-                <Stat label="Stock MGO" value={`${fmt(tanques.filter(t=>t.producto==="MGO").reduce((a,t)=>a+t.nivel,0))} Gls`} color="#c084fc" />
+                <Stat label="🚚 Carros en Ruta" value={enRuta} color={T.orange} sub="hacia planta" />
+                <Stat label="⏳ Tiquetes Pend." value={pendTiquetes} color={T.navy} sub="esperan laboratorio" />
+                <Stat label="⚙️ PBS Pendientes" value={pendPBS} color="#f59e0b" sub="esperan operaciones" />
+                <Stat label="✅ CMT Pendientes" value={pendCMT} color={T.success} sub="esperan coordinador" />
+                <Stat label="⛽ Stock VLSFO" value={`${fmt(tanques.filter(t=>t.producto==="VLSFO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.success} />
+                <Stat label="⛽ Stock MGO" value={`${fmt(tanques.filter(t=>t.producto==="MGO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.navy} />
               </div>
-              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:14, fontWeight:800, marginBottom:12 }}>Tanques TK-111 al TK-117</div>
+              <div style={{ fontWeight:800, fontSize:14, color:T.navy, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${T.orange}22` }}>🛢 Inventario de Tanques</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:10 }}>
-                {tanques.map(t=>(
+                {tanques.map(t=>{
+                  const pct = Math.round((t.nivel/t.capacidad)*100);
+                  const barColor = pct > 80 ? T.danger : pct > 50 ? T.success : "#f59e0b";
+                  return (
                   <Card key={t.id} style={{ padding:"14px 16px" }}>
                     <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
                       <div>
-                        <div style={{ fontWeight:800, fontSize:13, fontFamily:"'Syne',sans-serif" }}>{t.id}</div>
-                        <div style={{ fontSize:10, color:"#6b8fa8" }}>{t.producto}</div>
+                        <div style={{ fontWeight:800, fontSize:13, color:T.navy }}>{t.id}</div>
+                        <div style={{ fontSize:10, color:T.muted }}>{t.producto}</div>
                       </div>
                       <Badge label={TIPO_LABEL[t.tipo]} color={TIPO_COLOR[t.tipo]} />
                     </div>
-                    <div style={{ background:"#162535", borderRadius:5, height:7, overflow:"hidden", marginBottom:6 }}>
-                      <div style={{ height:"100%", width:`${Math.round((t.nivel/t.capacidad)*100)}%`, background:TIPO_COLOR[t.tipo], borderRadius:5 }} />
+                    <div style={{ background:T.border, borderRadius:4, height:8, overflow:"hidden", marginBottom:6 }}>
+                      <div style={{ height:"100%", width:`${pct}%`, background:barColor, borderRadius:4, transition:"width 0.3s" }} />
                     </div>
                     <div style={{ display:"flex", justifyContent:"space-between", fontSize:10 }}>
-                      <span style={{ color:"#6b8fa8" }}>{fmt(t.nivel)} / {fmt(t.capacidad)} Gls</span>
-                      <span style={{ fontWeight:700, color:TIPO_COLOR[t.tipo] }}>{Math.round((t.nivel/t.capacidad)*100)}%</span>
+                      <span style={{ color:T.muted }}>{fmt(t.nivel)} / {fmt(t.capacidad)} Gls</span>
+                      <span style={{ fontWeight:800, color:barColor }}>{pct}%</span>
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* VIAJES */}
           {nav==="viajes" && (()=>{
-            const selStyle = {background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"6px 10px",color:"#dff0f8",fontSize:11,fontFamily:"monospace",outline:"none"};
+            const selStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:11,fontFamily:"system-ui,sans-serif",outline:"none"};
             const productosUnicos = [...new Set(viajesFiltrados.map(v=>v.producto).filter(Boolean))].sort();
             const viajesFinal = viajesFiltrados.filter(v=>{
               const q = viajesBusqueda.toLowerCase();
@@ -960,8 +959,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{flexShrink:0,marginBottom:12}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                   <div>
-                    <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Listado Tránsito</div>
-                    <div style={{ fontSize:11, color:"#6b8fa8" }}>Carros en ruta · <b style={{color:"#f59e0b"}}>{viajesFinal.length}</b> resultado(s)</div>
+                    <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Listado Tránsito</div>
+                    <div style={{ fontSize:11, color:T.muted }}>Carros en ruta · <b style={{color:"#f59e0b"}}>{viajesFinal.length}</b> resultado(s)</div>
                   </div>
                   {puedeCrear("viajes") && <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>}
                 </div>
@@ -1015,16 +1014,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <span style={{color:"#f59e0b"}}>{v.id}</span>,
                     <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?"#c084fc":v.sede==="CARTAGENA"?"#fb923c":"#00b4ff"}/>,
                     v.fecha,
-                    v.fecha_llegada||<span style={{color:"#6b8fa8",fontSize:10}}>—</span>,
+                    v.fecha_llegada||<span style={{color:T.muted,fontSize:10}}>—</span>,
                     v.producto, v.transportadora, v.placa, v.guia,
                     fmt(v.gls_netos_guia||v.volumen_guia||0),
-                    v.gls_recibidos>0?<span style={{color:"#00e5a0",fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:"#6b8fa8",fontSize:10}}>—</span>,
+                    v.gls_recibidos>0?<span style={{color:"#00e5a0",fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:T.muted,fontSize:10}}>—</span>,
                     faltantes>0?<span style={{color:"#ff4d4d",fontWeight:700}}>{fmt(faltantes)}</span>:<span style={{color:"#00e5a0"}}>OK</span>,
                     sbLabel !== null
                       ? <span style={{display:"inline-flex",alignItems:"center",gap:4}}>
                           <Badge label={sbLabel} color={sbColor}/>
                           {!sbFinalizado && horasStandby>=24 && <span style={{fontSize:9,color:"#ff4d4d",fontWeight:700}}>COBRO</span>}
-                          {!sbFinalizado && horasStandby<24 && <span style={{fontSize:9,color:"#6b8fa8",fontStyle:"italic"}}>en curso</span>}
+                          {!sbFinalizado && horasStandby<24 && <span style={{fontSize:9,color:T.muted,fontStyle:"italic"}}>en curso</span>}
                         </span>
                       : <span style={{color:"#ffffff18"}}>—</span>,
                     <Badge label={v.estado} color={v.estado==="Descargado"?"#00e5a0":v.estado==="En Ruta"?"#f59e0b":v.estado==="Rechazado"?"#ff4d4d":"#00b4ff"}/>,
@@ -1058,8 +1057,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {/* Header */}
               <div style={{flexShrink:0,marginBottom:18,display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
                 <div>
-                  <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,letterSpacing:0.5}}>Listado Planta</div>
-                  <div style={{fontSize:11,color:"#6b8fa8",marginTop:2}}>
+                  <div style={{fontWeight:800,fontSize:22,color:T.navy,letterSpacing:0.5}}>Listado Planta</div>
+                  <div style={{fontSize:11,color:T.muted,marginTop:2}}>
                     Enturne de carros para descargue ·{" "}
                     <b style={{color:COLOR}}>{enPlanta.length}</b> carro(s) en planta
                   </div>
@@ -1073,13 +1072,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <thead>
                     <tr style={{background:"#0d1f30",position:"sticky",top:0,zIndex:2}}>
                       {["#","FECHA LLEGADA","FECHA CARGUE","PLACA","PRODUCTO","OBSERVACIONES",""].map((h,i)=>(
-                        <th key={i} style={{padding:"11px 14px",textAlign:"left",fontSize:10,color:"#6b8fa8",fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",borderBottom:"1px solid #ffffff0a",whiteSpace:"nowrap"}}>{h}</th>
+                        <th key={i} style={{padding:"11px 14px",textAlign:"left",fontSize:10,color:T.navy,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",background:T.bg}}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {enPlanta.length===0 && (
-                      <tr><td colSpan={7} style={{padding:40,textAlign:"center",color:"#6b8fa8",fontSize:13}}>No hay carros en planta</td></tr>
+                      <tr><td colSpan={7} style={{padding:40,textAlign:"center",color:T.muted,fontSize:13}}>No hay carros en planta</td></tr>
                     )}
                     {enPlanta.map((v)=>{
                       const llegó = !!v.fecha_llegada;
@@ -1113,7 +1112,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.producto||"—"}</div>
                           </td>
                           {/* Observaciones */}
-                          <td style={{padding:"12px 14px",color:"#6b8fa8",maxWidth:200}}>
+                          <td style={{padding:"12px 14px",color:T.muted,maxWidth:200}}>
                             <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.observacion||<span style={{color:"#ffffff22",fontStyle:"italic"}}>Sin observaciones</span>}</div>
                           </td>
                           {/* Acción */}
@@ -1140,13 +1139,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
-                  <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Tiquete de Ingreso MP</div>
-                  <div style={{ fontSize:11, color:"#6b8fa8" }}>Emitido por laboratorio · Aval para descargue</div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Tiquete de Ingreso MP</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Emitido por laboratorio · Aval para descargue</div>
                 </div>
                 <div style={{display:"flex",gap:8,alignItems:"center"}}>
                   {["administrador","gerencia"].includes(perfil.rol) && (
                     <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)}
-                      style={{background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"6px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none"}}>
+                      style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,outline:"none"}}>
                       <option value="TODAS">Todas</option>
                       {SEDES.map(s=><option key={s}>{s}</option>)}
                     </select>
@@ -1188,8 +1187,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {/* RESULTADOS LABORATORIO */}
           {nav==="resultados" && (
             <div>
-              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800, marginBottom:4 }}>Resultados de Laboratorio</div>
-              <div style={{ fontSize:11, color:"#6b8fa8", marginBottom:22 }}>Consolidado de análisis por tiquete</div>
+              <div style={{ fontWeight:800, fontSize:20, color:T.navy, marginBottom:4 }}>Resultados de Laboratorio</div>
+              <div style={{ fontSize:11, color:T.muted, marginBottom:22 }}>Consolidado de análisis por tiquete</div>
               <Table
                 cols={["No. Tiquete","Fecha","Producto","Placa","API Corr.","Flash °C","Agua %","Viscosidad","Gls Recibidos","Resultado"]}
                 rows={tiquetesFiltrados.map(t=>[
@@ -1213,8 +1212,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
-                  <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Permiso de Bombeo Seguro</div>
-                  <div style={{ fontSize:11, color:"#6b8fa8" }}>Checklist de 27 puntos por cada descargue</div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Permiso de Bombeo Seguro</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Checklist de 27 puntos por cada descargue</div>
                 </div>
                 {puedeCrear("pbs") && <Btn color="#fb923c" onClick={()=>{setForm({fecha:today()});setPbsChecklist(Array(27).fill(""));setModal("pbs");}}>+ Nuevo PBS</Btn>}
               </div>
@@ -1238,24 +1237,24 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
-                  <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>CMT — Control de Movimiento de Tanques</div>
-                  <div style={{ fontSize:11, color:"#6b8fa8" }}>Registro oficial de movimientos en tanques</div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>CMT — Control de Movimiento de Tanques</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Registro oficial de movimientos en tanques</div>
                 </div>
                 <div style={{display:"flex",gap:12,alignItems:"flex-end"}}>
                   {["administrador","gerencia"].includes(perfil.rol) && (<>
                     <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                      <div style={{fontSize:10,color:"#6b8fa8",textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}}>Sede</div>
+                      <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}}>Sede</div>
                       <select value={sedeFiltro||"TODAS"} onChange={e=>{setSedeFiltro(e.target.value);setPlantaFiltro(null);}}
-                        style={{background:(!sedeFiltro||sedeFiltro==="TODAS")?"#2a1a0e":"#0f1e2e",border:(!sedeFiltro||sedeFiltro==="TODAS")?"1px solid #f59e0b88":"1px solid #ffffff22",borderRadius:8,padding:"6px 12px",color:(!sedeFiltro||sedeFiltro==="TODAS")?"#f59e0b":"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",cursor:"pointer"}}>
+                        style={{background:(!sedeFiltro||sedeFiltro==="TODAS")?`${T.orange}18`:T.card,border:(!sedeFiltro||sedeFiltro==="TODAS")?`1px solid ${T.orange}`:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:(!sedeFiltro||sedeFiltro==="TODAS")?T.orange:T.text,fontSize:12,outline:"none",cursor:"pointer"}}>
                         <option value="TODAS">— Seleccionar sede —</option>
                         {SEDES.map(s=><option key={s}>{s}</option>)}
                       </select>
                     </div>
                     {sedeFiltro==="MALAMBO" && (
                       <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                        <div style={{fontSize:10,color:"#6b8fa8",textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}}>Planta</div>
+                        <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace"}}>Planta</div>
                         <select value={plantaFiltro||""} onChange={e=>setPlantaFiltro(e.target.value)}
-                          style={{background:!plantaFiltro?"#2a1a0e":"#0f1e2e",border:!plantaFiltro?"1px solid #f59e0b88":"1px solid #ffffff22",borderRadius:8,padding:"6px 12px",color:!plantaFiltro?"#f59e0b":"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",cursor:"pointer"}}>
+                          style={{background:!plantaFiltro?`${T.orange}18`:T.card,border:!plantaFiltro?`1px solid ${T.orange}`:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:!plantaFiltro?T.orange:T.text,fontSize:12,outline:"none",cursor:"pointer"}}>
                           <option value="">— Seleccionar planta —</option>
                           {PLANTAS.map(p=><option key={p}>{p}</option>)}
                         </select>
@@ -1287,13 +1286,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontSize:28,lineHeight:1}}>📍</div>
                   <div>
                     {(!sedeFiltro||sedeFiltro==="TODAS") ? (<>
-                      <div style={{fontWeight:800,fontSize:15,color:"#f59e0b",marginBottom:6,fontFamily:"'Syne',sans-serif"}}>Paso 1 — Seleccione la sede donde va a trabajar</div>
+                      <div style={{fontWeight:800,fontSize:15,color:T.orange,marginBottom:6}}>Paso 1 — Seleccione la sede donde va a trabajar</div>
                       <div style={{fontSize:13,color:"#c9a84c",lineHeight:1.6}}>
                         Use el selector <b style={{color:"#f59e0b"}}>"Sede"</b> arriba a la derecha para elegir entre {SEDES.join(", ")}.<br/>
                         <span style={{fontSize:11,color:"#8a7040",marginTop:4,display:"block"}}>Cada CMT queda registrado en la sede donde se realizó el movimiento. Esto no se puede cambiar después.</span>
                       </div>
                     </>) : (<>
-                      <div style={{fontWeight:800,fontSize:15,color:"#f59e0b",marginBottom:6,fontFamily:"'Syne',sans-serif"}}>Paso 2 — Seleccione la planta dentro de MALAMBO</div>
+                      <div style={{fontWeight:800,fontSize:15,color:T.orange,marginBottom:6}}>Paso 2 — Seleccione la planta dentro de MALAMBO</div>
                       <div style={{fontSize:13,color:"#c9a84c",lineHeight:1.6}}>
                         MALAMBO tiene dos plantas de recibo. Use el selector <b style={{color:"#f59e0b"}}>"Planta"</b> para elegir entre {PLANTAS.join(" o ")}.<br/>
                         <span style={{fontSize:11,color:"#8a7040",marginTop:4,display:"block"}}>El número del CMT cambia según la planta elegida (MAL1 o MAL2). Esto garantiza trazabilidad exacta del movimiento.</span>
@@ -1313,31 +1312,31 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const matchFH = !cmtFiltroFechaH || (c.fecha||"")<=cmtFiltroFechaH;
                   return matchQ && matchTipo && matchFD && matchFH;
                 });
-                const thStyle = {padding:"10px 12px",fontSize:10,color:"#6b8fa8",textTransform:"uppercase",letterSpacing:1,fontFamily:"monospace",borderBottom:"1px solid #ffffff0f",whiteSpace:"nowrap",textAlign:"left"};
+                const thStyle = {padding:"10px 12px",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg};
                 const tdStyle = {padding:"10px 12px",fontSize:12,fontFamily:"monospace",borderBottom:"1px solid #ffffff08",verticalAlign:"middle"};
                 return (<>
                   <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"flex-end"}}>
                     <div style={{flex:1,minWidth:180}}>
-                      <div style={{fontSize:10,color:"#6b8fa8",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Buscar</div>
-                      <input value={cmtBusqueda} onChange={e=>setCmtBusqueda(e.target.value)} placeholder="N° CMT, operador, producto, placa..." style={{width:"100%",background:"#0f1e2e",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/>
+                      <div style={{fontSize:10,color:T.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Buscar</div>
+                      <input value={cmtBusqueda} onChange={e=>setCmtBusqueda(e.target.value)} placeholder="N° CMT, operador, producto, placa..." style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"7px 12px",color:T.text,fontSize:12,outline:"none",boxSizing:"border-box"}}/>
                     </div>
                     <div>
-                      <div style={{fontSize:10,color:"#6b8fa8",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Tipo operación</div>
-                      <select value={cmtFiltroTipo} onChange={e=>setCmtFiltroTipo(e.target.value)} style={{background:"#0f1e2e",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none"}}>
+                      <div style={{fontSize:10,color:T.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Tipo operación</div>
+                      <select value={cmtFiltroTipo} onChange={e=>setCmtFiltroTipo(e.target.value)} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"7px 12px",color:T.text,fontSize:12,outline:"none"}}>
                         <option value="">Todos</option>
                         {tiposUnicos.map(t=><option key={t}>{t}</option>)}
                       </select>
                     </div>
                     <div>
-                      <div style={{fontSize:10,color:"#6b8fa8",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Desde</div>
-                      <input type="date" value={cmtFiltroFechaD} onChange={e=>setCmtFiltroFechaD(e.target.value)} style={{background:"#0f1e2e",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none"}}/>
+                      <div style={{fontSize:10,color:T.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Desde</div>
+                      <input type="date" value={cmtFiltroFechaD} onChange={e=>setCmtFiltroFechaD(e.target.value)} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"7px 10px",color:T.text,fontSize:12,outline:"none"}}/>
                     </div>
                     <div>
-                      <div style={{fontSize:10,color:"#6b8fa8",marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Hasta</div>
-                      <input type="date" value={cmtFiltroFechaH} onChange={e=>setCmtFiltroFechaH(e.target.value)} style={{background:"#0f1e2e",border:"1px solid #ffffff14",borderRadius:8,padding:"7px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none"}}/>
+                      <div style={{fontSize:10,color:T.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Hasta</div>
+                      <input type="date" value={cmtFiltroFechaH} onChange={e=>setCmtFiltroFechaH(e.target.value)} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"7px 10px",color:T.text,fontSize:12,outline:"none"}}/>
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:10,paddingBottom:6}}>
-                      <span style={{fontSize:11,color:"#6b8fa8"}}>{cmtsFinal.length} registro(s)</span>
+                      <span style={{fontSize:11,color:T.muted}}>{cmtsFinal.length} registro(s)</span>
                       <button onClick={()=>{
                         const wb = XLSX.utils.book_new();
                         // Hoja 1: Resumen general
@@ -1434,7 +1433,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </div>
                   </div>
                   <div style={{overflowX:"auto"}}>
-                    <table style={{width:"100%",borderCollapse:"collapse",background:"#0f1e2e",borderRadius:10,overflow:"hidden"}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,borderRadius:8,overflow:"hidden"}}>
                       <thead>
                         <tr style={{background:"#162535"}}>
                           <th style={thStyle}>N° CMT</th>
@@ -1451,7 +1450,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </thead>
                       <tbody>
                         {cmtsFinal.length===0 && (
-                          <tr><td colSpan={10} style={{...tdStyle,textAlign:"center",color:"#6b8fa8",padding:28}}>Sin registros</td></tr>
+                          <tr><td colSpan={10} style={{...tdStyle,textAlign:"center",color:T.muted,padding:28}}>Sin registros</td></tr>
                         )}
                         {cmtsFinal.map(c=>{
                           const tanquesNombres = [...new Set([...(c.tanques_antes||[]).map(t=>t.tanque), ...(c.tanques_despues||[]).map(t=>t.tanque)].filter(Boolean))].join(", ");
@@ -1461,14 +1460,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <React.Fragment key={c.id}>
                           <tr onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{cursor:"pointer",background:expandido?"#162535":"transparent",transition:"background 0.15s"}} onMouseEnter={e=>{if(!expandido)e.currentTarget.style.background="#162535"}} onMouseLeave={e=>{if(!expandido)e.currentTarget.style.background="transparent"}}>
                             <td style={tdStyle}><span style={{color:"#00e5a0",fontWeight:700,letterSpacing:0.5}}>{c.numero_cmt||c.id}</span></td>
-                            <td style={tdStyle}><span style={{color:"#6b8fa8"}}>{c.fecha}</span></td>
+                            <td style={tdStyle}><span style={{color:T.muted}}>{c.fecha}</span></td>
                             <td style={tdStyle}><Badge label={c.tipo_operacion||"—"} color="#00e5a0"/></td>
                             <td style={tdStyle}><span style={{color:"#f59e0b"}}>{c.producto||"—"}</span></td>
-                            <td style={tdStyle}><span style={{color:"#dff0f8",fontSize:11}}>{tanquesNombres||"—"}</span></td>
-                            <td style={tdStyle}><span style={{color:"#dff0f8"}}>{fmt(c.total_antes)}</span></td>
-                            <td style={tdStyle}><span style={{color:"#dff0f8"}}>{fmt(c.total_despues)}</span></td>
+                            <td style={tdStyle}><span style={{color:T.text,fontSize:11}}>{tanquesNombres||"—"}</span></td>
+                            <td style={tdStyle}><span style={{color:T.text}}>{fmt(c.total_antes)}</span></td>
+                            <td style={tdStyle}><span style={{color:T.text}}>{fmt(c.total_despues)}</span></td>
                             <td style={tdStyle}><span style={{color:"#00e5a0",fontWeight:700}}>{fmt(Math.abs(movido))}</span></td>
-                            <td style={tdStyle}><span style={{color:"#6b8fa8",fontSize:11}}>{c.operador||"—"}</span></td>
+                            <td style={tdStyle}><span style={{color:T.muted,fontSize:11}}>{c.operador||"—"}</span></td>
                             <td style={{...tdStyle,whiteSpace:"nowrap"}} onClick={e=>e.stopPropagation()}>
                               <div style={{display:"flex",gap:6}}>
                                 <button onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{background:"#00b4ff22",border:"1px solid #00b4ff55",borderRadius:6,color:"#00b4ff",padding:"4px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700}}>
@@ -1493,39 +1492,39 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <tr>
                               <td colSpan={10} style={{padding:"0 0 2px 0",background:"#0a1829",borderBottom:"2px solid #00e5a033"}}>
                                 <div style={{padding:"16px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                                  <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #00b4ff"}}>
+                                  <div style={{background:T.bg,borderRadius:8,padding:"12px 14px",borderLeft:`3px solid ${T.navy}`}}>
                                     <div style={{fontSize:10,color:"#00b4ff",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Inicial</div>
                                     {(c.tanques_antes||[]).map((t,i)=>(
                                       <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:"1px solid #ffffff08"}}>
-                                        <span style={{color:"#dff0f8",fontWeight:700}}>{t.tanque||"—"}</span>
-                                        <span style={{color:"#6b8fa8"}}>Sonda: {t.sonda||"—"}</span>
+                                        <span style={{color:T.text,fontWeight:700}}>{t.tanque||"—"}</span>
+                                        <span style={{color:T.muted}}>Sonda: {t.sonda||"—"}</span>
                                         <span style={{color:"#f59e0b",fontWeight:700}}>{fmt(t.galones)} Gls</span>
                                       </div>
                                     ))}
-                                    <div style={{fontSize:11,color:"#6b8fa8",marginTop:4}}>Total: <b style={{color:"#dff0f8"}}>{fmt(c.total_antes)} Gls</b></div>
+                                    <div style={{fontSize:11,color:T.muted,marginTop:4}}>Total: <b style={{color:T.text}}>{fmt(c.total_antes)} Gls</b></div>
                                   </div>
                                   <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #c084fc"}}>
                                     <div style={{fontSize:10,color:"#c084fc",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Final</div>
                                     {(c.tanques_despues||[]).map((t,i)=>(
                                       <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:"1px solid #ffffff08"}}>
-                                        <span style={{color:"#dff0f8",fontWeight:700}}>{t.tanque||"—"}</span>
-                                        <span style={{color:"#6b8fa8"}}>Sonda: {t.sonda||"—"}</span>
+                                        <span style={{color:T.text,fontWeight:700}}>{t.tanque||"—"}</span>
+                                        <span style={{color:T.muted}}>Sonda: {t.sonda||"—"}</span>
                                         <span style={{color:"#f59e0b",fontWeight:700}}>{fmt(t.galones)} Gls</span>
                                       </div>
                                     ))}
-                                    <div style={{fontSize:11,color:"#6b8fa8",marginTop:4}}>Total: <b style={{color:"#dff0f8"}}>{fmt(c.total_despues)} Gls</b></div>
+                                    <div style={{fontSize:11,color:T.muted,marginTop:4}}>Total: <b style={{color:T.text}}>{fmt(c.total_despues)} Gls</b></div>
                                   </div>
                                   {(c.carros||[]).length>0 && (c.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && (
                                     <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #6b8fa8",gridColumn:"1/-1"}}>
-                                      <div style={{fontSize:10,color:"#6b8fa8",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Carros Descargados</div>
+                                      <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Carros Descargados</div>
                                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
                                         {(c.carros||[]).map((cr,i)=>(
                                           <div key={i} style={{background:"#162535",borderRadius:8,padding:"8px 10px",fontSize:11}}>
-                                            <div style={{color:"#dff0f8",fontWeight:700,marginBottom:3}}>{cr.placa||"Sin placa"}</div>
+                                            <div style={{color:T.text,fontWeight:700,marginBottom:3}}>{cr.placa||"Sin placa"}</div>
                                             {cr.tiquete&&<div style={{color:"#00b4ff"}}>Tiquete: {cr.tiquete}</div>}
-                                            {cr.guia&&<div style={{color:"#6b8fa8"}}>Guía: {cr.guia}</div>}
+                                            {cr.guia&&<div style={{color:T.muted}}>Guía: {cr.guia}</div>}
                                             {cr.pbs_id&&<div style={{color:"#fb923c"}}>PBS: {cr.pbs_id}</div>}
-                                            {cr.hora_inicio&&<div style={{color:"#6b8fa8"}}>Inicio: {cr.hora_inicio} — Fin: {cr.hora_final||"—"}</div>}
+                                            {cr.hora_inicio&&<div style={{color:T.muted}}>Inicio: {cr.hora_inicio} — Fin: {cr.hora_final||"—"}</div>}
                                           </div>
                                         ))}
                                       </div>
@@ -1541,10 +1540,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
                                               <div style={{color:"#00b4ff",fontSize:10,fontWeight:700,marginBottom:2}}>INICIAL</div>
                                               <div style={{color:"#c084fc",fontSize:10,fontWeight:700,marginBottom:2}}>FINAL</div>
-                                              <div style={{color:"#6b8fa8"}}>Sonda: <b style={{color:"#dff0f8"}}>{r.sondaInicial||"—"}</b></div>
-                                              <div style={{color:"#6b8fa8"}}>Sonda: <b style={{color:"#dff0f8"}}>{r.sondaFinal||"—"}</b></div>
-                                              <div style={{color:"#6b8fa8"}}>Temp: <b style={{color:"#dff0f8"}}>{r.tempInicial||"—"}</b></div>
-                                              <div style={{color:"#6b8fa8"}}>Temp: <b style={{color:"#dff0f8"}}>{r.tempFinal||"—"}</b></div>
+                                              <div style={{color:T.muted}}>Sonda: <b style={{color:T.text}}>{r.sondaInicial||"—"}</b></div>
+                                              <div style={{color:T.muted}}>Sonda: <b style={{color:T.text}}>{r.sondaFinal||"—"}</b></div>
+                                              <div style={{color:T.muted}}>Temp: <b style={{color:T.text}}>{r.tempInicial||"—"}</b></div>
+                                              <div style={{color:T.muted}}>Temp: <b style={{color:T.text}}>{r.tempFinal||"—"}</b></div>
                                               <div style={{color:"#f59e0b",fontWeight:700}}>{fmt(r.galonesInicial||0)} Gls</div>
                                               <div style={{color:"#f59e0b",fontWeight:700}}>{fmt(r.galonesFinal||0)} Gls</div>
                                             </div>
@@ -1553,11 +1552,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                       </div>
                                     </div>
                                   )}
-                                  <div style={{gridColumn:"1/-1",display:"flex",gap:20,fontSize:11,color:"#6b8fa8",flexWrap:"wrap",paddingTop:4}}>
-                                    {c.sede&&<span>Sede: <b style={{color:"#dff0f8"}}>{c.sede}{c.planta?` · ${c.planta}`:""}</b></span>}
-                                    {c.operador&&<span>Operador: <b style={{color:"#dff0f8"}}>{c.operador}</b></span>}
-                                    {c.placa&&<span>Placa: <b style={{color:"#dff0f8"}}>{c.placa}</b></span>}
-                                    {c.guia&&<span>Guía: <b style={{color:"#dff0f8"}}>{c.guia}</b></span>}
+                                  <div style={{gridColumn:"1/-1",display:"flex",gap:20,fontSize:11,color:T.muted,flexWrap:"wrap",paddingTop:4}}>
+                                    {c.sede&&<span>Sede: <b style={{color:T.text}}>{c.sede}{c.planta?` · ${c.planta}`:""}</b></span>}
+                                    {c.operador&&<span>Operador: <b style={{color:T.text}}>{c.operador}</b></span>}
+                                    {c.placa&&<span>Placa: <b style={{color:T.text}}>{c.placa}</b></span>}
+                                    {c.guia&&<span>Guía: <b style={{color:T.text}}>{c.guia}</b></span>}
                                     {c.tiquete_entrada&&<span>Tiquete: <b style={{color:"#00b4ff"}}>{c.tiquete_entrada}</b></span>}
                                     {(c.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"&&c.pbs_id&&<span>PBS: <b style={{color:"#fb923c"}}>{c.pbs_id}</b></span>}
                                     <span style={{marginLeft:"auto",color: movido>=0?"#00e5a0":"#ff4d4d",fontWeight:700,fontSize:13}}>
@@ -1582,15 +1581,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {/* TANQUES */}
           {nav==="tanques" && (
             <div>
-              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800, marginBottom:4 }}>Tanques TK-111 al TK-117</div>
-              <div style={{ fontSize:11, color:"#6b8fa8", marginBottom:18 }}>Niveles en tiempo real · Planta QBS</div>
+              <div style={{ fontWeight:800, fontSize:20, color:T.navy, marginBottom:4 }}>Tanques TK-111 al TK-117</div>
+              <div style={{ fontSize:11, color:T.muted, marginBottom:18 }}>Niveles en tiempo real · Planta QBS</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap:14 }}>
                 {tanques.map(t=>(
                   <Card key={t.id}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
                       <div>
-                        <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:800, fontSize:16 }}>{t.id}</div>
-                        <div style={{ fontSize:11, color:"#6b8fa8" }}>{t.producto} · {t.planta}</div>
+                        <div style={{ fontWeight:800, fontSize:16, color:T.navy }}>{t.id}</div>
+                        <div style={{ fontSize:11, color:T.muted }}>{t.producto} · {t.planta}</div>
                       </div>
                       <Badge label={TIPO_LABEL[t.tipo]} color={TIPO_COLOR[t.tipo]}/>
                     </div>
@@ -1600,7 +1599,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
                       {[["Capacidad",fmt(t.capacidad)],["Actual",fmt(t.nivel)],["Libre",fmt(t.capacidad-t.nivel)]].map(([l,v])=>(
                         <div key={l} style={{ background:"#162535", borderRadius:8, padding:"8px 10px" }}>
-                          <div style={{ fontSize:9, color:"#6b8fa8", textTransform:"uppercase" }}>{l}</div>
+                          <div style={{ fontSize:9, color:T.muted, textTransform:"uppercase" }}>{l}</div>
                           <div style={{ fontSize:12, fontWeight:700, marginTop:3 }}>{v} Gls</div>
                         </div>
                       ))}
@@ -1616,13 +1615,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
-                  <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Despacho a Buques</div>
-                  <div style={{ fontSize:11, color:"#6b8fa8" }}>Carga en barcaza → manguera al buque</div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Despacho a Buques</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Carga en barcaza → manguera al buque</div>
                 </div>
                 <div style={{display:"flex",gap:8,alignItems:"center"}}>
                   {["administrador","gerencia"].includes(perfil.rol) && (
                     <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)}
-                      style={{background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"6px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none"}}>
+                      style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,outline:"none"}}>
                       <option value="TODAS">Todas</option>
                       {SEDES.map(s=><option key={s}>{s}</option>)}
                     </select>
@@ -1649,8 +1648,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {/* TRAZABILIDAD */}
           {nav==="trazabilidad" && (
             <div>
-              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800, marginBottom:4 }}>Trazabilidad Completa</div>
-              <div style={{ fontSize:11, color:"#6b8fa8", marginBottom:22 }}>Cargue → Tiquete → PBS → CMT → Despacho</div>
+              <div style={{ fontWeight:800, fontSize:20, color:T.navy, marginBottom:4 }}>Trazabilidad Completa</div>
+              <div style={{ fontSize:11, color:T.muted, marginBottom:22 }}>Cargue → Tiquete → PBS → CMT → Despacho</div>
               <div style={{ display:"grid", gap:14 }}>
                 {viajes.map(v=>{
                   const tq = tiquetes.find(t=>t.viaje_id===v.id);
@@ -1662,7 +1661,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
                           <span style={{ color:"#f59e0b", fontWeight:700 }}>{v.id}</span>
                           <span style={{ fontWeight:700 }}>{v.producto}</span>
-                          <span style={{ color:"#6b8fa8", fontSize:11 }}>{v.placa} · {v.fecha}</span>
+                          <span style={{ color:T.muted, fontSize:11 }}>{v.placa} · {v.fecha}</span>
                         </div>
                         <Badge label={v.estado} color={v.estado==="Descargado"?"#00e5a0":v.estado==="Rechazado"?"#ff4d4d":"#f59e0b"}/>
                       </div>
@@ -1670,16 +1669,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:"3px solid #f59e0b" }}>
                           <div style={{ fontSize:10, color:"#f59e0b", marginBottom:6 }}>🚛 LOGÍSTICA</div>
                           <div style={{ fontSize:11 }}>{v.transportadora}</div>
-                          <div style={{ fontSize:11, color:"#6b8fa8" }}>Guía: {v.guia}</div>
-                          <div style={{ fontSize:11, color:"#6b8fa8" }}>{fmt(v.volumen_guia)} Gls</div>
+                          <div style={{ fontSize:11, color:T.muted }}>Guía: {v.guia}</div>
+                          <div style={{ fontSize:11, color:T.muted }}>{fmt(v.volumen_guia)} Gls</div>
                         </div>
                         <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${tq?(tq.resultado==="APROBADO"?"#00e5a0":"#ff4d4d"):"#6b8fa8"}` }}>
                           <div style={{ fontSize:10, color:"#00b4ff", marginBottom:6 }}>🧪 TIQUETE</div>
-                          {tq?<><Badge label={tq.resultado} color={tq.resultado==="APROBADO"?"#00e5a0":"#ff4d4d"}/><div style={{ fontSize:11, color:"#6b8fa8", marginTop:4 }}>API: {tq.api_corregido}° · {fmt(tq.galones_recibidos)} Gls</div></>:<div style={{ fontSize:11, color:"#f59e0b" }}>Pendiente</div>}
+                          {tq?<><Badge label={tq.resultado} color={tq.resultado==="APROBADO"?"#00e5a0":"#ff4d4d"}/><div style={{ fontSize:11, color:T.muted, marginTop:4 }}>API: {tq.api_corregido}° · {fmt(tq.galones_recibidos)} Gls</div></>:<div style={{ fontSize:11, color:"#f59e0b" }}>Pendiente</div>}
                         </div>
                         <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${pb?"#fb923c":"#6b8fa8"}` }}>
                           <div style={{ fontSize:10, color:"#fb923c", marginBottom:6 }}>🔒 PBS</div>
-                          {pb?<><div style={{ fontSize:11 }}>{pb.id}</div><div style={{ fontSize:11, color:"#6b8fa8" }}>{pb.bodega_recibe}</div></>:<div style={{ fontSize:11, color:"#f59e0b" }}>Pendiente</div>}
+                          {pb?<><div style={{ fontSize:11 }}>{pb.id}</div><div style={{ fontSize:11, color:T.muted }}>{pb.bodega_recibe}</div></>:<div style={{ fontSize:11, color:"#f59e0b" }}>Pendiente</div>}
                         </div>
                         <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${cm?"#00e5a0":"#6b8fa8"}` }}>
                           <div style={{ fontSize:10, color:"#00e5a0", marginBottom:6 }}>📋 CMT</div>
@@ -1696,8 +1695,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   <div>
     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
       <div>
-        <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800 }}>Gestión de Usuarios</div>
-        <div style={{ fontSize:11, color:"#6b8fa8" }}>Roles, permisos y accesos · {perfiles.length} usuarios</div>
+        <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Gestión de Usuarios</div>
+        <div style={{ fontSize:11, color:T.muted }}>Roles, permisos y accesos · {perfiles.length} usuarios</div>
       </div>
       <Btn color="#ff7eb3" onClick={()=>{setForm({planta:"PLANTA 1",rol:"logistica"});setModal("usuario");}}>+ Nuevo Usuario</Btn>
     </div>
@@ -1708,7 +1707,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{ width:40, height:40, background:ROLES[p.rol]?.color+"22", border:`1px solid ${ROLES[p.rol]?.color}44`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>{ROLES[p.rol]?.icon}</div>
             <div>
               <div style={{ fontWeight:700, fontSize:14 }}>{p.nombre}</div>
-              <div style={{ fontSize:11, color:"#6b8fa8" }}>
+              <div style={{ fontSize:11, color:T.muted }}>
                 Cédula: {p.cedula || (p.email||"").replace("@qbs.internal","") || "—"} · {p.planta}
               </div>
             </div>
@@ -1905,11 +1904,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
               <div>
                 <Lbl>Bodega / Tanque que Recibe</Lbl>
-                <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:"#dff0f8",border:"1px solid #ffffff14"}}>{form.bodega_recibe||"—"}</div>
+                <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:T.text,border:"1px solid #ffffff14"}}>{form.bodega_recibe||"—"}</div>
               </div>
               <div>
                 <Lbl>Bodega / Carrotanque que Despacha</Lbl>
-                <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:"#dff0f8",border:"1px solid #ffffff14"}}>{form.bodega_despacha||"—"}</div>
+                <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:T.text,border:"1px solid #ffffff14"}}>{form.bodega_despacha||"—"}</div>
               </div>
             </div>
           </Section>
@@ -1948,8 +1947,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div key={i} style={{ background:"#162535", borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
                       <span style={{ fontSize:11, flex:1 }}><b style={{color:"#fb923c"}}>{i+1}.</b> {p}</span>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        <input type="number" min="0" value={pbsChecklist[i]} onChange={e=>{const n=[...pbsChecklist];n[i]=e.target.value;setPbsChecklist(n);}} placeholder="0" style={{ width:110, background:"#0f1e2e", border:"1px solid #ffffff20", borderRadius:6, padding:"5px 10px", color:"#dff0f8", fontSize:13, fontFamily:"monospace", outline:"none", textAlign:"right" }} />
-                        <span style={{fontSize:11,color:"#6b8fa8"}}>Gls</span>
+                        <input type="number" min="0" value={pbsChecklist[i]} onChange={e=>{const n=[...pbsChecklist];n[i]=e.target.value;setPbsChecklist(n);}} placeholder="0" style={{ width:110, background:"#0f1e2e", border:"1px solid #ffffff20", borderRadius:6, padding:"5px 10px", color:T.text, fontSize:13, fontFamily:"monospace", outline:"none", textAlign:"right" }} />
+                        <span style={{fontSize:11,color:T.muted}}>Gls</span>
                       </div>
                     </div>
                   );
@@ -1957,7 +1956,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 return (
                   <div key={i} style={{ background:"#162535", borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
                     <span style={{ fontSize:11, flex:1 }}><b style={{color:"#fb923c"}}>{i+1}.</b> {p}</span>
-                    <select value={pbsChecklist[i]} onChange={e=>{const n=[...pbsChecklist];n[i]=e.target.value;setPbsChecklist(n);}} style={{ background:"#0f1e2e", border:"1px solid #ffffff14", borderRadius:6, padding:"4px 8px", color:"#dff0f8", fontSize:12, fontFamily:"monospace", outline:"none", minWidth:70 }}>
+                    <select value={pbsChecklist[i]} onChange={e=>{const n=[...pbsChecklist];n[i]=e.target.value;setPbsChecklist(n);}} style={{ background:"#0f1e2e", border:"1px solid #ffffff14", borderRadius:6, padding:"4px 8px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none", minWidth:70 }}>
                       <option value="">—</option>
                       <option value="SI">SI</option>
                       <option value="NO">NO</option>
@@ -1979,20 +1978,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <Modal title={form.id ? `Corregir CMT — ${form.numero_cmt}` : "Control de Movimiento de Tanques"} onClose={()=>setModal(null)} wide>
           <div style={{background:"#162535",borderRadius:10,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
             <div>
-              <div style={{fontSize:10,color:"#6b8fa8",textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>No. CMT</div>
-              <div style={{fontFamily:"'Syne',sans-serif",fontSize:20,fontWeight:900,color:"#00e5a0",letterSpacing:2}}>{form.numero_cmt||"—"}</div>
+              <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>No. CMT</div>
+              <div style={{fontSize:20,fontWeight:900,color:T.success,letterSpacing:2}}>{form.numero_cmt||"—"}</div>
             </div>
             <div>
-              <div style={{fontSize:10,color:"#6b8fa8",textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Sede</div>
-              <div style={{fontSize:13,fontWeight:700,color:"#dff0f8"}}>{form.sede||perfil.sede||"MALAMBO"}</div>
+              <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Sede</div>
+              <div style={{fontSize:13,fontWeight:700,color:T.text}}>{form.sede||perfil.sede||"MALAMBO"}</div>
             </div>
             {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (
               <div>
-                <div style={{fontSize:10,color:"#6b8fa8",textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Planta</div>
-                <div style={{fontSize:13,fontWeight:700,color:"#dff0f8"}}>{form.planta||perfil.planta||"PLANTA 1"}</div>
+                <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Planta</div>
+                <div style={{fontSize:13,fontWeight:700,color:T.text}}>{form.planta||perfil.planta||"PLANTA 1"}</div>
               </div>
             )}
-            <div style={{marginLeft:"auto",fontSize:11,color:"#6b8fa8"}}>Generado automáticamente</div>
+            <div style={{marginLeft:"auto",fontSize:11,color:T.muted}}>Generado automáticamente</div>
           </div>
           <Grid cols={2}>
             <Inp label="Fecha" type="date" value={form.fecha||today()} onChange={f("fecha")}/>
@@ -2009,7 +2008,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #f59e0b33"}}>
               <span style={{fontSize:11,fontWeight:700,color:"#f59e0b",letterSpacing:1,textTransform:"uppercase"}}>{(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"?"Tanque de Despacho":"Medida Inicial"}</span>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:11,color:"#6b8fa8",fontFamily:"monospace"}}>Producto del CMT:</span>
+                <span style={{fontSize:11,color:T.muted,fontFamily:"monospace"}}>Producto del CMT:</span>
                 <input value={cmtProducto} onChange={e=>{
                   const val=e.target.value.toUpperCase();
                   setCmtProducto(val);
@@ -2023,14 +2022,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtPlanta = form.planta || perfil?.planta || "PLANTA 1";
               const tanquesDisponibles = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
               const esTrasiego = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
-              const inputStyle = { width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:"#dff0f8", fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" };
+              const inputStyle = { width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" };
               return cmtAntes.map((row,i)=>{
                 const rowD = cmtDespues[i]||{};
                 return esTrasiego ? (
                 <div key={i} style={{background:"#0d1a28",borderRadius:10,padding:"12px 14px",marginBottom:10,border:"1px solid #f59e0b22"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:10,color:"#6b8fa8",textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
+                      <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
                       <select value={row.tanque} onChange={e=>{
                         const val=e.target.value;
                         const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
@@ -2065,7 +2064,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
                     setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]) nd[i]={...nd[i],tanque:val}; return nd;});
                     calcularGalones(val,na[i].sonda,na[i].temp,na[i].api,false,i);
-                  }} style={{ width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:"#dff0f8", fontSize:12, fontFamily:"monospace", outline:"none" }}><option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}</select>
+                  }} style={{ width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none" }}><option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}</select>
                   </div>
                   <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtAntes];n[i].sonda=e.target.value;setCmtAntes(n);}} onBlur={e=>{const idx=i;calcularGalones(row.tanque,e.target.value,row.temp,row.api,false,idx);}} style={inputStyle}/></div>
                   <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="25" value={row.temp||""} onChange={e=>{const n=[...cmtAntes];n[i].temp=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,false,i);}} style={inputStyle}/></div>
@@ -2092,12 +2091,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
               const cmtPlanta = form.planta || perfil?.planta || "PLANTA 1";
               const tanquesDisponibles = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
-              const inputStyle = { width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:"#dff0f8", fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" };
+              const inputStyle = { width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" };
               return cmtRecepcion.map((rec,i)=>(
                 <div key={i} style={{background:"#0d1a28",borderRadius:10,padding:"12px 14px",marginBottom:10,border:"1px solid #00e5a022"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{fontSize:10,color:"#6b8fa8",textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
+                      <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
                       <select value={rec.tanque} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tanque:e.target.value};setCmtRecepcion(n);}} style={{background:"#162535",border:"1px solid #00e5a044",borderRadius:8,padding:"6px 10px",color:"#00e5a0",fontSize:12,fontFamily:"monospace",outline:"none",fontWeight:700}}>
                         <option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}
                       </select>
@@ -2129,7 +2128,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #00e5a033"}}>
               <span style={{fontSize:11,fontWeight:700,color:"#00e5a0",letterSpacing:1,textTransform:"uppercase"}}>Medida Final</span>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:11,color:"#6b8fa8",fontFamily:"monospace"}}>Producto:</span>
+                <span style={{fontSize:11,color:T.muted,fontFamily:"monospace"}}>Producto:</span>
                 <div style={{background:"#0d1a28",border:"1px solid #00e5a033",borderRadius:8,padding:"6px 14px",fontSize:12,fontFamily:"monospace",color:"#00e5a0",fontWeight:700,minWidth:180}}>{cmtProducto||"—"}</div>
               </div>
             </div>
@@ -2147,9 +2146,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <Lbl>Tanque</Lbl>
                     <div style={{background:"#0d1a28",border:"1px solid #00e5a033",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:"#00e5a0",fontWeight:700}}>{row.tanque||"—"}</div>
                   </div>
-                  <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtDespues];n[i].sonda=e.target.value;setCmtDespues(n);}} onBlur={e=>{calcularGalones(row.tanque,e.target.value,row.temp,row.api,true,i);}} style={{ width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:"#dff0f8", fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" }}/></div>
-                  <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="25" value={row.temp||""} onChange={e=>{const n=[...cmtDespues];n[i].temp=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,true,i);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="14" value={row.api||""} onChange={e=>{const n=[...cmtDespues];n[i].api=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,n[i].temp,e.target.value,true,i);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtDespues];n[i].sonda=e.target.value;setCmtDespues(n);}} onBlur={e=>{calcularGalones(row.tanque,e.target.value,row.temp,row.api,true,i);}} style={{ width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" }}/></div>
+                  <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="25" value={row.temp||""} onChange={e=>{const n=[...cmtDespues];n[i].temp=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,true,i);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="14" value={row.api||""} onChange={e=>{const n=[...cmtDespues];n[i].api=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,n[i].temp,e.target.value,true,i);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones} onChange={e=>{const n=[...cmtDespues];n[i].galones=e.target.value;setCmtDespues(n);}} style={{ width:"100%", background:"#162535", border:`1px solid ${excede?"#ff4d4d44":"#ffffff14"}`, borderRadius:8, padding:"8px 10px", color: excede?"#ff4d4d":"#dff0f8", fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" }}/></div>
                 </div>
                 {espacioDisponible !== null && row.tanque && (()=>{
@@ -2158,7 +2157,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const enAlerta = galonesIniciales >= capMaxOp;
                   return (
                     <div style={{marginTop:5,padding:"6px 10px",background:"#061520",borderRadius:6,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-                      <span style={{fontSize:11,color:"#6b8fa8"}}>Espacio disponible: <b style={{color: enAlerta?"#ff4d4d":"#00e5a0"}}>{fmt(Math.max(0,espacioDisponible))} Gls</b></span>
+                      <span style={{fontSize:11,color:T.muted}}>Espacio disponible: <b style={{color: enAlerta?"#ff4d4d":"#00e5a0"}}>{fmt(Math.max(0,espacioDisponible))} Gls</b></span>
                       {enAlerta && (
                         <span style={{fontSize:11,fontWeight:800,color:"#ff4d4d",background:"#2a0a0a",border:"1px solid #ff4d4d55",borderRadius:6,padding:"2px 10px",letterSpacing:0.5}}>
                           ⚠ ALERTA CAPACIDAD EN {pctActual}%
@@ -2175,19 +2174,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
           </div>}
           {(form.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && <Section title="Carros Descargados" color="#6b8fa8">
-            <div style={{fontSize:11,color:"#6b8fa8",marginBottom:10}}>Un registro por cada carro descargado en este CMT</div>
+            <div style={{fontSize:11,color:T.muted,marginBottom:10}}>Un registro por cada carro descargado en este CMT</div>
             {cmtCarros.map((carro,i)=>(
               <div key={i} style={{background:"#0d1a28",borderRadius:10,padding:"12px 14px",marginBottom:12,border:"1px solid #ffffff0a"}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-                  <div><Lbl>Placa</Lbl><input type="text" placeholder="Ej: ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.toUpperCase().replace(/\s/g,"");setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
-                  <div><Lbl>Guía</Lbl><input type="text" value={carro.guia} onChange={e=>{const n=[...cmtCarros];n[i].guia=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
-                  <div><Lbl>Tiquete</Lbl><input type="text" value={carro.tiquete} onChange={e=>{const n=[...cmtCarros];n[i].tiquete=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>Placa</Lbl><input type="text" placeholder="Ej: ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.toUpperCase().replace(/\s/g,"");setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>Guía</Lbl><input type="text" value={carro.guia} onChange={e=>{const n=[...cmtCarros];n[i].guia=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>Tiquete</Lbl><input type="text" value={carro.tiquete} onChange={e=>{const n=[...cmtCarros];n[i].tiquete=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
-                  <div><Lbl>Hora Inicio</Lbl><input type="time" value={carro.hora_inicio||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_inicio=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>Hora Final</Lbl><input type="time" value={carro.hora_final||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_final=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>Peso Neto</Lbl><input type="text" placeholder="Kg" value={carro.peso_neto||""} onChange={e=>{const n=[...cmtCarros];n[i].peso_neto=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
-                  <div><Lbl>PBS</Lbl><div style={{background:"#162535",border:`1px solid ${carro.pbs_id?"#fb923c44":"#ffffff14"}`,borderRadius:8,padding:"8px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>{carro.pbs_id?<span style={{fontSize:11,color:"#fb923c",fontFamily:"monospace"}}>{carro.pbs_id}</span>:<span style={{fontSize:11,color:"#6b8fa8"}}>Sin PBS</span>}<button onClick={()=>{
+                  <div><Lbl>Hora Inicio</Lbl><input type="time" value={carro.hora_inicio||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_inicio=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>Hora Final</Lbl><input type="time" value={carro.hora_final||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_final=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>Peso Neto</Lbl><input type="text" placeholder="Kg" value={carro.peso_neto||""} onChange={e=>{const n=[...cmtCarros];n[i].peso_neto=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>PBS</Lbl><div style={{background:"#162535",border:`1px solid ${carro.pbs_id?"#fb923c44":"#ffffff14"}`,borderRadius:8,padding:"8px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>{carro.pbs_id?<span style={{fontSize:11,color:"#fb923c",fontFamily:"monospace"}}>{carro.pbs_id}</span>:<span style={{fontSize:11,color:T.muted}}>Sin PBS</span>}<button onClick={()=>{
                     const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
                     setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
                     setPbsParaCarro(i);
@@ -2208,7 +2207,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             ))}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
               <Btn sm outline color="#6b8fa8" onClick={()=>setCmtCarros([...cmtCarros,{placa:"",guia:"",tiquete:"",pbs_id:"",hora_inicio:"",hora_final:"",peso_neto:""}])}>+ Agregar Carro</Btn>
-              <span style={{fontSize:11,color:"#6b8fa8"}}>{cmtCarros.length} carro(s)</span>
+              <span style={{fontSize:11,color:T.muted}}>{cmtCarros.length} carro(s)</span>
             </div>
             {form.tipo_operacion==="Entrega a motonave" && (
               <div style={{marginTop:14}}>
@@ -2222,7 +2221,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{flex:1,background:"#162535",border:`1px solid ${form.pbs_id?"#fb923c44":"#ffffff14"}`,borderRadius:8,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   {form.pbs_id
                     ? <span style={{fontSize:12,color:"#fb923c",fontFamily:"monospace",fontWeight:700}}>{form.pbs_id}</span>
-                    : <span style={{fontSize:12,color:"#6b8fa8"}}>Sin PBS vinculado</span>}
+                    : <span style={{fontSize:12,color:T.muted}}>Sin PBS vinculado</span>}
                   <button onClick={()=>{
                     const tanquesDespacho = cmtAntes.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
                     const tanquesRecibe = cmtRecepcion.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
@@ -2252,7 +2251,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ fontSize:13, color:"#00b4ff", fontWeight:700 }}>
                   Galonaje Trasegado: {fmt(galonajeTraseado)} Galones
                 </div>
-                <div style={{ fontSize:11, color:"#6b8fa8", marginTop:4 }}>
+                <div style={{ fontSize:11, color:T.muted, marginTop:4 }}>
                   Salida Tanque de Despacho: {fmt(galonesDespachoInicial)} → {fmt(galonesDespachoFinal)} Gls
                 </div>
               </Card>
@@ -2316,7 +2315,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           value={form._busqueda !== undefined ? form._busqueda : (selViaje ? `${selViaje.placa} · ${selViaje.producto}` : "")}
           onChange={e=>setForm(p=>({...p,_busqueda:e.target.value,viaje_id:""}))}
           placeholder="Ej: WOM853, FRONTERA, guía 123..."
-          style={{width:"100%",background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"10px 12px",color:"#dff0f8",fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}
+          style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"}}
         />
         {form._busqueda && !form.viaje_id && (()=>{
           const q = form._busqueda.toLowerCase();
@@ -2326,7 +2325,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             (v.guia||"").toLowerCase().includes(q) ||
             (v.conductor||"").toLowerCase().includes(q)
           ).slice(0,8);
-          if(!matches.length) return <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#0d1f30",border:"1px solid #ffffff14",borderRadius:"0 0 10px 10px",padding:"10px 14px",fontSize:12,color:"#6b8fa8",zIndex:50}}>Sin resultados</div>;
+          if(!matches.length) return <div style={{position:"absolute",top:"100%",left:0,right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:"0 0 8px 8px",padding:"10px 14px",fontSize:12,color:T.muted,zIndex:50}}>Sin resultados</div>;
           return (
             <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#0d1f30",border:"1px solid #ffffff14",borderTop:"none",borderRadius:"0 0 10px 10px",zIndex:50,overflow:"hidden",boxShadow:"0 8px 24px #000c"}}>
               {matches.map(v=>(
@@ -2336,7 +2335,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                   <span style={{background:"#f59e0b18",border:"1px solid #f59e0b44",borderRadius:6,padding:"3px 9px",color:"#f59e0b",fontWeight:700,fontSize:12,letterSpacing:1}}>{v.placa}</span>
                   <span style={{color:"#c8dce8",fontSize:12}}>{v.producto}</span>
-                  <span style={{color:"#6b8fa8",fontSize:11}}>{v.fecha}</span>
+                  <span style={{color:T.muted,fontSize:11}}>{v.fecha}</span>
                 </div>
               ))}
             </div>
@@ -2345,12 +2344,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       </div>
       {selViaje && (
         <div style={{background:"#0d1f30",borderRadius:10,padding:"12px 16px",marginBottom:14,fontSize:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          <div><span style={{color:"#6b8fa8"}}>Placa: </span><b style={{color:"#f59e0b"}}>{selViaje.placa}</b></div>
-          <div><span style={{color:"#6b8fa8"}}>Producto: </span>{selViaje.producto}</div>
-          <div><span style={{color:"#6b8fa8"}}>Transportadora: </span>{selViaje.transportadora}</div>
-          <div><span style={{color:"#6b8fa8"}}>F. Cargue: </span>{selViaje.fecha}</div>
-          <div><span style={{color:"#6b8fa8"}}>Guía: </span>{selViaje.guia||"—"}</div>
-          <div><span style={{color:"#6b8fa8"}}>Conductor: </span>{selViaje.conductor||"—"}</div>
+          <div><span style={{color:T.muted}}>Placa: </span><b style={{color:"#f59e0b"}}>{selViaje.placa}</b></div>
+          <div><span style={{color:T.muted}}>Producto: </span>{selViaje.producto}</div>
+          <div><span style={{color:T.muted}}>Transportadora: </span>{selViaje.transportadora}</div>
+          <div><span style={{color:T.muted}}>F. Cargue: </span>{selViaje.fecha}</div>
+          <div><span style={{color:T.muted}}>Guía: </span>{selViaje.guia||"—"}</div>
+          <div><span style={{color:T.muted}}>Conductor: </span>{selViaje.conductor||"—"}</div>
         </div>
       )}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
@@ -2367,7 +2366,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <Lbl>Observaciones</Lbl>
         <textarea value={form.observacion||""} onChange={e=>setForm(p=>({...p,observacion:e.target.value}))}
           rows={2} placeholder="Ej: llegó con sello roto, carro en buen estado..."
-          style={{width:"100%",background:"#0f1e2e",border:"1px solid #ffffff22",borderRadius:8,padding:"10px 12px",color:"#dff0f8",fontSize:12,fontFamily:"monospace",outline:"none",resize:"vertical",boxSizing:"border-box"}}/>
+          style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:12,outline:"none",resize:"vertical",boxSizing:"border-box"}}/>
       </div>
       <Btn disabled={!form.viaje_id||!form.fecha_llegada||saving} onClick={async()=>{
         if(!form.viaje_id){showToast("Selecciona un carro primero",false);return;}
@@ -2404,19 +2403,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:18}}>
         <div>
           <Lbl>Cédula</Lbl>
-          <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:"#dff0f8"}}>{cedula||"—"}</div>
+          <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:T.text}}>{cedula||"—"}</div>
         </div>
         <div>
           <Lbl>Rol</Lbl>
           <select value={editUsuario.rol} onChange={e=>setEditUsuario(u=>({...u,rol:e.target.value}))}
-            style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 12px",color:"#dff0f8",fontSize:13,fontFamily:"monospace",outline:"none"}}>
+            style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 12px",color:T.text,fontSize:13,fontFamily:"monospace",outline:"none"}}>
             {Object.entries(ROLES).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
           </select>
         </div>
         <div>
           <Lbl>Sede</Lbl>
           <select value={editUsuario.sede||"MALAMBO"} onChange={e=>setEditUsuario(u=>({...u,sede:e.target.value}))}
-            style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 12px",color:"#dff0f8",fontSize:13,fontFamily:"monospace",outline:"none"}}>
+            style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 12px",color:T.text,fontSize:13,fontFamily:"monospace",outline:"none"}}>
             {SEDES.map(s=><option key={s}>{s}</option>)}
           </select>
         </div>
@@ -2425,25 +2424,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <div style={{marginBottom:18}}>
           <Lbl>Planta</Lbl>
           <select value={editUsuario.planta||"PLANTA 1"} onChange={e=>setEditUsuario(u=>({...u,planta:e.target.value}))}
-            style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 12px",color:"#dff0f8",fontSize:13,fontFamily:"monospace",outline:"none"}}>
+            style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 12px",color:T.text,fontSize:13,fontFamily:"monospace",outline:"none"}}>
             {PLANTAS.map(pl=><option key={pl}>{pl}</option>)}
           </select>
         </div>
       )}
 
-      <div style={{fontSize:11,fontWeight:700,color:"#6b8fa8",letterSpacing:1,textTransform:"uppercase",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #ffffff14"}}>Permisos por Módulo</div>
+      <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:1,textTransform:"uppercase",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #ffffff14"}}>Permisos por Módulo</div>
       <div style={{overflowX:"auto",marginBottom:18}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"monospace",fontSize:12}}>
           <thead>
             <tr style={{background:"#162535"}}>
-              <th style={{padding:"10px 14px",textAlign:"left",color:"#6b8fa8",fontSize:10,textTransform:"uppercase",width:140}}>Módulo</th>
+              <th style={{padding:"10px 14px",textAlign:"left",color:T.muted,fontSize:10,textTransform:"uppercase",width:140}}>Módulo</th>
               {ACCIONES.map(a=><th key={a} style={{padding:"10px 14px",textAlign:"center",color:COLOR_ACCION[a],fontSize:10,textTransform:"uppercase"}}>{a}</th>)}
             </tr>
           </thead>
           <tbody>
             {MODS.map(mod=>(
               <tr key={mod} style={{borderTop:"1px solid #ffffff07"}}>
-                <td style={{padding:"10px 14px",color:"#dff0f8",textTransform:"capitalize",fontWeight:600}}>{mod}</td>
+                <td style={{padding:"10px 14px",color:T.text,textTransform:"capitalize",fontWeight:600}}>{mod}</td>
                 {ACCIONES.map(accion=>(
                   <td key={accion} style={{padding:"10px 14px",textAlign:"center"}}>
                     <input type="checkbox"
