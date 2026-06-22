@@ -10,7 +10,9 @@ document.head.appendChild(_style);
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://pahulcaneuzfiknrzlbc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_6A3JvUT-O5UpP5FAYUIKaA_6-Xihr7N";
+const SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhaHVsY2FuZXV6ZmlrbnJ6bGJjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTg3Mjg2OCwiZXhwIjoyMDk1NDQ4ODY4fQ.jwQZ3-FZe7zv3CGMgQvNiphxHtlFbfZX2HTq5orX46E";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 const MATERIAS_PRIMAS = ["FRONTERA","PENDARE","ALBERTA","CARRIZALES NORTE P","CARRIZALES NORTE B","OMI","VIGIA","KIMBO","CUERVA","SOGAMOSO","TK205","RUMBA","MATEGUAFA","DESTILADO REFISAMAG"];
@@ -2453,8 +2455,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginTop:4}}>
         <Btn color={T.danger} sm onClick={async()=>{
           if (!confirm(`¿Eliminar a ${editUsuario.nombre}? Esta acción no se puede deshacer.`)) return;
-          const {error} = await supabase.from("perfiles").delete().eq("id",editUsuario.id);
-          if (error) return showToast("Error: "+error.message, false);
+          const {error:e1} = await supabase.from("perfiles").delete().eq("id",editUsuario.id);
+          if (e1) return showToast("Error perfil: "+e1.message, false);
+          const {error:e2} = await supabaseAdmin.auth.admin.deleteUser(editUsuario.id);
+          if (e2) return showToast("Error auth: "+e2.message, false);
           await loadData(); setEditUsuario(null);
           showToast(`Usuario ${editUsuario.nombre} eliminado`);
         }}>🗑 Eliminar Usuario</Btn>
