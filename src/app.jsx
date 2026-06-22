@@ -1720,6 +1720,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            {p.activo===false && <Badge label="Deshabilitado" color="#aaa"/>}
             <Badge label={ROLES[p.rol]?.label||p.rol} color={ROLES[p.rol]?.color||"#6b8fa8"}/>
             <Btn sm color="#ff7eb3" outline onClick={()=>{
               const MODS = ["viajes","tiquetes","pbs","cmt","tanques","despachos","trazabilidad"];
@@ -2453,15 +2454,29 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginTop:4}}>
-        <Btn color={T.danger} sm onClick={async()=>{
-          if (!confirm(`¿Eliminar a ${editUsuario.nombre}? Esta acción no se puede deshacer.`)) return;
-          const {error:e1} = await supabase.from("perfiles").delete().eq("id",editUsuario.id);
-          if (e1) return showToast("Error perfil: "+e1.message, false);
-          const {error:e2} = await supabaseAdmin.auth.admin.deleteUser(editUsuario.id);
-          if (e2) return showToast("Error auth: "+e2.message, false);
-          await loadData(); setEditUsuario(null);
-          showToast(`Usuario ${editUsuario.nombre} eliminado`);
-        }}>🗑 Eliminar Usuario</Btn>
+        <div style={{display:"flex",gap:8}}>
+          <Btn color={editUsuario.activo===false?"#00b894":"#f59e0b"} sm onClick={async()=>{
+            const desactivar = editUsuario.activo !== false;
+            const label = desactivar ? "deshabilitar" : "habilitar";
+            if (!confirm(`¿${label.charAt(0).toUpperCase()+label.slice(1)} a ${editUsuario.nombre}?`)) return;
+            const ban = desactivar ? "876600h" : "none";
+            const {error:e1} = await supabaseAdmin.auth.admin.updateUserById(editUsuario.id, {ban_duration: ban});
+            if (e1) return showToast("Error auth: "+e1.message, false);
+            const {error:e2} = await supabase.from("perfiles").update({activo: !desactivar}).eq("id",editUsuario.id);
+            if (e2) return showToast("Error perfil: "+e2.message, false);
+            await loadData(); setEditUsuario(null);
+            showToast(`Usuario ${editUsuario.nombre} ${desactivar?"deshabilitado":"habilitado"}`);
+          }}>{editUsuario.activo===false ? "✅ Habilitar" : "⛔ Deshabilitar"}</Btn>
+          <Btn color={T.danger} sm onClick={async()=>{
+            if (!confirm(`¿Eliminar a ${editUsuario.nombre}? Esta acción no se puede deshacer.`)) return;
+            const {error:e1} = await supabase.from("perfiles").delete().eq("id",editUsuario.id);
+            if (e1) return showToast("Error perfil: "+e1.message, false);
+            const {error:e2} = await supabaseAdmin.auth.admin.deleteUser(editUsuario.id);
+            if (e2) return showToast("Error auth: "+e2.message, false);
+            await loadData(); setEditUsuario(null);
+            showToast(`Usuario ${editUsuario.nombre} eliminado`);
+          }}>🗑 Eliminar</Btn>
+        </div>
         <div style={{display:"flex",gap:10}}>
           <Btn outline onClick={()=>setEditUsuario(null)}>Cancelar</Btn>
           <Btn color="#ff7eb3" disabled={saving} onClick={async()=>{
