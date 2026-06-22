@@ -1174,7 +1174,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               {perfil.rol==="administrador" && (
                                 <button onClick={async()=>{
                                   if (!confirm(`¿Eliminar carro ${v.placa} del listado? Esta acción no se puede deshacer.`)) return;
-                                  const {error} = await supabase.from("viajes").delete().eq("id",v.id);
+                                  const {error} = await supabaseAdmin.from("viajes").delete().eq("id",v.id);
                                   if (error) return showToast("Error: "+error.message, false);
                                   await loadData();
                                   showToast(`Carro ${v.placa} eliminado del listado`);
