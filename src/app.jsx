@@ -1837,10 +1837,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </Section>
           <Section title="Análisis API" color="#00b4ff">
             <Grid cols={7}>
-              <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={f("api_reportado")}/>
-              <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={f("api_observado")}/>
+              <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={e=>{const v=e.target.value;const d=v.split(".");if(d[1]&&d[1].length>1)return;setForm(p=>({...p,api_reportado:v}));}}/>
+              <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={e=>{const v=e.target.value;const d=v.split(".");if(d[1]&&d[1].length>1)return;setForm(p=>({...p,api_observado:v}));}}/>
               <Inp label="API Corregido 60°F" type="number" step="0.1" value={form.api_corregido||""} onChange={e=>{
-                const api = Number(e.target.value||0);
+                const v=e.target.value; const d=v.split("."); if(d[1]&&d[1].length>1)return;
+                const api = Number(v||0);
                 const temp = Number(form.temp_observada||0);
                 setForm(prev=>{
                   const next = {...prev, api_corregido: e.target.value};
