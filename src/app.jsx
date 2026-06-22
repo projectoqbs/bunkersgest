@@ -342,7 +342,7 @@ export default function App() {
     if (permR.data) setPermisosRoles(permR.data);
   }
 
-  const cedulaToEmail = (cedula) => cedula.includes("@") ? cedula : `${cedula}@qbs.internal`;
+  const cedulaToEmail = (cedula) => cedula.includes("@") ? cedula : `${cedula}@quimibuques.com`;
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -1715,7 +1715,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div>
               <div style={{ fontWeight:700, fontSize:14 }}>{p.nombre}</div>
               <div style={{ fontSize:11, color:T.muted }}>
-                Cédula: {p.cedula || (p.email||"").replace("@qbs.internal","") || "—"} · {p.planta}
+                Cédula: {p.cedula || (p.email||"").replace("@quimibuques.com","") || "—"} · {p.planta}
               </div>
             </div>
           </div>
@@ -2393,7 +2393,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const MODS = ["viajes","tiquetes","pbs","cmt","tanques","despachos","trazabilidad"];
   const ACCIONES = ["ver","crear","editar","eliminar"];
   const COLOR_ACCION = {ver:"#00b4ff",crear:"#00e5a0",editar:"#f59e0b",eliminar:"#ff4d4d"};
-  const cedula = editUsuario.cedula || (editUsuario.email||"").replace("@qbs.internal","");
+  const cedula = editUsuario.cedula || (editUsuario.email||"").replace("@quimibuques.com","");
   return (
     <Modal title={`Gestionar Usuario — ${editUsuario.nombre}`} onClose={()=>setEditUsuario(null)} wide>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:18}}>
@@ -2526,12 +2526,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         if (!form.cedula||!form.password||!form.nombre) return showToast("Completa nombre, cédula y contraseña", false);
         setSaving(true);
         const emailFinal = cedulaToEmail(form.cedula);
-        const {error} = await supabase.auth.signUp({
-          email:emailFinal, password:form.password,
-          options:{data:{nombre:form.nombre, rol:form.rol, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}}
+        const {data:newUser, error} = await supabaseAdmin.auth.admin.createUser({
+          email:emailFinal, password:form.password, email_confirm:true,
+          user_metadata:{nombre:form.nombre, rol:form.rol, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
+        });
+        if (error) { setSaving(false); return showToast("Error: "+error.message, false); }
+        const {error:e2} = await supabase.from("perfiles").insert({
+          id:newUser.user.id, nombre:form.nombre, email:emailFinal,
+          rol:form.rol, planta:form.planta||"PLANTA 1", sede:form.sede||"MALAMBO",
+          cedula:form.cedula, activo:true, permisos:{}
         });
         setSaving(false);
-        if (error) return showToast("Error: "+error.message, false);
+        if (e2) return showToast("Error perfil: "+e2.message, false);
         await loadData(); setModal(null); setForm({});
         showToast(`Usuario ${form.nombre} creado · Cédula: ${form.cedula}`);
       }}>{saving?"Creando...":"Crear Usuario"}</Btn>
