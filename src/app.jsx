@@ -1853,14 +1853,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Factor Tabla 13" type="number" step="0.0001" value={form.factor_tabla13||""} onChange={f("factor_tabla13")} readOnly/>
             </Grid>
           </Section>
-          <Section title="Pesos y Galones" color="#00b4ff">
-            <Grid cols={4}>
-              <Inp label="Peso Ingreso (Kg)" type="number" value={form.peso_ingreso||""} onChange={f("peso_ingreso")}/>
-              <Inp label="Peso Salida (Kg)" type="number" value={form.peso_salida||""} onChange={f("peso_salida")}/>
-              <Inp label="Galones Reportados" type="number" value={form.galones_reportados||""} onChange={f("galones_reportados")}/>
-              <Inp label="Galones Recibidos" type="number" value={form.galones_recibidos||""} onChange={f("galones_recibidos")}/>
-            </Grid>
-          </Section>
           <Section title="Calidad" color="#00b4ff">
             <Grid cols={5}>
               <Inp label="Agua Destilación (%)" type="number" step="0.01" value={form.agua_destilacion||""} onChange={f("agua_destilacion")}/>
