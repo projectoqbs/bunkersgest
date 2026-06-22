@@ -763,7 +763,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
           <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:13, fontWeight:700, color:"#ffffff" }}>{perfil.nombre}</div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#ffffff" }}>{(perfil.nombre||"").split(" ")[0]}</div>
             <div style={{ fontSize:10, color:T.orange }}>{rol.icon} {rol.label} · {perfil.sede||"MALAMBO"} · <span style={{color:T.success}}>● EN VIVO</span></div>
           </div>
           <Btn sm color={T.danger} onClick={handleLogout}>Salir</Btn>
