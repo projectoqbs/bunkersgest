@@ -2526,13 +2526,27 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         if (!form.cedula||!form.password||!form.nombre) return showToast("Completa nombre, cédula y contraseña", false);
         setSaving(true);
         const emailFinal = cedulaToEmail(form.cedula);
+        let userId;
         const {data:newUser, error} = await supabaseAdmin.auth.admin.createUser({
           email:emailFinal, password:form.password, email_confirm:true,
           user_metadata:{nombre:form.nombre, rol:form.rol, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
         });
-        if (error) { setSaving(false); return showToast("Error: "+error.message, false); }
-        const {error:e2} = await supabase.from("perfiles").insert({
-          id:newUser.user.id, nombre:form.nombre, email:emailFinal,
+        if (error) {
+          if (error.message.includes("already been registered")) {
+            // El usuario existe en Auth pero no en perfiles — buscamos el ID
+            const {data:list} = await supabaseAdmin.auth.admin.listUsers();
+            const existing = (list?.users||[]).find(u=>u.email===emailFinal);
+            if (!existing) { setSaving(false); return showToast("Error: cédula ya registrada", false); }
+            // Actualizamos contraseña y metadata
+            await supabaseAdmin.auth.admin.updateUserById(existing.id, {
+              password:form.password, email_confirm:true,
+              user_metadata:{nombre:form.nombre, rol:form.rol, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
+            });
+            userId = existing.id;
+          } else { setSaving(false); return showToast("Error: "+error.message, false); }
+        } else { userId = newUser.user.id; }
+        const {error:e2} = await supabase.from("perfiles").upsert({
+          id:userId, nombre:form.nombre, email:emailFinal,
           rol:form.rol, planta:form.planta||"PLANTA 1", sede:form.sede||"MALAMBO",
           cedula:form.cedula, activo:true, permisos:{}
         });
