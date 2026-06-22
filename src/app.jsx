@@ -1174,6 +1174,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               {perfil.rol==="administrador" && (
                                 <button onClick={async()=>{
                                   if (!confirm(`¿Eliminar carro ${v.placa} del listado? Esta acción no se puede deshacer.`)) return;
+                                  // Eliminar registros relacionados primero (FK constraints)
+                                  await supabaseAdmin.from("tiquetes").delete().eq("viaje_id",v.id);
+                                  await supabaseAdmin.from("pbs").delete().eq("viaje_id",v.id);
+                                  await supabaseAdmin.from("cmts").delete().eq("viaje_id",v.id);
                                   const {error} = await supabaseAdmin.from("viajes").delete().eq("id",v.id);
                                   if (error) return showToast("Error: "+error.message, false);
                                   await loadData();
