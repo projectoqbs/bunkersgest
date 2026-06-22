@@ -2482,7 +2482,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <Btn color={T.orange} disabled={saving} onClick={async()=>{
             setSaving(true);
             const {error} = await supabase.from("perfiles").update({
-              rol:editUsuario.rol, sede:editUsuario.sede||"MALAMBO", planta:editUsuario.planta||"PLANTA 1", permisos:permsEdit
+              rol:editUsuario.rol, planta:editUsuario.planta||"PLANTA 1", permisos:permsEdit
             }).eq("id",editUsuario.id);
             setSaving(false);
             if (error) return showToast("Error: "+error.message, false);
