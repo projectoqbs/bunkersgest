@@ -118,7 +118,7 @@ function Card({ children, style }) {
 function Lbl({ children }) {
   return <div style={{ fontSize:10, color:"#6b8fa8", textTransform:"uppercase", letterSpacing:1.2, marginBottom:5, fontFamily:"monospace" }}>{children}</div>;
 }
-function Inp({ label, type="text", onChange, ...p }) {
+function Inp({ label, type="text", onChange, readOnly, ...p }) {
   const isText = !["date","time","number","email","password"].includes(type);
   const handleChange = onChange ? e => {
     if (isText) { e.target.value = e.target.value.toUpperCase(); }
@@ -127,7 +127,7 @@ function Inp({ label, type="text", onChange, ...p }) {
   return (
     <div style={{ marginBottom:12 }}>
       {label && <Lbl>{label}</Lbl>}
-      <input type={type} onChange={handleChange} {...p} style={{ width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 12px", color:"#dff0f8", fontSize:13, fontFamily:"monospace", outline:"none", boxSizing:"border-box", textTransform: isText?"uppercase":"none" }} />
+      <input type={type} onChange={handleChange} readOnly={readOnly} tabIndex={readOnly ? -1 : undefined} {...p} style={{ width:"100%", background: readOnly ? "#0a1520" : "#162535", border: readOnly ? "1px solid #ffffff08" : "1px solid #ffffff14", borderRadius:8, padding:"8px 12px", color: readOnly ? "#4a7a9b" : "#dff0f8", fontSize:13, fontFamily:"monospace", outline:"none", boxSizing:"border-box", textTransform: isText?"uppercase":"none", cursor: readOnly ? "default" : "text" }} />
     </div>
   );
 }
