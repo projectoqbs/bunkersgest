@@ -116,7 +116,7 @@ function Card({ children, style }) {
   return <div style={{ background:"#0f1e2e", border:"1px solid #ffffff0d", borderRadius:16, padding:20, ...style }}>{children}</div>;
 }
 function Lbl({ children }) {
-  return <div style={{ fontSize:10, color:"#6b8fa8", textTransform:"uppercase", letterSpacing:1.2, marginBottom:5, fontFamily:"monospace" }}>{children}</div>;
+  return <div style={{ fontSize:10, color:"#6b8fa8", textTransform:"uppercase", letterSpacing:1.2, marginBottom:5, fontFamily:"monospace", minHeight:24, display:"flex", alignItems:"flex-end" }}>{children}</div>;
 }
 function Inp({ label, type="text", onChange, readOnly, ...p }) {
   const isText = !["date","time","number","email","password"].includes(type);
@@ -162,7 +162,7 @@ function Modal({ title, onClose, children, wide }) {
   );
 }
 function Grid({ cols=2, children }) {
-  return <div style={{ display:"grid", gridTemplateColumns:`repeat(${cols},1fr)`, gap:12 }}>{children}</div>;
+  return <div style={{ display:"grid", gridTemplateColumns:`repeat(${cols},1fr)`, gap:12, alignItems:"end" }}>{children}</div>;
 }
 function Section({ title, color="#6b8fa8", children }) {
   return (
