@@ -41,7 +41,7 @@ const ROLES = {
   coordinador: { label:"Coordinador Planta", color:"#00e5a0", icon:"📋" },
   despacho:    { label:"Despacho",           color:"#c084fc", icon:"🚢" },
   gerencia:    { label:"Gerencia",           color:"#fb7185", icon:"📊" },
-  administrador: { label:"Administrador", color:"#ff7eb3", icon:"👑" },
+  administrador: { label:"Administrador", color:"#FF6B35", icon:"👑" },
 };
 
 const NAV_META = {
@@ -1705,7 +1705,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Gestión de Usuarios</div>
         <div style={{ fontSize:11, color:T.muted }}>Roles, permisos y accesos · {perfiles.length} usuarios</div>
       </div>
-      <Btn color="#ff7eb3" onClick={()=>{setForm({planta:"PLANTA 1",rol:"logistica"});setModal("usuario");}}>+ Nuevo Usuario</Btn>
+      <Btn color={T.orange} onClick={()=>{setForm({planta:"PLANTA 1",rol:"logistica"});setModal("usuario");}}>+ Nuevo Usuario</Btn>
     </div>
     <div style={{ display:"grid", gap:12 }}>
       {perfiles.map(p=>(
@@ -1722,7 +1722,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             {p.activo===false && <Badge label="Deshabilitado" color="#aaa"/>}
             <Badge label={ROLES[p.rol]?.label||p.rol} color={ROLES[p.rol]?.color||"#6b8fa8"}/>
-            <Btn sm color="#ff7eb3" outline onClick={()=>{
+            <Btn sm color={T.orange} outline onClick={()=>{
               const MODS = ["viajes","tiquetes","pbs","cmt","tanques","despachos","trazabilidad"];
               const base = MODS.reduce((acc,m)=>({...acc,[m]:{ver:false,crear:false,editar:false,eliminar:false,...((p.permisos||{})[m]||{})}}),{});
               setEditUsuario({...p});
@@ -2479,7 +2479,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </div>
         <div style={{display:"flex",gap:10}}>
           <Btn outline onClick={()=>setEditUsuario(null)}>Cancelar</Btn>
-          <Btn color="#ff7eb3" disabled={saving} onClick={async()=>{
+          <Btn color={T.orange} disabled={saving} onClick={async()=>{
             setSaving(true);
             const {error} = await supabase.from("perfiles").update({
               rol:editUsuario.rol, sede:editUsuario.sede||"MALAMBO", planta:editUsuario.planta||"PLANTA 1", permisos:permsEdit
@@ -2522,7 +2522,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     )}
     <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:12 }}>
       <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
-      <Btn color="#ff7eb3" disabled={saving} onClick={async()=>{
+      <Btn color={T.orange} disabled={saving} onClick={async()=>{
         if (!form.cedula||!form.password||!form.nombre) return showToast("Completa nombre, cédula y contraseña", false);
         setSaving(true);
         const emailFinal = cedulaToEmail(form.cedula);
