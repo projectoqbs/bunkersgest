@@ -1174,19 +1174,24 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               {perfil.rol==="administrador" && (
                                 <button onClick={async()=>{
                                   if (!confirm(`¿Eliminar carro ${v.placa} del listado? Esta acción no se puede deshacer.`)) return;
-                                  // Cascada: cmts → pbs → tiquetes → viaje
+                                  // Cascada completa antes de eliminar viaje
                                   const {data:pbsIds} = await supabaseAdmin.from("pbs").select("id").eq("viaje_id",v.id);
                                   if (pbsIds?.length) {
                                     for (const p of pbsIds) {
                                       await supabaseAdmin.from("cmts").delete().eq("pbs_id",p.id);
                                     }
                                   }
-                                  const r1 = await supabaseAdmin.from("tiquetes").delete().eq("viaje_id",v.id);
-                                  if(r1.error) return showToast("Error tiquetes: "+r1.error.message, false);
-                                  const r2 = await supabaseAdmin.from("pbs").delete().eq("viaje_id",v.id);
-                                  if(r2.error) return showToast("Error pbs: "+r2.error.message, false);
-                                  const {error} = await supabaseAdmin.from("viajes").delete().eq("id",v.id);
-                                  if (error) return showToast("Error viaje: "+error.message, false);
+                                  await supabaseAdmin.from("tiquetes").delete().eq("viaje_id",v.id);
+                                  await supabaseAdmin.from("pbs").delete().eq("viaje_id",v.id);
+                                  await supabaseAdmin.from("despachos").delete().eq("viaje_id",v.id);
+                                  // Llamada directa a la REST API con service role para garantizar el delete
+                                  const res = await fetch(`${SUPABASE_URL}/rest/v1/viajes?id=eq.${v.id}`, {
+                                    method:"DELETE",
+                                    headers:{"apikey":SUPABASE_SERVICE_KEY,"Authorization":`Bearer ${SUPABASE_SERVICE_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"}
+                                  });
+                                  if (!res.ok) return showToast(`Error viaje: ${res.status} ${await res.text()}`, false);
+                                  const deleted = await res.json();
+                                  if (!deleted.length) return showToast("No se eliminó: puede haber otra FK pendiente", false);
                                   await loadData();
                                   showToast(`Carro ${v.placa} eliminado del listado`);
                                 }}
