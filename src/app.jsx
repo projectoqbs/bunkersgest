@@ -126,6 +126,7 @@ function Inp({ label, type="text", onChange, readOnly, ...p }) {
   } : undefined;
   return (
     <div style={{ marginBottom:12 }}>
+      <style>{`input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}`}</style>
       {label && <Lbl>{label}</Lbl>}
       <input type={type} onChange={handleChange} {...p} readOnly={readOnly} tabIndex={readOnly ? -1 : undefined} style={{ width:"100%", background: readOnly ? "#0a1520" : "#162535", border: readOnly ? "1px solid #ffffff08" : "1px solid #ffffff14", borderRadius:8, padding:"8px 12px", color: readOnly ? "#4a7a9b" : "#dff0f8", fontSize:13, fontFamily:"monospace", outline:"none", boxSizing:"border-box", textTransform: isText?"uppercase":"none", cursor: readOnly ? "default" : "text", MozAppearance:"textfield", appearance:"textfield" }} />
     </div>
@@ -201,6 +202,7 @@ function Spinner() {
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
+const NO_SPINNER = `input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}`;
 export default function App() {
   const [session, setSession] = useState(null);
   const [perfil, setPerfil] = useState(null);
