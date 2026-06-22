@@ -409,8 +409,9 @@ export default function App() {
     const aprueba = Number(form.agua_destilacion)<=1.0 && Number(form.flash_point)>=60;
     const pesoNetoQBS = Number(form.peso_ingreso||0)-Number(form.peso_salida||0);
     if (form.id) {
+      const {sede:_s, creado_por:_cp, viaje_id:_vi, id:_id, ...formClean} = form;
       const {error} = await supabase.from("tiquetes").update({
-        ...form,
+        ...formClean,
         peso_neto_qbs:pesoNetoQBS,
         api_reportado:Number(form.api_reportado), api_observado:Number(form.api_observado),
         api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion), factor_tabla13:Number(form.factor_tabla13||0), azufre:Number(form.azufre||0), tsa:Number(form.tsa||0), temp_observada_f:Number(form.temp_observada_f||0),
