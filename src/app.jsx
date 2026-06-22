@@ -738,7 +738,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const horas = (new Date() - new Date(created_at)) / 1000 / 3600;
   return horas <= 72;
 };
-  const navItems = NAV_ROL[perfil.rol] || [];
+  const ALL_MODULOS = ["dashboard","viajes","tiquetes","pbs","cmt","tanques","despacho","trazabilidad","usuarios"];
+  const navItems = perfil.rol === "administrador"
+    ? NAV_ROL.administrador
+    : ALL_MODULOS.filter(m => {
+        if (m === "dashboard") return true;
+        if (m === "usuarios") return false;
+        const base = (NAV_ROL[perfil.rol]||[]).includes(m);
+        const permiso = permisos[m]?.ver === true;
+        return base || permiso;
+      });
 
   // Colecciones filtradas por sede
   const filtraSede = (arr, campo="sede") =>
