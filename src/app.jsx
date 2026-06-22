@@ -137,7 +137,7 @@ function Inp({ label, type="text", onChange, readOnly, ...p }) {
     <div style={{ marginBottom:12 }}>
       <style>{`input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}`}</style>
       {label && <Lbl>{label}</Lbl>}
-      <input type={type} onChange={handleChange} {...p} readOnly={readOnly} tabIndex={readOnly ? -1 : undefined} style={{ width:"100%", background: readOnly ? "#f9fafb" : T.card, border:`1px solid ${readOnly?"#e8e8e8":T.border}`, borderRadius:6, padding:"10px 12px", color: readOnly ? "#aab4c0" : T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box", textTransform: isText?"uppercase":"none", cursor: readOnly ? "default" : "text", MozAppearance:"textfield", appearance:"textfield", opacity: readOnly ? 0.8 : 1 }} />
+      <input type={type} onChange={handleChange} {...p} readOnly={readOnly} tabIndex={readOnly ? -1 : undefined} style={{ width:"100%", background: readOnly ? "#e8edf2" : T.card, border:`1px solid ${readOnly?"#c5cfd8":T.border}`, borderRadius:6, padding:"10px 12px", color: readOnly ? "#4a5568" : T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box", textTransform: isText?"uppercase":"none", cursor: readOnly ? "default" : "text", MozAppearance:"textfield", appearance:"textfield", fontWeight: readOnly ? 600 : 400 }} />
     </div>
   );
 }
@@ -1819,7 +1819,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       )}
 
       {modal==="tiquete" && (()=>{
-        const soloLab = perfil.rol !== "administrador";
+        // Identificación viene del viaje (readonly cuando tiene datos pre-cargados), admin siempre puede editar
+        const soloLab = perfil.rol !== "administrador" && !!form.viaje_id;
         return (
         <Modal title={form.id ? `Editar Tiquete ${form.id}` : "Tiquete de Ingreso de Materia Prima"} onClose={()=>setModal(null)} wide>
           <Section title="Identificación" color="#00b4ff">
