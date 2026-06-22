@@ -2495,7 +2495,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   );
 })()}
 
-{modal==="usuario" && (
+{modal==="usuario" && (()=>{
+  const esAdmin = (form.rol||"logistica") === "administrador";
+  return (
   <Modal title="Crear Nuevo Usuario" onClose={()=>setModal(null)} wide>
     <Grid cols={2}>
       <Inp label="Nombre completo" type="text" value={form.nombre||""} onChange={f("nombre")}/>
@@ -2510,22 +2512,29 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         {SEDES.map(s=><option key={s}>{s}</option>)}
       </Sel>
     </Grid>
+    {esAdmin && (
+      <Inp label="Correo electrónico (obligatorio para Administrador)" type="email" placeholder="correo@empresa.com" value={form.email||""} onChange={f("email")}/>
+    )}
     {(form.sede||"MALAMBO")==="MALAMBO" && (
       <Sel label="Planta" value={form.planta||"PLANTA 1"} onChange={f("planta")}>
         {PLANTAS.map(p=><option key={p}>{p}</option>)}
       </Sel>
     )}
     {form.cedula && form.password && (
-      <div style={{background:"#00e5a018",border:"1px solid #00e5a033",borderRadius:8,padding:"10px 14px",fontSize:12,marginBottom:8}}>
-        <b style={{color:"#00e5a0"}}>Datos de acceso a entregar:</b>&nbsp; Usuario: <b>{form.cedula}</b> &nbsp;·&nbsp; Clave: <b>{form.password}</b>
+      <div style={{background:`${T.success}18`,border:`1px solid ${T.success}33`,borderRadius:8,padding:"10px 14px",fontSize:12,marginBottom:8}}>
+        <b style={{color:T.success}}>Datos de acceso a entregar:</b>&nbsp;
+        {esAdmin ? <>Correo: <b>{form.email||"—"}</b>&nbsp;·&nbsp;</> : <>Usuario: <b>{form.cedula}</b>&nbsp;·&nbsp;</>}
+        Clave: <b>{form.password}</b>
       </div>
     )}
     <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:12 }}>
       <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
       <Btn color={T.orange} disabled={saving} onClick={async()=>{
+        const rolSel = form.rol||"logistica";
         if (!form.cedula||!form.password||!form.nombre) return showToast("Completa nombre, cédula y contraseña", false);
+        if (rolSel==="administrador" && !form.email) return showToast("El correo es obligatorio para Administrador", false);
         setSaving(true);
-        const emailFinal = cedulaToEmail(form.cedula);
+        const emailFinal = rolSel==="administrador" ? form.email.trim().toLowerCase() : cedulaToEmail(form.cedula);
         let userId;
         const {data:newUser, error} = await supabaseAdmin.auth.admin.createUser({
           email:emailFinal, password:form.password, email_confirm:true,
@@ -2557,7 +2566,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       }}>{saving?"Creando...":"Crear Usuario"}</Btn>
     </div>
   </Modal>
-)}
+  );
+})()}
 
     </div>
   );
