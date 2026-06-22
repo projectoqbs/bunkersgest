@@ -2396,19 +2396,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:18}}>
         <div>
           <Lbl>Cédula</Lbl>
-          <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:T.text}}>{cedula||"—"}</div>
+          <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",fontSize:13,color:T.muted}}>{cedula||"—"}</div>
         </div>
         <div>
           <Lbl>Rol</Lbl>
           <select value={editUsuario.rol} onChange={e=>setEditUsuario(u=>({...u,rol:e.target.value}))}
-            style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 12px",color:T.text,fontSize:13,fontFamily:"monospace",outline:"none"}}>
+            style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none"}}>
             {Object.entries(ROLES).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
           </select>
         </div>
         <div>
           <Lbl>Sede</Lbl>
           <select value={editUsuario.sede||"MALAMBO"} onChange={e=>setEditUsuario(u=>({...u,sede:e.target.value}))}
-            style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 12px",color:T.text,fontSize:13,fontFamily:"monospace",outline:"none"}}>
+            style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none"}}>
             {SEDES.map(s=><option key={s}>{s}</option>)}
           </select>
         </div>
@@ -2417,25 +2417,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <div style={{marginBottom:18}}>
           <Lbl>Planta</Lbl>
           <select value={editUsuario.planta||"PLANTA 1"} onChange={e=>setEditUsuario(u=>({...u,planta:e.target.value}))}
-            style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 12px",color:T.text,fontSize:13,fontFamily:"monospace",outline:"none"}}>
+            style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none"}}>
             {PLANTAS.map(pl=><option key={pl}>{pl}</option>)}
           </select>
         </div>
       )}
 
-      <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:1,textTransform:"uppercase",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #ffffff14"}}>Permisos por Módulo</div>
-      <div style={{overflowX:"auto",marginBottom:18}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"monospace",fontSize:12}}>
+      <div style={{fontSize:11,fontWeight:800,color:T.orange,letterSpacing:1.5,textTransform:"uppercase",marginBottom:10,paddingBottom:6,borderBottom:`2px solid ${T.orange}22`}}>Permisos por Módulo</div>
+      <div style={{overflowX:"auto",marginBottom:18,borderRadius:8,border:`1px solid ${T.border}`,overflow:"hidden"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
           <thead>
-            <tr style={{background:"#162535"}}>
-              <th style={{padding:"10px 14px",textAlign:"left",color:T.muted,fontSize:10,textTransform:"uppercase",width:140}}>Módulo</th>
-              {ACCIONES.map(a=><th key={a} style={{padding:"10px 14px",textAlign:"center",color:COLOR_ACCION[a],fontSize:10,textTransform:"uppercase"}}>{a}</th>)}
+            <tr style={{background:T.bg}}>
+              <th style={{padding:"10px 14px",textAlign:"left",color:T.navy,fontSize:10,textTransform:"uppercase",fontWeight:700,width:140,borderBottom:`2px solid ${T.border}`}}>Módulo</th>
+              {ACCIONES.map(a=><th key={a} style={{padding:"10px 14px",textAlign:"center",color:COLOR_ACCION[a],fontSize:10,textTransform:"uppercase",fontWeight:700,borderBottom:`2px solid ${T.border}`}}>{a}</th>)}
             </tr>
           </thead>
           <tbody>
-            {MODS.map(mod=>(
-              <tr key={mod} style={{borderTop:"1px solid #ffffff07"}}>
-                <td style={{padding:"10px 14px",color:T.text,textTransform:"capitalize",fontWeight:600}}>{mod}</td>
+            {MODS.map((mod,i)=>(
+              <tr key={mod} style={{borderTop:`1px solid ${T.border}`,background:i%2===0?T.card:"#fafbfc"}}>
+                <td style={{padding:"10px 14px",color:T.navy,textTransform:"capitalize",fontWeight:600}}>{mod}</td>
                 {ACCIONES.map(accion=>(
                   <td key={accion} style={{padding:"10px 14px",textAlign:"center"}}>
                     <input type="checkbox"
@@ -2451,7 +2451,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       </div>
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginTop:4}}>
-        <Btn outline color="#ff4d4d" sm onClick={async()=>{
+        <Btn color={T.danger} sm onClick={async()=>{
           if (!confirm(`¿Eliminar a ${editUsuario.nombre}? Esta acción no se puede deshacer.`)) return;
           const {error} = await supabase.from("perfiles").delete().eq("id",editUsuario.id);
           if (error) return showToast("Error: "+error.message, false);
