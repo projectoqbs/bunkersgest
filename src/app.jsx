@@ -127,7 +127,7 @@ function Inp({ label, type="text", onChange, readOnly, ...p }) {
   return (
     <div style={{ marginBottom:12 }}>
       {label && <Lbl>{label}</Lbl>}
-      <input type={type} onChange={handleChange} readOnly={readOnly} tabIndex={readOnly ? -1 : undefined} {...p} style={{ width:"100%", background: readOnly ? "#0a1520" : "#162535", border: readOnly ? "1px solid #ffffff08" : "1px solid #ffffff14", borderRadius:8, padding:"8px 12px", color: readOnly ? "#4a7a9b" : "#dff0f8", fontSize:13, fontFamily:"monospace", outline:"none", boxSizing:"border-box", textTransform: isText?"uppercase":"none", cursor: readOnly ? "default" : "text" }} />
+      <input type={type} onChange={handleChange} {...p} readOnly={readOnly} tabIndex={readOnly ? -1 : undefined} style={{ width:"100%", background: readOnly ? "#0a1520" : "#162535", border: readOnly ? "1px solid #ffffff08" : "1px solid #ffffff14", borderRadius:8, padding:"8px 12px", color: readOnly ? "#4a7a9b" : "#dff0f8", fontSize:13, fontFamily:"monospace", outline:"none", boxSizing:"border-box", textTransform: isText?"uppercase":"none", cursor: readOnly ? "default" : "text", MozAppearance:"textfield", appearance:"textfield" }} />
     </div>
   );
 }
