@@ -1812,7 +1812,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Fecha Llegada" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")}/>
             </Grid>
           </Section>
-          <Section title="Análisis API" color="#00b4ff">
+          <Section title="Análisis" color="#00b4ff">
             <Grid cols={8}>
               <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={f("api_reportado")}/>
               <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={f("api_observado")}/>
