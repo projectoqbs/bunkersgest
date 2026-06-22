@@ -402,7 +402,7 @@ export default function App() {
         ...form,
         peso_neto_qbs:pesoNetoQBS,
         api_reportado:Number(form.api_reportado), api_observado:Number(form.api_observado),
-        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion), factor_tabla13:Number(form.factor_tabla13||0), azufre:Number(form.azufre||0), tsa:Number(form.tsa||0),
+        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion), factor_tabla13:Number(form.factor_tabla13||0), azufre:Number(form.azufre||0), tsa:Number(form.tsa||0), temp_observada_f:Number(form.temp_observada_f||0),
         temp_observada:Number(form.temp_observada||0),
         peso_ingreso:Number(form.peso_ingreso), peso_salida:Number(form.peso_salida),
         galones_reportados:Number(form.galones_reportados), galones_recibidos:Number(form.galones_recibidos),
@@ -423,7 +423,7 @@ export default function App() {
         id, viaje_id:form.viaje_id, fecha:today(), ...form,
         peso_neto_qbs:pesoNetoQBS,
         api_reportado:Number(form.api_reportado), api_observado:Number(form.api_observado),
-        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion), factor_tabla13:Number(form.factor_tabla13||0), azufre:Number(form.azufre||0), tsa:Number(form.tsa||0),
+        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion), factor_tabla13:Number(form.factor_tabla13||0), azufre:Number(form.azufre||0), tsa:Number(form.tsa||0), temp_observada_f:Number(form.temp_observada_f||0),
         temp_observada:Number(form.temp_observada||0),
         peso_ingreso:Number(form.peso_ingreso), peso_salida:Number(form.peso_salida),
         galones_reportados:Number(form.galones_reportados), galones_recibidos:Number(form.galones_recibidos),
@@ -1813,23 +1813,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </Grid>
           </Section>
           <Section title="Análisis" color="#00b4ff">
-            <Grid cols={8}>
+            <Grid cols={9}>
               <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={f("api_reportado")}/>
               <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={f("api_observado")}/>
-              <Inp label="Temperatura Obs. (°C)" type="number" step="0.1" value={form.temp_observada||""} onChange={e=>{
-                const temp = e.target.value;
-                const api = Number(form.api_corregido||0);
-                setForm(prev=>{
-                  const next = {...prev, temp_observada: temp};
-                  if (api > 0 && temp !== "") {
-                    const rho15 = 141500/(131.5+api);
-                    const alpha = 631.2283/(rho15*rho15);
-                    const vcf = Math.exp(-alpha*(Number(temp)-15)*(1+0.8*alpha*(Number(temp)-15)));
-                    next.factor_conversion = vcf.toFixed(4);
-                  }
-                  return next;
-                });
-              }}/>
               <Inp label="API Corregido 60°F" type="number" step="0.1" value={form.api_corregido||""} onChange={e=>{
                 const api = Number(e.target.value||0);
                 const temp = Number(form.temp_observada||0);
@@ -1845,6 +1831,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   return next;
                 });
               }}/>
+              <Inp label="Temperatura Obs. (°C)" type="number" step="0.1" value={form.temp_observada||""} onChange={e=>{
+                const temp = e.target.value;
+                const api = Number(form.api_corregido||0);
+                setForm(prev=>{
+                  const next = {...prev, temp_observada: temp};
+                  if (temp !== "") next.temp_observada_f = (Number(temp)*9/5+32).toFixed(1);
+                  if (api > 0 && temp !== "") {
+                    const rho15 = 141500/(131.5+api);
+                    const alpha = 631.2283/(rho15*rho15);
+                    const vcf = Math.exp(-alpha*(Number(temp)-15)*(1+0.8*alpha*(Number(temp)-15)));
+                    next.factor_conversion = vcf.toFixed(4);
+                  }
+                  return next;
+                });
+              }}/>
+              <Inp label="Temperatura Obs. (°F)" type="number" step="0.1" value={form.temp_observada_f||""} onChange={f("temp_observada_f")} readOnly/>
               <Inp label="Factor VCF" type="number" step="0.0001" value={form.factor_conversion||""} onChange={f("factor_conversion")}/>
               <Inp label="Factor Tabla 13" type="number" step="0.0001" value={form.factor_tabla13||""} onChange={f("factor_tabla13")}/>
               <Inp label="Azufre (%)" type="number" step="0.001" value={form.azufre||""} onChange={f("azufre")}/>
