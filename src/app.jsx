@@ -1067,12 +1067,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
 
               {/* Tabla */}
-              <div style={{flex:1,overflow:"auto",borderRadius:14,border:"1px solid #ffffff0a",background:"#0a1826"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:"monospace"}}>
+              <div style={{flex:1,overflow:"auto",borderRadius:8,border:`1px solid ${T.border}`,background:T.card,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                   <thead>
-                    <tr style={{background:"#0d1f30",position:"sticky",top:0,zIndex:2}}>
+                    <tr style={{background:T.bg,position:"sticky",top:0,zIndex:2}}>
                       {["#","FECHA LLEGADA","FECHA CARGUE","PLACA","PRODUCTO","OBSERVACIONES",""].map((h,i)=>(
-                        <th key={i} style={{padding:"11px 14px",textAlign:"left",fontSize:10,color:T.navy,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",background:T.bg}}>{h}</th>
+                        <th key={i} style={{padding:"11px 14px",textAlign:"left",fontSize:10,color:T.navy,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap"}}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -1080,47 +1080,47 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {enPlanta.length===0 && (
                       <tr><td colSpan={7} style={{padding:40,textAlign:"center",color:T.muted,fontSize:13}}>No hay carros en planta</td></tr>
                     )}
-                    {enPlanta.map((v)=>{
+                    {enPlanta.map((v,idx)=>{
                       const llegó = !!v.fecha_llegada;
                       const turno = v.turno_planta||null;
                       return (
-                        <tr key={v.id} style={{borderBottom:"1px solid #ffffff06",transition:"background 0.12s"}}
-                          onMouseEnter={e=>e.currentTarget.style.background="#ffffff05"}
-                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                        <tr key={v.id} style={{borderTop:`1px solid ${T.border}`,background:idx%2===0?T.card:"#fafbfc",transition:"background 0.12s"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="#f0f4f8"}
+                          onMouseLeave={e=>e.currentTarget.style.background=idx%2===0?T.card:"#fafbfc"}>
                           {/* Número de turno */}
                           <td style={{padding:"12px 14px"}}>
                             {turno
-                              ? <div style={{width:28,height:28,borderRadius:"50%",background:turno===1?"#00e5a044":COLOR+"22",border:`2px solid ${turno===1?"#00e5a0":COLOR}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,color:turno===1?"#00e5a0":COLOR}}>{turno}</div>
+                              ? <div style={{width:28,height:28,borderRadius:"50%",background:turno===1?`${T.success}22`:`${T.orange}22`,border:`2px solid ${turno===1?T.success:T.orange}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,color:turno===1?T.success:T.orange}}>{turno}</div>
                               : <div style={{width:28,height:28,borderRadius:"50%",background:"#f59e0b22",border:"2px solid #f59e0b66",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#f59e0b"}}>—</div>
                             }
                           </td>
                           {/* Fecha llegada */}
                           <td style={{padding:"12px 14px"}}>
                             {llegó
-                              ? <span style={{color:"#00e5a0",fontWeight:700}}>{v.fecha_llegada}</span>
+                              ? <span style={{color:T.success,fontWeight:700}}>{v.fecha_llegada}</span>
                               : <span style={{color:"#f59e0b",fontSize:11}}>Pendiente</span>
                             }
                           </td>
                           {/* Fecha cargue */}
-                          <td style={{padding:"12px 14px",color:"#8aacbf"}}>{v.fecha||"—"}</td>
+                          <td style={{padding:"12px 14px",color:T.muted}}>{v.fecha||"—"}</td>
                           {/* Placa */}
                           <td style={{padding:"12px 14px"}}>
-                            <span style={{background:"#f59e0b18",border:"1px solid #f59e0b44",borderRadius:6,padding:"3px 9px",color:"#f59e0b",fontWeight:700,letterSpacing:1}}>{v.placa||"—"}</span>
+                            <span style={{background:`${T.orange}18`,border:`1px solid ${T.orange}44`,borderRadius:6,padding:"3px 9px",color:T.orange,fontWeight:700,letterSpacing:1}}>{v.placa||"—"}</span>
                           </td>
                           {/* Producto */}
-                          <td style={{padding:"12px 14px",color:"#c8dce8",maxWidth:160}}>
+                          <td style={{padding:"12px 14px",color:T.text,maxWidth:160}}>
                             <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.producto||"—"}</div>
                           </td>
                           {/* Observaciones */}
                           <td style={{padding:"12px 14px",color:T.muted,maxWidth:200}}>
-                            <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.observacion||<span style={{color:"#ffffff22",fontStyle:"italic"}}>Sin observaciones</span>}</div>
+                            <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontStyle:v.observacion?"normal":"italic"}}>{v.observacion||"Sin observaciones"}</div>
                           </td>
                           {/* Acción */}
                           <td style={{padding:"12px 14px"}}>
                             <button onClick={()=>{setForm({...v});setModal("viaje");}}
-                              style={{background:COLOR+"18",border:`1px solid ${COLOR}44`,borderRadius:7,color:COLOR,padding:"5px 12px",fontSize:11,cursor:"pointer",fontFamily:"monospace",transition:"background 0.12s",whiteSpace:"nowrap"}}
-                              onMouseEnter={e=>e.currentTarget.style.background=COLOR+"30"}
-                              onMouseLeave={e=>e.currentTarget.style.background=COLOR+"18"}>
+                              style={{background:T.navy,border:"none",borderRadius:6,color:"#ffffff",padding:"5px 14px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}
+                              onMouseEnter={e=>e.currentTarget.style.background=T.orange}
+                              onMouseLeave={e=>e.currentTarget.style.background=T.navy}>
                               {llegó ? "✏ Editar" : "📍 Registrar llegada"}
                             </button>
                           </td>
