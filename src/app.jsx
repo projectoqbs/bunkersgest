@@ -407,21 +407,34 @@ export default function App() {
   async function guardarTiquete(e) {
     e.preventDefault(); setSaving(true);
     const aprueba = Number(form.agua_destilacion)<=1.0 && Number(form.flash_point)>=60;
-    const pesoNetoQBS = Number(form.peso_ingreso||0)-Number(form.peso_salida||0);
+    const campos = {
+      viaje_id:form.viaje_id||null,
+      fecha:form.fecha||today(),
+      proveedor:form.proveedor||null,
+      producto:form.producto||null,
+      placa:form.placa||null,
+      cedula:form.cedula||null,
+      fecha_cargue:form.fecha_cargue||null,
+      fecha_llegada:form.fecha_llegada||null,
+      api_reportado:Number(form.api_reportado||0),
+      api_observado:Number(form.api_observado||0),
+      api_corregido:Number(form.api_corregido||0),
+      temp_observada:Number(form.temp_observada||0),
+      temp_observada_f:Number(form.temp_observada_f||0),
+      factor_conversion:Number(form.factor_conversion||0),
+      factor_tabla13:Number(form.factor_tabla13||0),
+      agua_destilacion:Number(form.agua_destilacion||0),
+      flash_point:Number(form.flash_point||0),
+      viscosidad:Number(form.viscosidad||0),
+      azufre:Number(form.azufre||0),
+      tsa:Number(form.tsa||0),
+      observaciones:form.observaciones||null,
+      autoriza:aprueba,
+      autoriza_nombre:perfil.nombre,
+      resultado:aprueba?"APROBADO":"RECHAZADO",
+    };
     if (form.id) {
-      const {sede:_s, creado_por:_cp, viaje_id:_vi, id:_id, ...formClean} = form;
-      const {error} = await supabase.from("tiquetes").update({
-        ...formClean,
-        peso_neto_qbs:pesoNetoQBS,
-        api_reportado:Number(form.api_reportado), api_observado:Number(form.api_observado),
-        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion), factor_tabla13:Number(form.factor_tabla13||0), azufre:Number(form.azufre||0), tsa:Number(form.tsa||0), temp_observada_f:Number(form.temp_observada_f||0),
-        temp_observada:Number(form.temp_observada||0),
-        peso_ingreso:Number(form.peso_ingreso), peso_salida:Number(form.peso_salida),
-        galones_reportados:Number(form.galones_reportados), galones_recibidos:Number(form.galones_recibidos),
-        agua_destilacion:Number(form.agua_destilacion), flash_point:Number(form.flash_point),
-        viscosidad:Number(form.viscosidad), autoriza:aprueba,
-        autoriza_nombre:perfil.nombre, resultado:aprueba?"APROBADO":"RECHAZADO",
-      }).eq("id", form.id);
+      const {error} = await supabase.from("tiquetes").update(campos).eq("id", form.id);
       if (!error && form.viaje_id) {
         await supabase.from("viajes").update({estado:aprueba?"En Planta":"Rechazado"}).eq("id",form.viaje_id);
       }
@@ -432,18 +445,10 @@ export default function App() {
     } else {
       const id = `TQ-${String(tiquetes.length+1+19571).padStart(5,"0")}`;
       const {error} = await supabase.from("tiquetes").insert([{
-        id, viaje_id:form.viaje_id, fecha:today(), ...form,
-        peso_neto_qbs:pesoNetoQBS,
-        api_reportado:Number(form.api_reportado), api_observado:Number(form.api_observado),
-        api_corregido:Number(form.api_corregido), factor_conversion:Number(form.factor_conversion), factor_tabla13:Number(form.factor_tabla13||0), azufre:Number(form.azufre||0), tsa:Number(form.tsa||0), temp_observada_f:Number(form.temp_observada_f||0),
-        temp_observada:Number(form.temp_observada||0),
-        peso_ingreso:Number(form.peso_ingreso), peso_salida:Number(form.peso_salida),
-        galones_reportados:Number(form.galones_reportados), galones_recibidos:Number(form.galones_recibidos),
-        agua_destilacion:Number(form.agua_destilacion), flash_point:Number(form.flash_point),
-        viscosidad:Number(form.viscosidad), autoriza:aprueba,
-        autoriza_nombre:perfil.nombre, resultado:aprueba?"APROBADO":"RECHAZADO",
+        id,
+        ...campos,
         sede: viajes.find(v=>v.id===form.viaje_id)?.sede || perfil.sede || "MALAMBO",
-        creado_por:session.user.id
+        creado_por:session.user.id,
       }]);
       if (!error && form.viaje_id) {
         await supabase.from("viajes").update({estado:aprueba?"En Planta":"Rechazado", tiquete_id:id}).eq("id",form.viaje_id);
