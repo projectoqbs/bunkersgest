@@ -1812,8 +1812,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Fecha Llegada" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")}/>
             </Grid>
           </Section>
-          <Section title="Análisis" color="#00b4ff">
-            <Grid cols={9}>
+          <Section title="Análisis API" color="#00b4ff">
+            <Grid cols={7}>
               <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={f("api_reportado")}/>
               <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={f("api_observado")}/>
               <Inp label="API Corregido 60°F" type="number" step="0.1" value={form.api_corregido||""} onChange={e=>{
@@ -1849,8 +1849,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Temperatura Obs. (°F)" type="number" step="0.1" value={form.temp_observada_f||""} onChange={f("temp_observada_f")} readOnly/>
               <Inp label="Factor VCF" type="number" step="0.0001" value={form.factor_conversion||""} onChange={f("factor_conversion")}/>
               <Inp label="Factor Tabla 13" type="number" step="0.0001" value={form.factor_tabla13||""} onChange={f("factor_tabla13")}/>
-              <Inp label="Azufre (%)" type="number" step="0.001" value={form.azufre||""} onChange={f("azufre")}/>
-              <Inp label="TSA" type="number" step="0.01" value={form.tsa||""} onChange={f("tsa")}/>
             </Grid>
           </Section>
           <Section title="Pesos y Galones" color="#00b4ff">
@@ -1862,10 +1860,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </Grid>
           </Section>
           <Section title="Calidad" color="#00b4ff">
-            <Grid cols={3}>
+            <Grid cols={5}>
               <Inp label="Agua Destilación (%)" type="number" step="0.01" value={form.agua_destilacion||""} onChange={f("agua_destilacion")}/>
               <Inp label="Flash Point (°C)" type="number" value={form.flash_point||""} onChange={f("flash_point")}/>
               <Inp label="Viscosidad 50°C (cSt)" type="number" step="0.1" value={form.viscosidad||""} onChange={f("viscosidad")}/>
+              <Inp label="Azufre (%)" type="number" step="0.001" value={form.azufre||""} onChange={f("azufre")}/>
+              <Inp label="TSA" type="number" step="0.01" value={form.tsa||""} onChange={f("tsa")}/>
             </Grid>
           </Section>
           <Section title="Descargue" color="#00b4ff">
