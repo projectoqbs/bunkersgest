@@ -1806,16 +1806,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </Modal>
       )}
 
-      {modal==="tiquete" && (
+      {modal==="tiquete" && (()=>{
+        const soloLab = perfil.rol !== "administrador";
+        return (
         <Modal title={form.id ? `Editar Tiquete ${form.id}` : "Tiquete de Ingreso de Materia Prima"} onClose={()=>setModal(null)} wide>
           <Section title="Identificación" color="#00b4ff">
             <Grid cols={2}>
-              <Inp label="Proveedor / Campo Origen" type="text" value={form.proveedor||""} onChange={f("proveedor")}/>
-              <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")}/>
-              <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")}/>
-              <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")}/>
-              <Inp label="Fecha Cargue" type="date" value={form.fecha_cargue||""} onChange={f("fecha_cargue")}/>
-              <Inp label="Fecha Llegada" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")}/>
+              <Inp label="Proveedor / Campo Origen" type="text" value={form.proveedor||""} onChange={f("proveedor")} readOnly={soloLab}/>
+              <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloLab}/>
+              <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")} readOnly={soloLab}/>
+              <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")} readOnly={soloLab}/>
+              <Inp label="Fecha Cargue" type="date" value={form.fecha_cargue||""} onChange={f("fecha_cargue")} readOnly={soloLab}/>
+              <Inp label="Fecha Llegada" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")} readOnly={soloLab}/>
             </Grid>
           </Section>
           <Section title="Análisis API" color="#00b4ff">
@@ -1874,7 +1876,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <Btn color="#00b4ff" onClick={guardarTiquete} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Tiquete":"Emitir Tiquete"}</Btn>
           </div>
         </Modal>
-      )}
+        );
+      })()}
 
       {modal==="pbs" && (
         <Modal title={form.id ? `Editar PBS ${form.id}` : "Permiso de Bombeo Seguro"} onClose={()=>{ pbsParaCarro!==null ? setModal("cmt") : setModal(null); }} wide>
