@@ -447,7 +447,6 @@ export default function App() {
       const {error} = await supabase.from("tiquetes").insert([{
         id,
         ...campos,
-        sede: viajes.find(v=>v.id===form.viaje_id)?.sede || perfil.sede || "MALAMBO",
         creado_por:session.user.id,
       }]);
       if (!error && form.viaje_id) {
