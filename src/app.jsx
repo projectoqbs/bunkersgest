@@ -1869,14 +1869,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="TSA" type="number" step="0.01" value={form.tsa||""} onChange={f("tsa")}/>
             </Grid>
           </Section>
-          <Section title="Descargue" color="#00b4ff">
-            <Grid cols={2}>
-              <Sel label="Bodega / Tanque" value={form.bodega||""} onChange={f("bodega")}>
-                <option value="">Seleccionar...</option>
-                {tanques.map(t=><option key={t.id} value={t.id}>{t.id} · Libre: {fmt(t.capacidad-t.nivel)} Gls</option>)}
-              </Sel>
-              <Inp label="Factura / Consecutivo SIIGO" type="text" value={form.factura||""} onChange={f("factura")}/>
-            </Grid>
+          <Section title="Observaciones">
             <Inp label="Observaciones" type="text" value={form.observaciones||""} onChange={f("observaciones")}/>
           </Section>
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
