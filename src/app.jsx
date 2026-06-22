@@ -251,6 +251,10 @@ export default function App() {
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
   const [viajesFiltroFechaH, setViajesFiltroFechaH] = useState("");
+  const [plantaBusqueda, setPlantaBusqueda] = useState("");
+  const [plantaFiltroProducto, setPlantaFiltroProducto] = useState("");
+  const [plantaFiltroFechaD, setPlantaFiltroFechaD] = useState("");
+  const [plantaFiltroFechaH, setPlantaFiltroFechaH] = useState("");
   const [cmtBusqueda, setCmtBusqueda] = useState("");
   const [cmtFiltroTipo, setCmtFiltroTipo] = useState("");
   const [cmtFiltroFechaD, setCmtFiltroFechaD] = useState("");
@@ -1056,12 +1060,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
           {/* LISTADO PLANTA */}
           {nav==="listado_planta" && (()=>{
-            // Carros en ruta con fecha_llegada registrada, o cualquier carro en planta
+            const selStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:11,fontFamily:"system-ui,sans-serif",outline:"none"};
+            const productosPlanta = [...new Set(viajesFiltrados.map(v=>v.producto).filter(Boolean))].sort();
             const enPlanta = viajesFiltrados
               .filter(v => v.fecha_llegada)
               .filter(v => v.estado !== "Descargado" && v.estado !== "Rechazado")
+              .filter(v => {
+                const q = (plantaBusqueda||"").toLowerCase();
+                if (q && ![(v.placa||""),(v.producto||""),(v.id||""),(v.guia||"")].some(x=>x.toLowerCase().includes(q))) return false;
+                if (plantaFiltroProducto && v.producto !== plantaFiltroProducto) return false;
+                if (plantaFiltroFechaD && v.fecha_llegada < plantaFiltroFechaD) return false;
+                if (plantaFiltroFechaH && v.fecha_llegada > plantaFiltroFechaH) return false;
+                return true;
+              })
               .sort((a,b) => {
-                // Si ambos tienen turno_planta, usarlo; si no, por updated_at
                 if (a.turno_planta && b.turno_planta) return a.turno_planta - b.turno_planta;
                 if (a.turno_planta) return -1;
                 if (b.turno_planta) return 1;
@@ -1071,15 +1083,34 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             return (
             <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 100px)"}}>
               {/* Header */}
-              <div style={{flexShrink:0,marginBottom:18,display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
-                <div>
-                  <div style={{fontWeight:800,fontSize:22,color:T.navy,letterSpacing:0.5}}>Listado Planta</div>
-                  <div style={{fontSize:11,color:T.muted,marginTop:2}}>
-                    Enturne de carros para descargue ·{" "}
-                    <b style={{color:COLOR}}>{enPlanta.length}</b> carro(s) en planta
+              <div style={{flexShrink:0,marginBottom:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <div>
+                    <div style={{fontWeight:800,fontSize:22,color:T.navy,letterSpacing:0.5}}>Listado Planta</div>
+                    <div style={{fontSize:11,color:T.muted,marginTop:2}}>
+                      Enturne de carros para descargue · <b style={{color:COLOR}}>{enPlanta.length}</b> carro(s)
+                    </div>
                   </div>
+                  <Btn onClick={()=>{setForm({fecha_llegada:today()});setModal("turno_carro");}}>+ TURNO CARRO</Btn>
                 </div>
-                <Btn onClick={()=>{setForm({fecha_llegada:today()});setModal("turno_carro");}}>+ TURNO CARRO</Btn>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                  <input value={plantaBusqueda||""} onChange={e=>setPlantaBusqueda(e.target.value)} placeholder="🔍 Buscar placa, producto, guía..." style={{...selStyle,width:240,padding:"6px 12px"}}/>
+                  {["administrador","gerencia"].includes(perfil.rol) && (
+                    <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)} style={selStyle}>
+                      <option value="TODAS">Todas las sedes</option>
+                      {SEDES.map(s=><option key={s}>{s}</option>)}
+                    </select>
+                  )}
+                  <select value={plantaFiltroProducto||""} onChange={e=>setPlantaFiltroProducto(e.target.value)} style={selStyle}>
+                    <option value="">Todos los productos</option>
+                    {productosPlanta.map(p=><option key={p}>{p}</option>)}
+                  </select>
+                  <input type="date" value={plantaFiltroFechaD||""} onChange={e=>setPlantaFiltroFechaD(e.target.value)} style={selStyle} title="Llegada desde"/>
+                  <input type="date" value={plantaFiltroFechaH||""} onChange={e=>setPlantaFiltroFechaH(e.target.value)} style={selStyle} title="Llegada hasta"/>
+                  {(plantaBusqueda||plantaFiltroProducto||plantaFiltroFechaD||plantaFiltroFechaH) && (
+                    <button onClick={()=>{setPlantaBusqueda("");setPlantaFiltroProducto("");setPlantaFiltroFechaD("");setPlantaFiltroFechaH("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                  )}
+                </div>
               </div>
 
               {/* Tabla */}
