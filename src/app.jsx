@@ -2693,7 +2693,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const esGlobal = ["HSFO","VLSFO"].includes(prodUpper);
                     const enPlanta = viajes.filter(v => v.estado === "En Planta" && (esGlobal || !cmtProducto || (v.producto||"").toUpperCase() === prodUpper));
                     return enPlanta.length > 0 ? (
-                      <select value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}>
+                      <select value={carro.placa} onChange={e=>{
+                        const placa = e.target.value;
+                        const viaje = enPlanta.find(v=>v.placa===placa);
+                        const tq = viaje ? tiquetes.find(t=>t.viaje_id===viaje.id || t.id===viaje.tiquete_id) : null;
+                        const n=[...cmtCarros];
+                        n[i] = {...n[i], placa, guia: viaje?.guia||n[i].guia, tiquete: tq?.id||n[i].tiquete};
+                        setCmtCarros(n);
+                      }} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}>
                         <option value="">Seleccionar placa...</option>
                         {enPlanta.map(v=><option key={v.id} value={v.placa}>{v.placa} — {v.producto}</option>)}
                       </select>
