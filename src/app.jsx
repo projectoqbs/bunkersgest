@@ -2687,7 +2687,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             {cmtCarros.map((carro,i)=>(
               <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:12,border:`1px solid ${T.border}`}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-                  <div><Lbl>Placa</Lbl><input type="text" placeholder="Ej: ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.toUpperCase().replace(/\s/g,"");setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>Placa</Lbl>
+                  {(()=>{
+                    const prodUpper = (cmtProducto||"").toUpperCase();
+                    const esGlobal = ["HSFO","VLSFO"].includes(prodUpper);
+                    const enPlanta = viajes.filter(v => v.estado === "En Planta" && (esGlobal || !cmtProducto || (v.producto||"").toUpperCase() === prodUpper));
+                    return enPlanta.length > 0 ? (
+                      <select value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}>
+                        <option value="">Seleccionar placa...</option>
+                        {enPlanta.map(v=><option key={v.id} value={v.placa}>{v.placa} — {v.producto}</option>)}
+                      </select>
+                    ) : (
+                      <input type="text" placeholder="ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.toUpperCase().replace(/\s/g,"");setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/>
+                    );
+                  })()}
+                  </div>
                   <div><Lbl>Guía</Lbl><input type="text" value={carro.guia} onChange={e=>{const n=[...cmtCarros];n[i].guia=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
                   <div><Lbl>Tiquete</Lbl><input type="text" value={carro.tiquete} onChange={e=>{const n=[...cmtCarros];n[i].tiquete=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
                 </div>
