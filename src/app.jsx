@@ -251,6 +251,11 @@ export default function App() {
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
   const [viajesFiltroFechaH, setViajesFiltroFechaH] = useState("");
+  const [tiqBusqueda, setTiqBusqueda] = useState("");
+  const [tiqFiltroProducto, setTiqFiltroProducto] = useState("");
+  const [tiqFiltroResultado, setTiqFiltroResultado] = useState("");
+  const [tiqFiltroFechaD, setTiqFiltroFechaD] = useState("");
+  const [tiqFiltroFechaH, setTiqFiltroFechaH] = useState("");
   const [plantaBusqueda, setPlantaBusqueda] = useState("");
   const [plantaFiltroProducto, setPlantaFiltroProducto] = useState("");
   const [plantaFiltroFechaD, setPlantaFiltroFechaD] = useState("");
@@ -1225,23 +1230,49 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           })()}
 
           {/* TIQUETES */}
-          {nav==="tiquetes" && (
+          {nav==="tiquetes" && (()=>{
+            const selSt = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:11,fontFamily:"system-ui,sans-serif",outline:"none"};
+            const prodsTiq = [...new Set(tiquetesFiltrados.map(t=>t.producto).filter(Boolean))].sort();
+            const tiqFinal = tiquetesFiltrados.filter(t=>{
+              const q=(tiqBusqueda||"").toLowerCase();
+              if(q&&![(t.id||""),(t.placa||""),(t.producto||""),(t.viaje_id||"")].some(x=>x.toLowerCase().includes(q))) return false;
+              if(tiqFiltroProducto&&t.producto!==tiqFiltroProducto) return false;
+              if(tiqFiltroResultado&&t.resultado!==tiqFiltroResultado) return false;
+              if(tiqFiltroFechaD&&(t.fecha_llegada||t.fecha)<tiqFiltroFechaD) return false;
+              if(tiqFiltroFechaH&&(t.fecha_llegada||t.fecha)>tiqFiltroFechaH) return false;
+              return true;
+            });
+            return (
             <div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                 <div>
                   <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Tiquete de Ingreso MP</div>
-                  <div style={{ fontSize:11, color:T.muted }}>Emitido por laboratorio · Aval para descargue</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Emitido por laboratorio · <b style={{color:"#00b4ff"}}>{tiqFinal.length}</b> resultado(s)</div>
                 </div>
-                <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                  {["administrador","gerencia"].includes(perfil.rol) && (
-                    <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)}
-                      style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,outline:"none"}}>
-                      <option value="TODAS">Todas</option>
-                      {SEDES.map(s=><option key={s}>{s}</option>)}
-                    </select>
-                  )}
-                  {puedeCrear("tiquetes") && <Btn color="#00b4ff" onClick={()=>{setForm({});setModal("tiquete");}}>+ Nuevo Tiquete</Btn>}
-                </div>
+                {puedeCrear("tiquetes") && <Btn color="#00b4ff" onClick={()=>{setForm({});setModal("tiquete");}}>+ Nuevo Tiquete</Btn>}
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:16}}>
+                <input value={tiqBusqueda||""} onChange={e=>setTiqBusqueda(e.target.value)} placeholder="🔍 Buscar tiquete, placa, viaje..." style={{...selSt,width:220,padding:"6px 12px"}}/>
+                {["administrador","gerencia"].includes(perfil.rol) && (
+                  <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)} style={selSt}>
+                    <option value="TODAS">Todas las sedes</option>
+                    {SEDES.map(s=><option key={s}>{s}</option>)}
+                  </select>
+                )}
+                <select value={tiqFiltroProducto||""} onChange={e=>setTiqFiltroProducto(e.target.value)} style={selSt}>
+                  <option value="">Todos los productos</option>
+                  {prodsTiq.map(p=><option key={p}>{p}</option>)}
+                </select>
+                <select value={tiqFiltroResultado||""} onChange={e=>setTiqFiltroResultado(e.target.value)} style={selSt}>
+                  <option value="">Todos los resultados</option>
+                  <option>APROBADO</option>
+                  <option>RECHAZADO</option>
+                </select>
+                <input type="date" value={tiqFiltroFechaD||""} onChange={e=>setTiqFiltroFechaD(e.target.value)} style={selSt} title="Desde"/>
+                <input type="date" value={tiqFiltroFechaH||""} onChange={e=>setTiqFiltroFechaH(e.target.value)} style={selSt} title="Hasta"/>
+                {(tiqBusqueda||tiqFiltroProducto||tiqFiltroResultado||tiqFiltroFechaD||tiqFiltroFechaH) && (
+                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                )}
               </div>
               {viajes.filter(v=>v.estado==="En Planta"&&!v.tiquete_id).length>0 && (
                 <Card style={{ marginBottom:18, borderColor:"#f59e0b33" }}>
@@ -1260,7 +1291,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               )}
               <Table
                 cols={["No. Tiquete","Viaje","Producto","Placa","API Corr.","Gls Recibidos","Flash","Agua %","Resultado","Analista",""]}
-                rows={tiquetesFiltrados.map(t=>[
+                rows={tiqFinal.map(t=>[
                   <span style={{color:"#00b4ff"}}>{t.id}</span>,
                   t.viaje_id, t.producto, t.placa,
                   `${t.api_corregido}°`, fmt(t.galones_recibidos), `${t.flash_point}°C`, `${t.agua_destilacion}%`,
@@ -1272,16 +1303,50 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 ])}
               />
             </div>
-          )}
+            );
+          })()}
 
           {/* RESULTADOS LABORATORIO */}
-          {nav==="resultados" && (
+          {nav==="resultados" && (()=>{
+            const selSt = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:11,fontFamily:"system-ui,sans-serif",outline:"none"};
+            const prodsRes = [...new Set(tiquetesFiltrados.map(t=>t.producto).filter(Boolean))].sort();
+            const resFinal = tiquetesFiltrados.filter(t=>{
+              const q=(tiqBusqueda||"").toLowerCase();
+              if(q&&![(t.id||""),(t.placa||""),(t.producto||""),(t.viaje_id||"")].some(x=>x.toLowerCase().includes(q))) return false;
+              if(tiqFiltroProducto&&t.producto!==tiqFiltroProducto) return false;
+              if(tiqFiltroResultado&&t.resultado!==tiqFiltroResultado) return false;
+              if(tiqFiltroFechaD&&(t.fecha_llegada||t.fecha)<tiqFiltroFechaD) return false;
+              if(tiqFiltroFechaH&&(t.fecha_llegada||t.fecha)>tiqFiltroFechaH) return false;
+              return true;
+            });
+            return (
             <div>
-              <div style={{ fontWeight:800, fontSize:20, color:T.navy, marginBottom:4 }}>Resultados de Laboratorio</div>
-              <div style={{ fontSize:11, color:T.muted, marginBottom:22 }}>Consolidado de análisis por tiquete</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                <div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Resultados de Laboratorio</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Consolidado de análisis por tiquete · <b style={{color:"#00b4ff"}}>{resFinal.length}</b> resultado(s)</div>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:16}}>
+                <input value={tiqBusqueda||""} onChange={e=>setTiqBusqueda(e.target.value)} placeholder="🔍 Buscar tiquete, placa, viaje..." style={{...selSt,width:220,padding:"6px 12px"}}/>
+                <select value={tiqFiltroProducto||""} onChange={e=>setTiqFiltroProducto(e.target.value)} style={selSt}>
+                  <option value="">Todos los productos</option>
+                  {prodsRes.map(p=><option key={p}>{p}</option>)}
+                </select>
+                <select value={tiqFiltroResultado||""} onChange={e=>setTiqFiltroResultado(e.target.value)} style={selSt}>
+                  <option value="">Todos los resultados</option>
+                  <option>APROBADO</option>
+                  <option>RECHAZADO</option>
+                </select>
+                <input type="date" value={tiqFiltroFechaD||""} onChange={e=>setTiqFiltroFechaD(e.target.value)} style={selSt} title="Desde"/>
+                <input type="date" value={tiqFiltroFechaH||""} onChange={e=>setTiqFiltroFechaH(e.target.value)} style={selSt} title="Hasta"/>
+                {(tiqBusqueda||tiqFiltroProducto||tiqFiltroResultado||tiqFiltroFechaD||tiqFiltroFechaH) && (
+                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                )}
+              </div>
               <Table
                 cols={["No. Tiquete","Fecha","Producto","Placa","API Corr.","Flash °C","Agua %","Viscosidad","Azufre %","TSA","Resultado"]}
-                rows={tiquetesFiltrados.map(t=>{
+                rows={resFinal.map(t=>{
                   const esV = (t.producto||"").toUpperCase()==="VLSFO";
                   const flashOk = Number(t.flash_point)>=60;
                   const aguaOk  = Number(t.agua_destilacion)<0.5;
@@ -1290,9 +1355,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const tsaOk   = !esV || Number(t.tsa)<0.1;
                   return [
                     <span style={{color:"#00b4ff",fontFamily:"monospace"}}>{t.id}</span>,
-                    t.fecha_llegada||"—",
-                    t.producto,
-                    t.placa,
+                    t.fecha_llegada||"—", t.producto, t.placa,
                     <span style={{color:T.text,fontWeight:600}}>{t.api_corregido}°</span>,
                     <span style={{color:flashOk?T.text:T.danger,fontWeight:flashOk?400:700}}>{t.flash_point}°C</span>,
                     <span style={{color:aguaOk?T.text:T.danger,fontWeight:aguaOk?400:700}}>{t.agua_destilacion}%</span>,
@@ -1304,7 +1367,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 })}
               />
             </div>
-          )}
+            );
+          })()}
 
           {/* PBS */}
           {nav==="pbs" && (
