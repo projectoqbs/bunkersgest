@@ -2517,13 +2517,29 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #f59e0b33"}}>
               <span style={{fontSize:11,fontWeight:700,color:"#f59e0b",letterSpacing:1,textTransform:"uppercase"}}>{(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"?"Tanque de Despacho":"Medida Inicial"}</span>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:11,color:T.muted,fontFamily:"monospace"}}>Producto del CMT:</span>
-                <input value={cmtProducto} onChange={e=>{
-                  const val=e.target.value.toUpperCase();
-                  setCmtProducto(val);
-                  setCmtDespues(prev=>prev.map(r=>({...r,producto:val})));
-                  setCmtAntes(prev=>prev.map(r=>({...r,producto:val})));
-                }} placeholder="Ej: VLSFO, MGO..." style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,fontFamily:"system-ui,sans-serif",outline:"none",width:180,textTransform:"uppercase"}}/>
+                <span style={{fontSize:11,color:T.muted}}>Producto del CMT:</span>
+                {(()=>{
+                  // Productos con tiquete APROBADO en viajes En Planta
+                  const prodAprobados = [...new Set(
+                    viajes
+                      .filter(v => v.estado === "En Planta")
+                      .filter(v => tiquetes.some(t => (t.viaje_id === v.id || t.id === v.tiquete_id) && t.resultado === "APROBADO"))
+                      .map(v => (v.producto||"").toUpperCase())
+                      .filter(Boolean)
+                  )];
+                  const opciones = [...new Set([...prodAprobados, "VLSFO", "HSFO"])].sort();
+                  return (
+                    <select value={cmtProducto} onChange={e=>{
+                      const val = e.target.value;
+                      setCmtProducto(val);
+                      setCmtDespues(prev=>prev.map(r=>({...r,producto:val})));
+                      setCmtAntes(prev=>prev.map(r=>({...r,producto:val})));
+                    }} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,fontFamily:"system-ui,sans-serif",outline:"none",width:200}}>
+                      <option value="">Seleccionar producto...</option>
+                      {opciones.map(p=><option key={p} value={p}>{p}</option>)}
+                    </select>
+                  );
+                })()}
               </div>
             </div>
             {(()=>{
