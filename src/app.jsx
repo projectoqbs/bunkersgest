@@ -1863,52 +1863,43 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
           {/* TANQUES */}
           {nav==="tanques" && (
-            <div>
-              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800, marginBottom:4 }}>Tanques TK-111 al TK-117</div>
-              <div style={{ fontSize:11, color:"#6b8fa8", marginBottom:22 }}>Niveles en tiempo real · Estilo SCADA</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:20 }}>
+            <div style={{ height:"calc(100vh - 120px)", display:"flex", flexDirection:"column" }}>
+              <div style={{ marginBottom:10 }}>
+                <div style={{ fontSize:16, fontWeight:800, color:"#dff0f8" }}>Tanques TK-111 al TK-117</div>
+                <div style={{ fontSize:10, color:"#6b8fa8" }}>Niveles en tiempo real · Estilo SCADA</div>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:10, flex:1, minHeight:0 }}>
                 {tanques.map(t=>{
                   const pctLleno = Math.round((t.nivel/t.capacidad)*100);
                   const productColor = getProductColor(t.producto);
                   return (
-                    <div key={t.id} style={{ background:"#0f1e2e", border:"1px solid #ffffff0d", borderRadius:10, overflow:"hidden" }}>
+                    <div key={t.id} style={{ background:"#0f1e2e", border:"1px solid #ffffff0d", borderRadius:8, overflow:"hidden", display:"flex", flexDirection:"column" }}>
                       {/* Header */}
-                      <div style={{ background:"#162535", padding:"12px 16px", borderBottom:"1px solid #ffffff0a" }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:"#dff0f8", marginBottom:2 }}>{t.id} · {t.producto}</div>
-                        <div style={{ fontSize:10, color:"#6b8fa8" }}>{t.planta}</div>
+                      <div style={{ background:"#162535", padding:"8px 10px", borderBottom:"1px solid #ffffff0a", flexShrink:0 }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:"#dff0f8", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.id}</div>
+                        <div style={{ fontSize:9, color:"#6b8fa8", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto}</div>
                       </div>
 
-                      {/* Body */}
-                      <div style={{ padding:"14px 16px" }}>
-                        {/* Visualización del tanque - Rectángulo gris con relleno de color */}
-                        <div style={{ position:"relative", height:180, background:"#2a3a48", border:"2px solid #555", borderRadius:6, overflow:"hidden", marginBottom:14 }}>
+                      {/* Tanque visual */}
+                      <div style={{ padding:"8px 10px", flex:1, display:"flex", flexDirection:"column", minHeight:0 }}>
+                        <div style={{ position:"relative", flex:1, background:"#2a3a48", border:"2px solid #555", borderRadius:4, overflow:"hidden", marginBottom:8, minHeight:60 }}>
                           <div style={{ position:"absolute", bottom:0, left:0, right:0, height:`${pctLleno}%`, background:productColor, transition:"height 0.3s ease" }}/>
+                          <div style={{ position:"absolute", top:"50%", left:0, right:0, textAlign:"center", transform:"translateY(-50%)", fontSize:13, fontWeight:800, color:"#ffffffcc", textShadow:"0 1px 4px #000" }}>{pctLleno}%</div>
                         </div>
 
-                        {/* Datos del tanque */}
-                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
-                          <div style={{ background:"#162535", borderRadius:6, padding:"8px 10px" }}>
-                            <div style={{ fontSize:9, color:"#6b8fa8", textTransform:"uppercase", marginBottom:3 }}>Nivel</div>
-                            <div style={{ fontSize:13, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(t.nivel)}</div>
-                          </div>
-                          <div style={{ background:"#162535", borderRadius:6, padding:"8px 10px" }}>
-                            <div style={{ fontSize:9, color:"#6b8fa8", textTransform:"uppercase", marginBottom:3 }}>Capacidad</div>
-                            <div style={{ fontSize:13, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(t.capacidad)}</div>
-                          </div>
-                          <div style={{ background:"#162535", borderRadius:6, padding:"8px 10px" }}>
-                            <div style={{ fontSize:9, color:"#6b8fa8", textTransform:"uppercase", marginBottom:3 }}>Disponible</div>
-                            <div style={{ fontSize:13, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(Math.max(0, t.capacidad - t.nivel))}</div>
-                          </div>
-                          <div style={{ background:"#162535", borderRadius:6, padding:"8px 10px" }}>
-                            <div style={{ fontSize:9, color:"#6b8fa8", textTransform:"uppercase", marginBottom:3 }}>% Lleno</div>
-                            <div style={{ fontSize:13, fontWeight:700, color:pctLleno>=90?"#ff4d4d":pctLleno>=75?"#f59e0b":"#00e5a0", fontFamily:"monospace" }}>{pctLleno}%</div>
-                          </div>
-                        </div>
-
-                        {/* Botones */}
-                        <div style={{ display:"flex", gap:8 }}>
-                          <Btn sm variant="outline" color="#00b4ff">Detalles</Btn>
-                          <Btn sm color="#00e5a0">CMT</Btn>
+                        {/* Datos */}
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, flexShrink:0 }}>
+                          {[
+                            ["Nivel", fmt(t.nivel), "#dff0f8"],
+                            ["Cap.", fmt(t.capacidad), "#dff0f8"],
+                            ["Libre", fmt(Math.max(0,t.capacidad-t.nivel)), "#00e5a0"],
+                            ["%", `${pctLleno}%`, pctLleno>=90?"#ff4d4d":pctLleno>=75?"#f59e0b":"#00e5a0"],
+                          ].map(([l,v,c])=>(
+                            <div key={l} style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
+                              <div style={{ fontSize:8, color:"#6b8fa8", textTransform:"uppercase" }}>{l}</div>
+                              <div style={{ fontSize:10, fontWeight:700, color:c, fontFamily:"monospace" }}>{v}</div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
