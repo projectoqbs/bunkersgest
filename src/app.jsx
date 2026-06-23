@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
 
 // CSS global: todos los inputs de texto en mayúsculas
@@ -99,6 +99,16 @@ const TIPO_LABEL = { materia_prima:"Mat. Prima", mezcla:"Mezcla/Prod.", terminad
 const fmt = n => Number(n||0).toLocaleString("es-CO");
 const today = () => new Date().toISOString().slice(0,10);
 const genId = (prefix, list) => `${prefix}-${String((list?.length||0)+1).padStart(3,"0")}`;
+
+// Colores por producto para tanques Varec
+const getProductColor = (producto) => {
+  if (!producto) return "#1a1a1a";
+  const upperProd = String(producto).toUpperCase();
+  if (upperProd === "MGO" || upperProd === "DIESEL") return "#1abc9c"; // Verde turquesa
+  if (upperProd === "VLSFO") return "#1a1a1a"; // Negro
+  // Todos los demás productos = Materia Prima (marrón oscuro)
+  return "#6b4423"; // Marrón oscuro para materia prima
+};
 
 // Genera el ID interno del CMT (registro DB)
 const genIdCMT = (cmts, sede, planta) => {
@@ -1854,31 +1864,56 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {/* TANQUES */}
           {nav==="tanques" && (
             <div>
-              <div style={{ fontWeight:800, fontSize:20, color:T.navy, marginBottom:4 }}>Tanques TK-111 al TK-117</div>
-              <div style={{ fontSize:11, color:T.muted, marginBottom:18 }}>Niveles en tiempo real · Planta QBS</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap:14 }}>
-                {tanques.map(t=>(
-                  <Card key={t.id}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
-                      <div>
-                        <div style={{ fontWeight:800, fontSize:16, color:T.navy }}>{t.id}</div>
-                        <div style={{ fontSize:11, color:T.muted }}>{t.producto} · {t.planta}</div>
+              <div style={{ fontFamily:"'Syne',sans-serif", fontSize:20, fontWeight:800, marginBottom:4 }}>Tanques TK-111 al TK-117</div>
+              <div style={{ fontSize:11, color:"#6b8fa8", marginBottom:22 }}>Niveles en tiempo real · Estilo SCADA</div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:20 }}>
+                {tanques.map(t=>{
+                  const pctLleno = Math.round((t.nivel/t.capacidad)*100);
+                  const productColor = getProductColor(t.producto);
+                  return (
+                    <div key={t.id} style={{ background:"#0f1e2e", border:"1px solid #ffffff0d", borderRadius:10, overflow:"hidden" }}>
+                      {/* Header */}
+                      <div style={{ background:"#162535", padding:"12px 16px", borderBottom:"1px solid #ffffff0a" }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:"#dff0f8", marginBottom:2 }}>{t.id} · {t.producto}</div>
+                        <div style={{ fontSize:10, color:"#6b8fa8" }}>{t.planta}</div>
                       </div>
-                      <Badge label={TIPO_LABEL[t.tipo]} color={TIPO_COLOR[t.tipo]}/>
-                    </div>
-                    <div style={{ background:"#162535", borderRadius:6, height:10, overflow:"hidden", marginBottom:10 }}>
-                      <div style={{ height:"100%", width:`${Math.round((t.nivel/t.capacidad)*100)}%`, background:TIPO_COLOR[t.tipo], borderRadius:6 }}/>
-                    </div>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
-                      {[["Capacidad",fmt(t.capacidad)],["Actual",fmt(t.nivel)],["Libre",fmt(t.capacidad-t.nivel)]].map(([l,v])=>(
-                        <div key={l} style={{ background:"#162535", borderRadius:8, padding:"8px 10px" }}>
-                          <div style={{ fontSize:9, color:T.muted, textTransform:"uppercase" }}>{l}</div>
-                          <div style={{ fontSize:12, fontWeight:700, marginTop:3 }}>{v} Gls</div>
+
+                      {/* Body */}
+                      <div style={{ padding:"14px 16px" }}>
+                        {/* Visualización del tanque - Rectángulo gris con relleno de color */}
+                        <div style={{ position:"relative", height:180, background:"#2a3a48", border:"2px solid #555", borderRadius:6, overflow:"hidden", marginBottom:14 }}>
+                          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:`${pctLleno}%`, background:productColor, transition:"height 0.3s ease" }}/>
                         </div>
-                      ))}
+
+                        {/* Datos del tanque */}
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
+                          <div style={{ background:"#162535", borderRadius:6, padding:"8px 10px" }}>
+                            <div style={{ fontSize:9, color:"#6b8fa8", textTransform:"uppercase", marginBottom:3 }}>Nivel</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(t.nivel)}</div>
+                          </div>
+                          <div style={{ background:"#162535", borderRadius:6, padding:"8px 10px" }}>
+                            <div style={{ fontSize:9, color:"#6b8fa8", textTransform:"uppercase", marginBottom:3 }}>Capacidad</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(t.capacidad)}</div>
+                          </div>
+                          <div style={{ background:"#162535", borderRadius:6, padding:"8px 10px" }}>
+                            <div style={{ fontSize:9, color:"#6b8fa8", textTransform:"uppercase", marginBottom:3 }}>Disponible</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(Math.max(0, t.capacidad - t.nivel))}</div>
+                          </div>
+                          <div style={{ background:"#162535", borderRadius:6, padding:"8px 10px" }}>
+                            <div style={{ fontSize:9, color:"#6b8fa8", textTransform:"uppercase", marginBottom:3 }}>% Lleno</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:pctLleno>=90?"#ff4d4d":pctLleno>=75?"#f59e0b":"#00e5a0", fontFamily:"monospace" }}>{pctLleno}%</div>
+                          </div>
+                        </div>
+
+                        {/* Botones */}
+                        <div style={{ display:"flex", gap:8 }}>
+                          <Btn sm variant="outline" color="#00b4ff">Detalles</Btn>
+                          <Btn sm color="#00e5a0">CMT</Btn>
+                        </div>
+                      </div>
                     </div>
-                  </Card>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
