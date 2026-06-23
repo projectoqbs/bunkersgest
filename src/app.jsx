@@ -1705,9 +1705,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </div>
                   </div>
                   <div style={{overflowX:"auto"}}>
-                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,borderRadius:8,overflow:"hidden"}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
                       <thead>
-                        <tr style={{background:"#162535"}}>
+                        <tr style={{background:T.bg}}>
                           <th style={thStyle}>N° CMT</th>
                           <th style={thStyle}>Fecha</th>
                           <th style={thStyle}>Tipo Operación</th>
@@ -1724,13 +1724,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {cmtsFinal.length===0 && (
                           <tr><td colSpan={10} style={{...tdStyle,textAlign:"center",color:T.muted,padding:28}}>Sin registros</td></tr>
                         )}
-                        {cmtsFinal.map(c=>{
+                        {cmtsFinal.map((c,idx)=>{
                           const tanquesNombres = [...new Set([...(c.tanques_antes||[]).map(t=>t.tanque), ...(c.tanques_despues||[]).map(t=>t.tanque)].filter(Boolean))].join(", ");
                           const movido = Number(c.total_movido||0);
                           const expandido = cmtExpandido===c.id;
+                          const bgRow = expandido ? "#dde6f0" : idx%2===0 ? T.card : "#eef2f7";
                           return (
                           <React.Fragment key={c.id}>
-                          <tr onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{cursor:"pointer",background:expandido?"#162535":"transparent",transition:"background 0.15s"}} onMouseEnter={e=>{if(!expandido)e.currentTarget.style.background="#162535"}} onMouseLeave={e=>{if(!expandido)e.currentTarget.style.background="transparent"}}>
+                          <tr onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{cursor:"pointer",background:bgRow,transition:"background 0.15s",borderTop:`1px solid ${T.border}`}} onMouseEnter={e=>{if(!expandido)e.currentTarget.style.background="#dde6f0"}} onMouseLeave={e=>{if(!expandido)e.currentTarget.style.background=bgRow}}>
                             <td style={tdStyle}><span style={{color:"#00e5a0",fontWeight:700,letterSpacing:0.5}}>{c.numero_cmt||c.id}</span></td>
                             <td style={tdStyle}><span style={{color:T.muted}}>{c.fecha}</span></td>
                             <td style={tdStyle}><Badge label={c.tipo_operacion||"—"} color="#00e5a0"/></td>
