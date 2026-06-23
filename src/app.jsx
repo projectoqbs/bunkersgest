@@ -60,9 +60,9 @@ const NAV_ROL = {
   logistica:   ["dashboard","viajes","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","trazabilidad"],
   operaciones: ["dashboard","pbs","trazabilidad"],
-  coordinador: ["dashboard","cmt","tanques","trazabilidad"],
+  coordinador: ["dashboard","pbs","tanques","trazabilidad"],
   despacho:    ["dashboard","despacho","trazabilidad"],
-  administrador:    ["dashboard","viajes","tiquetes","pbs","cmt","tanques","despacho","trazabilidad","usuarios"],
+  administrador:    ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","usuarios"],
 };
 
 const PBS_PREGUNTAS = [
@@ -814,10 +814,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <div style={{ width:58, background:T.sidebar, borderRight:`1px solid rgba(255,255,255,0.06)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100 }}>
           {(()=>{
             const GRUPOS = {
-              viajes:   { icon:"🚛", label:"LOGÍSTICA",  subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
-              tiquetes: { icon:"🧪", label:"LABORATORIO", subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
+              viajes:   { icon:"🚛", label:"LOGÍSTICA",    subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
+              tiquetes: { icon:"🧪", label:"LABORATORIO",  subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
+              pbs:      { icon:"⚙️", label:"OPERACIONES",  subs:[{id:"pbs",label:"PBS",badge:pendPBS},{id:"cmt",label:"CMT",badge:pendCMT}] },
             };
-            const badges = { pbs:pendPBS, cmt:pendCMT };
+            const badges = {};
 
             const btnStyle = (active, isHov, color) => ({
               width:42, height:42, border:"none", borderRadius:8, cursor:"pointer",
