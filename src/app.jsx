@@ -378,7 +378,7 @@ export default function App() {
   async function guardarViaje(e) {
     e.preventDefault(); setSaving(true);
     if (form.id) {
-      const {error} = await supabase.from("viajes").update({
+      const {error} = await supabaseAdmin.from("viajes").update({
         fecha:form.fecha, producto:form.producto, transportadora:form.transportadora,
         placa:form.placa, conductor:form.conductor, cedula:form.cedula,
         guia:form.guia, volumen_guia:Number(form.volumen_guia||0),
@@ -395,7 +395,7 @@ export default function App() {
       showToast(`Viaje ${form.id} actualizado`);
     } else {
       const id = genId("VJ", viajes);
-      const {error} = await supabase.from("viajes").insert([{
+      const {error} = await supabaseAdmin.from("viajes").insert([{
         id, ...form, volumen_guia:Number(form.volumen_guia||0),
         standby:Number(form.standby||0), flete:Number(form.flete||0),
         bono:Number(form.bono||0), barriles_nsv:Number(form.barriles_nsv||0),
@@ -440,9 +440,9 @@ export default function App() {
       resultado:aprueba?"APROBADO":"RECHAZADO",
     };
     if (form.id) {
-      const {error} = await supabase.from("tiquetes").update(campos).eq("id", form.id);
+      const {error} = await supabaseAdmin.from("tiquetes").update(campos).eq("id", form.id);
       if (!error && form.viaje_id) {
-        await supabase.from("viajes").update({estado:aprueba?"En Planta":"Rechazado"}).eq("id",form.viaje_id);
+        await supabaseAdmin.from("viajes").update({estado:aprueba?"En Planta":"Rechazado"}).eq("id",form.viaje_id);
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
@@ -450,13 +450,13 @@ export default function App() {
       showToast(`Tiquete ${form.id} actualizado — ${aprueba?"APROBADO":"RECHAZADO"}`);
     } else {
       const id = `TQ-${String(tiquetes.length+1+19571).padStart(5,"0")}`;
-      const {error} = await supabase.from("tiquetes").insert([{
+      const {error} = await supabaseAdmin.from("tiquetes").insert([{
         id,
         ...campos,
         creado_por:session.user.id,
       }]);
       if (!error && form.viaje_id) {
-        await supabase.from("viajes").update({estado:aprueba?"En Planta":"Rechazado", tiquete_id:id}).eq("id",form.viaje_id);
+        await supabaseAdmin.from("viajes").update({estado:aprueba?"En Planta":"Rechazado", tiquete_id:id}).eq("id",form.viaje_id);
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
@@ -468,7 +468,7 @@ export default function App() {
   async function guardarPBS(e) {
     e.preventDefault(); setSaving(true);
     if (form.id) {
-      const {error} = await supabase.from("pbs").update({
+      const {error} = await supabaseAdmin.from("pbs").update({
         ...form, checklist:pbsChecklist,
       }).eq("id", form.id);
       setSaving(false);
@@ -477,7 +477,7 @@ export default function App() {
       showToast(`PBS ${form.id} actualizado`);
     } else {
       const id = `PBS-${String(pbsList.length+1+19454).padStart(5,"0")}`;
-      const {error} = await supabase.from("pbs").insert([{
+      const {error} = await supabaseAdmin.from("pbs").insert([{
         id, ...form, checklist:pbsChecklist, fecha:today(),
         firma_auxiliar:perfil.nombre, creado_por:session.user.id
       }]);
@@ -552,7 +552,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     if (form.id) {
       // EDICIÓN: revertir impacto original y aplicar nuevo
       const original = cmts.find(c=>c.id===form.id);
-      const {error} = await supabase.from("cmts").update({
+      const {error} = await supabaseAdmin.from("cmts").update({
         numero_cmt:form.numero_cmt, pbs_id:form.pbs_id||null,
         tiquete_entrada:form.tiquete_entrada||null, producto:cmtProducto,
         tipo_operacion:form.tipo_operacion, tanques_antes:cmtAntes,
@@ -579,10 +579,10 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
           const ajuste = diffNuevo - diffOrig;
           if (ajuste !== 0) {
             const tq = tanques.find(t=>t.id===tanqueId);
-            if (tq) await supabase.from("tanques").update({nivel:Math.max(0, tq.nivel+ajuste)}).eq("id",tanqueId);
+            if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0, tq.nivel+ajuste)}).eq("id",tanqueId);
           }
         }
-        if (form.placa) await supabase.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
+        if (form.placa) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
@@ -597,7 +597,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       const plantaActual = sedeActual === "MALAMBO" ? (form.planta || perfil.planta || "PLANTA 1") : "";
       const numeroCmt = form.numero_cmt || genIdCMT(cmts, sedeActual, plantaActual);
       const id = `${numeroCmt}`;
-      const {error} = await supabase.from("cmts").insert([{
+      const {error} = await supabaseAdmin.from("cmts").insert([{
         id, numero_cmt:numeroCmt, pbs_id:form.pbs_id||null,
         tiquete_entrada:form.tiquete_entrada||null, fecha:form.fecha||today(),
         producto:cmtProducto,
@@ -616,10 +616,10 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
           if (ta && td.tanque) {
             const diff = Number(td.galones||0)-Number(ta.galones||0);
             const tanque = tanques.find(t=>t.id===td.tanque);
-            if (tanque) await supabase.from("tanques").update({nivel:Math.max(0,tanque.nivel+diff)}).eq("id",td.tanque);
+            if (tanque) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tanque.nivel+diff)}).eq("id",td.tanque);
           }
         }
-        if (form.placa) await supabase.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
+        if (form.placa) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
@@ -643,13 +643,13 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       const mismoTanque = form.tanque === original?.tanque;
       const nivelDisponible = mismoTanque ? (tqOrig?.nivel||0)+volOrig : (tqNuevo?.nivel||0);
       if (vol > nivelDisponible) { setSaving(false); return showToast("Volumen supera stock disponible",false); }
-      const {error} = await supabase.from("despachos").update({...form, volumen:vol}).eq("id",form.id);
+      const {error} = await supabaseAdmin.from("despachos").update({...form, volumen:vol}).eq("id",form.id);
       if (!error) {
         if (mismoTanque && tqOrig) {
-          await supabase.from("tanques").update({nivel: tqOrig.nivel + volOrig - vol}).eq("id",form.tanque);
+          await supabaseAdmin.from("tanques").update({nivel: tqOrig.nivel + volOrig - vol}).eq("id",form.tanque);
         } else {
-          if (tqOrig) await supabase.from("tanques").update({nivel: tqOrig.nivel + volOrig}).eq("id",original.tanque);
-          if (tqNuevo) await supabase.from("tanques").update({nivel: tqNuevo.nivel - vol}).eq("id",form.tanque);
+          if (tqOrig) await supabaseAdmin.from("tanques").update({nivel: tqOrig.nivel + volOrig}).eq("id",original.tanque);
+          if (tqNuevo) await supabaseAdmin.from("tanques").update({nivel: tqNuevo.nivel - vol}).eq("id",form.tanque);
         }
       }
       setSaving(false);
@@ -660,12 +660,12 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       const tanque = tanques.find(t=>t.id===form.tanque);
       if (!tanque||vol>tanque.nivel) { setSaving(false); return showToast("Volumen supera stock disponible",false); }
       const id = genId("DSP", despachos);
-      const {error} = await supabase.from("despachos").insert([{
+      const {error} = await supabaseAdmin.from("despachos").insert([{
         id, ...form, volumen:vol, operador:perfil.nombre,
         sede: form.sede || perfil.sede || "MALAMBO",
         fecha:today(), creado_por:session.user.id
       }]);
-      if (!error) await supabase.from("tanques").update({nivel:tanque.nivel-vol}).eq("id",form.tanque);
+      if (!error) await supabaseAdmin.from("tanques").update({nivel:tanque.nivel-vol}).eq("id",form.tanque);
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
       await loadData(); setModal(null); setForm({});
@@ -2447,7 +2447,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         // Calcular siguiente turno: máximo turno_planta actual + 1
         const {data:turnos} = await supabase.from("viajes").select("turno_planta").not("turno_planta","is",null);
         const maxTurno = turnos&&turnos.length>0 ? Math.max(...turnos.map(t=>t.turno_planta||0)) : 0;
-        const {error, data} = await supabase.from("viajes").update({
+        const {error, data} = await supabaseAdmin.from("viajes").update({
           fecha_llegada: form.fecha_llegada,
           observacion: form.observacion||null,
           estado: "En Planta",
@@ -2538,14 +2538,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const ban = desactivar ? "876600h" : "none";
             const {error:e1} = await supabaseAdmin.auth.admin.updateUserById(editUsuario.id, {ban_duration: ban});
             if (e1) return showToast("Error auth: "+e1.message, false);
-            const {error:e2} = await supabase.from("perfiles").update({activo: !desactivar}).eq("id",editUsuario.id);
+            const {error:e2} = await supabaseAdmin.from("perfiles").update({activo: !desactivar}).eq("id",editUsuario.id);
             if (e2) return showToast("Error perfil: "+e2.message, false);
             await loadData(); setEditUsuario(null);
             showToast(`Usuario ${editUsuario.nombre} ${desactivar?"deshabilitado":"habilitado"}`);
           }}>{editUsuario.activo===false ? "✅ Habilitar" : "⛔ Deshabilitar"}</Btn>
           <Btn color={T.danger} sm onClick={async()=>{
             if (!confirm(`¿Eliminar a ${editUsuario.nombre}? Esta acción no se puede deshacer.`)) return;
-            const {error:e1} = await supabase.from("perfiles").delete().eq("id",editUsuario.id);
+            const {error:e1} = await supabaseAdmin.from("perfiles").delete().eq("id",editUsuario.id);
             if (e1) return showToast("Error perfil: "+e1.message, false);
             const {error:e2} = await supabaseAdmin.auth.admin.deleteUser(editUsuario.id);
             if (e2) return showToast("Error auth: "+e2.message, false);
@@ -2557,7 +2557,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <Btn outline onClick={()=>setEditUsuario(null)}>Cancelar</Btn>
           <Btn color={T.orange} disabled={saving} onClick={async()=>{
             setSaving(true);
-            const {error} = await supabase.from("perfiles").update({
+            const {error} = await supabaseAdmin.from("perfiles").update({
               rol:editUsuario.rol, planta:editUsuario.planta||"PLANTA 1", permisos:permsEdit
             }).eq("id",editUsuario.id);
             setSaving(false);
@@ -2630,7 +2630,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             userId = existing.id;
           } else { setSaving(false); return showToast("Error: "+error.message, false); }
         } else { userId = newUser.user.id; }
-        const {error:e2} = await supabase.from("perfiles").upsert({
+        const {error:e2} = await supabaseAdmin.from("perfiles").upsert({
           id:userId, nombre:form.nombre, email:emailFinal,
           rol:form.rol, planta:form.planta||"PLANTA 1", sede:form.sede||"MALAMBO",
           cedula:form.cedula, activo:true, permisos:{}
