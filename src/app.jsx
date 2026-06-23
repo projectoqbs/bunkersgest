@@ -57,11 +57,11 @@ const NAV_META = {
 };
 
 const NAV_ROL = {
-  logistica:   ["dashboard","viajes","trazabilidad"],
-  laboratorio: ["dashboard","tiquetes","trazabilidad"],
+  logistica:   ["dashboard","viajes","pbs","trazabilidad"],
+  laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
   operaciones: ["dashboard","pbs","trazabilidad"],
   coordinador: ["dashboard","pbs","tanques","trazabilidad"],
-  despacho:    ["dashboard","despacho","trazabilidad"],
+  despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador:    ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","usuarios"],
 };
 
