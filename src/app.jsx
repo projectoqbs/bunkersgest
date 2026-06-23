@@ -90,8 +90,8 @@ const PBS_PREGUNTAS = [
   "¿Verificó que las válvulas de los otros tanques estén cerradas?",
   "Si está bombeando a una motonave: ¿Ya tiene el visto bueno del Ingeniero de Operaciones?",
   "¿Cada miembro del equipo se encuentra en el lugar que le corresponde?",
-  "Hora exacta del inicio y fin de las operaciones",
-  "Una vez estabilizado el sistema, registre RPM y presión del manómetro.",
+  "Una vez estabilizado el sistema, registre RPM",
+  "Una vez estabilizado el sistema, registre presión de manómetro",
 ];
 
 const TIPO_COLOR = { materia_prima:"#f59e0b", mezcla:"#00b4ff", terminado:"#00e5a0" };
@@ -664,7 +664,9 @@ const aprueba = esVLSFO
       }).eq("id", form.id);
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
-      await loadData(); setModal(null); setForm({}); setPbsChecklist(Array(27).fill(""));
+      await loadData();
+      if (pbsParaCarro !== null) { setModal("cmt"); } else { setModal(null); setForm({}); }
+      setPbsChecklist(Array(26).fill(""));
       showToast(`PBS ${form.id} actualizado`);
     } else {
       const id = `PBS-${String(pbsList.length+1+19454).padStart(5,"0")}`;
@@ -674,7 +676,7 @@ const aprueba = esVLSFO
       }]);
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
-      await loadData(); setPbsChecklist(Array(27).fill(""));
+      await loadData(); setPbsChecklist(Array(26).fill(""));
       if (pbsParaCarro !== null || pbsEsTrasiego) {
         const snap = cmtSnapshot;
         if (snap) {
@@ -2404,7 +2406,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Responsable Tanque / Carro que Despacha" type="text" value={form.responsable_despacha||""} onChange={f("responsable_despacha")}/>
               <Inp label="Responsable Tanque / Carro que Recibe" type="text" value={form.responsable_recibe||""} onChange={f("responsable_recibe")}/>
               <Inp label="Nombre Conductor" type="text" value={form.conductor_nombre||""} onChange={f("conductor_nombre")}/>
-              <Inp label="RPM / Presión Manómetro" type="text" value={form.rpm_manometro||""} onChange={f("rpm_manometro")}/>
             </Grid>
             <div style={{marginTop:12,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
               <div>
@@ -2421,7 +2422,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
             </div>
           </Section>
-          <Section title="Lista de Chequeo — 27 Puntos" color="#fb923c">
+          <Section title="Lista de Chequeo — 26 Puntos" color="#fb923c">
             <div style={{ display:"grid", gap:8 }}>
               {PBS_PREGUNTAS.map((p,i)=>{
                 // Punto 17 (índice 16): espacio vacío calculado de los tanques del CMT
@@ -2462,6 +2463,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </div>
                   );
                 }
+                if (i===24 || i===25) {
+                  return (
+                    <div key={i} style={{ background:T.bg, borderRadius:6, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, border:`1px solid ${T.border}` }}>
+                      <span style={{ fontSize:11, flex:1, color:T.text }}><b style={{color:T.orange}}>{i+1}.</b> {p}</span>
+                      <input type="text" value={pbsChecklist[i]} onChange={e=>{const n=[...pbsChecklist];n[i]=e.target.value;setPbsChecklist(n);}} placeholder="Registrar..." style={{ width:150, background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"5px 10px", color:T.text, fontSize:13, outline:"none" }} />
+                    </div>
+                  );
+                }
                 return (
                   <div key={i} style={{ background:T.bg, borderRadius:6, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, border:`1px solid ${T.border}` }}>
                     <span style={{ fontSize:11, flex:1, color:T.text }}><b style={{color:T.orange}}>{i+1}.</b> {p}</span>
@@ -2478,7 +2487,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </Section>
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:8 }}>
             <Btn outline onClick={()=>{ pbsParaCarro!==null ? setModal("cmt") : setModal(null); }}>Cancelar</Btn>
-            <Btn color="#fb923c" onClick={guardarPBS} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar PBS":"Registrar PBS"}</Btn>
+            <Btn color="#fb923c" onClick={guardarPBS} disabled={saving}>{saving?"Guardando...":form.id?"Guardar Cambios":"Registrar PBS"}</Btn>
           </div>
         </Modal>
       )}
@@ -2735,21 +2744,34 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div><Lbl>Peso Neto (Kg)</Lbl><input type="text" readOnly value={carro.peso_neto||""} style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
                   <div><Lbl>Galones Guía</Lbl><input type="text" readOnly value={carro.galones_guia ? fmt(Number(carro.galones_guia)) : ""} style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
                   <div><Lbl>Gls Descargados</Lbl><input type="number" value={carro.galones_descargados||""} onChange={e=>{const n=[...cmtCarros];n[i].galones_descargados=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>PBS</Lbl><div style={{background:T.card,border:`1px solid ${carro.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>{carro.pbs_id?<span style={{fontSize:11,color:T.orange,fontWeight:700}}>{carro.pbs_id}</span>:<span style={{fontSize:11,color:T.muted}}>Sin PBS</span>}<button onClick={()=>{
-                    const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
-                    setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
-                    setPbsParaCarro(i);
-                    setForm({
-                      tipo_operacion: form.tipo_operacion||"",
-                      bodega_recibe: tanquesRecibe,
-                      bodega_despacha: carro.placa||"",
-                      conductor_nombre: carro.conductor||"",
-                    });
-                    const cl = Array(27).fill("");
-                    if (carro.galones_guia) cl[18] = String(carro.galones_guia);
-                    setPbsChecklist(cl);
-                    setModal("pbs");
-                  }} style={{background:T.orange,border:"none",borderRadius:6,color:"#ffffff",padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}}>+ PBS</button></div></div>
+                  <div><Lbl>PBS</Lbl><div style={{background:T.card,border:`1px solid ${carro.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
+                    {carro.pbs_id
+                      ? <button onClick={()=>{
+                          const pbsExistente = pbsList.find(p=>p.id===carro.pbs_id);
+                          const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
+                          setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
+                          setPbsParaCarro(i);
+                          if (pbsExistente) {
+                            setForm({...pbsExistente});
+                            setPbsChecklist(pbsExistente.checklist||Array(26).fill(""));
+                          } else {
+                            setForm({ id: carro.pbs_id, tipo_operacion: form.tipo_operacion||"", bodega_recibe: tanquesRecibe, bodega_despacha: carro.placa||"", conductor_nombre: carro.conductor||"" });
+                            setPbsChecklist(Array(26).fill(""));
+                          }
+                          setModal("pbs");
+                        }} style={{background:"none",border:"none",color:T.orange,fontWeight:700,fontSize:11,cursor:"pointer",padding:0,fontFamily:"monospace",textDecoration:"underline"}}>{carro.pbs_id}</button>
+                      : <><span style={{fontSize:11,color:T.muted}}>Sin PBS</span><button onClick={()=>{
+                          const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
+                          setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
+                          setPbsParaCarro(i);
+                          setForm({ tipo_operacion: form.tipo_operacion||"", bodega_recibe: tanquesRecibe, bodega_despacha: carro.placa||"", conductor_nombre: carro.conductor||"" });
+                          const cl = Array(26).fill("");
+                          if (carro.galones_guia) cl[18] = String(carro.galones_guia);
+                          setPbsChecklist(cl);
+                          setModal("pbs");
+                        }} style={{background:T.orange,border:"none",borderRadius:6,color:"#ffffff",padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}}>+ PBS</button></>
+                    }
+                  </div></div>
                 </div>
                 <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
                   <button onClick={()=>setCmtCarros(cmtCarros.filter((_,j)=>j!==i))} style={{background:`${T.danger}15`,border:`1px solid ${T.danger}55`,borderRadius:6,color:T.danger,padding:"5px 14px",cursor:"pointer",fontSize:11,fontFamily:"system-ui,sans-serif"}}>✕ Eliminar carro</button>
