@@ -2294,19 +2294,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       {modal==="cmt" && (
         <Modal title={form.id ? `Corregir CMT — ${form.numero_cmt}` : "Control de Movimiento de Tanques"} onClose={()=>setModal(null)} wide>
-          <div style={{background:"#162535",borderRadius:10,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
+          <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:8,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
             <div>
               <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>No. CMT</div>
               <div style={{fontSize:20,fontWeight:900,color:T.success,letterSpacing:2}}>{form.numero_cmt||"—"}</div>
             </div>
             <div>
               <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Sede</div>
-              <div style={{fontSize:13,fontWeight:700,color:T.text}}>{form.sede||perfil.sede||"MALAMBO"}</div>
+              <div style={{fontSize:13,fontWeight:700,color:T.navy}}>{form.sede||perfil.sede||"MALAMBO"}</div>
             </div>
             {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (
               <div>
                 <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Planta</div>
-                <div style={{fontSize:13,fontWeight:700,color:T.text}}>{form.planta||perfil.planta||"PLANTA 1"}</div>
+                <div style={{fontSize:13,fontWeight:700,color:T.navy}}>{form.planta||perfil.planta||"PLANTA 1"}</div>
               </div>
             )}
             <div style={{marginLeft:"auto",fontSize:11,color:T.muted}}>Generado automáticamente</div>
@@ -2332,7 +2332,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   setCmtProducto(val);
                   setCmtDespues(prev=>prev.map(r=>({...r,producto:val})));
                   setCmtAntes(prev=>prev.map(r=>({...r,producto:val})));
-                }} placeholder="Ej: VLSFO, MGO..." style={{background:"#162535",border:"1px solid #f59e0b55",borderRadius:8,padding:"6px 12px",color:"#f59e0b",fontSize:12,fontFamily:"monospace",outline:"none",width:180,fontWeight:700,textTransform:"uppercase"}}/>
+                }} placeholder="Ej: VLSFO, MGO..." style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,fontFamily:"system-ui,sans-serif",outline:"none",width:180,textTransform:"uppercase"}}/>
               </div>
             </div>
             {(()=>{
@@ -2340,11 +2340,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtPlanta = form.planta || perfil?.planta || "PLANTA 1";
               const tanquesDisponibles = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
               const esTrasiego = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
-              const inputStyle = { width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" };
+              const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
               return cmtAntes.map((row,i)=>{
                 const rowD = cmtDespues[i]||{};
                 return esTrasiego ? (
-                <div key={i} style={{background:"#0d1a28",borderRadius:10,padding:"12px 14px",marginBottom:10,border:"1px solid #f59e0b22"}}>
+                <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
                       <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
@@ -2353,7 +2353,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
                         setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]) nd[i]={...nd[i],tanque:val}; return nd;});
                         calcularGalones(val,na[i].sonda,na[i].temp,na[i].api,false,i);
-                      }} style={{background:"#162535",border:"1px solid #f59e0b44",borderRadius:8,padding:"6px 10px",color:"#f59e0b",fontSize:12,fontFamily:"monospace",outline:"none",fontWeight:700}}>
+                      }} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none"}}>
                         <option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}
                       </select>
                     </div>
@@ -2382,7 +2382,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
                     setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]) nd[i]={...nd[i],tanque:val}; return nd;});
                     calcularGalones(val,na[i].sonda,na[i].temp,na[i].api,false,i);
-                  }} style={{ width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none" }}><option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}</select>
+                  }} style={{ width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none" }}><option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}</select>
                   </div>
                   <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtAntes];n[i].sonda=e.target.value;setCmtAntes(n);}} onBlur={e=>{const idx=i;calcularGalones(row.tanque,e.target.value,row.temp,row.api,false,idx);}} style={inputStyle}/></div>
                   <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="25" value={row.temp||""} onChange={e=>{const n=[...cmtAntes];n[i].temp=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,false,i);}} style={inputStyle}/></div>
@@ -2409,13 +2409,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
               const cmtPlanta = form.planta || perfil?.planta || "PLANTA 1";
               const tanquesDisponibles = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
-              const inputStyle = { width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" };
+              const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
               return cmtRecepcion.map((rec,i)=>(
-                <div key={i} style={{background:"#0d1a28",borderRadius:10,padding:"12px 14px",marginBottom:10,border:"1px solid #00e5a022"}}>
+                <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
                       <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
-                      <select value={rec.tanque} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tanque:e.target.value};setCmtRecepcion(n);}} style={{background:"#162535",border:"1px solid #00e5a044",borderRadius:8,padding:"6px 10px",color:"#00e5a0",fontSize:12,fontFamily:"monospace",outline:"none",fontWeight:700}}>
+                      <select value={rec.tanque} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tanque:e.target.value};setCmtRecepcion(n);}} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none"}}>
                         <option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}
                       </select>
                     </div>
@@ -2447,7 +2447,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <span style={{fontSize:11,fontWeight:700,color:"#00e5a0",letterSpacing:1,textTransform:"uppercase"}}>Medida Final</span>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:11,color:T.muted,fontFamily:"monospace"}}>Producto:</span>
-                <div style={{background:"#0d1a28",border:"1px solid #00e5a033",borderRadius:8,padding:"6px 14px",fontSize:12,fontFamily:"monospace",color:"#00e5a0",fontWeight:700,minWidth:180}}>{cmtProducto||"—"}</div>
+                <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 14px",fontSize:13,fontFamily:"system-ui,sans-serif",color:T.navy,fontWeight:700,minWidth:180}}>{cmtProducto||"—"}</div>
               </div>
             </div>
             {cmtDespues.map((row,i)=>{
@@ -2462,19 +2462,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr", gap:8, alignItems:"end" }}>
                   <div>
                     <Lbl>Tanque</Lbl>
-                    <div style={{background:"#0d1a28",border:"1px solid #00e5a033",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:"#00e5a0",fontWeight:700}}>{row.tanque||"—"}</div>
+                    <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"system-ui,sans-serif",color:T.navy,fontWeight:700}}>{row.tanque||"—"}</div>
                   </div>
-                  <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtDespues];n[i].sonda=e.target.value;setCmtDespues(n);}} onBlur={e=>{calcularGalones(row.tanque,e.target.value,row.temp,row.api,true,i);}} style={{ width:"100%", background:"#162535", border:"1px solid #ffffff14", borderRadius:8, padding:"8px 10px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" }}/></div>
+                  <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtDespues];n[i].sonda=e.target.value;setCmtDespues(n);}} onBlur={e=>{calcularGalones(row.tanque,e.target.value,row.temp,row.api,true,i);}} style={{ width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" }}/></div>
                   <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="25" value={row.temp||""} onChange={e=>{const n=[...cmtDespues];n[i].temp=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,true,i);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="14" value={row.api||""} onChange={e=>{const n=[...cmtDespues];n[i].api=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,n[i].temp,e.target.value,true,i);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones} onChange={e=>{const n=[...cmtDespues];n[i].galones=e.target.value;setCmtDespues(n);}} style={{ width:"100%", background:"#162535", border:`1px solid ${excede?"#ff4d4d44":"#ffffff14"}`, borderRadius:8, padding:"8px 10px", color: excede?"#ff4d4d":"#dff0f8", fontSize:12, fontFamily:"monospace", outline:"none", boxSizing:"border-box" }}/></div>
+                  <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones} onChange={e=>{const n=[...cmtDespues];n[i].galones=e.target.value;setCmtDespues(n);}} style={{ width:"100%", background:T.card, border:`1px solid ${excede?T.danger:T.border}`, borderRadius:6, padding:"8px 10px", color: excede?T.danger:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" }}/></div>
                 </div>
                 {espacioDisponible !== null && row.tanque && (()=>{
                   const capTotal = capMaxOp / 0.9;
                   const pctActual = capTotal > 0 ? Math.round((galonesIniciales / capTotal) * 100) : 0;
                   const enAlerta = galonesIniciales >= capMaxOp;
                   return (
-                    <div style={{marginTop:5,padding:"6px 10px",background:"#061520",borderRadius:6,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+                    <div style={{marginTop:5,padding:"6px 10px",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
                       <span style={{fontSize:11,color:T.muted}}>Espacio disponible: <b style={{color: enAlerta?"#ff4d4d":"#00e5a0"}}>{fmt(Math.max(0,espacioDisponible))} Gls</b></span>
                       {enAlerta && (
                         <span style={{fontSize:11,fontWeight:800,color:"#ff4d4d",background:"#2a0a0a",border:"1px solid #ff4d4d55",borderRadius:6,padding:"2px 10px",letterSpacing:0.5}}>
