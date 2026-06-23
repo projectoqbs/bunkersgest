@@ -440,12 +440,13 @@ export default function App() {
       resultado:aprueba?"APROBADO":"RECHAZADO",
     };
     if (form.id) {
-      const {error} = await supabaseAdmin.from("tiquetes").update(campos).eq("id", form.id);
+      const {error, data:upd} = await supabaseAdmin.from("tiquetes").update(campos).eq("id", form.id).select();
       if (!error && form.viaje_id) {
         await supabaseAdmin.from("viajes").update({estado:aprueba?"En Planta":"Rechazado"}).eq("id",form.viaje_id);
       }
       setSaving(false);
-      if (error) return showToast("Error: "+error.message,false);
+      if (error) return showToast("Error al guardar: "+error.message, false);
+      if (!upd||upd.length===0) return showToast("No se actualizó ningún registro — verifique permisos", false);
       await loadData(); setModal(null); setForm({});
       showToast(`Tiquete ${form.id} actualizado — ${aprueba?"APROBADO":"RECHAZADO"}`);
     } else {
