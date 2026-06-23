@@ -440,13 +440,20 @@ export default function App() {
       resultado:aprueba?"APROBADO":"RECHAZADO",
     };
     if (form.id) {
-      const {error, data:upd} = await supabaseAdmin.from("tiquetes").update(campos).eq("id", form.id).select();
-      if (!error && form.viaje_id) {
-        await supabaseAdmin.from("viajes").update({estado:aprueba?"En Planta":"Rechazado"}).eq("id",form.viaje_id);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/tiquetes?id=eq.${encodeURIComponent(form.id)}`, {
+        method:"PATCH",
+        headers:{"apikey":SUPABASE_SERVICE_KEY,"Authorization":`Bearer ${SUPABASE_SERVICE_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
+        body:JSON.stringify(campos)
+      });
+      if (!res.ok) { setSaving(false); return showToast("Error: "+await res.text(), false); }
+      if (form.viaje_id) {
+        await fetch(`${SUPABASE_URL}/rest/v1/viajes?id=eq.${form.viaje_id}`, {
+          method:"PATCH",
+          headers:{"apikey":SUPABASE_SERVICE_KEY,"Authorization":`Bearer ${SUPABASE_SERVICE_KEY}`,"Content-Type":"application/json"},
+          body:JSON.stringify({estado:aprueba?"En Planta":"Rechazado"})
+        });
       }
       setSaving(false);
-      if (error) return showToast("Error al guardar: "+error.message, false);
-      if (!upd||upd.length===0) return showToast("No se actualizó ningún registro — verifique permisos", false);
       await loadData(); setModal(null); setForm({});
       showToast(`Tiquete ${form.id} actualizado — ${aprueba?"APROBADO":"RECHAZADO"}`);
     } else {
