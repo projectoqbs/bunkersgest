@@ -1178,9 +1178,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{padding:"12px 14px",color:T.text,maxWidth:160}}>
                             <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.producto||"—"}</div>
                           </td>
-                          {/* Observaciones */}
-                          <td style={{padding:"12px 14px",color:T.muted,maxWidth:200}}>
-                            <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontStyle:v.observacion?"normal":"italic"}}>{v.observacion||"Sin observaciones"}</div>
+                          {/* Observaciones — valores fuera de spec del tiquete */}
+                          <td style={{padding:"12px 14px",maxWidth:220}}>
+                            {(()=>{
+                              const tq = tiquetes.find(t=>t.viaje_id===v.id);
+                              if (!tq) return <span style={{color:T.muted,fontStyle:"italic",fontSize:11}}>Sin análisis</span>;
+                              const esV = (tq.producto||"").toUpperCase()==="VLSFO";
+                              const fuera = [];
+                              if (Number(tq.flash_point)<60)       fuera.push(`Flash ${tq.flash_point}°C`);
+                              if (Number(tq.agua_destilacion)>=0.5) fuera.push(`Agua ${tq.agua_destilacion}%`);
+                              if (esV && Number(tq.viscosidad)>=380) fuera.push(`Visc. ${tq.viscosidad}`);
+                              if (esV && Number(tq.azufre)>=0.5)    fuera.push(`Azufre ${tq.azufre}%`);
+                              if (esV && Number(tq.tsa)>=0.1)       fuera.push(`TSA ${tq.tsa}`);
+                              if (fuera.length===0) return <span style={{color:"#00e5a0",fontWeight:700,fontSize:11}}>✔ Listo para descargue</span>;
+                              return <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                {fuera.map(f=><span key={f} style={{background:"#ff4d4d18",border:"1px solid #ff4d4d55",borderRadius:5,padding:"2px 7px",color:"#ff4d4d",fontSize:10,fontWeight:700}}>{f}</span>)}
+                              </div>;
+                            })()}
                           </td>
                           {/* Acción */}
                           <td style={{padding:"12px 14px"}}>
