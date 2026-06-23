@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
 
@@ -170,16 +170,20 @@ function Btn({ children, color, variant, sm, onClick, disabled, type="button" })
     </button>
   );
 }
-function Modal({ title, onClose, children, wide }) {
+function Modal({ title, onClose, children, wide, inline }) {
+  const inner = (
+    <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:10, width:"100%", maxWidth: inline ? "none" : (wide?860:560), overflow:"hidden", boxShadow: inline ? "0 1px 3px rgba(0,0,0,0.08)" : "0 20px 60px rgba(0,0,0,0.3)" }}>
+      <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <span style={{ fontSize:15, fontWeight:800, color:"#ffffff", letterSpacing:1, textTransform:"uppercase" }}>{title}</span>
+        <button onClick={onClose} style={{ background:"rgba(255,255,255,0.1)", border:"none", color:"#ffffff", fontSize:18, cursor:"pointer", borderRadius:6, width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+      </div>
+      <div style={{ padding:24, ...(inline ? { maxHeight:'calc(100vh - 180px)', overflowY:'auto' } : {}) }}>{children}</div>
+    </div>
+  );
+  if (inline) return inner;
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center", padding:20, overflowY:"auto" }}>
-      <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:10, width:"100%", maxWidth:wide?860:560, margin:"auto", overflow:"hidden", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
-        <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <span style={{ fontSize:15, fontWeight:800, color:"#ffffff", letterSpacing:1, textTransform:"uppercase" }}>{title}</span>
-          <button onClick={onClose} style={{ background:"rgba(255,255,255,0.1)", border:"none", color:"#ffffff", fontSize:18, cursor:"pointer", borderRadius:6, width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
-        </div>
-        <div style={{ padding:24 }}>{children}</div>
-      </div>
+      <div style={{ width:"100%", maxWidth:wide?860:560, margin:"auto" }}>{inner}</div>
     </div>
   );
 }
@@ -236,10 +240,16 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [perfil, setPerfil] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [nav, setNav] = useState("dashboard");
   const [labOpen, setLabOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [navHovered, setNavHovered] = useState(null);
+
+  // ── TAB SYSTEM ──
+  const [tabs, setTabs] = useState([
+    { id: 'tab-dashboard', type: 'nav', section: 'dashboard', title: 'Dashboard', icon: '▦', closeable: false }
+  ]);
+  const [activeTabId, setActiveTabId] = useState('tab-dashboard');
+  const tabStateCache = useRef({});
 
   // Data
   const [tanques, setTanques] = useState([]);
@@ -251,8 +261,7 @@ export default function App() {
     const [perfiles, setPerfiles] = useState([]);
     const [permisosRoles, setPermisosRoles] = useState([]);
 
-  // UI
-  const [modal, setModal] = useState(null);
+  // UI  (nav and modal are now DERIVED from the active tab — see below)
   const [form, setForm] = useState({});
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -307,6 +316,149 @@ export default function App() {
     setToast({msg,ok});
     setTimeout(()=>setToast(null),3500);
   }
+
+  // ── TAB DERIVED STATE ──
+  const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
+  const nav = activeTab?.type === 'nav' ? activeTab.section : '';
+  const modal = activeTab?.type === 'form' ? activeTab.formType : null;
+
+  // ── TAB HELPER FUNCTIONS ──
+  function captureFormState() {
+    return {
+      form: {...form},
+      cmtAntes: JSON.parse(JSON.stringify(cmtAntes)),
+      cmtDespues: JSON.parse(JSON.stringify(cmtDespues)),
+      cmtCarros: JSON.parse(JSON.stringify(cmtCarros)),
+      cmtProducto,
+      cmtRecepcion: JSON.parse(JSON.stringify(cmtRecepcion)),
+      pbsChecklist: [...pbsChecklist],
+      pbsParaCarro,
+      pbsEsTrasiego,
+      cmtSnapshot: cmtSnapshot ? JSON.parse(JSON.stringify(cmtSnapshot)) : null,
+    };
+  }
+
+  function restoreFormState(cached) {
+    if (!cached) return;
+    setForm(cached.form || {});
+    setCmtAntes(cached.cmtAntes || [{tanque:'',sonda:'',galones:''}]);
+    setCmtDespues(cached.cmtDespues || [{tanque:'',producto:'',sonda:'',galones:''}]);
+    setCmtCarros(cached.cmtCarros || [{placa:'',guia:'',tiquete:'',pbs_id:''}]);
+    setCmtProducto(cached.cmtProducto || '');
+    setCmtRecepcion(cached.cmtRecepcion || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
+    setPbsChecklist(cached.pbsChecklist || Array(27).fill(''));
+    setPbsParaCarro(cached.pbsParaCarro ?? null);
+    setPbsEsTrasiego(cached.pbsEsTrasiego || false);
+    setCmtSnapshot(cached.cmtSnapshot || null);
+  }
+
+  function clearFormState() {
+    setForm({});
+    setCmtAntes([{tanque:'',sonda:'',galones:''}]);
+    setCmtDespues([{tanque:'',producto:'',sonda:'',galones:''}]);
+    setCmtCarros([{placa:'',guia:'',tiquete:'',pbs_id:''}]);
+    setCmtProducto('');
+    setCmtRecepcion([{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
+    setPbsChecklist(Array(27).fill(''));
+    setPbsParaCarro(null);
+    setPbsEsTrasiego(false);
+    setCmtSnapshot(null);
+  }
+
+  function switchToTab(tabId) {
+    if (tabId === activeTabId) return;
+    if (activeTab?.type === 'form') {
+      tabStateCache.current[activeTabId] = captureFormState();
+    }
+    setActiveTabId(tabId);
+    const newTab = tabs.find(t => t.id === tabId);
+    if (newTab?.type === 'form') {
+      restoreFormState(tabStateCache.current[tabId]);
+    } else {
+      clearFormState();
+    }
+  }
+
+  function closeTab(tabId) {
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab?.closeable) return;
+    delete tabStateCache.current[tabId];
+    const remaining = tabs.filter(t => t.id !== tabId);
+    setTabs(remaining);
+    if (activeTabId === tabId) {
+      const prevTab = remaining[remaining.length - 1];
+      setActiveTabId(prevTab?.id);
+      if (prevTab?.type === 'form') {
+        restoreFormState(tabStateCache.current[prevTab.id]);
+      } else {
+        clearFormState();
+      }
+    }
+  }
+
+  function openNavTab(section) {
+    if (activeTab?.type === 'form') {
+      tabStateCache.current[activeTabId] = captureFormState();
+    }
+    const existing = tabs.find(t => t.type === 'nav' && t.section === section);
+    if (existing) {
+      setActiveTabId(existing.id);
+      clearFormState();
+      return;
+    }
+    const meta = NAV_META[section] || { label: section, icon: '📄' };
+    const id = `nav-${section}-${Date.now()}`;
+    setTabs(prev => [...prev, { id, type:'nav', section, title: meta.label, icon: meta.icon, closeable: true }]);
+    setActiveTabId(id);
+    clearFormState();
+  }
+
+  function openFormTab(formType, initialState) {
+    if (!formType) {
+      closeTab(activeTabId);
+      return;
+    }
+    // If there's already a tab of this formType, switch to it
+    // (e.g. returning from PBS → CMT, or editing from a section with a tab already open)
+    const existing = tabs.find(t => t.type === 'form' && t.formType === formType);
+    if (existing) {
+      if (activeTab?.type === 'form') {
+        tabStateCache.current[activeTabId] = captureFormState();
+      }
+      setActiveTabId(existing.id);
+      // If initialState provided or caller set form state (e.g. edit button), use current state;
+      // otherwise restore cached state (e.g. returning from PBS → CMT with cmtSnapshot)
+      if (initialState) {
+        restoreFormState(initialState);
+      }
+      // Note: if caller did setForm({...v}) before calling openFormTab, that state is already in
+      // React state and will be used — no need to restore cache
+      return;
+    }
+    if (activeTab?.type === 'form') {
+      tabStateCache.current[activeTabId] = captureFormState();
+    }
+    const FORM_META = {
+      cmt:        { title: 'Nuevo CMT',      icon: '📋' },
+      viaje:      { title: 'Nuevo Viaje',    icon: '🚛' },
+      tiquete:    { title: 'Nuevo Tiquete',  icon: '🧪' },
+      pbs:        { title: 'Nuevo PBS',      icon: '⚙️' },
+      despacho:   { title: 'Nuevo Despacho', icon: '🚢' },
+      usuario:    { title: 'Nuevo Usuario',  icon: '👥' },
+      turno_carro:{ title: 'Turno Carro',    icon: '🚛' },
+    };
+    const meta = FORM_META[formType] || { title: formType, icon: '📄' };
+    const id = `form-${formType}-${Date.now()}`;
+    setTabs(prev => [...prev, { id, type:'form', formType, title: meta.title, icon: meta.icon, closeable: true }]);
+    setActiveTabId(id);
+    if (initialState) {
+      restoreFormState(initialState);
+    }
+  }
+
+  // Backward-compat shims so all existing setModal / setNav calls work
+  function setModal(formType) { openFormTab(formType); }
+  function setNav(section) { openNavTab(section); }
 
   // ── AUTH ──
   useEffect(()=>{
@@ -396,7 +548,9 @@ export default function App() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    setNav("dashboard");
+    setTabs([{ id: 'tab-dashboard', type: 'nav', section: 'dashboard', title: 'Dashboard', icon: '▦', closeable: false }]);
+    setActiveTabId('tab-dashboard');
+    tabStateCache.current = {};
   }
 
   // ── GUARDAR DATOS ──
@@ -546,7 +700,20 @@ const aprueba = esVLSFO
         }
         setPbsParaCarro(null);
         setPbsEsTrasiego(false);
-        setModal("cmt");
+        // Go back to existing CMT tab or open a new one
+        setTabs(prevTabs => {
+          const cmtTab = prevTabs.find(t => t.type === 'form' && t.formType === 'cmt');
+          const pbsTabId = activeTabId;
+          if (cmtTab) {
+            setActiveTabId(cmtTab.id);
+            return prevTabs.filter(t => t.id !== pbsTabId);
+          } else {
+            // Open new CMT tab
+            const newId = `form-cmt-${Date.now()}`;
+            setTimeout(() => setActiveTabId(newId), 0);
+            return [...prevTabs.filter(t => t.id !== pbsTabId), { id: newId, type:'form', formType:'cmt', title:'Nuevo CMT', icon:'📋', closeable:true }];
+          }
+        });
         showToast(`PBS ${id} creado y vinculado al trasiego`);
       } else {
         setModal(null); setForm({});
@@ -827,7 +994,34 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </div>
       </div>
 
-      <div style={{ display:"flex", minHeight:"calc(100vh - 67px)" }}>
+      {/* Tab bar */}
+      <div style={{ background:T.card, borderBottom:`1px solid ${T.border}`, padding:"0 16px", display:"flex", alignItems:"stretch", gap:0, overflowX:"auto", minHeight:38, flexShrink:0 }}>
+        {tabs.map(tab => {
+          const isActive = tab.id === activeTabId;
+          return (
+            <div key={tab.id}
+              onClick={() => switchToTab(tab.id)}
+              style={{ display:'flex', alignItems:'center', gap:6, padding:'0 14px', cursor:'pointer',
+                borderBottom:`2px solid ${isActive ? T.orange : 'transparent'}`,
+                borderRight:`1px solid ${T.border}`,
+                background: isActive ? `${T.orange}10` : 'transparent',
+                color: isActive ? T.orange : T.muted,
+                fontWeight: isActive ? 700 : 400,
+                fontSize:12, whiteSpace:'nowrap', flexShrink:0, minHeight:38,
+                transition:'background 0.12s, color 0.12s',
+              }}>
+              <span style={{fontSize:13}}>{tab.icon}</span>
+              <span>{tab.title}</span>
+              {tab.closeable && (
+                <button onClick={e => { e.stopPropagation(); closeTab(tab.id); }}
+                  style={{ background:'none', border:'none', color:'inherit', cursor:'pointer', fontSize:14, padding:'0 0 0 4px', lineHeight:1, opacity:0.6 }}>×</button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ display:"flex", minHeight:"calc(100vh - 105px)" }}>
         {/* Sidebar */}
         <div style={{ width:58, background:T.sidebar, borderRight:`1px solid rgba(255,255,255,0.06)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100 }}>
           {(()=>{
@@ -2047,13 +2241,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   </div>
 )}
 
-        </div>
-      </div>
-
-      {/* ═══ MODALS ═══ */}
+      {/* ═══ FORMS (inline in content area) ═══ */}
 
       {modal==="viaje" && (
-        <Modal title={form.id ? `Editar Viaje ${form.id}` : "Registrar Nuevo Viaje"} onClose={()=>setModal(null)} wide>
+        <Modal title={form.id ? `Editar Viaje ${form.id}` : "Registrar Nuevo Viaje"} onClose={()=>setModal(null)} wide inline>
           <Section title="Identificación del Viaje" color="#f59e0b">
             <Grid cols={3}>
               <Sel label="Sede de Destino" value={form.sede||"MALAMBO"} onChange={f("sede")}>
@@ -2133,7 +2324,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           : esMP ? "Tiquete de Ingreso de Materia Prima"
           : `Análisis ${tipoA}`;
         return (
-        <Modal title={tituloModal} onClose={()=>setModal(null)} wide>
+        <Modal title={tituloModal} onClose={()=>setModal(null)} wide inline>
           <Section title="Identificación" color="#00b4ff">
             <Grid cols={esMP?2:3}>
               <Inp label="Proveedor / Campo Origen" type="text" value={form.proveedor||""} onChange={f("proveedor")}/>
@@ -2205,7 +2396,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       })()}
 
       {modal==="pbs" && (
-        <Modal title={form.id ? `Editar PBS ${form.id}` : "Permiso de Bombeo Seguro"} onClose={()=>{ pbsParaCarro!==null ? setModal("cmt") : setModal(null); }} wide>
+        <Modal title={form.id ? `Editar PBS ${form.id}` : "Permiso de Bombeo Seguro"} onClose={()=>{ pbsParaCarro!==null ? setModal("cmt") : setModal(null); }} wide inline>
           <Section title="Encabezado" color="#fb923c">
             <Grid cols={2}>
               <Inp label="Fecha" type="date" value={form.fecha||today()} onChange={f("fecha")}/>
@@ -2293,7 +2484,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       )}
 
       {modal==="cmt" && (
-        <Modal title={form.id ? `Corregir CMT — ${form.numero_cmt}` : "Control de Movimiento de Tanques"} onClose={()=>setModal(null)} wide>
+        <Modal title={form.id ? `Corregir CMT — ${form.numero_cmt}` : "Control de Movimiento de Tanques"} onClose={()=>setModal(null)} wide inline>
           <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:8,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
             <div>
               <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>No. CMT</div>
@@ -2590,7 +2781,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       )}
 
       {modal==="despacho" && (
-        <Modal title={form.id ? `Editar Despacho ${form.id}` : "Registrar Despacho a Buque"} onClose={()=>setModal(null)} wide>
+        <Modal title={form.id ? `Editar Despacho ${form.id}` : "Registrar Despacho a Buque"} onClose={()=>setModal(null)} wide inline>
           <Grid cols={2}>
             <Inp label="Fecha" type="date" value={form.fecha||""} onChange={f("fecha")}/>
             <Inp label="Nombre del Buque" type="text" placeholder="MV / MT / BT ..." value={form.buque||""} onChange={f("buque")}/>
@@ -2625,7 +2816,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     .sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
   const selViaje = enRuta.find(v=>v.id===form.viaje_id);
   return (
-    <Modal title="Registrar Llegada a Planta" onClose={()=>{setModal(null);setForm({});}}>
+    <Modal title="Registrar Llegada a Planta" onClose={()=>{setModal(null);setForm({});}} inline>
       <div style={{marginBottom:14,position:"relative"}}>
         <Lbl>Buscar Carro por Placa, Guía o Producto</Lbl>
         <input
@@ -2717,7 +2908,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const COLOR_ACCION = {ver:"#00b4ff",crear:"#00e5a0",editar:"#f59e0b",eliminar:"#ff4d4d"};
   const cedula = editUsuario.cedula || (editUsuario.email||"").replace("@quimibuques.com","");
   return (
-    <Modal title={`Gestionar Usuario — ${editUsuario.nombre}`} onClose={()=>setEditUsuario(null)} wide>
+    <Modal title={`Gestionar Usuario — ${editUsuario.nombre}`} onClose={()=>setEditUsuario(null)} wide inline>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:18}}>
         <div>
           <Lbl>Cédula</Lbl>
@@ -2820,7 +3011,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 {modal==="usuario" && (()=>{
   const esAdmin = (form.rol||"logistica") === "administrador";
   return (
-  <Modal title="Crear Nuevo Usuario" onClose={()=>setModal(null)} wide>
+  <Modal title="Crear Nuevo Usuario" onClose={()=>setModal(null)} wide inline>
     <Grid cols={2}>
       <Inp label="Nombre completo" type="text" value={form.nombre||""} onChange={f("nombre")}/>
       <Inp label="Cédula (usuario de acceso)" type="text" placeholder="Número de cédula" value={form.cedula||""} onChange={f("cedula")}/>
@@ -2891,6 +3082,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   );
 })()}
 
+        </div>
+      </div>
     </div>
   );
 }
