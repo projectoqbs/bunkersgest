@@ -1903,21 +1903,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       {/* Datos abajo */}
                       <div style={{ padding:"6px 8px", flexShrink:0 }}>
                         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
-                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
+                          <div style={{ background:"#ffffff", borderRadius:4, padding:"5px 7px" }}>
                             <div style={{ fontSize:8, color:"#6b8fa8", textTransform:"uppercase", marginBottom:2 }}>Nivel (Gls)</div>
-                            <div style={{ fontSize:10, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(nivel)}</div>
+                            <div style={{ fontSize:10, fontWeight:700, color:"#1a2a3a", fontFamily:"monospace" }}>{fmt(nivel)}</div>
                           </div>
-                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
+                          <div style={{ background:"#ffffff", borderRadius:4, padding:"5px 7px" }}>
                             <div style={{ fontSize:8, color:"#f59e0b", textTransform:"uppercase", marginBottom:2 }}>Carros cargue</div>
                             <div style={{ fontSize:10, fontWeight:700, color:"#f59e0b", fontFamily:"monospace" }}>{carrosCargue} carros</div>
                           </div>
-                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
+                          <div style={{ background:"#ffffff", borderRadius:4, padding:"5px 7px" }}>
                             <div style={{ fontSize:8, color:"#6b8fa8", textTransform:"uppercase", marginBottom:2 }}>Esp. libre (Gls)</div>
-                            <div style={{ fontSize:10, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(espLibre)}</div>
+                            <div style={{ fontSize:10, fontWeight:700, color:"#00b894", fontFamily:"monospace" }}>{fmt(espLibre)}</div>
                           </div>
-                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
-                            <div style={{ fontSize:8, color:"#00e5a0", textTransform:"uppercase", marginBottom:2 }}>Carros desc.</div>
-                            <div style={{ fontSize:10, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{carrosDesc} carros</div>
+                          <div style={{ background:"#ffffff", borderRadius:4, padding:"5px 7px" }}>
+                            <div style={{ fontSize:8, color:"#00b894", textTransform:"uppercase", marginBottom:2 }}>Carros desc.</div>
+                            <div style={{ fontSize:10, fontWeight:700, color:"#00b894", fontFamily:"monospace" }}>{carrosDesc} carros</div>
                           </div>
                         </div>
                       </div>
