@@ -2053,20 +2053,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       )}
 
       {modal==="tiquete" && (()=>{
-        // Solo los campos que vienen del viaje son readonly para no-admin
         const esAdmin = perfil.rol === "administrador";
         const tieneViaje = !!form.viaje_id;
         const soloLab = !esAdmin && tieneViaje;
+        const tipoA = form.tipo_analisis||"Tiquetes MP";
+        const esMP = tipoA === "Tiquetes MP";
+        const tituloModal = form.id
+          ? `Editar ${esMP?"Tiquete":("Análisis "+tipoA.replace("Tiquetes MP",""))} ${form.id}`
+          : esMP ? "Tiquete de Ingreso de Materia Prima"
+          : `Análisis ${tipoA}`;
         return (
-        <Modal title={form.id ? `Editar Tiquete ${form.id}` : "Tiquete de Ingreso de Materia Prima"} onClose={()=>setModal(null)} wide>
+        <Modal title={tituloModal} onClose={()=>setModal(null)} wide>
           <Section title="Identificación" color="#00b4ff">
-            <Grid cols={2}>
+            <Grid cols={esMP?2:3}>
               <Inp label="Proveedor / Campo Origen" type="text" value={form.proveedor||""} onChange={f("proveedor")}/>
               <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloLab}/>
-              <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")} readOnly={soloLab}/>
-              <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")}/>
-              <Inp label="Fecha Cargue" type="date" value={form.fecha_cargue||""} onChange={f("fecha_cargue")} readOnly={soloLab}/>
-              <Inp label="Fecha Llegada" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")} readOnly={soloLab}/>
+              {esMP && <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")} readOnly={soloLab}/>}
+              {esMP && <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")}/>}
+              {esMP && <Inp label="Fecha Cargue" type="date" value={form.fecha_cargue||""} onChange={f("fecha_cargue")} readOnly={soloLab}/>}
+              <Inp label="Fecha de Análisis" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")} readOnly={esMP&&soloLab}/>
             </Grid>
           </Section>
           <Section title="Análisis API" color="#00b4ff">
