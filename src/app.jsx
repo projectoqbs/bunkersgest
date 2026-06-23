@@ -1280,19 +1280,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{ fontWeight:800, fontSize:20, color:T.navy, marginBottom:4 }}>Resultados de Laboratorio</div>
               <div style={{ fontSize:11, color:T.muted, marginBottom:22 }}>Consolidado de análisis por tiquete</div>
               <Table
-                cols={["No. Tiquete","Fecha","Producto","Placa","API Corr.","Flash °C","Agua %","Viscosidad","Gls Recibidos","Resultado"]}
-                rows={tiquetesFiltrados.map(t=>[
-                  <span style={{color:"#00b4ff",fontFamily:"monospace"}}>{t.id}</span>,
-                  t.fecha_llegada||"—",
-                  t.producto,
-                  t.placa,
-                  <span style={{color:"#f59e0b",fontWeight:700}}>{t.api_corregido}°</span>,
-                  <span style={{color:Number(t.flash_point)>=60?"#00e5a0":"#ff4d4d",fontWeight:700}}>{t.flash_point}°C</span>,
-                  <span style={{color:Number(t.agua_destilacion)<=1?"#00e5a0":"#ff4d4d",fontWeight:700}}>{t.agua_destilacion}%</span>,
-                  t.viscosidad||"—",
-                  <span style={{color:"#00e5a0",fontWeight:700}}>{fmt(t.galones_recibidos)}</span>,
-                  <Badge label={t.resultado} color={t.resultado==="APROBADO"?"#00e5a0":"#ff4d4d"}/>,
-                ])}
+                cols={["No. Tiquete","Fecha","Producto","Placa","API Corr.","Flash °C","Agua %","Viscosidad","Azufre %","TSA","Resultado"]}
+                rows={tiquetesFiltrados.map(t=>{
+                  const esV = (t.producto||"").toUpperCase()==="VLSFO";
+                  const flashOk = Number(t.flash_point)>=60;
+                  const aguaOk  = Number(t.agua_destilacion)<0.5;
+                  const viscOk  = !esV || Number(t.viscosidad)<380;
+                  const azuOk   = !esV || Number(t.azufre)<0.5;
+                  const tsaOk   = !esV || Number(t.tsa)<0.1;
+                  return [
+                    <span style={{color:"#00b4ff",fontFamily:"monospace"}}>{t.id}</span>,
+                    t.fecha_llegada||"—",
+                    t.producto,
+                    t.placa,
+                    <span style={{color:T.text,fontWeight:600}}>{t.api_corregido}°</span>,
+                    <span style={{color:flashOk?T.text:T.danger,fontWeight:flashOk?400:700}}>{t.flash_point}°C</span>,
+                    <span style={{color:aguaOk?T.text:T.danger,fontWeight:aguaOk?400:700}}>{t.agua_destilacion}%</span>,
+                    <span style={{color:viscOk?T.text:T.danger,fontWeight:viscOk?400:700}}>{t.viscosidad||"—"}</span>,
+                    <span style={{color:azuOk?T.text:T.danger,fontWeight:azuOk?400:700}}>{t.azufre||"—"}</span>,
+                    <span style={{color:tsaOk?T.text:T.danger,fontWeight:tsaOk?400:700}}>{t.tsa||"—"}</span>,
+                    <Badge label={t.resultado} color={t.resultado==="APROBADO"?"#00e5a0":T.danger}/>,
+                  ];
+                })}
               />
             </div>
           )}
