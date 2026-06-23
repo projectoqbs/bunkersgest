@@ -1092,7 +1092,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const productosPlanta = [...new Set(viajesFiltrados.map(v=>v.producto).filter(Boolean))].sort();
             const enPlanta = viajesFiltrados
               .filter(v => v.fecha_llegada)
-              .filter(v => v.estado !== "Descargado" && v.estado !== "Rechazado")
+              .filter(v => v.estado !== "Descargado")
               .filter(v => {
                 const q = (plantaBusqueda||"").toLowerCase();
                 if (q && ![(v.placa||""),(v.producto||""),(v.id||""),(v.guia||"")].some(x=>x.toLowerCase().includes(q))) return false;
