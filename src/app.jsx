@@ -1296,7 +1296,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         </svg>
                       ), label:"No Rutinarios", color:"#fb923c", desc:"Análisis especiales y muestras puntuales" },
                   ].map(card=>(
-                    <div key={card.key} onClick={()=>{setForm({tipo_analisis:card.label});setModal("tiquete");}}
+                    <div key={card.key} onClick={()=>{ card.key==="tiquetes_mp" ? setAnalisisNav("tiquetes_mp") : (setForm({tipo_analisis:card.label}),setModal("tiquete")); }}
                       style={{background:T.card,border:`2px solid ${card.color}33`,borderRadius:16,padding:"32px 28px",display:"flex",flexDirection:"column",alignItems:"center",gap:16,cursor:"pointer",width:180,transition:"all 0.2s",boxShadow:`0 4px 20px ${card.color}18`}}
                       onMouseEnter={e=>{e.currentTarget.style.border=`2px solid ${card.color}`;e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 8px 28px ${card.color}44`;}}
                       onMouseLeave={e=>{e.currentTarget.style.border=`2px solid ${card.color}33`;e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=`0 4px 20px ${card.color}18`;}}>
