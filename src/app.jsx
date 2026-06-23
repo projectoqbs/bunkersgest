@@ -412,7 +412,10 @@ export default function App() {
 
   async function guardarTiquete(e) {
     e.preventDefault(); setSaving(true);
-    const aprueba = Number(form.agua_destilacion)<0.5 && Number(form.flash_point)>=60;
+    const esVLSFO = (form.producto||"").toUpperCase()==="VLSFO";
+const aprueba = esVLSFO
+  ? Number(form.agua_destilacion)<0.5 && Number(form.flash_point)>=60 && Number(form.viscosidad)<380 && Number(form.azufre)<0.5 && Number(form.tsa)<0.1
+  : Number(form.agua_destilacion)<0.5 && Number(form.flash_point)>=60;
     const campos = {
       viaje_id:form.viaje_id||null,
       fecha:form.fecha||today(),
@@ -1837,6 +1840,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Sel label="Producto" value={form.producto||""} onChange={f("producto")}>
                 <option value="">Seleccionar...</option>
                 {MATERIAS_PRIMAS.map(p=><option key={p}>{p}</option>)}
+                <option value="VLSFO">VLSFO</option>
                 <option value="MGO">MGO</option>
               </Sel>
               <Sel label="Transportadora" value={form.transportadora||""} onChange={f("transportadora")}>
