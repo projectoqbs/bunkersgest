@@ -2502,7 +2502,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             )}
             <div style={{marginLeft:"auto",fontSize:11,color:T.muted}}>Generado automáticamente</div>
           </div>
-          <div style={{display:"flex",gap:12,alignItems:"end",marginBottom:18,flexWrap:"nowrap"}}>
+          <div style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:18,flexWrap:"nowrap"}}>
             <div style={{width:155,flexShrink:0}}><Inp label="Fecha" type="date" value={form.fecha||today()} onChange={f("fecha")}/></div>
             <div style={{width:260,flexShrink:0}}><Sel label="Tipo de Operación" value={form.tipo_operacion||""} onChange={f("tipo_operacion")}>
               <option value="">Seleccionar...</option>
