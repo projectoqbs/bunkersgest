@@ -2409,15 +2409,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{marginTop:12,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
               <div>
                 <Lbl>Tipo de Operación</Lbl>
-                <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:"#fb923c",fontWeight:700,border:"1px solid #fb923c33"}}>{form.tipo_operacion||"—"}</div>
+                <div style={{background:T.bg,borderRadius:6,padding:"8px 12px",fontSize:13,color:T.orange,fontWeight:700,border:`1px solid ${T.border}`}}>{form.tipo_operacion||"—"}</div>
               </div>
               <div>
                 <Lbl>Bodega / Tanque que Recibe</Lbl>
-                <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:T.text,border:"1px solid #ffffff14"}}>{form.bodega_recibe||"—"}</div>
+                <div style={{background:T.bg,borderRadius:6,padding:"8px 12px",fontSize:13,color:T.text,border:`1px solid ${T.border}`}}>{form.bodega_recibe||"—"}</div>
               </div>
               <div>
                 <Lbl>Bodega / Carrotanque que Despacha</Lbl>
-                <div style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:13,fontFamily:"monospace",color:T.text,border:"1px solid #ffffff14"}}>{form.bodega_despacha||"—"}</div>
+                <div style={{background:T.bg,borderRadius:6,padding:"8px 12px",fontSize:13,color:T.text,border:`1px solid ${T.border}`}}>{form.bodega_despacha||"—"}</div>
               </div>
             </div>
           </Section>
@@ -2432,9 +2432,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     return acc + (tq ? Math.max(0, tq.capacidad - galonesIniciales) : 0);
                   }, 0);
                   return (
-                    <div key={i} style={{ background:"#162535", borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-                      <span style={{ fontSize:11, flex:1 }}><b style={{color:"#fb923c"}}>{i+1}.</b> {p}</span>
-                      <div style={{background:"#0f1e2e",borderRadius:6,padding:"6px 14px",fontSize:13,fontFamily:"monospace",fontWeight:700,color:"#00e5a0",border:"1px solid #00e5a033",whiteSpace:"nowrap"}}>
+                    <div key={i} style={{ background:T.bg, borderRadius:6, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, border:`1px solid ${T.border}` }}>
+                      <span style={{ fontSize:11, flex:1, color:T.text }}><b style={{color:T.orange}}>{i+1}.</b> {p}</span>
+                      <div style={{background:T.card,borderRadius:6,padding:"6px 14px",fontSize:13,fontWeight:700,color:T.success,border:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>
                         {fmt(espacioVacio)} Gls
                       </div>
                     </div>
@@ -2443,9 +2443,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 if (i===17) {
                   const totalInicial = cmtAntes.reduce((acc,t)=>acc+Number(t.galones||0),0);
                   return (
-                    <div key={i} style={{ background:"#162535", borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-                      <span style={{ fontSize:11, flex:1 }}><b style={{color:"#fb923c"}}>{i+1}.</b> {p}</span>
-                      <div style={{background:"#0f1e2e",borderRadius:6,padding:"6px 14px",fontSize:13,fontFamily:"monospace",fontWeight:700,color:"#f59e0b",border:"1px solid #f59e0b33",whiteSpace:"nowrap"}}>
+                    <div key={i} style={{ background:T.bg, borderRadius:6, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, border:`1px solid ${T.border}` }}>
+                      <span style={{ fontSize:11, flex:1, color:T.text }}><b style={{color:T.orange}}>{i+1}.</b> {p}</span>
+                      <div style={{background:T.card,borderRadius:6,padding:"6px 14px",fontSize:13,fontWeight:700,color:"#f59e0b",border:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>
                         {fmt(totalInicial)} Gls
                       </div>
                     </div>
@@ -2453,19 +2453,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 }
                 if (i===18) {
                   return (
-                    <div key={i} style={{ background:"#162535", borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-                      <span style={{ fontSize:11, flex:1 }}><b style={{color:"#fb923c"}}>{i+1}.</b> {p}</span>
+                    <div key={i} style={{ background:T.bg, borderRadius:6, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, border:`1px solid ${T.border}` }}>
+                      <span style={{ fontSize:11, flex:1, color:T.text }}><b style={{color:T.orange}}>{i+1}.</b> {p}</span>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        <input type="number" min="0" value={pbsChecklist[i]} onChange={e=>{const n=[...pbsChecklist];n[i]=e.target.value;setPbsChecklist(n);}} placeholder="0" style={{ width:110, background:"#0f1e2e", border:"1px solid #ffffff20", borderRadius:6, padding:"5px 10px", color:T.text, fontSize:13, fontFamily:"monospace", outline:"none", textAlign:"right" }} />
+                        <input type="number" min="0" value={pbsChecklist[i]} onChange={e=>{const n=[...pbsChecklist];n[i]=e.target.value;setPbsChecklist(n);}} placeholder="0" style={{ width:110, background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"5px 10px", color:T.text, fontSize:13, outline:"none", textAlign:"right" }} />
                         <span style={{fontSize:11,color:T.muted}}>Gls</span>
                       </div>
                     </div>
                   );
                 }
                 return (
-                  <div key={i} style={{ background:"#162535", borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-                    <span style={{ fontSize:11, flex:1 }}><b style={{color:"#fb923c"}}>{i+1}.</b> {p}</span>
-                    <select value={pbsChecklist[i]} onChange={e=>{const n=[...pbsChecklist];n[i]=e.target.value;setPbsChecklist(n);}} style={{ background:"#0f1e2e", border:"1px solid #ffffff14", borderRadius:6, padding:"4px 8px", color:T.text, fontSize:12, fontFamily:"monospace", outline:"none", minWidth:70 }}>
+                  <div key={i} style={{ background:T.bg, borderRadius:6, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, border:`1px solid ${T.border}` }}>
+                    <span style={{ fontSize:11, flex:1, color:T.text }}><b style={{color:T.orange}}>{i+1}.</b> {p}</span>
+                    <select value={pbsChecklist[i]} onChange={e=>{const n=[...pbsChecklist];n[i]=e.target.value;setPbsChecklist(n);}} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"6px 10px", color:T.text, fontSize:13, outline:"none", minWidth:80 }}>
                       <option value="">—</option>
                       <option value="SI">SI</option>
                       <option value="NO">NO</option>
