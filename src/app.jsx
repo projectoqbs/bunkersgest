@@ -2502,7 +2502,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             )}
             <div style={{marginLeft:"auto",fontSize:11,color:T.muted}}>Generado automáticamente</div>
           </div>
-          <Grid cols={2}>
+          <div style={{display:"grid",gridTemplateColumns:"160px 1fr 200px",gap:12,alignItems:"end",marginBottom:18}}>
             <Inp label="Fecha" type="date" value={form.fecha||today()} onChange={f("fecha")}/>
             <Sel label="Tipo de Operación" value={form.tipo_operacion||""} onChange={f("tipo_operacion")}>
               <option value="">Seleccionar...</option>
@@ -2512,35 +2512,34 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <option>TRASIEGO DE PRODUCTO</option>
               <option>PORTEO</option>
             </Sel>
-          </Grid>
+            <div>
+              <Lbl>Producto del CMT</Lbl>
+              {(()=>{
+                const prodAprobados = [...new Set(
+                  viajes
+                    .filter(v => v.estado === "En Planta")
+                    .filter(v => tiquetes.some(t => (t.viaje_id === v.id || t.id === v.tiquete_id) && t.resultado === "APROBADO"))
+                    .map(v => (v.producto||"").toUpperCase())
+                    .filter(Boolean)
+                )];
+                const opciones = [...new Set([...prodAprobados, "VLSFO", "HSFO"])].sort();
+                return (
+                  <select value={cmtProducto} onChange={e=>{
+                    const val = e.target.value;
+                    setCmtProducto(val);
+                    setCmtDespues(prev=>prev.map(r=>({...r,producto:val})));
+                    setCmtAntes(prev=>prev.map(r=>({...r,producto:val})));
+                  }} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}>
+                    <option value="">Seleccionar...</option>
+                    {opciones.map(p=><option key={p} value={p}>{p}</option>)}
+                  </select>
+                );
+              })()}
+            </div>
+          </div>
           <div style={{marginBottom:18}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #f59e0b33"}}>
+            <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #f59e0b33"}}>
               <span style={{fontSize:11,fontWeight:700,color:"#f59e0b",letterSpacing:1,textTransform:"uppercase"}}>{(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"?"Tanque de Despacho":"Medida Inicial"}</span>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:11,color:T.muted}}>Producto del CMT:</span>
-                {(()=>{
-                  // Productos con tiquete APROBADO en viajes En Planta
-                  const prodAprobados = [...new Set(
-                    viajes
-                      .filter(v => v.estado === "En Planta")
-                      .filter(v => tiquetes.some(t => (t.viaje_id === v.id || t.id === v.tiquete_id) && t.resultado === "APROBADO"))
-                      .map(v => (v.producto||"").toUpperCase())
-                      .filter(Boolean)
-                  )];
-                  const opciones = [...new Set([...prodAprobados, "VLSFO", "HSFO"])].sort();
-                  return (
-                    <select value={cmtProducto} onChange={e=>{
-                      const val = e.target.value;
-                      setCmtProducto(val);
-                      setCmtDespues(prev=>prev.map(r=>({...r,producto:val})));
-                      setCmtAntes(prev=>prev.map(r=>({...r,producto:val})));
-                    }} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,fontFamily:"system-ui,sans-serif",outline:"none",width:200}}>
-                      <option value="">Seleccionar producto...</option>
-                      {opciones.map(p=><option key={p} value={p}>{p}</option>)}
-                    </select>
-                  );
-                })()}
-              </div>
             </div>
             {(()=>{
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
