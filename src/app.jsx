@@ -252,6 +252,7 @@ export default function App() {
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
   const [viajesFiltroFechaH, setViajesFiltroFechaH] = useState("");
   const [analisisNav, setAnalisisNav] = useState("");
+  const [resFiltroTipo, setResFiltroTipo] = useState("");
   const [tiqBusqueda, setTiqBusqueda] = useState("");
   const [tiqFiltroProducto, setTiqFiltroProducto] = useState("");
   const [tiqFiltroResultado, setTiqFiltroResultado] = useState("");
@@ -444,6 +445,7 @@ const aprueba = esVLSFO
       azufre:Number(form.azufre||0),
       tsa:Number(form.tsa||0),
       observaciones:form.observaciones||null,
+      tipo_analisis:form.tipo_analisis||"Tiquetes MP",
       autoriza:aprueba,
       autoriza_nombre:perfil.nombre,
       resultado:aprueba?"APROBADO":"RECHAZADO",
@@ -1293,7 +1295,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         </svg>
                       ), label:"No Rutinarios", color:"#fb923c", desc:"Análisis especiales y muestras puntuales" },
                   ].map(card=>(
-                    <div key={card.key} onClick={()=>setAnalisisNav(card.key)}
+                    <div key={card.key} onClick={()=>{setForm({tipo_analisis:card.label});setModal("tiquete");}}
                       style={{background:T.card,border:`2px solid ${card.color}33`,borderRadius:16,padding:"32px 28px",display:"flex",flexDirection:"column",alignItems:"center",gap:16,cursor:"pointer",width:180,transition:"all 0.2s",boxShadow:`0 4px 20px ${card.color}18`}}
                       onMouseEnter={e=>{e.currentTarget.style.border=`2px solid ${card.color}`;e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 8px 28px ${card.color}44`;}}
                       onMouseLeave={e=>{e.currentTarget.style.border=`2px solid ${card.color}33`;e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=`0 4px 20px ${card.color}18`;}}>
@@ -1386,13 +1388,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               if(tiqFiltroFechaH&&(t.fecha_llegada||t.fecha)>tiqFiltroFechaH) return false;
               return true;
             });
+            const resFinalTyped = resFinal.filter(t=>!resFiltroTipo||(t.tipo_analisis||"Tiquetes MP")===resFiltroTipo);
+            const TIPOS_ANALISIS = ["Tiquetes MP","Planta 2","Planta 1","No Rutinarios"];
+            const tipoColor = {"Tiquetes MP":"#00b4ff","Planta 2":"#00e5a0","Planta 1":"#c084fc","No Rutinarios":"#fb923c"};
             return (
             <div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                 <div>
                   <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Resultados de Laboratorio</div>
-                  <div style={{ fontSize:11, color:T.muted }}>Consolidado de análisis por tiquete · <b style={{color:"#00b4ff"}}>{resFinal.length}</b> resultado(s)</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Consolidado de análisis · <b style={{color:"#00b4ff"}}>{resFinalTyped.length}</b> resultado(s)</div>
                 </div>
+              </div>
+              {/* Filtro rápido por tipo */}
+              <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+                {["", ...TIPOS_ANALISIS].map(tipo=>(
+                  <button key={tipo||"todos"} onClick={()=>setResFiltroTipo(tipo)}
+                    style={{padding:"5px 14px",borderRadius:20,border:`1px solid ${tipo?(tipoColor[tipo]+"55"):(T.border)}`,background:resFiltroTipo===tipo?(tipo?tipoColor[tipo]+"33":"#ffffff22"):"transparent",color:tipo?tipoColor[tipo]:T.muted,fontSize:11,cursor:"pointer",fontWeight:resFiltroTipo===tipo?700:400,transition:"all 0.15s"}}>
+                    {tipo||"Todos"}
+                  </button>
+                ))}
               </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:16}}>
                 <input value={tiqBusqueda||""} onChange={e=>setTiqBusqueda(e.target.value)} placeholder="🔍 Buscar tiquete, placa, viaje..." style={{...selSt,width:220,padding:"6px 12px"}}/>
@@ -1407,21 +1421,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </select>
                 <input type="date" value={tiqFiltroFechaD||""} onChange={e=>setTiqFiltroFechaD(e.target.value)} style={selSt} title="Desde"/>
                 <input type="date" value={tiqFiltroFechaH||""} onChange={e=>setTiqFiltroFechaH(e.target.value)} style={selSt} title="Hasta"/>
-                {(tiqBusqueda||tiqFiltroProducto||tiqFiltroResultado||tiqFiltroFechaD||tiqFiltroFechaH) && (
-                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                {(tiqBusqueda||tiqFiltroProducto||tiqFiltroResultado||tiqFiltroFechaD||tiqFiltroFechaH||resFiltroTipo) && (
+                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");setResFiltroTipo("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
                 )}
               </div>
               <Table
-                cols={["No. Tiquete","Fecha","Producto","Placa","API Corr.","Flash °C","Agua %","Viscosidad","Azufre %","TSA","Resultado"]}
-                rows={resFinal.map(t=>{
+                cols={["No. Tiquete","Tipo","Fecha","Producto","Placa","API Corr.","Flash °C","Agua %","Viscosidad","Azufre %","TSA","Resultado",""]}
+                rows={resFinalTyped.map(t=>{
                   const esV = (t.producto||"").toUpperCase()==="VLSFO";
                   const flashOk = Number(t.flash_point)>=60;
                   const aguaOk  = Number(t.agua_destilacion)<0.5;
                   const viscOk  = !esV || Number(t.viscosidad)<380;
                   const azuOk   = !esV || Number(t.azufre)<0.5;
                   const tsaOk   = !esV || Number(t.tsa)<0.1;
+                  const tipo = t.tipo_analisis||"Tiquetes MP";
                   return [
                     <span style={{color:"#00b4ff",fontFamily:"monospace"}}>{t.id}</span>,
+                    <Badge label={tipo} color={tipoColor[tipo]||"#00b4ff"}/>,
                     t.fecha_llegada||"—", t.producto, t.placa,
                     <span style={{color:T.text,fontWeight:600}}>{t.api_corregido}°</span>,
                     <span style={{color:flashOk?T.text:T.danger,fontWeight:flashOk?400:700}}>{t.flash_point}°C</span>,
@@ -1430,6 +1446,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <span style={{color:azuOk?T.text:T.danger,fontWeight:azuOk?400:700}}>{t.azufre||"—"}</span>,
                     <span style={{color:tsaOk?T.text:T.danger,fontWeight:tsaOk?400:700}}>{t.tsa||"—"}</span>,
                     <Badge label={t.resultado} color={t.resultado==="APROBADO"?"#00e5a0":T.danger}/>,
+                    puedeEditar("tiquetes",t.creado_por,t.created_at)
+                      ? <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:"#00b4ff22",border:"1px solid #00b4ff55",borderRadius:6,color:"#00b4ff",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                      : null,
                   ];
                 })}
               />
