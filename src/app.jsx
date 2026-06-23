@@ -412,7 +412,7 @@ export default function App() {
 
   async function guardarTiquete(e) {
     e.preventDefault(); setSaving(true);
-    const aprueba = Number(form.agua_destilacion)<=1.0 && Number(form.flash_point)>=60;
+    const aprueba = Number(form.agua_destilacion)<0.5 && Number(form.flash_point)>=60;
     const campos = {
       viaje_id:form.viaje_id||null,
       fecha:form.fecha||today(),
