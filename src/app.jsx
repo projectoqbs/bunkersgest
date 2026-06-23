@@ -801,7 +801,12 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
             if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0, tq.nivel+ajuste)}).eq("id",tanqueId);
           }
         }
-        if (form.placa) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
+        const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
+        if (placasCarros.length > 0) {
+          for (const placa of placasCarros) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",placa);
+        } else if (form.placa) {
+          await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
+        }
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
@@ -838,7 +843,12 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
             if (tanque) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tanque.nivel+diff)}).eq("id",td.tanque);
           }
         }
-        if (form.placa) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
+        const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
+        if (placasCarros.length > 0) {
+          for (const placa of placasCarros) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",placa);
+        } else if (form.placa) {
+          await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
+        }
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
