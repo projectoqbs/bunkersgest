@@ -2494,17 +2494,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {(form.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && <Section title="Carros Descargados" color="#6b8fa8">
             <div style={{fontSize:11,color:T.muted,marginBottom:10}}>Un registro por cada carro descargado en este CMT</div>
             {cmtCarros.map((carro,i)=>(
-              <div key={i} style={{background:"#0d1a28",borderRadius:10,padding:"12px 14px",marginBottom:12,border:"1px solid #ffffff0a"}}>
+              <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:12,border:`1px solid ${T.border}`}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-                  <div><Lbl>Placa</Lbl><input type="text" placeholder="Ej: ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.toUpperCase().replace(/\s/g,"");setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
-                  <div><Lbl>Guía</Lbl><input type="text" value={carro.guia} onChange={e=>{const n=[...cmtCarros];n[i].guia=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
-                  <div><Lbl>Tiquete</Lbl><input type="text" value={carro.tiquete} onChange={e=>{const n=[...cmtCarros];n[i].tiquete=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>Placa</Lbl><input type="text" placeholder="Ej: ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.toUpperCase().replace(/\s/g,"");setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>Guía</Lbl><input type="text" value={carro.guia} onChange={e=>{const n=[...cmtCarros];n[i].guia=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>Tiquete</Lbl><input type="text" value={carro.tiquete} onChange={e=>{const n=[...cmtCarros];n[i].tiquete=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
-                  <div><Lbl>Hora Inicio</Lbl><input type="time" value={carro.hora_inicio||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_inicio=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>Hora Final</Lbl><input type="time" value={carro.hora_final||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_final=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>Peso Neto</Lbl><input type="text" placeholder="Kg" value={carro.peso_neto||""} onChange={e=>{const n=[...cmtCarros];n[i].peso_neto=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,fontFamily:"monospace",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
-                  <div><Lbl>PBS</Lbl><div style={{background:"#162535",border:`1px solid ${carro.pbs_id?"#fb923c44":"#ffffff14"}`,borderRadius:8,padding:"8px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>{carro.pbs_id?<span style={{fontSize:11,color:"#fb923c",fontFamily:"monospace"}}>{carro.pbs_id}</span>:<span style={{fontSize:11,color:T.muted}}>Sin PBS</span>}<button onClick={()=>{
+                  <div><Lbl>Hora Inicio</Lbl><input type="time" value={carro.hora_inicio||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_inicio=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>Hora Final</Lbl><input type="time" value={carro.hora_final||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_final=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>Peso Neto</Lbl><input type="text" placeholder="Kg" value={carro.peso_neto||""} onChange={e=>{const n=[...cmtCarros];n[i].peso_neto=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>PBS</Lbl><div style={{background:T.card,border:`1px solid ${carro.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>{carro.pbs_id?<span style={{fontSize:11,color:T.orange,fontWeight:700}}>{carro.pbs_id}</span>:<span style={{fontSize:11,color:T.muted}}>Sin PBS</span>}<button onClick={()=>{
                     const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
                     setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
                     setPbsParaCarro(i);
@@ -2516,10 +2516,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     });
                     setPbsChecklist(Array(27).fill(""));
                     setModal("pbs");
-                  }} style={{background:"#fb923c",border:"none",borderRadius:6,color:"#071422",padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}}>+ PBS</button></div></div>
+                  }} style={{background:T.orange,border:"none",borderRadius:6,color:"#ffffff",padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}}>+ PBS</button></div></div>
                 </div>
                 <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-                  <button onClick={()=>setCmtCarros(cmtCarros.filter((_,j)=>j!==i))} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"5px 14px",cursor:"pointer",fontSize:11,fontFamily:"monospace"}}>✕ Eliminar carro</button>
+                  <button onClick={()=>setCmtCarros(cmtCarros.filter((_,j)=>j!==i))} style={{background:`${T.danger}15`,border:`1px solid ${T.danger}55`,borderRadius:6,color:T.danger,padding:"5px 14px",cursor:"pointer",fontSize:11,fontFamily:"system-ui,sans-serif"}}>✕ Eliminar carro</button>
                 </div>
               </div>
             ))}
@@ -2536,9 +2536,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && (
             <Section title="Permiso de Bombeo Seguro" color="#fb923c">
               <div style={{display:"flex",alignItems:"center",gap:12}}>
-                <div style={{flex:1,background:"#162535",border:`1px solid ${form.pbs_id?"#fb923c44":"#ffffff14"}`,borderRadius:8,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{flex:1,background:T.card,border:`1px solid ${form.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   {form.pbs_id
-                    ? <span style={{fontSize:12,color:"#fb923c",fontFamily:"monospace",fontWeight:700}}>{form.pbs_id}</span>
+                    ? <span style={{fontSize:12,color:T.orange,fontWeight:700}}>{form.pbs_id}</span>
                     : <span style={{fontSize:12,color:T.muted}}>Sin PBS vinculado</span>}
                   <button onClick={()=>{
                     const tanquesDespacho = cmtAntes.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
@@ -2553,7 +2553,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     });
                     setPbsChecklist(Array(27).fill(""));
                     setModal("pbs");
-                  }} style={{background:"#fb923c",border:"none",borderRadius:6,color:"#071422",padding:"5px 12px",cursor:"pointer",fontSize:11,fontWeight:700}}>
+                  }} style={{background:T.orange,border:"none",borderRadius:6,color:"#ffffff",padding:"5px 12px",cursor:"pointer",fontSize:11,fontWeight:700}}>
                     {form.pbs_id ? "↺ Cambiar PBS" : "+ Generar PBS"}
                   </button>
                 </div>
