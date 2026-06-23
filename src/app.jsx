@@ -201,7 +201,15 @@ function Table({ cols, rows, emptyMsg }) {
         <tbody>
           {rows.length===0
             ? <tr><td colSpan={cols.length} style={{ padding:24, textAlign:"center", color:T.muted, fontSize:12 }}>{emptyMsg||"Sin registros"}</td></tr>
-            : rows.map((r,i)=><tr key={i} style={{ borderTop:`1px solid ${T.border}`, background: i%2===0 ? T.card : "#fafbfc" }}>{r.map((cell,j)=><td key={j} style={{ padding:"9px 14px", fontSize:12, color:T.text, whiteSpace:"nowrap" }}>{cell}</td>)}</tr>)
+            : rows.map((r,i)=>{
+                const bg = i%2===0 ? T.card : "#eef2f7";
+                return <tr key={i}
+                  style={{ borderTop:`1px solid ${T.border}`, background:bg, transition:"background 0.12s" }}
+                  onMouseEnter={e=>e.currentTarget.style.background="#dde6f0"}
+                  onMouseLeave={e=>e.currentTarget.style.background=bg}>
+                  {r.map((cell,j)=><td key={j} style={{ padding:"9px 14px", fontSize:12, color:T.text, whiteSpace:"nowrap" }}>{cell}</td>)}
+                </tr>;
+              })
           }
         </tbody>
       </table>
@@ -1151,9 +1159,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       const llegó = !!v.fecha_llegada;
                       const turno = v.turno_planta||null;
                       return (
-                        <tr key={v.id} style={{borderTop:`1px solid ${T.border}`,background:idx%2===0?T.card:"#fafbfc",transition:"background 0.12s"}}
-                          onMouseEnter={e=>e.currentTarget.style.background="#f0f4f8"}
-                          onMouseLeave={e=>e.currentTarget.style.background=idx%2===0?T.card:"#fafbfc"}>
+                        <tr key={v.id} style={{borderTop:`1px solid ${T.border}`,background:idx%2===0?T.card:"#eef2f7",transition:"background 0.12s"}}
+                          onMouseEnter={e=>e.currentTarget.style.background="#dde6f0"}
+                          onMouseLeave={e=>e.currentTarget.style.background=idx%2===0?T.card:"#eef2f7"}>
                           {/* Número de turno */}
                           <td style={{padding:"12px 14px"}}>
                             {turno
