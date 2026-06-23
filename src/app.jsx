@@ -124,7 +124,7 @@ const genIdCMT = (cmts, sede, planta) => {
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const T = {
   navy:"#003D5C", sidebar:"#2D3142", orange:"#FF6B35", success:"#00B894",
-  danger:"#D63031", bg:"#f5f6fa", text:"#1E1E24", card:"#ffffff",
+  danger:"#D63031", bg:"#e8eaf0", text:"#1E1E24", card:"#ffffff",
   border:"#e0e0e0", muted:"#6b7a99",
 };
 
@@ -172,15 +172,15 @@ function Btn({ children, color, variant, sm, onClick, disabled, type="button" })
 }
 function Modal({ title, onClose, children, wide, inline }) {
   const inner = (
-    <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:10, width:"100%", maxWidth: inline ? "none" : (wide?860:560), overflow:"hidden", boxShadow: inline ? "0 1px 3px rgba(0,0,0,0.08)" : "0 20px 60px rgba(0,0,0,0.3)" }}>
-      <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div style={{ background:T.card, border: inline ? "none" : `1px solid ${T.border}`, borderRadius: inline ? 0 : 10, width:"100%", maxWidth: inline ? "none" : (wide?860:560), overflow:"hidden", boxShadow: inline ? "none" : "0 20px 60px rgba(0,0,0,0.3)", display: inline ? "flex" : "block", flexDirection:"column", height: inline ? "100%" : "auto" }}>
+      <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0 }}>
         <span style={{ fontSize:15, fontWeight:800, color:"#ffffff", letterSpacing:1, textTransform:"uppercase" }}>{title}</span>
         <button onClick={onClose} style={{ background:"rgba(255,255,255,0.1)", border:"none", color:"#ffffff", fontSize:18, cursor:"pointer", borderRadius:6, width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
       </div>
-      <div style={{ padding:24, ...(inline ? { maxHeight:'calc(100vh - 180px)', overflowY:'auto' } : {}) }}>{children}</div>
+      <div style={{ padding:24, ...(inline ? { flex:1, overflowY:'auto' } : {}) }}>{children}</div>
     </div>
   );
-  if (inline) return inner;
+  if (inline) return <div style={{ height:"100%", display:"flex", flexDirection:"column" }}>{inner}</div>;
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center", padding:20, overflowY:"auto" }}>
       <div style={{ width:"100%", maxWidth:wide?860:560, margin:"auto" }}>{inner}</div>
@@ -986,7 +986,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const pendCMT = pbsList.filter(p=>!cmtsFiltrados.find(c=>c.pbs_id===p.id)).length;
 
   return (
-    <div style={{ fontFamily:"system-ui,sans-serif", background:T.bg, minHeight:"100vh", color:T.text }}>
+    <div style={{ fontFamily:"system-ui,sans-serif", background:T.bg, height:"100vh", overflow:"hidden", display:"flex", flexDirection:"column", color:T.text }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeSlideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}`}</style>
 
       {toast && <div style={{ position:"fixed", top:18, right:18, zIndex:9999, background:toast.ok?T.success:T.danger, borderRadius:8, padding:"12px 20px", color:"#ffffff", fontSize:13, fontWeight:700, boxShadow:"0 4px 16px rgba(0,0,0,0.25)", maxWidth:360 }}>{toast.msg}</div>}
@@ -1036,9 +1036,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         })}
       </div>
 
-      <div style={{ display:"flex", minHeight:"calc(100vh - 105px)" }}>
+      <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
         {/* Sidebar */}
-        <div style={{ width:58, background:T.sidebar, borderRight:`1px solid rgba(255,255,255,0.06)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100 }}>
+        <div style={{ width:58, background:T.sidebar, borderRight:`1px solid rgba(255,255,255,0.06)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflowY:"hidden" }}>
           {(()=>{
             const GRUPOS = {
               viajes:   { icon:"🚛", label:"LOGÍSTICA",    subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
@@ -1147,7 +1147,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </div>
 
         {/* Content */}
-        <div style={{ flex:1, padding:24, overflowY:"auto", background:T.bg }}>
+        <div style={{ flex:1, padding: modal ? 0 : 24, overflowY: modal ? "hidden" : "auto", background:T.bg }}>
 
           {/* DASHBOARD */}
           {nav==="dashboard" && (
