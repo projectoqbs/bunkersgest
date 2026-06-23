@@ -769,7 +769,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const horas = (new Date() - new Date(created_at)) / 1000 / 3600;
   return horas <= 72;
 };
-  const ALL_MODULOS = ["dashboard","viajes","tiquetes","pbs","cmt","tanques","despacho","trazabilidad","usuarios"];
+  const ALL_MODULOS = ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","usuarios"];
   const navItems = perfil.rol === "administrador"
     ? NAV_ROL.administrador
     : ALL_MODULOS.filter(m => {
