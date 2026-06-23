@@ -987,7 +987,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
   return (
     <div style={{ fontFamily:"system-ui,sans-serif", background:T.bg, height:"100vh", overflow:"hidden", display:"flex", flexDirection:"column", color:T.text }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeSlideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}`}</style>
+      <style>{`html,body{margin:0;padding:0;overflow:hidden;height:100%} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeSlideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}`}</style>
 
       {toast && <div style={{ position:"fixed", top:18, right:18, zIndex:9999, background:toast.ok?T.success:T.danger, borderRadius:8, padding:"12px 20px", color:"#ffffff", fontSize:13, fontWeight:700, boxShadow:"0 4px 16px rgba(0,0,0,0.25)", maxWidth:360 }}>{toast.msg}</div>}
 
@@ -1038,7 +1038,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
         {/* Sidebar */}
-        <div style={{ width:58, background:T.sidebar, borderRight:`1px solid rgba(255,255,255,0.06)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflowY:"hidden" }}>
+        <div style={{ width:58, background:T.sidebar, borderRight:`1px solid rgba(255,255,255,0.06)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflow:"visible" }}>
           {(()=>{
             const GRUPOS = {
               viajes:   { icon:"🚛", label:"LOGÍSTICA",    subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
