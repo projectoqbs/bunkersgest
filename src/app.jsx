@@ -346,7 +346,7 @@ export default function App() {
     setCmtCarros(cached.cmtCarros || [{placa:'',guia:'',tiquete:'',pbs_id:''}]);
     setCmtProducto(cached.cmtProducto || '');
     setCmtRecepcion(cached.cmtRecepcion || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
-    setPbsChecklist(cached.pbsChecklist || Array(27).fill(''));
+    setPbsChecklist(cached.pbsChecklist || Array(26).fill(''));
     setPbsParaCarro(cached.pbsParaCarro ?? null);
     setPbsEsTrasiego(cached.pbsEsTrasiego || false);
     setCmtSnapshot(cached.cmtSnapshot || null);
@@ -359,7 +359,7 @@ export default function App() {
     setCmtCarros([{placa:'',guia:'',tiquete:'',pbs_id:''}]);
     setCmtProducto('');
     setCmtRecepcion([{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
-    setPbsChecklist(Array(27).fill(''));
+    setPbsChecklist(Array(26).fill(''));
     setPbsParaCarro(null);
     setPbsEsTrasiego(false);
     setCmtSnapshot(null);
@@ -2773,26 +2773,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       ? <button onClick={()=>{
                           const pbsExistente = pbsList.find(p=>p.id===carro.pbs_id);
                           const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
-                          setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
+                          const snap = {form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]};
+                          setCmtSnapshot(snap);
                           setPbsParaCarro(i);
-                          if (pbsExistente) {
-                            setForm({...pbsExistente});
-                            setPbsChecklist(pbsExistente.checklist||Array(26).fill(""));
-                          } else {
-                            setForm({ id: carro.pbs_id, tipo_operacion: form.tipo_operacion||"", bodega_recibe: tanquesRecibe, bodega_despacha: carro.placa||"", conductor_nombre: carro.conductor||"" });
-                            setPbsChecklist(Array(26).fill(""));
-                          }
-                          setModal("pbs");
+                          const pbsForm = pbsExistente ? {...pbsExistente} : { id: carro.pbs_id, tipo_operacion: form.tipo_operacion||"", bodega_recibe: tanquesRecibe, bodega_despacha: carro.placa||"", conductor_nombre: carro.conductor||"" };
+                          const pbsCl = pbsExistente?.checklist || Array(26).fill("");
+                          const pbsInitialState = { form: pbsForm, pbsChecklist: pbsCl, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion], pbsParaCarro: i, pbsEsTrasiego: false, cmtSnapshot: snap };
+                          openFormTab("pbs", pbsInitialState);
                         }} style={{background:"none",border:"none",color:T.orange,fontWeight:700,fontSize:11,cursor:"pointer",padding:0,fontFamily:"monospace",textDecoration:"underline"}}>{carro.pbs_id}</button>
                       : <><span style={{fontSize:11,color:T.muted}}>Sin PBS</span><button onClick={()=>{
                           const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
-                          setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
-                          setPbsParaCarro(i);
-                          setForm({ tipo_operacion: form.tipo_operacion||"", bodega_recibe: tanquesRecibe, bodega_despacha: carro.placa||"", conductor_nombre: carro.conductor||"" });
+                          const snap = {form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]};
                           const cl = Array(26).fill("");
                           if (carro.galones_guia) cl[18] = String(carro.galones_guia);
-                          setPbsChecklist(cl);
-                          setModal("pbs");
+                          const pbsForm = { tipo_operacion: form.tipo_operacion||"", bodega_recibe: tanquesRecibe, bodega_despacha: carro.placa||"", conductor_nombre: carro.conductor||"" };
+                          const pbsInitialState = { form: pbsForm, pbsChecklist: cl, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion], pbsParaCarro: i, pbsEsTrasiego: false, cmtSnapshot: snap };
+                          openFormTab("pbs", pbsInitialState);
                         }} style={{background:T.orange,border:"none",borderRadius:6,color:"#ffffff",padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}}>+ PBS</button></>
                     }
                   </div></div>
