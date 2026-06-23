@@ -665,9 +665,22 @@ const aprueba = esVLSFO
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
       await loadData();
-      if (pbsParaCarro !== null) { setModal("cmt"); } else { setModal(null); setForm({}); }
+      if (pbsParaCarro !== null) {
+        const snap = cmtSnapshot;
+        if (snap) {
+          setForm({...snap.form});
+          setCmtAntes(snap.cmtAntes);
+          setCmtDespues(snap.cmtDespues);
+          setCmtCarros(snap.cmtCarros);
+          setCmtProducto(snap.cmtProducto);
+          setCmtRecepcion(snap.cmtRecepcion);
+          setCmtSnapshot(null);
+        }
+        setPbsParaCarro(null);
+        setModal("cmt");
+      } else { setModal(null); setForm({}); }
       setPbsChecklist(Array(26).fill(""));
-      showToast(`PBS ${form.id} actualizado`);
+      showToast(`PBS ${form.id} guardado`);
     } else {
       const id = `PBS-${String(pbsList.length+1+19454).padStart(5,"0")}`;
       const {error} = await supabaseAdmin.from("pbs").insert([{
@@ -2333,6 +2346,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloLab}/>
               {esMP && <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")} readOnly={soloLab}/>}
               {esMP && <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")}/>}
+              {esMP && <Inp label="Nombre Conductor" type="text" value={form.nombre_conductor||""} onChange={f("nombre_conductor")}/>}
               {esMP && <Inp label="Fecha Cargue" type="date" value={form.fecha_cargue||""} onChange={f("fecha_cargue")} readOnly={soloLab}/>}
               <Inp label="Fecha de Análisis" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")} readOnly={esMP&&soloLab}/>
             </Grid>
@@ -2743,7 +2757,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div><Lbl>Peso Salida (Kg)</Lbl><input type="number" value={carro.peso_salida||""} onChange={e=>{const n=[...cmtCarros];n[i].peso_salida=e.target.value;const neto=Number(n[i].peso_ingreso||0)-Number(e.target.value||0);if(n[i].peso_ingreso)n[i].peso_neto=neto>0?String(neto):"";setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>Peso Neto (Kg)</Lbl><input type="text" readOnly value={carro.peso_neto||""} style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
                   <div><Lbl>Galones Guía</Lbl><input type="text" readOnly value={carro.galones_guia ? fmt(Number(carro.galones_guia)) : ""} style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
-                  <div><Lbl>Gls Descargados</Lbl><input type="number" value={carro.galones_descargados||""} onChange={e=>{const n=[...cmtCarros];n[i].galones_descargados=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div>{(()=>{
+                    const tq = tiquetes.find(t=>t.id===carro.tiquete);
+                    const factor = Number(tq?.factor_tabla13||0);
+                    const pesoNeto = Number(carro.peso_neto||0);
+                    const autoGls = (factor>0 && pesoNeto>0) ? Math.round(pesoNeto/factor) : null;
+                    return <>
+                      <Lbl>Gls Descargados</Lbl>
+                      <input type="text" readOnly value={autoGls!==null ? fmt(autoGls) : (carro.galones_descargados||"")} style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/>
+                      {factor>0 && <span style={{fontSize:10,color:T.muted}}>Factor: {tq?.factor_tabla13}</span>}
+                    </>;
+                  })()}</div>
                   <div><Lbl>PBS</Lbl><div style={{background:T.card,border:`1px solid ${carro.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
                     {carro.pbs_id
                       ? <button onClick={()=>{
