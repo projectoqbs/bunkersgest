@@ -1862,44 +1862,63 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           )}
 
           {/* TANQUES */}
-          {nav==="tanques" && (
-            <div style={{ height:"calc(100vh - 120px)", display:"flex", flexDirection:"column" }}>
+          {nav==="tanques" && (()=>{
+            const REMANENTE = id => ["TK-111","TK-116","TK-117"].includes(id) ? 4500 : 3800;
+            const CAP_OPERATIVA = t => Math.round(t.capacidad * 0.9);
+            const CARROS = 9200;
+            return (
+            <div style={{ height:"calc(100vh - 100px)", display:"flex", flexDirection:"column" }}>
               <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:16, fontWeight:800, color:"#dff0f8" }}>Tanques TK-111 al TK-117</div>
-                <div style={{ fontSize:10, color:"#6b8fa8" }}>Niveles en tiempo real · Estilo SCADA</div>
+                <div style={{ fontSize:16, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:10, flex:1, minHeight:0 }}>
                 {tanques.map(t=>{
-                  const pctLleno = Math.round((t.nivel/t.capacidad)*100);
+                  const rem = REMANENTE(t.id);
+                  const capOp = CAP_OPERATIVA(t);
+                  const nivel = Number(t.nivel||0);
+                  const pctLleno = Math.round((nivel / t.capacidad) * 100);
                   const productColor = getProductColor(t.producto);
+                  // Cargue: cuántos carros puedo SACAR (nivel - remanente)
+                  const dispCargue = Math.max(0, nivel - rem);
+                  const carrosCargue = Math.floor(dispCargue / CARROS);
+                  // Descargue: cuántos carros puedo METER (capOp - nivel)
+                  const espLibre = Math.max(0, capOp - nivel);
+                  const carrosDesc = Math.floor(espLibre / CARROS);
                   return (
-                    <div key={t.id} style={{ background:"#0f1e2e", border:"1px solid #ffffff0d", borderRadius:8, overflow:"hidden", display:"flex", flexDirection:"column" }}>
-                      {/* Header */}
-                      <div style={{ background:"#162535", padding:"8px 10px", borderBottom:"1px solid #ffffff0a", flexShrink:0 }}>
-                        <div style={{ fontSize:11, fontWeight:700, color:"#dff0f8", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.id}</div>
-                        <div style={{ fontSize:9, color:"#6b8fa8", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto}</div>
+                    <div key={t.id} style={{ borderRadius:8, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0f1e2e" }}>
+                      {/* Header: nombre + producto sobre el tanque */}
+                      <div style={{ padding:"8px 10px", flexShrink:0 }}>
+                        <div style={{ fontSize:12, fontWeight:800, color:"#dff0f8", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.id}</div>
+                        <div style={{ fontSize:9, color:"#6b8fa8", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto||"—"}</div>
                       </div>
 
-                      {/* Tanque visual */}
-                      <div style={{ padding:"8px 10px", flex:1, display:"flex", flexDirection:"column", minHeight:0 }}>
-                        <div style={{ position:"relative", flex:1, background:"#2a3a48", border:"2px solid #555", borderRadius:4, overflow:"hidden", marginBottom:8, minHeight:60 }}>
-                          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:`${pctLleno}%`, background:productColor, transition:"height 0.3s ease" }}/>
-                          <div style={{ position:"absolute", top:"50%", left:0, right:0, textAlign:"center", transform:"translateY(-50%)", fontSize:13, fontWeight:800, color:"#ffffffcc", textShadow:"0 1px 4px #000" }}>{pctLleno}%</div>
-                        </div>
+                      {/* Tanque visual: relleno de color directo, sin borde interno */}
+                      <div style={{ flex:1, position:"relative", background:"#1e2e3e", overflow:"hidden", minHeight:80 }}>
+                        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:`${pctLleno}%`, background:productColor, transition:"height 0.3s ease" }}/>
+                        {/* Línea de capacidad operativa (90%) */}
+                        <div style={{ position:"absolute", left:0, right:0, bottom:`90%`, borderTop:"1px dashed #ffffff44", pointerEvents:"none" }}/>
+                        <div style={{ position:"absolute", top:"50%", left:0, right:0, textAlign:"center", transform:"translateY(-50%)", fontSize:14, fontWeight:800, color:"#ffffffdd", textShadow:"0 1px 6px #000" }}>{pctLleno}%</div>
+                      </div>
 
-                        {/* Datos */}
-                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, flexShrink:0 }}>
-                          {[
-                            ["Nivel", fmt(t.nivel), "#dff0f8"],
-                            ["Cap.", fmt(t.capacidad), "#dff0f8"],
-                            ["Libre", fmt(Math.max(0,t.capacidad-t.nivel)), "#00e5a0"],
-                            ["%", `${pctLleno}%`, pctLleno>=90?"#ff4d4d":pctLleno>=75?"#f59e0b":"#00e5a0"],
-                          ].map(([l,v,c])=>(
-                            <div key={l} style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
-                              <div style={{ fontSize:8, color:"#6b8fa8", textTransform:"uppercase" }}>{l}</div>
-                              <div style={{ fontSize:10, fontWeight:700, color:c, fontFamily:"monospace" }}>{v}</div>
-                            </div>
-                          ))}
+                      {/* Datos abajo */}
+                      <div style={{ padding:"6px 8px", flexShrink:0, background:"#0f1e2e" }}>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
+                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
+                            <div style={{ fontSize:8, color:"#6b8fa8", textTransform:"uppercase", marginBottom:2 }}>Nivel (Gls)</div>
+                            <div style={{ fontSize:10, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(nivel)}</div>
+                          </div>
+                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
+                            <div style={{ fontSize:8, color:"#f59e0b", textTransform:"uppercase", marginBottom:2 }}>Carros cargue</div>
+                            <div style={{ fontSize:10, fontWeight:700, color:"#f59e0b", fontFamily:"monospace" }}>{carrosCargue} carros</div>
+                          </div>
+                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
+                            <div style={{ fontSize:8, color:"#6b8fa8", textTransform:"uppercase", marginBottom:2 }}>Esp. libre (Gls)</div>
+                            <div style={{ fontSize:10, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(espLibre)}</div>
+                          </div>
+                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
+                            <div style={{ fontSize:8, color:"#00e5a0", textTransform:"uppercase", marginBottom:2 }}>Carros desc.</div>
+                            <div style={{ fontSize:10, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{carrosDesc} carros</div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1907,7 +1926,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 })}
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* DESPACHO */}
           {nav==="despacho" && (
