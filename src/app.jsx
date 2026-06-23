@@ -1901,7 +1901,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </div>
 
                       {/* Datos abajo */}
-                      <div style={{ padding:"6px 8px", flexShrink:0, background:"#0f1e2e" }}>
+                      <div style={{ padding:"6px 8px", flexShrink:0 }}>
                         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
                           <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
                             <div style={{ fontSize:8, color:"#6b8fa8", textTransform:"uppercase", marginBottom:2 }}>Nivel (Gls)</div>
