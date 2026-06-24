@@ -2614,20 +2614,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </div>
                 </div>
                 ) : (
-                <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr auto", gap:8, marginBottom:8, alignItems:"end" }}>
-                  <div><Lbl>Tanque</Lbl>
-                  <select value={row.tanque} onChange={e=>{
-                    const val=e.target.value;
-                    const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
-                    setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]) nd[i]={...nd[i],tanque:val}; return nd;});
-                    calcularGalones(val,na[i].sonda,na[i].temp,na[i].api,false,i);
-                  }} style={{ width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none" }}><option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}</select>
+                <div key={i} style={{background:"#f1f5f9",borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr auto",gap:8,alignItems:"end"}}>
+                    <div><Lbl>Tanque</Lbl>
+                    <select value={row.tanque} onChange={e=>{
+                      const val=e.target.value;
+                      const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
+                      setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]) nd[i]={...nd[i],tanque:val}; return nd;});
+                      calcularGalones(val,na[i].sonda,na[i].temp,na[i].api,false,i);
+                    }} style={{width:"100%",background:"#ffffff",border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none"}}><option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}</select>
+                    </div>
+                    <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtAntes];n[i].sonda=e.target.value;setCmtAntes(n);}} onBlur={e=>calcularGalones(row.tanque,e.target.value,row.temp,row.api,false,i)} style={{...inputStyle,background:"#ffffff"}}/></div>
+                    <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={row.temp||""} onChange={e=>{const n=[...cmtAntes];n[i].temp=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,false,i);}} style={{...inputStyle,background:"#ffffff"}}/></div>
+                    <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={row.api||""} onChange={e=>{const n=[...cmtAntes];n[i].api=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,n[i].temp,e.target.value,false,i);}} style={{...inputStyle,background:"#ffffff"}}/></div>
+                    <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones} onChange={e=>{const n=[...cmtAntes];n[i].galones=e.target.value;setCmtAntes(n);}} style={{...inputStyle,background:"#ffffff"}}/></div>
+                    <button onClick={()=>{setCmtAntes(cmtAntes.filter((_,j)=>j!==i));setCmtDespues(cmtDespues.filter((_,j)=>j!==i));}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"8px 10px",cursor:"pointer",fontSize:12}}>✕</button>
                   </div>
-                  <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtAntes];n[i].sonda=e.target.value;setCmtAntes(n);}} onBlur={e=>{const idx=i;calcularGalones(row.tanque,e.target.value,row.temp,row.api,false,idx);}} style={inputStyle}/></div>
-                  <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={row.temp||""} onChange={e=>{const n=[...cmtAntes];n[i].temp=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,false,i);}} style={inputStyle}/></div>
-                  <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={row.api||""} onChange={e=>{const n=[...cmtAntes];n[i].api=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,n[i].temp,e.target.value,false,i);}} style={inputStyle}/></div>
-                  <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones} onChange={e=>{const n=[...cmtAntes];n[i].galones=e.target.value;setCmtAntes(n);}} style={inputStyle}/></div>
-                  <button onClick={()=>{setCmtAntes(cmtAntes.filter((_,j)=>j!==i));setCmtDespues(cmtDespues.filter((_,j)=>j!==i));}} style={{ background:"#ff4d4d22", border:"1px solid #ff4d4d44", borderRadius:8, color:"#ff4d4d", padding:"8px 10px", cursor:"pointer", fontSize:12 }}>✕</button>
                 </div>
                 );
               });
@@ -2697,26 +2699,26 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const galonesFinales = Number(row.galones||0);
               const excede = espacioDisponible !== null && galonesFinales > capMaxOp;
               return (
-              <div key={i} style={{marginBottom:12}}>
+              <div key={i} style={{background:"#f1f5f9",borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr", gap:8, alignItems:"end" }}>
                   <div>
                     <Lbl>Tanque</Lbl>
-                    <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"system-ui,sans-serif",color:T.navy,fontWeight:700}}>{row.tanque||"—"}</div>
+                    <div style={{background:"#e2e8f0",border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"system-ui,sans-serif",color:T.navy,fontWeight:700}}>{row.tanque||"—"}</div>
                   </div>
-                  <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtDespues];n[i].sonda=e.target.value;setCmtDespues(n);}} onBlur={e=>{calcularGalones(row.tanque,e.target.value,row.temp,row.api,true,i);}} style={{ width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" }}/></div>
-                  <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={row.temp||""} onChange={e=>{const n=[...cmtDespues];n[i].temp=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,true,i);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={row.api||""} onChange={e=>{const n=[...cmtDespues];n[i].api=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,n[i].temp,e.target.value,true,i);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones} onChange={e=>{const n=[...cmtDespues];n[i].galones=e.target.value;setCmtDespues(n);}} style={{ width:"100%", background:T.card, border:`1px solid ${excede?T.danger:T.border}`, borderRadius:6, padding:"8px 10px", color: excede?T.danger:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" }}/></div>
+                  <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda} onChange={e=>{const n=[...cmtDespues];n[i].sonda=e.target.value;setCmtDespues(n);}} onBlur={e=>{calcularGalones(row.tanque,e.target.value,row.temp,row.api,true,i);}} style={{ width:"100%", background:"#ffffff", border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" }}/></div>
+                  <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={row.temp||""} onChange={e=>{const n=[...cmtDespues];n[i].temp=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,true,i);}} style={{width:"100%",background:"#ffffff",border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={row.api||""} onChange={e=>{const n=[...cmtDespues];n[i].api=e.target.value;setCmtDespues(n);calcularGalones(n[i].tanque,n[i].sonda,n[i].temp,e.target.value,true,i);}} style={{width:"100%",background:"#ffffff",border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones} onChange={e=>{const n=[...cmtDespues];n[i].galones=e.target.value;setCmtDespues(n);}} style={{ width:"100%", background:"#ffffff", border:`1px solid ${excede?T.danger:T.border}`, borderRadius:6, padding:"8px 10px", color: excede?T.danger:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" }}/></div>
                 </div>
                 {espacioDisponible !== null && row.tanque && (()=>{
                   const capTotal = capMaxOp / 0.9;
                   const pctActual = capTotal > 0 ? Math.round((galonesIniciales / capTotal) * 100) : 0;
                   const enAlerta = galonesIniciales >= capMaxOp;
                   return (
-                    <div style={{marginTop:5,padding:"6px 10px",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-                      <span style={{fontSize:11,color:T.muted}}>Espacio disponible: <b style={{color: enAlerta?"#ff4d4d":"#00e5a0"}}>{fmt(Math.max(0,espacioDisponible))} Gls</b></span>
+                    <div style={{marginTop:8,padding:"6px 10px",background:"#e2e8f0",border:`1px solid ${T.border}`,borderRadius:6,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+                      <span style={{fontSize:11,color:T.muted}}>Espacio disponible: <b style={{color: enAlerta?"#ff4d4d":"#059669"}}>{fmt(Math.max(0,espacioDisponible))} Gls</b></span>
                       {enAlerta && (
-                        <span style={{fontSize:11,fontWeight:800,color:"#ff4d4d",background:"#2a0a0a",border:"1px solid #ff4d4d55",borderRadius:6,padding:"2px 10px",letterSpacing:0.5}}>
+                        <span style={{fontSize:11,fontWeight:800,color:"#ff4d4d",background:"#fee2e2",border:"1px solid #fca5a5",borderRadius:6,padding:"2px 10px",letterSpacing:0.5}}>
                           ⚠ ALERTA CAPACIDAD EN {pctActual}%
                         </span>
                       )}
