@@ -2158,10 +2158,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const domeH = cylH * 0.18;        // altura domo encima del aro
               const peakY = topY - domeH;       // pico del domo
 
-              // Franja roja: just below top rim
-              const stripeTop = topY + eh * 0.4;
-              const stripeH   = cylH * 0.065;
-
               // Clip para el cuerpo cilíndrico
               const bodyClip = `M ${lx},${topY} L ${lx},${botY} A ${ew/2},${eh/2} 0 0,0 ${rx},${botY} L ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${lx},${topY} Z`;
 
@@ -2189,21 +2185,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="100%" stopColor="#0a0a0a"/>
                     </linearGradient>
 
-                    {/* Gradiente franja roja */}
-                    <linearGradient id={`rg-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%"   stopColor="#8b1a1a"/>
-                      <stop offset="20%"  stopColor="#cc2200"/>
-                      <stop offset="80%"  stopColor="#aa1e00"/>
-                      <stop offset="100%" stopColor="#5a0e0e"/>
-                    </linearGradient>
                   </defs>
 
                   {/* ── CUERPO PRINCIPAL con gradiente 3D ── */}
                   <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#cg-${label})`}/>
 
-                  {/* ── FRANJA ROJA (como en la foto) ── */}
-                  <rect x={lx} y={stripeTop} width={ew} height={stripeH}
-                    fill={`url(#rg-${label})`} clipPath={`url(#cb-${label})`}/>
 
                   {/* ── BORDES LATERALES negros (grosor visual de pared) ── */}
                   <rect x={lx}    y={topY} width={ew*0.025} height={cylH} fill="#050505"/>
@@ -2226,9 +2212,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* Reflejo sutil en domo */}
                   <path d={`M ${cx-ew*0.25},${topY-domeH*0.3} Q ${cx-ew*0.05},${peakY+domeH*0.2} ${cx+ew*0.15},${topY-domeH*0.5}`}
                     fill="none" stroke="#fff" strokeWidth="0.6" opacity="0.06"/>
-                  {/* Ventilación / boca de hombre en la cima */}
-                  <ellipse cx={cx} cy={peakY+2} rx={ew*0.055} ry={eh*0.38} fill="#090909" stroke="#444" strokeWidth="1"/>
-                  <ellipse cx={cx} cy={peakY+2} rx={ew*0.03}  ry={eh*0.22} fill="#000" stroke="#555" strokeWidth="0.6"/>
 
                   {/* ── PORCENTAJE centrado en el cuerpo ── */}
                   <text x={cx} y={topY + cylH*0.52} textAnchor="middle" dominantBaseline="middle"
