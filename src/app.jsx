@@ -2756,9 +2756,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const prodUpper = (cmtProducto||"").toUpperCase();
                     const esGlobal = ["HSFO","VLSFO"].includes(prodUpper);
                     const placasUsadas = cmtCarros.filter((_,j)=>j!==i).map(c=>c.placa).filter(Boolean);
+                    const matchProducto = (vProd) => {
+                      if (!cmtProducto || esGlobal) return true;
+                      const vUp = (vProd||"").toUpperCase();
+                      // Si cualquiera de los dos contiene "PENDARE", mostrar todos los PENDARE
+                      if (prodUpper.includes("PENDARE") || vUp.includes("PENDARE")) return vUp.includes("PENDARE");
+                      return vUp === prodUpper;
+                    };
                     const enPlanta = viajes.filter(v =>
                       !placasUsadas.includes(v.placa) &&
-                      (esGlobal || !cmtProducto || (v.producto||"").toUpperCase() === prodUpper) &&
+                      matchProducto(v.producto) &&
                       (v.estado === "En Planta" || (v.estado === "Rechazado" && v.autorizado_descargue))
                     );
                     return enPlanta.length > 0 ? (
