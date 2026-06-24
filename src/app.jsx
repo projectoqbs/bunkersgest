@@ -2129,11 +2129,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const CARROS = 9200;
             const byId = id => tanques.find(t=>t.id===id);
 
-            // Renderiza cilindro industrial SVG
-            // ViewBox ancho (300x220) para que escale bien al alto del contenedor
-            const CilindroSVG = ({pct, color, W=300, H=220, label}) => {
+            // ViewBox 300×200: ratio 1.5:1 (más ancho que alto) → escala bien en columnas anchas
+            const CilindroSVG = ({pct, color, W=300, H=200, label}) => {
               const RX = W * 0.42;
-              const RY = RX * 0.18;
+              const RY = RX * 0.16;
               const top = RY + 2;
               const bot = H - RY - 2;
               const bodyH = bot - top;
@@ -2145,7 +2144,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const fillColorDark = fillColor + "bb";
               const strokeColor = "#4a7090";
               return (
-                <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{height:"100%",width:"auto",maxWidth:"100%",display:"block",margin:"0 auto"}}>
+                <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
                   <defs>
                     <clipPath id={`clip-${label}`}>
                       <rect x={W/2-RX} y={top} width={RX*2} height={bodyH}/>
@@ -2229,8 +2228,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{ fontSize:11, fontWeight:800, color:T.navy, letterSpacing:1 }}>{t.id}</div>
                     <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto||"—"}</div>
                   </div>
-                  {/* Cilindro SVG — crece con el flex pero nunca desborda */}
-                  <div style={{ flex:1, minHeight:0, overflow:"hidden", display:"flex", alignItems:"stretch", justifyContent:"center" }}>
+                  {/* Cilindro SVG — ocupa el espacio flex disponible */}
+                  <div style={{ flex:1, minHeight:0, overflow:"hidden" }}>
                     <CilindroSVG pct={pct} color={color} label={t.id}/>
                   </div>
                   {/* Stats en una línea horizontal */}
@@ -2261,21 +2260,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ fontSize:15, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
                 <div style={{ fontSize:9, color:T.muted }}>— — — línea amarilla = capacidad operativa (90%)</div>
               </div>
-              {/* 3 columnas: Izq(112/111) | Centro(115/114/113) | Der(117/116) */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:10 }}>
-                {/* Columna izquierda: TK-112 (30%) / TK-111 (70%) */}
-                <div style={{ display:"flex", flexDirection:"column", gap:8, height:"100%" }}>
-                  <TankCard id="TK-112" flexH="0 0 30%"/>
+              {/* 3 columnas: Izq(112/111) | Centro(115/114/113) | Der(117/116)
+                  gridTemplateRows:"1fr" es clave: fuerza a las celdas a tener altura acotada */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr", gap:12, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:10, alignItems:"stretch" }}>
+                {/* Columna izquierda: TK-112 (28%) / TK-111 (72%) */}
+                <div style={{ display:"flex", flexDirection:"column", gap:6, overflow:"hidden" }}>
+                  <TankCard id="TK-112" flexH="0 0 28%"/>
                   <TankCard id="TK-111" flexH="1"/>
                 </div>
                 {/* Columna central: 3 tanques iguales */}
-                <div style={{ display:"flex", flexDirection:"column", gap:8, height:"100%" }}>
+                <div style={{ display:"flex", flexDirection:"column", gap:6, overflow:"hidden" }}>
                   <TankCard id="TK-115" flexH="1"/>
                   <TankCard id="TK-114" flexH="1"/>
                   <TankCard id="TK-113" flexH="1"/>
                 </div>
-                {/* Columna derecha: TK-117 (45%) / TK-116 (55%) */}
-                <div style={{ display:"flex", flexDirection:"column", gap:8, height:"100%" }}>
+                {/* Columna derecha: TK-117 (44%) / TK-116 (56%) */}
+                <div style={{ display:"flex", flexDirection:"column", gap:6, overflow:"hidden" }}>
                   <TankCard id="TK-117" flexH="0 0 44%"/>
                   <TankCard id="TK-116" flexH="1"/>
                 </div>
