@@ -100,12 +100,11 @@ const genId = (prefix, list) => `${prefix}-${String((list?.length||0)+1).padStar
 
 // Colores por producto para tanques Varec
 const getProductColor = (producto) => {
-  if (!producto) return "#1a1a1a";
+  if (!producto) return "#2a2a2a";
   const upperProd = String(producto).toUpperCase();
   if (upperProd === "MGO" || upperProd === "DIESEL") return "#1abc9c"; // Verde turquesa
-  if (upperProd === "VLSFO") return "#1a1a1a"; // Negro
-  // Todos los demás productos = Materia Prima (marrón oscuro)
-  return "#6b4423"; // Marrón oscuro para materia prima
+  if (upperProd === "VLSFO" || upperProd === "HSFO") return "#3d3d5c"; // Azul-negro distinguible del gris interior
+  return "#6b4423"; // Marrón oscuro para materia prima (PENDARE, etc.)
 };
 
 // Genera el ID interno del CMT (registro DB)
@@ -2136,7 +2135,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             //   TK-116/117 = 66% h de 111 → h=36 (66% de 55)
             //   TK-113/114/115 = 55% h de 111 → h=30 (55% de 55)
             const CFG = {
-              "TK-111": { h: 55, w: 82 },
+              "TK-111": { h: 55, w: 78 },
               "TK-112": { h: 39, w: 72 },
               "TK-113": { h: 30, w: 72 },
               "TK-114": { h: 30, w: 72 },
@@ -2145,82 +2144,106 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               "TK-117": { h: 36, w: 78 },
             };
 
-            // ViewBox 300×200: ratio 1.5:1 (más ancho que alto) → escala bien en columnas anchas
+            // Cilindro industrial: negro exterior, gris interior, producto sube desde el fondo
             const CilindroSVG = ({pct, color, W=300, H=200, label}) => {
-              const RX = W * 0.42;
-              const RY = RX * 0.16;
-              const top = RY + 2;
-              const bot = H - RY - 2;
-              const bodyH = bot - top;
+              const RX = W * 0.43;          // radio horizontal del cuerpo
+              const RY = RX * 0.17;         // aplanamiento elipse tapa
+              const wallT = W * 0.032;       // grosor pared lateral (negro)
+              const topY = RY + 3;           // inicio cuerpo
+              const botY = H - RY - 3;       // fin cuerpo
+              const bodyH = botY - topY;
+              const innerRX = RX - wallT;    // radio interior (zona gris)
               const fillH = bodyH * Math.min(pct, 100) / 100;
-              const fillY = bot - fillH;
-              // marcas de nivel cada 25%
-              const marcas = [25,50,75].map(p => ({ y: bot - bodyH*p/100, p }));
-              const fillColor = color || "#334";
-              const fillColorDark = fillColor + "bb";
-              const strokeColor = "#4a7090";
+              const fillY = botY - fillH;
+              const fillColor = color || "#3d3d5c";
+              const marcas = [25, 50, 75].map(p => ({ p, y: botY - bodyH * p / 100 }));
+
               return (
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
                   <defs>
-                    <clipPath id={`clip-${label}`}>
-                      <rect x={W/2-RX} y={top} width={RX*2} height={bodyH}/>
+                    <clipPath id={`clipInner-${label}`}>
+                      {/* Zona interior del tanque (dentro de paredes) */}
+                      <rect x={W/2 - innerRX} y={topY} width={innerRX*2} height={bodyH+1}/>
                     </clipPath>
-                    <linearGradient id={`grad-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.07"/>
-                      <stop offset="40%" stopColor="#ffffff" stopOpacity="0.0"/>
-                      <stop offset="100%" stopColor="#000000" stopOpacity="0.18"/>
+                    <clipPath id={`clipFull-${label}`}>
+                      <rect x={W/2 - RX} y={topY} width={RX*2} height={bodyH+1}/>
+                    </clipPath>
+                    {/* Gradiente reflejo izquierdo en pared exterior */}
+                    <linearGradient id={`wallGrad-${label}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.10"/>
+                      <stop offset="15%"  stopColor="#ffffff" stopOpacity="0.04"/>
+                      <stop offset="85%"  stopColor="#000000" stopOpacity="0.10"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.25"/>
                     </linearGradient>
-                    <linearGradient id={`liq-${label}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={fillColor} stopOpacity="1"/>
-                      <stop offset="100%" stopColor={fillColor} stopOpacity="0.7"/>
+                    {/* Gradiente producto (más claro arriba) */}
+                    <linearGradient id={`fillGrad-${label}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor={fillColor} stopOpacity="0.85"/>
+                      <stop offset="100%" stopColor={fillColor} stopOpacity="1"/>
                     </linearGradient>
                   </defs>
 
-                  {/* Cuerpo vacío */}
-                  <rect x={W/2-RX} y={top} width={RX*2} height={bodyH} fill="#1a2d40"/>
+                  {/* ── PARED EXTERIOR NEGRA (fondo completo del cuerpo) ── */}
+                  <rect x={W/2-RX} y={topY} width={RX*2} height={bodyH} fill="#111111"/>
 
-                  {/* Líquido */}
-                  {pct>0 && (
-                    <g clipPath={`url(#clip-${label})`}>
-                      <rect x={W/2-RX} y={fillY} width={RX*2} height={fillH} fill={`url(#liq-${label})`}/>
-                      {/* Superficie líquido - elipse superior */}
-                      <ellipse cx={W/2} cy={fillY} rx={RX} ry={RY} fill={fillColor} opacity="0.9"/>
+                  {/* ── INTERIOR GRIS (zona dentro de paredes) ── */}
+                  <rect x={W/2-innerRX} y={topY} width={innerRX*2} height={bodyH} fill="#4a4a4a" clipPath={`url(#clipInner-${label})`}/>
+
+                  {/* ── PRODUCTO (sube desde el fondo) ── */}
+                  {pct > 0 && (
+                    <g clipPath={`url(#clipInner-${label})`}>
+                      <rect x={W/2-innerRX} y={fillY} width={innerRX*2} height={fillH+RY} fill={`url(#fillGrad-${label})`}/>
+                      {/* Superficie del líquido — elipse sobre el producto */}
+                      <ellipse cx={W/2} cy={fillY} rx={innerRX} ry={RY*0.7} fill={fillColor} opacity="0.95"/>
+                      {/* Reflejo tenue en superficie */}
+                      <ellipse cx={W/2} cy={fillY} rx={innerRX*0.45} ry={RY*0.25} fill="#ffffff" opacity="0.08"/>
                     </g>
                   )}
 
-                  {/* Línea cap. operativa 90% */}
-                  <line x1={W/2-RX+2} y1={bot - bodyH*0.9} x2={W/2+RX-2} y2={bot - bodyH*0.9} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.7"/>
+                  {/* ── LÍNEA CAPACIDAD OPERATIVA 90% (amarilla) ── */}
+                  <line
+                    x1={W/2-innerRX+2} y1={botY - bodyH*0.9}
+                    x2={W/2+innerRX-2} y2={botY - bodyH*0.9}
+                    stroke="#f59e0b" strokeWidth="1.2" strokeDasharray="4,3" opacity="0.8"/>
 
-                  {/* Marcas de nivel */}
+                  {/* ── MARCAS DE NIVEL laterales ── */}
                   {marcas.map(m=>(
                     <g key={m.p}>
-                      <line x1={W/2-RX} y1={m.y} x2={W/2-RX+8} y2={m.y} stroke={strokeColor} strokeWidth="1"/>
-                      <text x={W/2-RX+10} y={m.y} dominantBaseline="middle" fill={strokeColor} fontSize="5.5" fontFamily="monospace">{m.p}%</text>
+                      <line x1={W/2-RX} y1={m.y} x2={W/2-RX-6} y2={m.y} stroke="#888" strokeWidth="1"/>
+                      <text x={W/2-RX-8} y={m.y} textAnchor="end" dominantBaseline="middle"
+                        fill="#999" fontSize="5" fontFamily="monospace">{m.p}%</text>
                     </g>
                   ))}
 
-                  {/* Tapa inferior */}
-                  <ellipse cx={W/2} cy={bot} rx={RX} ry={RY} fill="#0f1e2e"/>
-                  <ellipse cx={W/2} cy={bot} rx={RX} ry={RY} fill="none" stroke={strokeColor} strokeWidth="1.5"/>
+                  {/* ── TAPA INFERIOR NEGRA ── */}
+                  <ellipse cx={W/2} cy={botY} rx={RX}      ry={RY}      fill="#111111"/>
+                  <ellipse cx={W/2} cy={botY} rx={innerRX} ry={RY*0.75} fill="#333333"/>
+                  <ellipse cx={W/2} cy={botY} rx={RX}      ry={RY}      fill="none" stroke="#444" strokeWidth="1"/>
 
-                  {/* Contorno lateral */}
-                  <rect x={W/2-RX} y={top} width={RX*2} height={bodyH} fill="none" stroke={strokeColor} strokeWidth="1.5"/>
+                  {/* ── CONTORNO LATERAL NEGRO ── */}
+                  <rect x={W/2-RX} y={topY} width={RX*2} height={bodyH}
+                    fill="none" stroke="#333" strokeWidth="1.5"/>
 
-                  {/* Reflejo lateral */}
-                  <rect x={W/2-RX} y={top} width={RX*2} height={bodyH} fill={`url(#grad-${label})`} clipPath={`url(#clip-${label})`}/>
+                  {/* ── REFLEJO PARED ── */}
+                  <rect x={W/2-RX} y={topY} width={RX*2} height={bodyH}
+                    fill={`url(#wallGrad-${label})`} clipPath={`url(#clipFull-${label})`}/>
 
-                  {/* Tapa superior */}
-                  <ellipse cx={W/2} cy={top} rx={RX} ry={RY} fill="#243d54"/>
-                  <ellipse cx={W/2} cy={top} rx={RX} ry={RY} fill="none" stroke={strokeColor} strokeWidth="1.5"/>
-                  {/* Detalle tapa - círculo central */}
-                  <ellipse cx={W/2} cy={top} rx={RX*0.3} ry={RY*0.5} fill="none" stroke={strokeColor} strokeWidth="1" opacity="0.5"/>
-                  {/* Boca de hombre */}
-                  <ellipse cx={W/2} cy={top} rx={RX*0.12} ry={RY*0.22} fill="#162535" stroke={strokeColor} strokeWidth="1"/>
+                  {/* ── TAPA SUPERIOR NEGRA con detalles ── */}
+                  {/* Aro exterior techo */}
+                  <ellipse cx={W/2} cy={topY} rx={RX}        ry={RY}        fill="#111111"/>
+                  {/* Plataforma / Aro intermedio */}
+                  <ellipse cx={W/2} cy={topY} rx={RX*0.88}   ry={RY*0.82}   fill="#1a1a1a"/>
+                  {/* Detalle aro interior */}
+                  <ellipse cx={W/2} cy={topY} rx={innerRX}   ry={RY*0.72}   fill="#222222"/>
+                  {/* Boca de hombre / medidor */}
+                  <ellipse cx={W/2} cy={topY} rx={RX*0.11}   ry={RY*0.30}   fill="#0a0a0a" stroke="#555" strokeWidth="0.8"/>
+                  {/* Contorno techo */}
+                  <ellipse cx={W/2} cy={topY} rx={RX}        ry={RY}        fill="none" stroke="#444" strokeWidth="1.5"/>
 
-                  {/* % en centro */}
-                  <text x={W/2} y={top + bodyH*0.52} textAnchor="middle" dominantBaseline="middle"
-                    fill="white" fontSize={W*0.13} fontWeight="bold" fontFamily="monospace"
-                    style={{textShadow:"0 1px 4px #000"}}>{pct}%</text>
+                  {/* ── PORCENTAJE ── */}
+                  <text x={W/2} y={topY + bodyH*0.52} textAnchor="middle" dominantBaseline="middle"
+                    fill={pct>0 ? "#ffffff" : "#777777"}
+                    fontSize={W*0.12} fontWeight="bold" fontFamily="monospace"
+                    opacity="0.9">{pct}%</text>
                 </svg>
               );
             };
