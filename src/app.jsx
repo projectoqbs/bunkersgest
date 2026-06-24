@@ -2104,9 +2104,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   return (
                     <div key={t.id} style={{ borderRadius:8, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0f1e2e" }}>
                       {/* Header: nombre + producto sobre el tanque */}
-                      <div style={{ padding:"8px 10px", flexShrink:0 }}>
-                        <div style={{ fontSize:12, fontWeight:800, color:"#dff0f8", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.id}</div>
-                        <div style={{ fontSize:9, color:"#6b8fa8", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto||"—"}</div>
+                      <div style={{ padding:"8px 10px", flexShrink:0, background:"#ffffff", borderRadius:"8px 8px 0 0" }}>
+                        <div style={{ fontSize:12, fontWeight:800, color:T.navy, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.id}</div>
+                        <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto||"—"}</div>
                       </div>
 
                       {/* Tanque visual: relleno de color directo, sin borde interno */}
