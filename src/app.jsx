@@ -90,8 +90,6 @@ const PBS_PREGUNTAS = [
   "¿Verificó que las válvulas de los otros tanques estén cerradas?",
   "Si está bombeando a una motonave: ¿Ya tiene el visto bueno del Ingeniero de Operaciones?",
   "¿Cada miembro del equipo se encuentra en el lugar que le corresponde?",
-  "Una vez estabilizado el sistema, registre RPM",
-  "Una vez estabilizado el sistema, registre presión de manómetro",
 ];
 
 const TIPO_COLOR = { materia_prima:"#f59e0b", mezcla:"#00b4ff", terminado:"#00e5a0" };
@@ -2446,7 +2444,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
             </div>
           </Section>
-          <Section title="Lista de Chequeo — 26 Puntos" color="#fb923c">
+          <Section title="Lista de Chequeo — 25 Puntos" color="#fb923c">
             <div style={{ display:"grid", gap:8 }}>
               {PBS_PREGUNTAS.map((p,i)=>{
                 // Punto 17 (índice 16): espacio vacío calculado de los tanques del CMT
@@ -2741,11 +2739,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {(()=>{
                     const prodUpper = (cmtProducto||"").toUpperCase();
                     const esGlobal = ["HSFO","VLSFO"].includes(prodUpper);
-                    const enPlanta = viajes.filter(v => v.estado === "En Planta" && (esGlobal || !cmtProducto || (v.producto||"").toUpperCase() === prodUpper));
+                    const placasUsadas = cmtCarros.filter((_,j)=>j!==i).map(c=>c.placa).filter(Boolean);
+                    const enPlanta = viajes.filter(v => v.estado === "En Planta" && !placasUsadas.includes(v.placa) && (esGlobal || !cmtProducto || (v.producto||"").toUpperCase() === prodUpper));
                     return enPlanta.length > 0 ? (
                       <select value={carro.placa} onChange={e=>{
                         const placa = e.target.value;
-                        const viaje = enPlanta.find(v=>v.placa===placa);
+                        const viaje = viajes.find(v=>v.placa===placa);
                         const tq = viaje ? tiquetes.find(t=>t.viaje_id===viaje.id || t.id===viaje.tiquete_id) : null;
                         const n=[...cmtCarros];
                         n[i] = {...n[i], placa, guia: viaje?.guia||n[i].guia, tiquete: tq?.id||n[i].tiquete, galones_guia: viaje?.gls_netos_guia||""};
@@ -2762,24 +2761,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div><Lbl>Guía</Lbl><input type="text" value={carro.guia} onChange={e=>{const n=[...cmtCarros];n[i].guia=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
                   <div><Lbl>Tiquete</Lbl><input type="text" value={carro.tiquete} onChange={e=>{const n=[...cmtCarros];n[i].tiquete=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:8,alignItems:"end"}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(10,1fr)",gap:8,alignItems:"end"}}>
                   <div><Lbl>Hora Inicio</Lbl><input type="time" value={carro.hora_inicio||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_inicio=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>Hora Final</Lbl><input type="time" value={carro.hora_final||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_final=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>Peso Ingreso (Kg)</Lbl><input type="number" value={carro.peso_ingreso||""} onChange={e=>{const n=[...cmtCarros];n[i].peso_ingreso=e.target.value;const neto=Number(e.target.value||0)-Number(n[i].peso_salida||0);if(n[i].peso_salida)n[i].peso_neto=neto>0?String(neto):"";setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>Peso Salida (Kg)</Lbl><input type="number" value={carro.peso_salida||""} onChange={async e=>{const val=e.target.value;const n=[...cmtCarros];n[i].peso_salida=val;const neto=Number(n[i].peso_ingreso||0)-Number(val||0);if(n[i].peso_ingreso)n[i].peso_neto=neto>0?String(neto):"";setCmtCarros(n);if(val && n[i].placa){await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",n[i].placa);await loadData();}}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>Peso Neto (Kg)</Lbl><input type="text" readOnly value={carro.peso_neto||""} style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
                   <div><Lbl>Galones Guía</Lbl><input type="text" readOnly value={carro.galones_guia ? fmt(Number(carro.galones_guia)) : ""} style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
-                  <div>{(()=>{
-                    const tq = tiquetes.find(t=>t.id===carro.tiquete);
-                    const factor = Number(tq?.factor_tabla13||0);
-                    const pesoNeto = Number(carro.peso_neto||0);
-                    const autoGls = (factor>0 && pesoNeto>0) ? Math.round(pesoNeto/factor) : null;
-                    return <>
-                      <Lbl>Gls Descargados</Lbl>
-                      <input type="text" readOnly value={autoGls!==null ? fmt(autoGls) : (carro.galones_descargados||"")} style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/>
-                      {factor>0 && <span style={{fontSize:10,color:T.muted}}>Factor: {tq?.factor_tabla13}</span>}
-                    </>;
-                  })()}</div>
+                  <div><Lbl>Gls Descargados</Lbl><input type="text" readOnly value={(()=>{const tq=tiquetes.find(t=>t.id===carro.tiquete);const factor=Number(tq?.factor_tabla13||0);const pesoNeto=Number(carro.peso_neto||0);return (factor>0&&pesoNeto>0)?fmt(Math.round(pesoNeto/factor)):(carro.galones_descargados||"");})()}  style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
+                  <div><Lbl>RPM</Lbl><input type="text" value={carro.rpm||""} onChange={e=>{const n=[...cmtCarros];n[i].rpm=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>Presión (Bar)</Lbl><input type="text" value={carro.presion||""} onChange={e=>{const n=[...cmtCarros];n[i].presion=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>PBS</Lbl><div style={{background:T.card,border:`1px solid ${carro.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
                     {carro.pbs_id
                       ? <button onClick={()=>{
