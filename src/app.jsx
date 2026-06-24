@@ -2144,118 +2144,95 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               "TK-117": { h: 36, w: 78 },
             };
 
-            // Cilindro industrial: negro exterior, gris interior, techo convexo real
-            const CilindroSVG = ({pct, color, W=300, H=240, label}) => {
-              const RX = W * 0.43;          // radio horizontal del cuerpo
-              const RY = RX * 0.17;         // aplanamiento elipse base/fondo
-              const domeH = RY * 2.6;       // altura del domo convexo del techo
-              const wallT = W * 0.032;       // grosor pared lateral
-              const topY = domeH + RY + 4;  // inicio del cuerpo (debajo del domo)
-              const botY = H - RY - 4;       // fin cuerpo
-              const bodyH = botY - topY;
-              const innerRX = RX - wallT;    // radio interior (zona gris)
-              const fillH = bodyH * Math.min(pct, 100) / 100;
-              const fillY = botY - fillH;
-              const fillColor = color || "#3d3d5c";
-              const marcas = [25, 50, 75].map(p => ({ p, y: botY - bodyH * p / 100 }));
+            // Tanque 3D: perspectiva frontal ligera desde arriba
+            // Negro exterior con gradiente de profundidad, franja roja, domo convexo hacia arriba
+            const CilindroSVG = ({pct, color, label, W=300, H=300}) => {
+              const cx   = W / 2;
+              const ew   = W * 0.86;          // ancho elipse (perspectiva)
+              const eh   = ew * 0.20;          // alto elipse (aplanamiento 3D)
+              const lx   = cx - ew/2;
+              const rx   = cx + ew/2;
+              const botY = H - eh/2 - 6;       // centro elipse inferior
+              const cylH = H * 0.52;           // altura cuerpo
+              const topY = botY - cylH;         // centro aro superior (borde techo)
+              const domeH = cylH * 0.18;        // altura domo encima del aro
+              const peakY = topY - domeH;       // pico del domo
+
+              // Franja roja: just below top rim
+              const stripeTop = topY + eh * 0.4;
+              const stripeH   = cylH * 0.065;
+
+              // Clip para el cuerpo cilíndrico
+              const bodyClip = `M ${lx},${topY} L ${lx},${botY} A ${ew/2},${eh/2} 0 0,0 ${rx},${botY} L ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${lx},${topY} Z`;
+
+              // Domo: curva cuadrática de cada lado hacia el pico (subiendo)
+              const domePath = `M ${lx},${topY} Q ${lx+ew*0.08},${peakY+domeH*0.1} ${cx},${peakY} Q ${rx-ew*0.08},${peakY+domeH*0.1} ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${lx},${topY} Z`;
+              const domeOutline = `M ${lx},${topY} Q ${lx+ew*0.08},${peakY+domeH*0.1} ${cx},${peakY} Q ${rx-ew*0.08},${peakY+domeH*0.1} ${rx},${topY}`;
 
               return (
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
                   <defs>
-                    <clipPath id={`clipInner-${label}`}>
-                      {/* Zona interior del tanque (dentro de paredes) */}
-                      <rect x={W/2 - innerRX} y={topY} width={innerRX*2} height={bodyH+1}/>
-                    </clipPath>
-                    <clipPath id={`clipFull-${label}`}>
-                      <rect x={W/2 - RX} y={topY} width={RX*2} height={bodyH+1}/>
-                    </clipPath>
-                    {/* Gradiente reflejo izquierdo en pared exterior */}
-                    <linearGradient id={`wallGrad-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.10"/>
-                      <stop offset="15%"  stopColor="#ffffff" stopOpacity="0.04"/>
-                      <stop offset="85%"  stopColor="#000000" stopOpacity="0.10"/>
-                      <stop offset="100%" stopColor="#000000" stopOpacity="0.25"/>
+                    <clipPath id={`cb-${label}`}><path d={bodyClip}/></clipPath>
+
+                    {/* Gradiente cuerpo: simula superficie cilíndrica con luz desde izq */}
+                    <linearGradient id={`cg-${label}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%"   stopColor="#2e2e2e"/>
+                      <stop offset="18%"  stopColor="#1a1a1a"/>
+                      <stop offset="55%"  stopColor="#0f0f0f"/>
+                      <stop offset="85%"  stopColor="#080808"/>
+                      <stop offset="100%" stopColor="#030303"/>
                     </linearGradient>
-                    {/* Gradiente producto (más claro arriba) */}
-                    <linearGradient id={`fillGrad-${label}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%"   stopColor={fillColor} stopOpacity="0.85"/>
-                      <stop offset="100%" stopColor={fillColor} stopOpacity="1"/>
+
+                    {/* Gradiente domo */}
+                    <linearGradient id={`dg-${label}`} x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%"   stopColor="#1a1a1a"/>
+                      <stop offset="100%" stopColor="#0a0a0a"/>
+                    </linearGradient>
+
+                    {/* Gradiente franja roja */}
+                    <linearGradient id={`rg-${label}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%"   stopColor="#8b1a1a"/>
+                      <stop offset="20%"  stopColor="#cc2200"/>
+                      <stop offset="80%"  stopColor="#aa1e00"/>
+                      <stop offset="100%" stopColor="#5a0e0e"/>
                     </linearGradient>
                   </defs>
 
-                  {/* ── PARED EXTERIOR NEGRA (fondo completo del cuerpo) ── */}
-                  <rect x={W/2-RX} y={topY} width={RX*2} height={bodyH} fill="#111111"/>
+                  {/* ── CUERPO PRINCIPAL con gradiente 3D ── */}
+                  <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#cg-${label})`}/>
 
-                  {/* ── INTERIOR GRIS (zona dentro de paredes) ── */}
-                  <rect x={W/2-innerRX} y={topY} width={innerRX*2} height={bodyH} fill="#4a4a4a" clipPath={`url(#clipInner-${label})`}/>
+                  {/* ── FRANJA ROJA (como en la foto) ── */}
+                  <rect x={lx} y={stripeTop} width={ew} height={stripeH}
+                    fill={`url(#rg-${label})`} clipPath={`url(#cb-${label})`}/>
 
-                  {/* ── PRODUCTO (sube desde el fondo) ── */}
-                  {pct > 0 && (
-                    <g clipPath={`url(#clipInner-${label})`}>
-                      <rect x={W/2-innerRX} y={fillY} width={innerRX*2} height={fillH+RY} fill={`url(#fillGrad-${label})`}/>
-                      {/* Superficie del líquido — elipse sobre el producto */}
-                      <ellipse cx={W/2} cy={fillY} rx={innerRX} ry={RY*0.7} fill={fillColor} opacity="0.95"/>
-                      {/* Reflejo tenue en superficie */}
-                      <ellipse cx={W/2} cy={fillY} rx={innerRX*0.45} ry={RY*0.25} fill="#ffffff" opacity="0.08"/>
-                    </g>
-                  )}
+                  {/* ── BORDES LATERALES negros (grosor visual de pared) ── */}
+                  <rect x={lx}    y={topY} width={ew*0.025} height={cylH} fill="#050505"/>
+                  <rect x={rx-ew*0.025} y={topY} width={ew*0.025} height={cylH} fill="#020202"/>
 
-                  {/* ── LÍNEA CAPACIDAD OPERATIVA 90% (amarilla) ── */}
-                  <line
-                    x1={W/2-innerRX+2} y1={botY - bodyH*0.9}
-                    x2={W/2+innerRX-2} y2={botY - bodyH*0.9}
-                    stroke="#f59e0b" strokeWidth="1.2" strokeDasharray="4,3" opacity="0.8"/>
+                  {/* ── ELIPSE INFERIOR (fondo del tanque, da profundidad 3D) ── */}
+                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#111"/>
+                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="none" stroke="#3a3a3a" strokeWidth="1.5"/>
 
-                  {/* ── MARCAS DE NIVEL laterales ── */}
-                  {marcas.map(m=>(
-                    <g key={m.p}>
-                      <line x1={W/2-RX} y1={m.y} x2={W/2-RX-6} y2={m.y} stroke="#888" strokeWidth="1"/>
-                      <text x={W/2-RX-8} y={m.y} textAnchor="end" dominantBaseline="middle"
-                        fill="#999" fontSize="5" fontFamily="monospace">{m.p}%</text>
-                    </g>
-                  ))}
+                  {/* ── ARO SUPERIOR (unión cuerpo-techo) ── */}
+                  <ellipse cx={cx} cy={topY} rx={ew/2}      ry={eh/2}      fill="#1a1a1a"/>
+                  <ellipse cx={cx} cy={topY} rx={ew/2}      ry={eh/2}      fill="none" stroke="#555" strokeWidth="2"/>
+                  {/* Aro exterior de confinamiento secundario (rojo, como en foto) */}
+                  <ellipse cx={cx} cy={topY} rx={ew/2+2}    ry={eh/2+1.5}  fill="none" stroke="#8b1a1a" strokeWidth="1.5"/>
 
-                  {/* ── TAPA INFERIOR NEGRA ── */}
-                  <ellipse cx={W/2} cy={botY} rx={RX}      ry={RY}      fill="#111111"/>
-                  <ellipse cx={W/2} cy={botY} rx={innerRX} ry={RY*0.75} fill="#333333"/>
-                  <ellipse cx={W/2} cy={botY} rx={RX}      ry={RY}      fill="none" stroke="#444" strokeWidth="1"/>
+                  {/* ── DOMO CONVEXO (sube hacia arriba) ── */}
+                  <path d={domePath} fill={`url(#dg-${label})`}/>
+                  {/* Contorno del domo */}
+                  <path d={domeOutline} fill="none" stroke="#3a3a3a" strokeWidth="1.2"/>
+                  {/* Reflejo sutil en domo */}
+                  <path d={`M ${cx-ew*0.25},${topY-domeH*0.3} Q ${cx-ew*0.05},${peakY+domeH*0.2} ${cx+ew*0.15},${topY-domeH*0.5}`}
+                    fill="none" stroke="#fff" strokeWidth="0.6" opacity="0.06"/>
+                  {/* Ventilación / boca de hombre en la cima */}
+                  <ellipse cx={cx} cy={peakY+2} rx={ew*0.055} ry={eh*0.38} fill="#090909" stroke="#444" strokeWidth="1"/>
+                  <ellipse cx={cx} cy={peakY+2} rx={ew*0.03}  ry={eh*0.22} fill="#000" stroke="#555" strokeWidth="0.6"/>
 
-                  {/* ── CONTORNO LATERAL NEGRO ── */}
-                  <rect x={W/2-RX} y={topY} width={RX*2} height={bodyH}
-                    fill="none" stroke="#333" strokeWidth="1.5"/>
-
-                  {/* ── REFLEJO PARED ── */}
-                  <rect x={W/2-RX} y={topY} width={RX*2} height={bodyH}
-                    fill={`url(#wallGrad-${label})`} clipPath={`url(#clipFull-${label})`}/>
-
-                  {/* ── TECHO CONVEXO (domo) ── */}
-                  {/* Relleno del domo — negro exterior */}
-                  <path
-                    d={`M ${W/2-RX},${topY} A ${RX},${domeH} 0 0,0 ${W/2+RX},${topY} A ${RX},${RY} 0 0,1 ${W/2-RX},${topY} Z`}
-                    fill="#111111"/>
-                  {/* Aro de unión cuerpo-techo (anillo elíptico) */}
-                  <ellipse cx={W/2} cy={topY} rx={RX}      ry={RY}      fill="none" stroke="#444" strokeWidth="2"/>
-                  {/* Reflejo sutil en domo (claridad izquierda) */}
-                  <path
-                    d={`M ${W/2-RX*0.7},${topY-domeH*0.25} A ${RX*0.55},${domeH*0.55} 0 0,0 ${W/2+RX*0.1},${topY-domeH*0.65}`}
-                    fill="none" stroke="#ffffff" strokeWidth="0.8" opacity="0.07"/>
-                  {/* Contorno arco del domo */}
-                  <path
-                    d={`M ${W/2-RX},${topY} A ${RX},${domeH} 0 0,0 ${W/2+RX},${topY}`}
-                    fill="none" stroke="#3a3a3a" strokeWidth="1.2"/>
-                  {/* Línea de plataforma / pasarela a 85% del radio */}
-                  <path
-                    d={`M ${W/2-RX*0.85},${topY - domeH*(1-Math.sqrt(1-0.85*0.85))} A ${RX*0.85},${domeH*0.85} 0 0,0 ${W/2+RX*0.85},${topY - domeH*(1-Math.sqrt(1-0.85*0.85))}`}
-                    fill="none" stroke="#333" strokeWidth="0.8" opacity="0.7"/>
-                  {/* Boca de hombre en la cima del domo */}
-                  <ellipse cx={W/2} cy={topY - domeH*0.88} rx={RX*0.08} ry={RY*0.55}
-                    fill="#0a0a0a" stroke="#555" strokeWidth="0.9"/>
-
-                  {/* ── PORCENTAJE ── */}
-                  <text x={W/2} y={topY + bodyH*0.52} textAnchor="middle" dominantBaseline="middle"
-                    fill={pct>0 ? "#ffffff" : "#777777"}
-                    fontSize={W*0.12} fontWeight="bold" fontFamily="monospace"
-                    opacity="0.9">{pct}%</text>
+                  {/* ── PORCENTAJE centrado en el cuerpo ── */}
+                  <text x={cx} y={topY + cylH*0.52} textAnchor="middle" dominantBaseline="middle"
+                    fill="#ffffff" fontSize={W*0.11} fontWeight="bold" fontFamily="monospace" opacity="0.85">{pct}%</text>
                 </svg>
               );
             };
