@@ -2197,7 +2197,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
                   {/* ── ELIPSE INFERIOR (fondo del tanque, da profundidad 3D) ── */}
                   <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#111"/>
-                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="none" stroke="#3a3a3a" strokeWidth="1.5"/>
 
                   {/* ── ARO SUPERIOR (unión cuerpo-techo) ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2}      ry={eh/2}      fill="#1a1a1a"/>
