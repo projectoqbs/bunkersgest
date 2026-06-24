@@ -2144,13 +2144,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               "TK-117": { h: 36, w: 78 },
             };
 
-            // Cilindro industrial: negro exterior, gris interior, producto sube desde el fondo
-            const CilindroSVG = ({pct, color, W=300, H=200, label}) => {
+            // Cilindro industrial: negro exterior, gris interior, techo convexo real
+            const CilindroSVG = ({pct, color, W=300, H=240, label}) => {
               const RX = W * 0.43;          // radio horizontal del cuerpo
-              const RY = RX * 0.17;         // aplanamiento elipse tapa
-              const wallT = W * 0.032;       // grosor pared lateral (negro)
-              const topY = RY + 3;           // inicio cuerpo
-              const botY = H - RY - 3;       // fin cuerpo
+              const RY = RX * 0.17;         // aplanamiento elipse base/fondo
+              const domeH = RY * 2.6;       // altura del domo convexo del techo
+              const wallT = W * 0.032;       // grosor pared lateral
+              const topY = domeH + RY + 4;  // inicio del cuerpo (debajo del domo)
+              const botY = H - RY - 4;       // fin cuerpo
               const bodyH = botY - topY;
               const innerRX = RX - wallT;    // radio interior (zona gris)
               const fillH = bodyH * Math.min(pct, 100) / 100;
@@ -2227,17 +2228,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <rect x={W/2-RX} y={topY} width={RX*2} height={bodyH}
                     fill={`url(#wallGrad-${label})`} clipPath={`url(#clipFull-${label})`}/>
 
-                  {/* ── TAPA SUPERIOR NEGRA con detalles ── */}
-                  {/* Aro exterior techo */}
-                  <ellipse cx={W/2} cy={topY} rx={RX}        ry={RY}        fill="#111111"/>
-                  {/* Plataforma / Aro intermedio */}
-                  <ellipse cx={W/2} cy={topY} rx={RX*0.88}   ry={RY*0.82}   fill="#1a1a1a"/>
-                  {/* Detalle aro interior */}
-                  <ellipse cx={W/2} cy={topY} rx={innerRX}   ry={RY*0.72}   fill="#222222"/>
-                  {/* Boca de hombre / medidor */}
-                  <ellipse cx={W/2} cy={topY} rx={RX*0.11}   ry={RY*0.30}   fill="#0a0a0a" stroke="#555" strokeWidth="0.8"/>
-                  {/* Contorno techo */}
-                  <ellipse cx={W/2} cy={topY} rx={RX}        ry={RY}        fill="none" stroke="#444" strokeWidth="1.5"/>
+                  {/* ── TECHO CONVEXO (domo) ── */}
+                  {/* Relleno del domo — negro exterior */}
+                  <path
+                    d={`M ${W/2-RX},${topY} A ${RX},${domeH} 0 0,0 ${W/2+RX},${topY} A ${RX},${RY} 0 0,1 ${W/2-RX},${topY} Z`}
+                    fill="#111111"/>
+                  {/* Aro de unión cuerpo-techo (anillo elíptico) */}
+                  <ellipse cx={W/2} cy={topY} rx={RX}      ry={RY}      fill="none" stroke="#444" strokeWidth="2"/>
+                  {/* Reflejo sutil en domo (claridad izquierda) */}
+                  <path
+                    d={`M ${W/2-RX*0.7},${topY-domeH*0.25} A ${RX*0.55},${domeH*0.55} 0 0,0 ${W/2+RX*0.1},${topY-domeH*0.65}`}
+                    fill="none" stroke="#ffffff" strokeWidth="0.8" opacity="0.07"/>
+                  {/* Contorno arco del domo */}
+                  <path
+                    d={`M ${W/2-RX},${topY} A ${RX},${domeH} 0 0,0 ${W/2+RX},${topY}`}
+                    fill="none" stroke="#3a3a3a" strokeWidth="1.2"/>
+                  {/* Línea de plataforma / pasarela a 85% del radio */}
+                  <path
+                    d={`M ${W/2-RX*0.85},${topY - domeH*(1-Math.sqrt(1-0.85*0.85))} A ${RX*0.85},${domeH*0.85} 0 0,0 ${W/2+RX*0.85},${topY - domeH*(1-Math.sqrt(1-0.85*0.85))}`}
+                    fill="none" stroke="#333" strokeWidth="0.8" opacity="0.7"/>
+                  {/* Boca de hombre en la cima del domo */}
+                  <ellipse cx={W/2} cy={topY - domeH*0.88} rx={RX*0.08} ry={RY*0.55}
+                    fill="#0a0a0a" stroke="#555" strokeWidth="0.9"/>
 
                   {/* ── PORCENTAJE ── */}
                   <text x={W/2} y={topY + bodyH*0.52} textAnchor="middle" dominantBaseline="middle"
