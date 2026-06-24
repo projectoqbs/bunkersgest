@@ -2129,56 +2129,127 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const CARROS = 9200;
             const byId = id => tanques.find(t=>t.id===id);
 
-            // Capacidades relativas para altura visual (mayor capacidad = más alto)
-            // TK-111 mayor, TK-116/117 segunda, TK-112 tercera, TK-113/114/115 menores
-            const HEIGHT = id => {
-              if (id==="TK-111") return "100%";
-              if (["TK-116","TK-117"].includes(id)) return "78%";
-              if (id==="TK-112") return "65%";
-              return "52%"; // TK-113, TK-114, TK-115
+            // Renderiza cilindro industrial SVG
+            // W/H = dimensiones del viewBox. RX = radio elipse tapa. RY = aplanamiento tapa.
+            const CilindroSVG = ({pct, color, W=120, H=200, label, producto}) => {
+              const RX = W * 0.42;
+              const RY = RX * 0.22;
+              const top = RY + 2;
+              const bot = H - RY - 2;
+              const bodyH = bot - top;
+              const fillH = bodyH * Math.min(pct, 100) / 100;
+              const fillY = bot - fillH;
+              // marcas de nivel cada 25%
+              const marcas = [25,50,75].map(p => ({ y: bot - bodyH*p/100, p }));
+              const fillColor = color || "#334";
+              const fillColorDark = fillColor + "bb";
+              const strokeColor = "#4a7090";
+              return (
+                <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"100%",display:"block"}}>
+                  <defs>
+                    <clipPath id={`clip-${label}`}>
+                      <rect x={W/2-RX} y={top} width={RX*2} height={bodyH}/>
+                    </clipPath>
+                    <linearGradient id={`grad-${label}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.07"/>
+                      <stop offset="40%" stopColor="#ffffff" stopOpacity="0.0"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.18"/>
+                    </linearGradient>
+                    <linearGradient id={`liq-${label}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={fillColor} stopOpacity="1"/>
+                      <stop offset="100%" stopColor={fillColor} stopOpacity="0.7"/>
+                    </linearGradient>
+                  </defs>
+
+                  {/* Cuerpo vacío */}
+                  <rect x={W/2-RX} y={top} width={RX*2} height={bodyH} fill="#1a2d40"/>
+
+                  {/* Líquido */}
+                  {pct>0 && (
+                    <g clipPath={`url(#clip-${label})`}>
+                      <rect x={W/2-RX} y={fillY} width={RX*2} height={fillH} fill={`url(#liq-${label})`}/>
+                      {/* Superficie líquido - elipse superior */}
+                      <ellipse cx={W/2} cy={fillY} rx={RX} ry={RY} fill={fillColor} opacity="0.9"/>
+                    </g>
+                  )}
+
+                  {/* Línea cap. operativa 90% */}
+                  <line x1={W/2-RX+2} y1={bot - bodyH*0.9} x2={W/2+RX-2} y2={bot - bodyH*0.9} stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,3" opacity="0.7"/>
+
+                  {/* Marcas de nivel */}
+                  {marcas.map(m=>(
+                    <g key={m.p}>
+                      <line x1={W/2-RX} y1={m.y} x2={W/2-RX+8} y2={m.y} stroke={strokeColor} strokeWidth="1"/>
+                      <text x={W/2-RX+10} y={m.y} dominantBaseline="middle" fill={strokeColor} fontSize="5.5" fontFamily="monospace">{m.p}%</text>
+                    </g>
+                  ))}
+
+                  {/* Tapa inferior */}
+                  <ellipse cx={W/2} cy={bot} rx={RX} ry={RY} fill="#0f1e2e"/>
+                  <ellipse cx={W/2} cy={bot} rx={RX} ry={RY} fill="none" stroke={strokeColor} strokeWidth="1.5"/>
+
+                  {/* Contorno lateral */}
+                  <rect x={W/2-RX} y={top} width={RX*2} height={bodyH} fill="none" stroke={strokeColor} strokeWidth="1.5"/>
+
+                  {/* Reflejo lateral */}
+                  <rect x={W/2-RX} y={top} width={RX*2} height={bodyH} fill={`url(#grad-${label})`} clipPath={`url(#clip-${label})`}/>
+
+                  {/* Tapa superior */}
+                  <ellipse cx={W/2} cy={top} rx={RX} ry={RY} fill="#243d54"/>
+                  <ellipse cx={W/2} cy={top} rx={RX} ry={RY} fill="none" stroke={strokeColor} strokeWidth="1.5"/>
+                  {/* Detalle tapa - círculo central */}
+                  <ellipse cx={W/2} cy={top} rx={RX*0.3} ry={RY*0.5} fill="none" stroke={strokeColor} strokeWidth="1" opacity="0.5"/>
+                  {/* Boca de hombre */}
+                  <ellipse cx={W/2} cy={top} rx={RX*0.12} ry={RY*0.22} fill="#162535" stroke={strokeColor} strokeWidth="1"/>
+
+                  {/* % en centro */}
+                  <text x={W/2} y={top + bodyH*0.52} textAnchor="middle" dominantBaseline="middle"
+                    fill="white" fontSize={W*0.13} fontWeight="bold" fontFamily="monospace"
+                    style={{textShadow:"0 1px 4px #000"}}>{pct}%</text>
+                </svg>
+              );
             };
 
-            const TankCard = ({id}) => {
+            const TankCard = ({id, flexH}) => {
               const t = byId(id);
-              if (!t) return null;
+              if (!t) return <div style={{flex:flexH}}/>;
               const rem = REMANENTE(t.id);
               const capOp = CAP_OPERATIVA(t);
               const nivel = Number(t.nivel||0);
-              const pctLleno = Math.round((nivel / t.capacidad) * 100);
-              const productColor = getProductColor(t.producto);
+              const pct = Math.round((nivel / t.capacidad) * 100);
+              const color = getProductColor(t.producto);
               const dispCargue = Math.max(0, nivel - rem);
               const carrosCargue = Math.floor(dispCargue / CARROS);
               const espLibre = Math.max(0, capOp - nivel);
               const carrosDesc = Math.floor(espLibre / CARROS);
               return (
-                <div style={{ borderRadius:8, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0f1e2e", height:HEIGHT(id), alignSelf:"flex-end", width:"100%" }}>
-                  <div style={{ padding:"6px 10px", flexShrink:0, background:"#ffffff", borderRadius:"8px 8px 0 0" }}>
-                    <div style={{ fontSize:12, fontWeight:800, color:T.navy }}>{t.id}</div>
-                    <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600 }}>{t.producto||"—"}</div>
+                <div style={{ flex:flexH, display:"flex", flexDirection:"column", minHeight:0 }}>
+                  {/* Nombre + producto */}
+                  <div style={{ flexShrink:0, paddingBottom:2, textAlign:"center" }}>
+                    <div style={{ fontSize:11, fontWeight:800, color:T.navy, letterSpacing:1 }}>{t.id}</div>
+                    <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto||"—"}</div>
                   </div>
-                  <div style={{ flex:1, position:"relative", background:"#1e2e3e", overflow:"hidden" }}>
-                    <div style={{ position:"absolute", bottom:0, left:0, right:0, height:`${pctLleno}%`, background:productColor, transition:"height 0.3s ease" }}/>
-                    <div style={{ position:"absolute", left:0, right:0, bottom:"90%", borderTop:"1px dashed #ffffff44", pointerEvents:"none" }}/>
-                    <div style={{ position:"absolute", top:"50%", left:0, right:0, textAlign:"center", transform:"translateY(-50%)", fontSize:13, fontWeight:800, color:"#ffffffdd", textShadow:"0 1px 6px #000" }}>{pctLleno}%</div>
+                  {/* Cilindro SVG */}
+                  <div style={{ flex:1, minHeight:0 }}>
+                    <CilindroSVG pct={pct} color={color} label={t.id}/>
                   </div>
-                  <div style={{ padding:"5px 6px", flexShrink:0, background:"#ffffff", borderRadius:"0 0 8px 8px" }}>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:3 }}>
-                      <div style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
-                        <div style={{ fontSize:7, color:"#6b8fa8", textTransform:"uppercase", marginBottom:1 }}>Nivel (Gls)</div>
-                        <div style={{ fontSize:9, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(nivel)}</div>
-                      </div>
-                      <div style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
-                        <div style={{ fontSize:7, color:"#f59e0b", textTransform:"uppercase", marginBottom:1 }}>Cargue</div>
-                        <div style={{ fontSize:9, fontWeight:700, color:"#f59e0b", fontFamily:"monospace" }}>{carrosCargue} carros</div>
-                      </div>
-                      <div style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
-                        <div style={{ fontSize:7, color:"#6b8fa8", textTransform:"uppercase", marginBottom:1 }}>Esp. libre (Gls)</div>
-                        <div style={{ fontSize:9, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(espLibre)}</div>
-                      </div>
-                      <div style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
-                        <div style={{ fontSize:7, color:"#00e5a0", textTransform:"uppercase", marginBottom:1 }}>Descargue</div>
-                        <div style={{ fontSize:9, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{carrosDesc} carros</div>
-                      </div>
+                  {/* Stats compactos */}
+                  <div style={{ flexShrink:0, display:"grid", gridTemplateColumns:"1fr 1fr", gap:2, paddingTop:2 }}>
+                    <div style={{ background:"#162535", borderRadius:3, padding:"3px 5px", textAlign:"center" }}>
+                      <div style={{ fontSize:7, color:"#6b8fa8", textTransform:"uppercase" }}>Nivel</div>
+                      <div style={{ fontSize:8, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(nivel)}</div>
+                    </div>
+                    <div style={{ background:"#162535", borderRadius:3, padding:"3px 5px", textAlign:"center" }}>
+                      <div style={{ fontSize:7, color:"#f59e0b", textTransform:"uppercase" }}>Cargue</div>
+                      <div style={{ fontSize:8, fontWeight:700, color:"#f59e0b", fontFamily:"monospace" }}>{carrosCargue}c</div>
+                    </div>
+                    <div style={{ background:"#162535", borderRadius:3, padding:"3px 5px", textAlign:"center" }}>
+                      <div style={{ fontSize:7, color:"#6b8fa8", textTransform:"uppercase" }}>Esp.libre</div>
+                      <div style={{ fontSize:8, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(espLibre)}</div>
+                    </div>
+                    <div style={{ background:"#162535", borderRadius:3, padding:"3px 5px", textAlign:"center" }}>
+                      <div style={{ fontSize:7, color:"#00e5a0", textTransform:"uppercase" }}>Descargue</div>
+                      <div style={{ fontSize:8, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{carrosDesc}c</div>
                     </div>
                   </div>
                 </div>
@@ -2186,31 +2257,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             };
 
             return (
-            <div style={{ height:"calc(100vh - 100px)", display:"flex", flexDirection:"column" }}>
-              <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:16, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
+            <div style={{ height:"calc(100vh - 112px)", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+              <div style={{ marginBottom:6, flexShrink:0 }}>
+                <div style={{ fontSize:15, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
+                <div style={{ fontSize:10, color:T.muted }}>— — — línea amarilla = capacidad operativa (90%)</div>
               </div>
-              {/* Layout: 3 columnas según distribución real
-                  Izq: TK-112 (arriba) / TK-111 (abajo)
-                  Centro: TK-115 (arriba) / TK-114 (medio) / TK-113 (abajo)
-                  Der: TK-117 (arriba) / TK-116 (abajo)
-              */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, flex:1, minHeight:0 }}>
+              {/* 3 columnas: Izq(112/111) | Centro(115/114/113) | Der(117/116) */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:12 }}>
                 {/* Columna izquierda */}
-                <div style={{ display:"flex", flexDirection:"column", gap:10, height:"100%" }}>
-                  <div style={{ flex:"0 0 38%", display:"flex", alignItems:"flex-end" }}><TankCard id="TK-112"/></div>
-                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-111"/></div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <TankCard id="TK-112" flexH="0 0 35%"/>
+                  <TankCard id="TK-111" flexH="1"/>
                 </div>
                 {/* Columna central */}
-                <div style={{ display:"flex", flexDirection:"column", gap:10, height:"100%" }}>
-                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-115"/></div>
-                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-114"/></div>
-                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-113"/></div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <TankCard id="TK-115" flexH="1"/>
+                  <TankCard id="TK-114" flexH="1"/>
+                  <TankCard id="TK-113" flexH="1"/>
                 </div>
                 {/* Columna derecha */}
-                <div style={{ display:"flex", flexDirection:"column", gap:10, height:"100%" }}>
-                  <div style={{ flex:"0 0 48%", display:"flex", alignItems:"flex-end" }}><TankCard id="TK-117"/></div>
-                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-116"/></div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <TankCard id="TK-117" flexH="0 0 46%"/>
+                  <TankCard id="TK-116" flexH="1"/>
                 </div>
               </div>
             </div>
