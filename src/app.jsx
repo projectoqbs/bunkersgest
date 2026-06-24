@@ -1696,9 +1696,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <span style={{color:azuOk?T.text:T.danger,fontWeight:azuOk?400:700}}>{t.azufre||"—"}</span>,
                     <span style={{color:tsaOk?T.text:T.danger,fontWeight:tsaOk?400:700}}>{t.tsa||"—"}</span>,
                     <Badge label={t.resultado} color={t.resultado==="APROBADO"?"#00e5a0":T.danger}/>,
-                    puedeEditar("tiquetes",t.creado_por,t.created_at)
-                      ? <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:"#00b4ff22",border:"1px solid #00b4ff55",borderRadius:6,color:"#00b4ff",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
-                      : null,
+                    <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                      {puedeEditar("tiquetes",t.creado_por,t.created_at) && (
+                        <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:"#00b4ff22",border:"1px solid #00b4ff55",borderRadius:6,color:"#00b4ff",padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                      )}
+                      {perfil.rol==="administrador" && t.resultado==="RECHAZADO" && t.viaje_id && (()=>{
+                        const viaje = viajes.find(v=>v.id===t.viaje_id);
+                        if (!viaje || viaje.estado==="Descargado") return null;
+                        const autorizado = viaje.autorizado_descargue;
+                        return (
+                          <button onClick={async()=>{
+                            await supabaseAdmin.from("viajes").update({autorizado_descargue:!autorizado, autorizado_por: !autorizado?perfil.nombre:null}).eq("id",t.viaje_id);
+                            await loadData();
+                            showToast(!autorizado?"Descargue autorizado ✔":"Autorización retirada", !autorizado);
+                          }} style={{background:autorizado?"#ff4d4d22":"#f59e0b22",border:`1px solid ${autorizado?"#ff4d4d55":"#f59e0b55"}`,borderRadius:6,color:autorizado?"#ff4d4d":"#f59e0b",padding:"3px 8px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>
+                            {autorizado?"✕ Revocar":"✔ Autorizar"}
+                          </button>
+                        );
+                      })()}
+                    </div>,
                   ];
                 })}
               />
@@ -2740,7 +2756,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const prodUpper = (cmtProducto||"").toUpperCase();
                     const esGlobal = ["HSFO","VLSFO"].includes(prodUpper);
                     const placasUsadas = cmtCarros.filter((_,j)=>j!==i).map(c=>c.placa).filter(Boolean);
-                    const enPlanta = viajes.filter(v => v.estado === "En Planta" && !placasUsadas.includes(v.placa) && (esGlobal || !cmtProducto || (v.producto||"").toUpperCase() === prodUpper));
+                    const enPlanta = viajes.filter(v =>
+                      !placasUsadas.includes(v.placa) &&
+                      (esGlobal || !cmtProducto || (v.producto||"").toUpperCase() === prodUpper) &&
+                      (v.estado === "En Planta" || (v.estado === "Rechazado" && v.autorizado_descargue))
+                    );
                     return enPlanta.length > 0 ? (
                       <select value={carro.placa} onChange={e=>{
                         const placa = e.target.value;
@@ -2751,7 +2771,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         setCmtCarros(n);
                       }} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}>
                         <option value="">Seleccionar placa...</option>
-                        {enPlanta.map(v=><option key={v.id} value={v.placa}>{v.placa} — {v.producto}</option>)}
+                        {enPlanta.map(v=><option key={v.id} value={v.placa}>{v.placa} — {v.producto}{v.autorizado_descargue?" [AUTORIZADO]":""}</option>)}
                       </select>
                     ) : (
                       <input type="text" placeholder="ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.toUpperCase().replace(/\s/g,"");setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/>
