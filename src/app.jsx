@@ -2129,6 +2129,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const CARROS = 9200;
             const byId = id => tanques.find(t=>t.id===id);
 
+            // Escala 1-100: h = proporción de altura en la columna (flex-grow)
+            //               w = % del ancho de la columna que ocupa el tanque
+            // TK-111 es referencia. Las demás capacidades:
+            //   TK-112 = 70% h de 111 → h=39 (70% de 55)
+            //   TK-116/117 = 66% h de 111 → h=36 (66% de 55)
+            //   TK-113/114/115 = 55% h de 111 → h=30 (55% de 55)
+            const CFG = {
+              "TK-111": { h: 55, w: 82 },
+              "TK-112": { h: 39, w: 72 },
+              "TK-113": { h: 30, w: 72 },
+              "TK-114": { h: 30, w: 72 },
+              "TK-115": { h: 30, w: 72 },
+              "TK-116": { h: 36, w: 78 },
+              "TK-117": { h: 36, w: 78 },
+            };
+
             // ViewBox 300×200: ratio 1.5:1 (más ancho que alto) → escala bien en columnas anchas
             const CilindroSVG = ({pct, color, W=300, H=200, label}) => {
               const RX = W * 0.42;
@@ -2209,9 +2225,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               );
             };
 
-            const TankCard = ({id, flexH}) => {
+            const TankCard = ({id}) => {
+              const cfg = CFG[id] || {h:40, w:75};
               const t = byId(id);
-              if (!t) return <div style={{flex:flexH}}/>;
+              if (!t) return <div style={{flex:cfg.h}}/>;
               const rem = REMANENTE(t.id);
               const capOp = CAP_OPERATIVA(t);
               const nivel = Number(t.nivel||0);
@@ -2222,29 +2239,33 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const espLibre = Math.max(0, capOp - nivel);
               const carrosDesc = Math.floor(espLibre / CARROS);
               return (
-                <div style={{ flex:flexH, display:"flex", flexDirection:"column", minHeight:0 }}>
-                  {/* Nombre + producto */}
-                  <div style={{ flexShrink:0, paddingBottom:2, textAlign:"center" }}>
-                    <div style={{ fontSize:11, fontWeight:800, color:T.navy, letterSpacing:1 }}>{t.id}</div>
-                    <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto||"—"}</div>
-                  </div>
-                  {/* Cilindro SVG — ocupa el espacio flex disponible */}
-                  <div style={{ flex:1, minHeight:0, overflow:"hidden" }}>
-                    <CilindroSVG pct={pct} color={color} label={t.id}/>
-                  </div>
-                  {/* Stats en una línea horizontal */}
-                  <div style={{ flexShrink:0, display:"flex", gap:2, paddingTop:2 }}>
-                    {[
-                      {label:"Nivel", val:fmt(nivel), color:"#dff0f8"},
-                      {label:"Cargue", val:`${carrosCargue}c`, color:"#f59e0b"},
-                      {label:"Libre", val:fmt(espLibre), color:"#00e5a0"},
-                      {label:"Desc.", val:`${carrosDesc}c`, color:"#00e5a0"},
-                    ].map(s=>(
-                      <div key={s.label} style={{ flex:1, background:"#162535", borderRadius:3, padding:"2px 3px", textAlign:"center" }}>
-                        <div style={{ fontSize:6, color:"#6b8fa8", textTransform:"uppercase", lineHeight:1.2 }}>{s.label}</div>
-                        <div style={{ fontSize:8, fontWeight:700, color:s.color, fontFamily:"monospace", lineHeight:1.3 }}>{s.val}</div>
-                      </div>
-                    ))}
+                // flex:cfg.h divide el espacio de la columna proporcionalmente entre los tanques
+                <div style={{ flex:cfg.h, minHeight:0, display:"flex", flexDirection:"column", alignItems:"center" }}>
+                  {/* Contenedor con ancho w% centrado */}
+                  <div style={{ width:cfg.w+"%", height:"100%", display:"flex", flexDirection:"column", minHeight:0 }}>
+                    {/* Nombre + producto */}
+                    <div style={{ flexShrink:0, paddingBottom:1, textAlign:"center" }}>
+                      <div style={{ fontSize:11, fontWeight:800, color:T.navy, letterSpacing:1 }}>{t.id}</div>
+                      <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600 }}>{t.producto||"—"}</div>
+                    </div>
+                    {/* Cilindro SVG */}
+                    <div style={{ flex:1, minHeight:0, overflow:"hidden" }}>
+                      <CilindroSVG pct={pct} color={color} label={t.id}/>
+                    </div>
+                    {/* Stats en una línea */}
+                    <div style={{ flexShrink:0, display:"flex", gap:2, paddingTop:2 }}>
+                      {[
+                        {label:"Nivel", val:fmt(nivel), color:"#dff0f8"},
+                        {label:"Cargue", val:`${carrosCargue}c`, color:"#f59e0b"},
+                        {label:"Libre", val:fmt(espLibre), color:"#00e5a0"},
+                        {label:"Desc.", val:`${carrosDesc}c`, color:"#00e5a0"},
+                      ].map(s=>(
+                        <div key={s.label} style={{ flex:1, background:"#162535", borderRadius:3, padding:"2px 3px", textAlign:"center" }}>
+                          <div style={{ fontSize:6, color:"#6b8fa8", textTransform:"uppercase", lineHeight:1.2 }}>{s.label}</div>
+                          <div style={{ fontSize:8, fontWeight:700, color:s.color, fontFamily:"monospace", lineHeight:1.3 }}>{s.val}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
@@ -2260,24 +2281,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ fontSize:15, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
                 <div style={{ fontSize:9, color:T.muted }}>— — — línea amarilla = capacidad operativa (90%)</div>
               </div>
-              {/* 3 columnas: Izq(112/111) | Centro(115/114/113) | Der(117/116)
-                  gridTemplateRows:"1fr" es clave: fuerza a las celdas a tener altura acotada */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr", gap:12, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:10, alignItems:"stretch" }}>
-                {/* Columna izquierda: TK-112 (28%) / TK-111 (72%) */}
+              {/* gridTemplateRows:"1fr" alinea las 3 columnas a la misma altura acotada */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr", gap:12, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:10 }}>
+                {/* Columna izquierda: TK-112 / TK-111 */}
                 <div style={{ display:"flex", flexDirection:"column", gap:6, overflow:"hidden" }}>
-                  <TankCard id="TK-112" flexH="0 0 28%"/>
-                  <TankCard id="TK-111" flexH="1"/>
+                  <TankCard id="TK-112"/>
+                  <TankCard id="TK-111"/>
                 </div>
-                {/* Columna central: 3 tanques iguales */}
+                {/* Columna central: TK-115 / TK-114 / TK-113 */}
                 <div style={{ display:"flex", flexDirection:"column", gap:6, overflow:"hidden" }}>
-                  <TankCard id="TK-115" flexH="1"/>
-                  <TankCard id="TK-114" flexH="1"/>
-                  <TankCard id="TK-113" flexH="1"/>
+                  <TankCard id="TK-115"/>
+                  <TankCard id="TK-114"/>
+                  <TankCard id="TK-113"/>
                 </div>
-                {/* Columna derecha: TK-117 (44%) / TK-116 (56%) */}
+                {/* Columna derecha: TK-117 / TK-116 */}
                 <div style={{ display:"flex", flexDirection:"column", gap:6, overflow:"hidden" }}>
-                  <TankCard id="TK-117" flexH="0 0 44%"/>
-                  <TankCard id="TK-116" flexH="1"/>
+                  <TankCard id="TK-117"/>
+                  <TankCard id="TK-116"/>
                 </div>
               </div>
             </div>
