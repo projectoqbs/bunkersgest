@@ -2127,64 +2127,91 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const REMANENTE = id => ["TK-111","TK-116","TK-117"].includes(id) ? 4500 : 3800;
             const CAP_OPERATIVA = t => Math.round(t.capacidad * 0.9);
             const CARROS = 9200;
+            const byId = id => tanques.find(t=>t.id===id);
+
+            // Capacidades relativas para altura visual (mayor capacidad = más alto)
+            // TK-111 mayor, TK-116/117 segunda, TK-112 tercera, TK-113/114/115 menores
+            const HEIGHT = id => {
+              if (id==="TK-111") return "100%";
+              if (["TK-116","TK-117"].includes(id)) return "78%";
+              if (id==="TK-112") return "65%";
+              return "52%"; // TK-113, TK-114, TK-115
+            };
+
+            const TankCard = ({id}) => {
+              const t = byId(id);
+              if (!t) return null;
+              const rem = REMANENTE(t.id);
+              const capOp = CAP_OPERATIVA(t);
+              const nivel = Number(t.nivel||0);
+              const pctLleno = Math.round((nivel / t.capacidad) * 100);
+              const productColor = getProductColor(t.producto);
+              const dispCargue = Math.max(0, nivel - rem);
+              const carrosCargue = Math.floor(dispCargue / CARROS);
+              const espLibre = Math.max(0, capOp - nivel);
+              const carrosDesc = Math.floor(espLibre / CARROS);
+              return (
+                <div style={{ borderRadius:8, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0f1e2e", height:HEIGHT(id), alignSelf:"flex-end", width:"100%" }}>
+                  <div style={{ padding:"6px 10px", flexShrink:0, background:"#ffffff", borderRadius:"8px 8px 0 0" }}>
+                    <div style={{ fontSize:12, fontWeight:800, color:T.navy }}>{t.id}</div>
+                    <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600 }}>{t.producto||"—"}</div>
+                  </div>
+                  <div style={{ flex:1, position:"relative", background:"#1e2e3e", overflow:"hidden" }}>
+                    <div style={{ position:"absolute", bottom:0, left:0, right:0, height:`${pctLleno}%`, background:productColor, transition:"height 0.3s ease" }}/>
+                    <div style={{ position:"absolute", left:0, right:0, bottom:"90%", borderTop:"1px dashed #ffffff44", pointerEvents:"none" }}/>
+                    <div style={{ position:"absolute", top:"50%", left:0, right:0, textAlign:"center", transform:"translateY(-50%)", fontSize:13, fontWeight:800, color:"#ffffffdd", textShadow:"0 1px 6px #000" }}>{pctLleno}%</div>
+                  </div>
+                  <div style={{ padding:"5px 6px", flexShrink:0, background:"#ffffff", borderRadius:"0 0 8px 8px" }}>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:3 }}>
+                      <div style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
+                        <div style={{ fontSize:7, color:"#6b8fa8", textTransform:"uppercase", marginBottom:1 }}>Nivel (Gls)</div>
+                        <div style={{ fontSize:9, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(nivel)}</div>
+                      </div>
+                      <div style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
+                        <div style={{ fontSize:7, color:"#f59e0b", textTransform:"uppercase", marginBottom:1 }}>Cargue</div>
+                        <div style={{ fontSize:9, fontWeight:700, color:"#f59e0b", fontFamily:"monospace" }}>{carrosCargue} carros</div>
+                      </div>
+                      <div style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
+                        <div style={{ fontSize:7, color:"#6b8fa8", textTransform:"uppercase", marginBottom:1 }}>Esp. libre (Gls)</div>
+                        <div style={{ fontSize:9, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(espLibre)}</div>
+                      </div>
+                      <div style={{ background:"#162535", borderRadius:4, padding:"4px 6px" }}>
+                        <div style={{ fontSize:7, color:"#00e5a0", textTransform:"uppercase", marginBottom:1 }}>Descargue</div>
+                        <div style={{ fontSize:9, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{carrosDesc} carros</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            };
+
             return (
             <div style={{ height:"calc(100vh - 100px)", display:"flex", flexDirection:"column" }}>
               <div style={{ marginBottom:10 }}>
                 <div style={{ fontSize:16, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:10, flex:1, minHeight:0 }}>
-                {tanques.map(t=>{
-                  const rem = REMANENTE(t.id);
-                  const capOp = CAP_OPERATIVA(t);
-                  const nivel = Number(t.nivel||0);
-                  const pctLleno = Math.round((nivel / t.capacidad) * 100);
-                  const productColor = getProductColor(t.producto);
-                  // Cargue: cuántos carros puedo SACAR (nivel - remanente)
-                  const dispCargue = Math.max(0, nivel - rem);
-                  const carrosCargue = Math.floor(dispCargue / CARROS);
-                  // Descargue: cuántos carros puedo METER (capOp - nivel)
-                  const espLibre = Math.max(0, capOp - nivel);
-                  const carrosDesc = Math.floor(espLibre / CARROS);
-                  return (
-                    <div key={t.id} style={{ borderRadius:8, overflow:"hidden", display:"flex", flexDirection:"column", background:"#0f1e2e" }}>
-                      {/* Header: nombre + producto sobre el tanque */}
-                      <div style={{ padding:"8px 10px", flexShrink:0, background:"#ffffff", borderRadius:"8px 8px 0 0" }}>
-                        <div style={{ fontSize:12, fontWeight:800, color:T.navy, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.id}</div>
-                        <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto||"—"}</div>
-                      </div>
-
-                      {/* Tanque visual: relleno de color directo, sin borde interno */}
-                      <div style={{ flex:1, position:"relative", background:"#1e2e3e", overflow:"hidden", minHeight:80 }}>
-                        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:`${pctLleno}%`, background:productColor, transition:"height 0.3s ease" }}/>
-                        {/* Línea de capacidad operativa (90%) */}
-                        <div style={{ position:"absolute", left:0, right:0, bottom:`90%`, borderTop:"1px dashed #ffffff44", pointerEvents:"none" }}/>
-                        <div style={{ position:"absolute", top:"50%", left:0, right:0, textAlign:"center", transform:"translateY(-50%)", fontSize:14, fontWeight:800, color:"#ffffffdd", textShadow:"0 1px 6px #000" }}>{pctLleno}%</div>
-                      </div>
-
-                      {/* Datos abajo */}
-                      <div style={{ padding:"6px 8px", flexShrink:0, background:"#ffffff", borderRadius:"0 0 8px 8px" }}>
-                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
-                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
-                            <div style={{ fontSize:8, color:"#6b8fa8", textTransform:"uppercase", marginBottom:2 }}>Nivel (Gls)</div>
-                            <div style={{ fontSize:10, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(nivel)}</div>
-                          </div>
-                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
-                            <div style={{ fontSize:8, color:"#f59e0b", textTransform:"uppercase", marginBottom:2 }}>Cargue</div>
-                            <div style={{ fontSize:10, fontWeight:700, color:"#f59e0b", fontFamily:"monospace" }}>{carrosCargue} carros</div>
-                          </div>
-                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
-                            <div style={{ fontSize:8, color:"#6b8fa8", textTransform:"uppercase", marginBottom:2 }}>Esp. libre (Gls)</div>
-                            <div style={{ fontSize:10, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(espLibre)}</div>
-                          </div>
-                          <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
-                            <div style={{ fontSize:8, color:"#00e5a0", textTransform:"uppercase", marginBottom:2 }}>Descargue</div>
-                            <div style={{ fontSize:10, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{carrosDesc} carros</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              {/* Layout: 3 columnas según distribución real
+                  Izq: TK-112 (arriba) / TK-111 (abajo)
+                  Centro: TK-115 (arriba) / TK-114 (medio) / TK-113 (abajo)
+                  Der: TK-117 (arriba) / TK-116 (abajo)
+              */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, flex:1, minHeight:0 }}>
+                {/* Columna izquierda */}
+                <div style={{ display:"flex", flexDirection:"column", gap:10, height:"100%" }}>
+                  <div style={{ flex:"0 0 38%", display:"flex", alignItems:"flex-end" }}><TankCard id="TK-112"/></div>
+                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-111"/></div>
+                </div>
+                {/* Columna central */}
+                <div style={{ display:"flex", flexDirection:"column", gap:10, height:"100%" }}>
+                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-115"/></div>
+                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-114"/></div>
+                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-113"/></div>
+                </div>
+                {/* Columna derecha */}
+                <div style={{ display:"flex", flexDirection:"column", gap:10, height:"100%" }}>
+                  <div style={{ flex:"0 0 48%", display:"flex", alignItems:"flex-end" }}><TankCard id="TK-117"/></div>
+                  <div style={{ flex:1, display:"flex", alignItems:"flex-end" }}><TankCard id="TK-116"/></div>
+                </div>
               </div>
             </div>
             );
