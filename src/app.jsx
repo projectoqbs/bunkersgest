@@ -1990,40 +1990,40 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           </tr>
                           {expandido && (
                             <tr>
-                              <td colSpan={10} style={{padding:"0 0 2px 0",background:"#0a1829",borderBottom:"2px solid #00e5a033"}}>
+                              <td colSpan={10} style={{padding:"0 0 2px 0",background:"#f1f5f9",borderBottom:`2px solid ${T.border}`}}>
                                 <div style={{padding:"16px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                                  <div style={{background:T.bg,borderRadius:8,padding:"12px 14px",borderLeft:`3px solid ${T.navy}`}}>
-                                    <div style={{fontSize:10,color:"#00b4ff",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Inicial</div>
+                                  <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:"3px solid #3b82f6"}}>
+                                    <div style={{fontSize:10,color:"#3b82f6",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Inicial</div>
                                     {(c.tanques_antes||[]).map((t,i)=>(
-                                      <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:"1px solid #ffffff08"}}>
-                                        <span style={{color:T.text,fontWeight:700}}>{t.tanque||"—"}</span>
+                                      <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:`1px solid ${T.border}`}}>
+                                        <span style={{color:T.navy,fontWeight:700}}>{t.tanque||"—"}</span>
                                         <span style={{color:T.muted}}>Sonda: {t.sonda||"—"}</span>
                                         <span style={{color:"#f59e0b",fontWeight:700}}>{fmt(t.galones)} Gls</span>
                                       </div>
                                     ))}
-                                    <div style={{fontSize:11,color:T.muted,marginTop:4}}>Total: <b style={{color:T.text}}>{fmt(c.total_antes)} Gls</b></div>
+                                    <div style={{fontSize:11,color:T.muted,marginTop:4}}>Total: <b style={{color:T.navy}}>{fmt(c.total_antes)} Gls</b></div>
                                   </div>
-                                  <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #c084fc"}}>
-                                    <div style={{fontSize:10,color:"#c084fc",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Final</div>
+                                  <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:"3px solid #8b5cf6"}}>
+                                    <div style={{fontSize:10,color:"#8b5cf6",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Final</div>
                                     {(c.tanques_despues||[]).map((t,i)=>(
-                                      <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:"1px solid #ffffff08"}}>
-                                        <span style={{color:T.text,fontWeight:700}}>{t.tanque||"—"}</span>
+                                      <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:`1px solid ${T.border}`}}>
+                                        <span style={{color:T.navy,fontWeight:700}}>{t.tanque||"—"}</span>
                                         <span style={{color:T.muted}}>Sonda: {t.sonda||"—"}</span>
                                         <span style={{color:"#f59e0b",fontWeight:700}}>{fmt(t.galones)} Gls</span>
                                       </div>
                                     ))}
-                                    <div style={{fontSize:11,color:T.muted,marginTop:4}}>Total: <b style={{color:T.text}}>{fmt(c.total_despues)} Gls</b></div>
+                                    <div style={{fontSize:11,color:T.muted,marginTop:4}}>Total: <b style={{color:T.navy}}>{fmt(c.total_despues)} Gls</b></div>
                                   </div>
                                   {(c.carros||[]).length>0 && (c.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && (
-                                    <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #6b8fa8",gridColumn:"1/-1"}}>
-                                      <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Carros Descargados</div>
+                                    <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:"3px solid #6b8fa8",gridColumn:"1/-1"}}>
+                                      <div style={{fontSize:10,color:"#6b8fa8",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Carros Descargados</div>
                                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
                                         {(c.carros||[]).map((cr,i)=>(
-                                          <div key={i} style={{background:"#162535",borderRadius:8,padding:"8px 10px",fontSize:11}}>
-                                            <div style={{color:T.text,fontWeight:700,marginBottom:3}}>{cr.placa||"Sin placa"}</div>
-                                            {cr.tiquete&&<div style={{color:"#00b4ff"}}>Tiquete: {cr.tiquete}</div>}
+                                          <div key={i} style={{background:"#f8fafc",borderRadius:8,padding:"8px 10px",fontSize:11,border:`1px solid ${T.border}`}}>
+                                            <div style={{color:T.navy,fontWeight:700,marginBottom:3}}>{cr.placa||"Sin placa"}</div>
+                                            {cr.tiquete&&<div style={{color:"#3b82f6"}}>Tiquete: {cr.tiquete}</div>}
                                             {cr.guia&&<div style={{color:T.muted}}>Guía: {cr.guia}</div>}
-                                            {cr.pbs_id&&<div style={{color:"#fb923c"}}>PBS: {cr.pbs_id}</div>}
+                                            {cr.pbs_id&&<div style={{color:T.orange}}>PBS: {cr.pbs_id}</div>}
                                             {cr.hora_inicio&&<div style={{color:T.muted}}>Inicio: {cr.hora_inicio} — Fin: {cr.hora_final||"—"}</div>}
                                           </div>
                                         ))}
@@ -2031,19 +2031,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                     </div>
                                   )}
                                   {(c.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && (c.tanques_recepcion||[]).length>0 && (
-                                    <div style={{background:"#0f1e2e",borderRadius:10,padding:"12px 14px",borderLeft:"3px solid #00e5a0",gridColumn:"1/-1"}}>
-                                      <div style={{fontSize:10,color:"#00e5a0",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Tanque de Recepción</div>
+                                    <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:"3px solid #10b981",gridColumn:"1/-1"}}>
+                                      <div style={{fontSize:10,color:"#10b981",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Tanque de Recepción</div>
                                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:8}}>
                                         {(c.tanques_recepcion||[]).map((r,i)=>(
-                                          <div key={i} style={{background:"#162535",borderRadius:8,padding:"8px 12px",fontSize:11}}>
-                                            <div style={{color:"#00e5a0",fontWeight:700,marginBottom:6,fontSize:12}}>{r.tanque||"—"}</div>
+                                          <div key={i} style={{background:"#f8fafc",borderRadius:8,padding:"8px 12px",fontSize:11,border:`1px solid ${T.border}`}}>
+                                            <div style={{color:"#10b981",fontWeight:700,marginBottom:6,fontSize:12}}>{r.tanque||"—"}</div>
                                             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
-                                              <div style={{color:"#00b4ff",fontSize:10,fontWeight:700,marginBottom:2}}>INICIAL</div>
-                                              <div style={{color:"#c084fc",fontSize:10,fontWeight:700,marginBottom:2}}>FINAL</div>
-                                              <div style={{color:T.muted}}>Sonda: <b style={{color:T.text}}>{r.sondaInicial||"—"}</b></div>
-                                              <div style={{color:T.muted}}>Sonda: <b style={{color:T.text}}>{r.sondaFinal||"—"}</b></div>
-                                              <div style={{color:T.muted}}>Temp: <b style={{color:T.text}}>{r.tempInicial||"—"}</b></div>
-                                              <div style={{color:T.muted}}>Temp: <b style={{color:T.text}}>{r.tempFinal||"—"}</b></div>
+                                              <div style={{color:"#3b82f6",fontSize:10,fontWeight:700,marginBottom:2}}>INICIAL</div>
+                                              <div style={{color:"#8b5cf6",fontSize:10,fontWeight:700,marginBottom:2}}>FINAL</div>
+                                              <div style={{color:T.muted}}>Sonda: <b style={{color:T.navy}}>{r.sondaInicial||"—"}</b></div>
+                                              <div style={{color:T.muted}}>Sonda: <b style={{color:T.navy}}>{r.sondaFinal||"—"}</b></div>
+                                              <div style={{color:T.muted}}>Temp: <b style={{color:T.navy}}>{r.tempInicial||"—"}</b></div>
+                                              <div style={{color:T.muted}}>Temp: <b style={{color:T.navy}}>{r.tempFinal||"—"}</b></div>
                                               <div style={{color:"#f59e0b",fontWeight:700}}>{fmt(r.galonesInicial||0)} Gls</div>
                                               <div style={{color:"#f59e0b",fontWeight:700}}>{fmt(r.galonesFinal||0)} Gls</div>
                                             </div>
@@ -2052,14 +2052,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                       </div>
                                     </div>
                                   )}
-                                  <div style={{gridColumn:"1/-1",display:"flex",gap:20,fontSize:11,color:T.muted,flexWrap:"wrap",paddingTop:4}}>
-                                    {c.sede&&<span>Sede: <b style={{color:T.text}}>{c.sede}{c.planta?` · ${c.planta}`:""}</b></span>}
-                                    {c.operador&&<span>Operador: <b style={{color:T.text}}>{c.operador}</b></span>}
-                                    {c.placa&&<span>Placa: <b style={{color:T.text}}>{c.placa}</b></span>}
-                                    {c.guia&&<span>Guía: <b style={{color:T.text}}>{c.guia}</b></span>}
-                                    {c.tiquete_entrada&&<span>Tiquete: <b style={{color:"#00b4ff"}}>{c.tiquete_entrada}</b></span>}
-                                    {(c.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"&&c.pbs_id&&<span>PBS: <b style={{color:"#fb923c"}}>{c.pbs_id}</b></span>}
-                                    <span style={{marginLeft:"auto",color: movido>=0?"#00e5a0":"#ff4d4d",fontWeight:700,fontSize:13}}>
+                                  <div style={{gridColumn:"1/-1",display:"flex",gap:20,fontSize:11,color:T.muted,flexWrap:"wrap",paddingTop:4,borderTop:`1px solid ${T.border}`,marginTop:4}}>
+                                    {c.sede&&<span>Sede: <b style={{color:T.navy}}>{c.sede}{c.planta?` · ${c.planta}`:""}</b></span>}
+                                    {c.operador&&<span>Operador: <b style={{color:T.navy}}>{c.operador}</b></span>}
+                                    {c.placa&&<span>Placa: <b style={{color:T.navy}}>{c.placa}</b></span>}
+                                    {c.guia&&<span>Guía: <b style={{color:T.navy}}>{c.guia}</b></span>}
+                                    {c.tiquete_entrada&&<span>Tiquete: <b style={{color:"#3b82f6"}}>{c.tiquete_entrada}</b></span>}
+                                    {(c.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"&&c.pbs_id&&<span>PBS: <b style={{color:T.orange}}>{c.pbs_id}</b></span>}
+                                    <span style={{marginLeft:"auto",color: movido>=0?"#059669":"#dc2626",fontWeight:700,fontSize:13}}>
                                       {movido>=0?"▲ Recibido:":"▼ Despachado:"} {fmt(Math.abs(movido))} Gls
                                     </span>
                                   </div>
