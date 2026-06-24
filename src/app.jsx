@@ -2169,7 +2169,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <div style={{ fontSize:10, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(nivel)}</div>
                           </div>
                           <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
-                            <div style={{ fontSize:8, color:"#f59e0b", textTransform:"uppercase", marginBottom:2 }}>Carros cargue</div>
+                            <div style={{ fontSize:8, color:"#f59e0b", textTransform:"uppercase", marginBottom:2 }}>Cargue</div>
                             <div style={{ fontSize:10, fontWeight:700, color:"#f59e0b", fontFamily:"monospace" }}>{carrosCargue} carros</div>
                           </div>
                           <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
@@ -2177,7 +2177,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <div style={{ fontSize:10, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(espLibre)}</div>
                           </div>
                           <div style={{ background:"#162535", borderRadius:4, padding:"5px 7px" }}>
-                            <div style={{ fontSize:8, color:"#00e5a0", textTransform:"uppercase", marginBottom:2 }}>Carros desc.</div>
+                            <div style={{ fontSize:8, color:"#00e5a0", textTransform:"uppercase", marginBottom:2 }}>Descargue</div>
                             <div style={{ fontSize:10, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{carrosDesc} carros</div>
                           </div>
                         </div>
