@@ -946,7 +946,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       <div style={{ width:420, background:T.card, borderRadius:12, overflow:"hidden", boxShadow:"0 24px 64px rgba(0,0,0,0.4)" }}>
         <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"28px 32px", textAlign:"center" }}>
           <div style={{ fontSize:32, marginBottom:8 }}>🚢</div>
-          <div style={{ fontWeight:800, fontSize:22, color:"#ffffff", letterSpacing:2 }}>BUNKERSGEST</div>
+          <div style={{ fontWeight:800, fontSize:22, color:"#ffffff", letterSpacing:2 }}>BunkersGest</div>
           <div style={{ fontSize:10, color:"#ffffff88", marginTop:4, letterSpacing:3 }}>SISTEMA DE GESTIÓN OPERATIVA · COMBUSTIBLE MARINO</div>
         </div>
         <div style={{ padding:32 }}>
@@ -1032,7 +1032,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <div style={{ display:"flex", alignItems:"center", gap:14 }}>
           <span style={{ fontSize:28 }}>🚢</span>
           <div>
-            <div style={{ fontWeight:800, fontSize:18, color:"#ffffff", letterSpacing:2 }}>BUNKERSGEST <span style={{color:T.orange, fontSize:12, fontWeight:700}}>v2.0</span></div>
+            <div style={{ fontWeight:800, fontSize:18, color:"#ffffff", letterSpacing:2 }}>BunkersGest <span style={{color:T.orange, fontSize:12, fontWeight:700}}>v2.0</span></div>
             <div style={{ fontSize:9, color:"#ffffff66", letterSpacing:2, textTransform:"uppercase" }}>Sistema de Gestión Operativa · Combustible Marino</div>
           </div>
         </div>
