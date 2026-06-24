@@ -248,6 +248,7 @@ export default function App() {
   ]);
   const [activeTabId, setActiveTabId] = useState('tab-dashboard');
   const tabStateCache = useRef({});
+  const cmtCarrosRef = useRef(null);
 
   // Data
   const [tanques, setTanques] = useState([]);
@@ -676,6 +677,7 @@ const aprueba = esVLSFO
         }
         setPbsParaCarro(null);
         setModal("cmt");
+        setTimeout(() => cmtCarrosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
       } else { setModal(null); setForm({}); }
       setPbsChecklist(Array(26).fill(""));
       showToast(`PBS ${form.id} guardado`);
@@ -719,11 +721,12 @@ const aprueba = esVLSFO
           const pbsTabId = activeTabId;
           if (cmtTab) {
             setActiveTabId(cmtTab.id);
+            setTimeout(() => cmtCarrosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
             return prevTabs.filter(t => t.id !== pbsTabId);
           } else {
             // Open new CMT tab
             const newId = `form-cmt-${Date.now()}`;
-            setTimeout(() => setActiveTabId(newId), 0);
+            setTimeout(() => { setActiveTabId(newId); setTimeout(() => cmtCarrosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150); }, 0);
             return [...prevTabs.filter(t => t.id !== pbsTabId), { id: newId, type:'form', formType:'cmt', title:'Nuevo CMT', icon:'📋', closeable:true }];
           }
         });
@@ -761,10 +764,35 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
 }
   async function guardarCMT(e) {
     e.preventDefault(); setSaving(true);
+
+    // Validaciones de campos requeridos
+    const errores = [];
+    if (!(form.fecha||"").trim()) errores.push("Fecha");
+    if (!(form.tipo_operacion||"").trim()) errores.push("Tipo de Operación");
+    if (!cmtProducto) errores.push("Producto del CMT");
+    const tipoOp = (form.tipo_operacion||"");
+    if (tipoOp === "DESCARGUE DE CARROTANQUE") {
+      if (cmtCarros.length === 0) errores.push("Debe agregar al menos un Carro Descargado");
+      else {
+        cmtCarros.forEach((c, i) => {
+          if (!c.placa) errores.push(`Carro ${i+1}: Placa`);
+          if (!c.hora_inicio) errores.push(`Carro ${i+1}: Hora Inicio`);
+          if (!c.hora_final) errores.push(`Carro ${i+1}: Hora Final`);
+          if (!c.peso_ingreso) errores.push(`Carro ${i+1}: Peso Ingreso`);
+          if (!c.peso_salida) errores.push(`Carro ${i+1}: Peso Salida`);
+        });
+      }
+    }
+    if (tipoOp === "ENTREGA A MOTONAVE" && !(form.nombre_motonave||"").trim()) errores.push("Nombre de la Motonave");
+    if (errores.length > 0) {
+      setSaving(false);
+      return showToast(`Campos requeridos:\n• ${errores.join("\n• ")}`, false);
+    }
+
     const totalAntes = cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0);
     const totalDespues = cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0);
     const totalMovido = totalDespues - totalAntes;
-    if (!form.id && (form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
+    if (!form.id && tipoOp !== "TRASIEGO DE PRODUCTO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
 
     if (form.id) {
       // EDICIÓN: revertir impacto original y aplicar nuevo
@@ -2746,7 +2774,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <span style={{ fontSize:12, color:"#00e5a0" }}>Total: {fmt(cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
             </div>
           </div>}
-          {(form.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && <Section title="Carros Descargados" color="#6b8fa8">
+          {(form.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && <><div ref={cmtCarrosRef}/><Section title="Carros Descargados" color="#6b8fa8">
             <div style={{fontSize:11,color:T.muted,marginBottom:10}}>Un registro por cada carro descargado en este CMT</div>
             {cmtCarros.map((carro,i)=>(
               <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:12,border:`1px solid ${T.border}`}}>
@@ -2837,7 +2865,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <Inp label="Nombre Motonave" type="text" value={form.nombre_motonave||""} onChange={f("nombre_motonave")}/>
               </div>
             )}
-          </Section>}
+          </Section></> }
           {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && (
             <Section title="Permiso de Bombeo Seguro" color="#fb923c">
               <div style={{display:"flex",alignItems:"center",gap:12}}>
