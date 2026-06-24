@@ -2130,10 +2130,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const byId = id => tanques.find(t=>t.id===id);
 
             // Renderiza cilindro industrial SVG
-            // W/H = dimensiones del viewBox. RX = radio elipse tapa. RY = aplanamiento tapa.
-            const CilindroSVG = ({pct, color, W=120, H=200, label, producto}) => {
+            // ViewBox ancho (300x220) para que escale bien al alto del contenedor
+            const CilindroSVG = ({pct, color, W=300, H=220, label}) => {
               const RX = W * 0.42;
-              const RY = RX * 0.22;
+              const RY = RX * 0.18;
               const top = RY + 2;
               const bot = H - RY - 2;
               const bodyH = bot - top;
@@ -2145,7 +2145,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const fillColorDark = fillColor + "bb";
               const strokeColor = "#4a7090";
               return (
-                <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"100%",display:"block"}}>
+                <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{height:"100%",width:"auto",maxWidth:"100%",display:"block",margin:"0 auto"}}>
                   <defs>
                     <clipPath id={`clip-${label}`}>
                       <rect x={W/2-RX} y={top} width={RX*2} height={bodyH}/>
@@ -2229,55 +2229,54 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{ fontSize:11, fontWeight:800, color:T.navy, letterSpacing:1 }}>{t.id}</div>
                     <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{t.producto||"—"}</div>
                   </div>
-                  {/* Cilindro SVG */}
-                  <div style={{ flex:1, minHeight:0 }}>
+                  {/* Cilindro SVG — crece con el flex pero nunca desborda */}
+                  <div style={{ flex:1, minHeight:0, overflow:"hidden", display:"flex", alignItems:"stretch", justifyContent:"center" }}>
                     <CilindroSVG pct={pct} color={color} label={t.id}/>
                   </div>
-                  {/* Stats compactos */}
-                  <div style={{ flexShrink:0, display:"grid", gridTemplateColumns:"1fr 1fr", gap:2, paddingTop:2 }}>
-                    <div style={{ background:"#162535", borderRadius:3, padding:"3px 5px", textAlign:"center" }}>
-                      <div style={{ fontSize:7, color:"#6b8fa8", textTransform:"uppercase" }}>Nivel</div>
-                      <div style={{ fontSize:8, fontWeight:700, color:"#dff0f8", fontFamily:"monospace" }}>{fmt(nivel)}</div>
-                    </div>
-                    <div style={{ background:"#162535", borderRadius:3, padding:"3px 5px", textAlign:"center" }}>
-                      <div style={{ fontSize:7, color:"#f59e0b", textTransform:"uppercase" }}>Cargue</div>
-                      <div style={{ fontSize:8, fontWeight:700, color:"#f59e0b", fontFamily:"monospace" }}>{carrosCargue}c</div>
-                    </div>
-                    <div style={{ background:"#162535", borderRadius:3, padding:"3px 5px", textAlign:"center" }}>
-                      <div style={{ fontSize:7, color:"#6b8fa8", textTransform:"uppercase" }}>Esp.libre</div>
-                      <div style={{ fontSize:8, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{fmt(espLibre)}</div>
-                    </div>
-                    <div style={{ background:"#162535", borderRadius:3, padding:"3px 5px", textAlign:"center" }}>
-                      <div style={{ fontSize:7, color:"#00e5a0", textTransform:"uppercase" }}>Descargue</div>
-                      <div style={{ fontSize:8, fontWeight:700, color:"#00e5a0", fontFamily:"monospace" }}>{carrosDesc}c</div>
-                    </div>
+                  {/* Stats en una línea horizontal */}
+                  <div style={{ flexShrink:0, display:"flex", gap:2, paddingTop:2 }}>
+                    {[
+                      {label:"Nivel", val:fmt(nivel), color:"#dff0f8"},
+                      {label:"Cargue", val:`${carrosCargue}c`, color:"#f59e0b"},
+                      {label:"Libre", val:fmt(espLibre), color:"#00e5a0"},
+                      {label:"Desc.", val:`${carrosDesc}c`, color:"#00e5a0"},
+                    ].map(s=>(
+                      <div key={s.label} style={{ flex:1, background:"#162535", borderRadius:3, padding:"2px 3px", textAlign:"center" }}>
+                        <div style={{ fontSize:6, color:"#6b8fa8", textTransform:"uppercase", lineHeight:1.2 }}>{s.label}</div>
+                        <div style={{ fontSize:8, fontWeight:700, color:s.color, fontFamily:"monospace", lineHeight:1.3 }}>{s.val}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
             };
 
+            // Altura disponible: pantalla menos header app (~56px) menos padding contenido (24px) menos título (38px)
+            // Cada TankCard: nombre(24px) + svg(flex) + stats(34px) = 58px fijo + svg
+            // Columna centro 3 tanques: svg por tanque = (H - 3*58 - 2*gap8) / 3 = (H - 190) / 3
+            // Para que quepan cómodo fijamos H = calc(100vh - 118px)
             return (
-            <div style={{ height:"calc(100vh - 112px)", display:"flex", flexDirection:"column", overflow:"hidden" }}>
-              <div style={{ marginBottom:6, flexShrink:0 }}>
+            <div style={{ height:"calc(100vh - 118px)", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+              <div style={{ marginBottom:4, flexShrink:0 }}>
                 <div style={{ fontSize:15, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
-                <div style={{ fontSize:10, color:T.muted }}>— — — línea amarilla = capacidad operativa (90%)</div>
+                <div style={{ fontSize:9, color:T.muted }}>— — — línea amarilla = capacidad operativa (90%)</div>
               </div>
               {/* 3 columnas: Izq(112/111) | Centro(115/114/113) | Der(117/116) */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:12 }}>
-                {/* Columna izquierda */}
-                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  <TankCard id="TK-112" flexH="0 0 35%"/>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:10 }}>
+                {/* Columna izquierda: TK-112 (30%) / TK-111 (70%) */}
+                <div style={{ display:"flex", flexDirection:"column", gap:8, height:"100%" }}>
+                  <TankCard id="TK-112" flexH="0 0 30%"/>
                   <TankCard id="TK-111" flexH="1"/>
                 </div>
-                {/* Columna central */}
-                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {/* Columna central: 3 tanques iguales */}
+                <div style={{ display:"flex", flexDirection:"column", gap:8, height:"100%" }}>
                   <TankCard id="TK-115" flexH="1"/>
                   <TankCard id="TK-114" flexH="1"/>
                   <TankCard id="TK-113" flexH="1"/>
                 </div>
-                {/* Columna derecha */}
-                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  <TankCard id="TK-117" flexH="0 0 46%"/>
+                {/* Columna derecha: TK-117 (45%) / TK-116 (55%) */}
+                <div style={{ display:"flex", flexDirection:"column", gap:8, height:"100%" }}>
+                  <TankCard id="TK-117" flexH="0 0 44%"/>
                   <TankCard id="TK-116" flexH="1"/>
                 </div>
               </div>
