@@ -2263,11 +2263,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
                   {label === "TK-111" ? <>
-                    {/* Mitad izquierda (exterior) → amarillo */}
-                    <path d={`M ${cx},${topY-eh/2} A ${ew/2},${eh/2} 0 0,0 ${cx},${topY+eh/2}`}
-                      fill="none" stroke="#f5c400" strokeWidth="2.5"/>
-                    {/* Mitad derecha (interior) → rojo */}
-                    <path d={`M ${cx},${topY+eh/2} A ${ew/2},${eh/2} 0 0,0 ${cx},${topY-eh/2}`}
+                    {/* Arco superior (hacia arriba) → amarillo exterior */}
+                    <path d={`M ${lx},${topY} A ${ew/2},${eh/2} 0 0,1 ${rx},${topY}`}
+                      fill="none" stroke="#f5c400" strokeWidth="12.5"/>
+                    {/* Arco inferior (hacia abajo) → rojo interior */}
+                    <path d={`M ${lx},${topY} A ${ew/2},${eh/2} 0 0,0 ${rx},${topY}`}
                       fill="none" stroke="#cc2200" strokeWidth="7.5"/>
                   </> :
                     <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="none" stroke="#444" strokeWidth="2"/>
