@@ -2177,9 +2177,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               return (
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
                   <defs>
-                    {/* Clip aro superior: limita baranda/rojo al ancho del tanque y a la zona del domo */}
-                    <clipPath id={`rc-${label}`}>
+                    {/* Clip baranda amarilla: solo zona del domo, borde inferior = topY */}
+                    <clipPath id={`ry-${label}`}>
                       <rect x={lx} y={topY - domeH - 20} width={ew} height={domeH + 20}/>
+                    </clipPath>
+                    {/* Clip arco rojo: ancho del tanque, zona justo en topY */}
+                    <clipPath id={`rr-${label}`}>
+                      <rect x={lx} y={topY - 10} width={ew} height={25}/>
                     </clipPath>
                     {/* Clip zona interior: mitad derecha (corte transversal) */}
                     <clipPath id={`ci-${label}`}>
@@ -2259,16 +2263,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <path d={`M ${cx-ew*0.22},${topY-domeH*0.28} Q ${cx},${peakY+domeH*0.25} ${cx+ew*0.18},${topY-domeH*0.45}`}
                     fill="none" stroke="#fff" strokeWidth="0.7" opacity="0.05"/>
 
-                  {/* ── BARANDA + ARO ROJO (encima del domo) ── */}
-                  <g clipPath={`url(#rc-${label})`}>
-                    {/* Amarillo: baranda de tubería (cuarto posterior-izquierdo) */}
+                  {/* ── BARANDA AMARILLA (encima del domo, clippeada hasta topY) ── */}
+                  <g clipPath={`url(#ry-${label})`}>
                     {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo;
                       const d=`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`; return (<>
                       <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw}/>
                       <path d={d} fill="none" stroke="#e8eef4" strokeWidth={yw*0.52}
                         strokeDasharray="11 3" strokeDashoffset="11" strokeLinecap="butt"/>
                     </>); })()}
-                    {/* Rojo: cuarto derecho */}
+                  </g>
+                  {/* ── ARO ROJO (cuarto derecho, encima del domo) ── */}
+                  <g clipPath={`url(#rr-${label})`}>
                     {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
                       <path d={`M ${rx},${rcy} A ${ew/2},${eh/2} 0 0,1 ${cx},${rcy+eh/2}`}
                         fill="none" stroke="#cc2200" strokeWidth={rw}/>
