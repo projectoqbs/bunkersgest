@@ -2176,7 +2176,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <defs>
                     {/* Clip aro superior: limita líneas amarilla/roja al ancho del tanque */}
                     <clipPath id={`rc-${label}`}>
-                      <rect x={lx} y={topY - 20} width={ew} height={40}/>
+                      <rect x={lx} y={topY - 150} width={ew} height={300}/>
                     </clipPath>
                     {/* Clip zona interior: TK-111 solo mitad derecha, resto completo */}
                     <clipPath id={`ci-${label}`}>
