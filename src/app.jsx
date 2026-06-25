@@ -2273,7 +2273,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         const d=`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`; return (<>
                         <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw}/>
                         <path d={d} fill="none" stroke="#e8eef4" strokeWidth={yw*0.52}
-                          strokeDasharray="13 17" strokeLinecap="butt"/>
+                          strokeDasharray="11 3" strokeDashoffset="11" strokeLinecap="butt"/>
                       </>); })()}
                       {/* Rojo: cuarto derecho, desplazado abajo para que borde sup = línea del aro */}
                       {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
