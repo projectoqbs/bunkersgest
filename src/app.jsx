@@ -2185,7 +2185,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="7%"   stopColor="#111111"/>
                       <stop offset="11%"  stopColor="#606060"/>
                       <stop offset="89%"  stopColor="#4e4e4e"/>
-                      <stop offset="93%"  stopColor="#111111"/>
+                      <stop offset="97%"  stopColor="#111111"/>
                       <stop offset="100%" stopColor="#050505"/>
                     </linearGradient>
 
