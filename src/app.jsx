@@ -2222,6 +2222,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="0%"   stopColor="#1a1a1a"/>
                       <stop offset="100%" stopColor="#0a0a0a"/>
                     </linearGradient>
+
+                    {/* Sombra profundidad interior derecha (TK-111): oscurece hacia el borde curvo */}
+                    {label === "TK-111" && (
+                      <linearGradient id={`sd-${label}`} x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%"   stopColor="#000000" stopOpacity="0.0"/>
+                        <stop offset="45%"  stopColor="#000000" stopOpacity="0.08"/>
+                        <stop offset="80%"  stopColor="#000000" stopOpacity="0.35"/>
+                        <stop offset="100%" stopColor="#000000" stopOpacity="0.65"/>
+                      </linearGradient>
+                    )}
                   </defs>
 
                   {/* ── CUERPO: paredes negras + zona interior gris en gradiente ── */}
@@ -2239,6 +2249,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       {/* Reflejo en superficie */}
                       <ellipse cx={cx-iRX*0.2} cy={fillTopY} rx={iRX*0.35} ry={eh*0.12} fill="#ffffff" opacity="0.10"/>
                     </g>
+                  )}
+
+                  {/* ── SOMBRA PROFUNDIDAD (solo TK-111): simula curvatura interior fondo ── */}
+                  {label === "TK-111" && (
+                    <rect x={cx} y={topY} width={iRX} height={cylH}
+                      fill={`url(#sd-${label})`} clipPath={`url(#ci-${label})`}/>
                   )}
 
                   {/* ── ELIPSE BASE (fondo) ── */}
