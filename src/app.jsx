@@ -2338,7 +2338,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {producto && (
                           <text x={bx} y={by + br + W*0.055} textAnchor="middle" dominantBaseline="middle"
                             fill="#ffffff" fontSize={W*0.058} fontWeight="700" fontFamily="monospace"
-                            opacity="0.92">{producto}</text>
+                            opacity="0.92" style={{cursor:"pointer"}}
+                            onClick={()=>setTankProdEdit({id:label, val:producto})}>{producto} ✎</text>
                         )}
                       </g>
                     );
@@ -2348,15 +2349,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             };
 
             const guardarProductoTanque = async (tkId, nuevo) => {
-              nuevo = nuevo.trim().toUpperCase();
+              const val = (nuevo||"").trim().toUpperCase();
               const t = byId(tkId);
-              if (!nuevo || nuevo === (t?.producto||"").toUpperCase()) { setTankProdEdit(null); return; }
+              if (!val || val === (t?.producto||"").toUpperCase()) { setTankProdEdit(null); return; }
               setTankProdSaving(true);
-              const {error} = await supabase.from("tanques").update({producto: nuevo}).eq("id", tkId);
+              const {error} = await supabase.from("tanques").update({producto: val}).eq("id", tkId);
               setTankProdSaving(false);
               setTankProdEdit(null);
-              if (error) showToast("Error al guardar producto", false);
-              else showToast(`Producto actualizado a ${nuevo}`, true);
+              if (error) { showToast("Error al guardar producto", false); return; }
+              // Actualizar estado local inmediatamente sin esperar real-time
+              setTanques(prev => prev.map(tk => tk.id === tkId ? {...tk, producto: val} : tk));
+              showToast(`Producto actualizado a ${val}`, true);
             };
 
             const TankCard = ({id}) => {
@@ -2383,36 +2386,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               if (id === "TK-111") return (
                 <div style={{ flex:cfg.h, minHeight:0, display:"flex", flexDirection:"column", alignItems:"center" }}>
                   <div style={{ width:cfg.w+"%", height:"100%", display:"flex", flexDirection:"column", minHeight:0 }}>
-                    {/* Editor de producto */}
-                    <div style={{ flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", gap:4, paddingBottom:2 }}>
-                      {editProd ? (
-                        <div style={{ display:"flex", gap:4, alignItems:"center" }}>
-                          <input autoFocus value={tankProdEdit.val}
-                            onChange={e=>setTankProdEdit({id, val:e.target.value})}
-                            onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
-                            onBlur={()=>guardarProductoTanque(id, tankProdEdit.val)}
-                            style={{ background:"#0f1e2e", border:"1px solid #3b82f6", borderRadius:4,
-                              color:"#fff", fontSize:10, fontWeight:700, padding:"2px 6px",
-                              width:70, textTransform:"uppercase", outline:"none" }}/>
-                          {tankProdSaving && <span style={{fontSize:8,color:"#6b8fa8"}}>...</span>}
-                        </div>
-                      ) : (
-                        <div onClick={()=>setTankProdEdit({id, val:t.producto||""})}
-                          title="Clic para cambiar producto"
-                          style={{ display:"flex", alignItems:"center", gap:3, cursor:"pointer",
-                            background:"#0f1e2e", borderRadius:4, padding:"2px 7px",
-                            border:"1px solid #1e3a5a" }}>
-                          <span style={{ fontSize:9, fontWeight:700, color:"#3b82f6", fontFamily:"monospace" }}>
-                            {t.producto||"—"}
-                          </span>
-                          <span style={{ fontSize:8, color:"#6b8fa8" }}>✎</span>
-                        </div>
-                      )}
-                    </div>
                     {/* SVG + stats a la derecha */}
                     <div style={{ flex:1, minHeight:0, display:"flex", gap:0 }}>
-                      <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden" }}>
+                      <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden", position:"relative" }}>
                         <CilindroSVG pct={pct} color={color} label={t.id} producto={t.producto||""}/>
+                        {/* Input edición producto — aparece sobre el SVG cuando se hace clic en VLSFO */}
+                        {editProd && (
+                          <div style={{ position:"absolute", bottom:"28%", left:"18%", zIndex:10 }}>
+                            <input autoFocus value={tankProdEdit.val}
+                              onChange={e=>setTankProdEdit({id, val:e.target.value})}
+                              onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
+                              onBlur={()=>guardarProductoTanque(id, tankProdEdit.val)}
+                              style={{ background:"#0f1e2e", border:"2px solid #3b82f6", borderRadius:6,
+                                color:"#fff", fontSize:11, fontWeight:700, padding:"3px 8px",
+                                width:72, textTransform:"uppercase", outline:"none", textAlign:"center" }}/>
+                            {tankProdSaving && <div style={{fontSize:8,color:"#6b8fa8",textAlign:"center"}}>guardando...</div>}
+                          </div>
+                        )}
                       </div>
                       {/* Panel stats vertical — alineado con cilindro SVG */}
                       {(()=>{
