@@ -2317,7 +2317,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   })()}
 
                   {/* ── PORCENTAJE ── */}
-                  <text x={cx} y={topY + cylH*0.52} textAnchor="middle" dominantBaseline="middle"
+                  <text x={cx + ew/4} y={topY + cylH*0.52} textAnchor="middle" dominantBaseline="middle"
                     fill={pct > 15 ? "#ffffff" : "#cccccc"}
                     fontSize={W*0.11} fontWeight="bold" fontFamily="monospace" opacity="0.9">{pct}%</text>
 
