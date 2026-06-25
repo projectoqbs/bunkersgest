@@ -2348,7 +2348,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const TankCard = ({id}) => {
               const cfg = CFG[id] || {h:40, w:75};
               const t = byId(id);
-              if (!t) return <div style={{flex:cfg.h}}/>;
+              const [editProd, setEditProd] = React.useState(false);
+              const [prodVal, setProdVal] = React.useState("");
+              const [savingProd, setSavingProd] = React.useState(false);
+
+              const guardarProducto = async () => {
+                const nuevo = prodVal.trim().toUpperCase();
+                if (!nuevo || nuevo === (t.producto||"").toUpperCase()) { setEditProd(false); return; }
+                setSavingProd(true);
+                const {error} = await supabase.from("tanques").update({producto: nuevo}).eq("id", t.id);
+                setSavingProd(false);
+                setEditProd(false);
+                if (error) showToast("Error al guardar producto", false);
+                else showToast(`Producto actualizado a ${nuevo}`, true);
+              };
+
               const rem = REMANENTE(t.id);
               const capOp = CAP_OPERATIVA(t);
               const nivel = Number(t.nivel||0);
@@ -2368,6 +2382,32 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               if (id === "TK-111") return (
                 <div style={{ flex:cfg.h, minHeight:0, display:"flex", flexDirection:"column", alignItems:"center" }}>
                   <div style={{ width:cfg.w+"%", height:"100%", display:"flex", flexDirection:"column", minHeight:0 }}>
+                    {/* Editor de producto */}
+                    <div style={{ flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", gap:4, paddingBottom:2 }}>
+                      {editProd ? (
+                        <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+                          <input autoFocus value={prodVal}
+                            onChange={e=>setProdVal(e.target.value)}
+                            onKeyDown={e=>{ if(e.key==="Enter") guardarProducto(); if(e.key==="Escape") setEditProd(false); }}
+                            onBlur={guardarProducto}
+                            style={{ background:"#0f1e2e", border:"1px solid #3b82f6", borderRadius:4,
+                              color:"#fff", fontSize:10, fontWeight:700, padding:"2px 6px",
+                              width:70, textTransform:"uppercase", outline:"none" }}/>
+                          {savingProd && <span style={{fontSize:8,color:"#6b8fa8"}}>...</span>}
+                        </div>
+                      ) : (
+                        <div onClick={()=>{ setProdVal(t.producto||""); setEditProd(true); }}
+                          title="Clic para cambiar producto"
+                          style={{ display:"flex", alignItems:"center", gap:3, cursor:"pointer",
+                            background:"#0f1e2e", borderRadius:4, padding:"2px 7px",
+                            border:"1px solid #1e3a5a" }}>
+                          <span style={{ fontSize:9, fontWeight:700, color:"#3b82f6", fontFamily:"monospace" }}>
+                            {t.producto||"—"}
+                          </span>
+                          <span style={{ fontSize:8, color:"#6b8fa8" }}>✎</span>
+                        </div>
+                      )}
+                    </div>
                     {/* SVG + stats a la derecha */}
                     <div style={{ flex:1, minHeight:0, display:"flex", gap:0 }}>
                       <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden" }}>
