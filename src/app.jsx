@@ -2268,12 +2268,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
                   {label === "TK-111" ? <>
                     <g clipPath={`url(#rc-${label})`}>
-                      {/* Amarillo: baranda de tubería — base sólida amarilla + cortes oscuros encima */}
+                      {/* Amarillo: baranda — línea amarilla + rectángulos grises centrados más delgados */}
                       {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo;
                         const d=`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`; return (<>
                         <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw}/>
-                        <path d={d} fill="none" stroke="#050505" strokeWidth={yw}
-                          strokeDasharray="14 16" strokeLinecap="butt"/>
+                        <path d={d} fill="none" stroke="#5a5a5a" strokeWidth={yw*0.52}
+                          strokeDasharray="13 17" strokeLinecap="butt"/>
                       </>); })()}
                       {/* Rojo: cuarto derecho, desplazado abajo para que borde sup = línea del aro */}
                       {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
