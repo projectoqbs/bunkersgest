@@ -272,6 +272,8 @@ export default function App() {
   const [cmtDespues, setCmtDespues] = useState([{tanque:"",producto:"",sonda:"",galones:""}]);
   const [cmtRecepcion, setCmtRecepcion] = useState([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
   const [viajesBusqueda, setViajesBusqueda] = useState("");
+  const [tankProdEdit, setTankProdEdit] = useState(null);   // {id, val} cuando se edita producto
+  const [tankProdSaving, setTankProdSaving] = useState(false);
   const [viajesFiltroEstado, setViajesFiltroEstado] = useState("");
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
@@ -2345,24 +2347,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               );
             };
 
+            const guardarProductoTanque = async (tkId, nuevo) => {
+              nuevo = nuevo.trim().toUpperCase();
+              const t = byId(tkId);
+              if (!nuevo || nuevo === (t?.producto||"").toUpperCase()) { setTankProdEdit(null); return; }
+              setTankProdSaving(true);
+              const {error} = await supabase.from("tanques").update({producto: nuevo}).eq("id", tkId);
+              setTankProdSaving(false);
+              setTankProdEdit(null);
+              if (error) showToast("Error al guardar producto", false);
+              else showToast(`Producto actualizado a ${nuevo}`, true);
+            };
+
             const TankCard = ({id}) => {
               const cfg = CFG[id] || {h:40, w:75};
               const t = byId(id);
-              const [editProd, setEditProd] = React.useState(false);
-              const [prodVal, setProdVal] = React.useState("");
-              const [savingProd, setSavingProd] = React.useState(false);
-
-              const guardarProducto = async () => {
-                const nuevo = prodVal.trim().toUpperCase();
-                if (!nuevo || nuevo === (t.producto||"").toUpperCase()) { setEditProd(false); return; }
-                setSavingProd(true);
-                const {error} = await supabase.from("tanques").update({producto: nuevo}).eq("id", t.id);
-                setSavingProd(false);
-                setEditProd(false);
-                if (error) showToast("Error al guardar producto", false);
-                else showToast(`Producto actualizado a ${nuevo}`, true);
-              };
-
+              if (!t) return <div style={{flex:cfg.h}}/>;
+              const editProd = tankProdEdit?.id === id;
               const rem = REMANENTE(t.id);
               const capOp = CAP_OPERATIVA(t);
               const nivel = Number(t.nivel||0);
@@ -2386,17 +2387,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{ flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", gap:4, paddingBottom:2 }}>
                       {editProd ? (
                         <div style={{ display:"flex", gap:4, alignItems:"center" }}>
-                          <input autoFocus value={prodVal}
-                            onChange={e=>setProdVal(e.target.value)}
-                            onKeyDown={e=>{ if(e.key==="Enter") guardarProducto(); if(e.key==="Escape") setEditProd(false); }}
-                            onBlur={guardarProducto}
+                          <input autoFocus value={tankProdEdit.val}
+                            onChange={e=>setTankProdEdit({id, val:e.target.value})}
+                            onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
+                            onBlur={()=>guardarProductoTanque(id, tankProdEdit.val)}
                             style={{ background:"#0f1e2e", border:"1px solid #3b82f6", borderRadius:4,
                               color:"#fff", fontSize:10, fontWeight:700, padding:"2px 6px",
                               width:70, textTransform:"uppercase", outline:"none" }}/>
-                          {savingProd && <span style={{fontSize:8,color:"#6b8fa8"}}>...</span>}
+                          {tankProdSaving && <span style={{fontSize:8,color:"#6b8fa8"}}>...</span>}
                         </div>
                       ) : (
-                        <div onClick={()=>{ setProdVal(t.producto||""); setEditProd(true); }}
+                        <div onClick={()=>setTankProdEdit({id, val:t.producto||""})}
                           title="Clic para cambiar producto"
                           style={{ display:"flex", alignItems:"center", gap:3, cursor:"pointer",
                             background:"#0f1e2e", borderRadius:4, padding:"2px 7px",
