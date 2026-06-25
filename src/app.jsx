@@ -2251,6 +2251,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
+
+                  {/* ── DOMO CONVEXO ── */}
+                  <path d={domePath} fill={`url(#dg-${label})`}/>
+                  <path d={domeOutline} fill="none" stroke="#333" strokeWidth="1.2"/>
+                  {/* Reflejo sutil domo */}
+                  <path d={`M ${cx-ew*0.22},${topY-domeH*0.28} Q ${cx},${peakY+domeH*0.25} ${cx+ew*0.18},${topY-domeH*0.45}`}
+                    fill="none" stroke="#fff" strokeWidth="0.7" opacity="0.05"/>
+
+                  {/* ── BARANDA + ARO ROJO (encima del domo) ── */}
                   <g clipPath={`url(#rc-${label})`}>
                     {/* Amarillo: baranda de tubería (cuarto posterior-izquierdo) */}
                     {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo;
@@ -2265,13 +2274,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         fill="none" stroke="#cc2200" strokeWidth={rw}/>
                     ); })()}
                   </g>
-
-                  {/* ── DOMO CONVEXO ── */}
-                  <path d={domePath} fill={`url(#dg-${label})`}/>
-                  <path d={domeOutline} fill="none" stroke="#333" strokeWidth="1.2"/>
-                  {/* Reflejo sutil domo */}
-                  <path d={`M ${cx-ew*0.22},${topY-domeH*0.28} Q ${cx},${peakY+domeH*0.25} ${cx+ew*0.18},${topY-domeH*0.45}`}
-                    fill="none" stroke="#fff" strokeWidth="0.7" opacity="0.05"/>
 
                   {/* ── CARA INTERNA DEL TECHO (corte derecho) ── */}
                   {(()=>{
@@ -2404,7 +2406,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {fs ? "✕ Salir" : "⛶ Presentación"}
                 </button>
                 {/* Izquierda */}
-                <div style={{ position:"absolute", left:8, top:0 }}><TankCard id="TK-112"/></div>
+                <div style={{ position:"absolute", left:8, top:-13 }}><TankCard id="TK-112"/></div>
                 <div style={{ position:"absolute", left:8, bottom:8 }}><TankCard id="TK-111"/></div>
                 {/* Derecha */}
                 <div style={{ position:"absolute", right:8, top:8 }}><TankCard id="TK-117"/></div>
