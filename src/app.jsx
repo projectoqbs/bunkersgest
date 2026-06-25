@@ -2353,28 +2353,57 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const carrosCargue = Math.floor(dispCargue / CARROS);
               const espLibre = Math.max(0, capOp - nivel);
               const carrosDesc = Math.floor(espLibre / CARROS);
-              return (
-                // flex:cfg.h divide el espacio de la columna proporcionalmente entre los tanques
+              const stats = [
+                {label:"Nivel",    val:fmt(nivel),           color:"#dff0f8", icon:"▊"},
+                {label:"Cargue",   val:`${carrosCargue} c`,  color:"#f59e0b", icon:"▲"},
+                {label:"Libre",    val:fmt(espLibre),         color:"#00e5a0", icon:"◻"},
+                {label:"Descargue",val:`${carrosDesc} c`,     color:"#38bdf8", icon:"▼"},
+              ];
+
+              if (id === "TK-111") return (
                 <div style={{ flex:cfg.h, minHeight:0, display:"flex", flexDirection:"column", alignItems:"center" }}>
-                  {/* Contenedor con ancho w% centrado */}
                   <div style={{ width:cfg.w+"%", height:"100%", display:"flex", flexDirection:"column", minHeight:0 }}>
                     {/* Nombre + producto */}
                     <div style={{ flexShrink:0, paddingBottom:1, textAlign:"center" }}>
                       <div style={{ fontSize:11, fontWeight:800, color:T.navy, letterSpacing:1 }}>{t.id}</div>
                       <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600 }}>{t.producto||"—"}</div>
                     </div>
-                    {/* Cilindro SVG */}
+                    {/* SVG + stats a la derecha */}
+                    <div style={{ flex:1, minHeight:0, display:"flex", gap:6 }}>
+                      <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden" }}>
+                        <CilindroSVG pct={pct} color={color} label={t.id}/>
+                      </div>
+                      {/* Panel stats vertical */}
+                      <div style={{ flexShrink:0, width:72, display:"flex", flexDirection:"column", gap:4, justifyContent:"center" }}>
+                        {stats.map(s=>(
+                          <div key={s.label} style={{ background:"#0f1e2e", borderRadius:6, padding:"4px 6px",
+                            borderLeft:`3px solid ${s.color}`, display:"flex", flexDirection:"column", gap:1 }}>
+                            <div style={{ fontSize:6.5, color:"#6b8fa8", textTransform:"uppercase", letterSpacing:0.8, lineHeight:1 }}>
+                              {s.icon} {s.label}
+                            </div>
+                            <div style={{ fontSize:10, fontWeight:800, color:s.color, fontFamily:"monospace", lineHeight:1.2 }}>
+                              {s.val}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+
+              return (
+                <div style={{ flex:cfg.h, minHeight:0, display:"flex", flexDirection:"column", alignItems:"center" }}>
+                  <div style={{ width:cfg.w+"%", height:"100%", display:"flex", flexDirection:"column", minHeight:0 }}>
+                    <div style={{ flexShrink:0, paddingBottom:1, textAlign:"center" }}>
+                      <div style={{ fontSize:11, fontWeight:800, color:T.navy, letterSpacing:1 }}>{t.id}</div>
+                      <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600 }}>{t.producto||"—"}</div>
+                    </div>
                     <div style={{ flex:1, minHeight:0, overflow:"hidden" }}>
                       <CilindroSVG pct={pct} color={color} label={t.id}/>
                     </div>
-                    {/* Stats en una línea */}
                     <div style={{ flexShrink:0, display:"flex", gap:2, paddingTop:2 }}>
-                      {[
-                        {label:"Nivel", val:fmt(nivel), color:"#dff0f8"},
-                        {label:"Cargue", val:`${carrosCargue}c`, color:"#f59e0b"},
-                        {label:"Libre", val:fmt(espLibre), color:"#00e5a0"},
-                        {label:"Desc.", val:`${carrosDesc}c`, color:"#00e5a0"},
-                      ].map(s=>(
+                      {stats.map(s=>(
                         <div key={s.label} style={{ flex:1, background:"#162535", borderRadius:3, padding:"2px 3px", textAlign:"center" }}>
                           <div style={{ fontSize:6, color:"#6b8fa8", textTransform:"uppercase", lineHeight:1.2 }}>{s.label}</div>
                           <div style={{ fontSize:8, fontWeight:700, color:s.color, fontFamily:"monospace", lineHeight:1.3 }}>{s.val}</div>
