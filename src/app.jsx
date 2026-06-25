@@ -2382,7 +2382,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         const aboveRailing = stopY - sdomeH*0.05; // ≈ nivel baranda
                         const belowCyl = SH - sbotY;
                         return (
-                          <div style={{ flexShrink:0, width:68, display:"flex", flexDirection:"column" }}>
+                          <div style={{ flexShrink:0, width:68, display:"flex", flexDirection:"column", marginLeft:-18 }}>
                             {/* espaciador superior hasta la baranda */}
                             <div style={{ flex: aboveRailing }}/>
                             {/* stats ocupan exactamente la altura del cilindro */}
