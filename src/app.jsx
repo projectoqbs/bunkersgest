@@ -2155,7 +2155,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const botY  = H - eh/2 - 6;
               const cylH  = H * 0.52;
               const topY  = botY - cylH;
-              const domeH = cylH * 0.18;
+              const domeH = label === "TK-111" ? cylH * 0.38 : cylH * 0.18;
               const peakY = topY - domeH;
 
               // Zona interior (descuenta grosor de pared ~9% cada lado)
@@ -2270,6 +2270,30 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* Reflejo sutil domo */}
                   <path d={`M ${cx-ew*0.22},${topY-domeH*0.28} Q ${cx},${peakY+domeH*0.25} ${cx+ew*0.18},${topY-domeH*0.45}`}
                     fill="none" stroke="#fff" strokeWidth="0.7" opacity="0.05"/>
+
+                  {/* ── CARA INTERNA DEL TECHO (solo TK-111, corte derecho) ── */}
+                  {/* La cara interior del domo se ve cóncava desde dentro: curva que baja desde el aro al pico */}
+                  {label === "TK-111" && (() => {
+                    // Cara interna: del punto en el aro (cx, topY) curva HACIA ABAJO siguiendo la cara interior del domo
+                    // La cara interna tiene un espesor de pared (~wallT) menos que la exterior
+                    const innerDomeDepth = domeH * 0.82; // cara interna algo menos pronunciada que exterior
+                    const innerPeakY = topY - innerDomeDepth;
+                    // Solo lado derecho (cx → rx)
+                    const innerFacePath = `M ${cx},${topY} Q ${cx + iRX*0.5},${innerPeakY + innerDomeDepth*0.15} ${cx + iRX},${topY} L ${cx + iRX},${topY} Z`;
+                    return (
+                      <g clipPath={`url(#ci-${label})`}>
+                        {/* Relleno cara interior del domo (gris oscuro, más oscuro en el pico) */}
+                        <path d={`M ${cx},${topY} Q ${cx+iRX*0.5},${innerPeakY+innerDomeDepth*0.12} ${cx+iRX},${topY} L ${cx+iRX},${topY-2} Q ${cx+iRX*0.5},${innerPeakY} ${cx},${topY-2} Z`}
+                          fill="#2a2a2a"/>
+                        {/* Sombra radial en la cara interna — más oscuro en el pico */}
+                        <path d={`M ${cx},${topY} Q ${cx+iRX*0.5},${innerPeakY+innerDomeDepth*0.12} ${cx+iRX},${topY}`}
+                          fill="none" stroke="#1a1a1a" strokeWidth="2"/>
+                        {/* Línea de unión aro-techo interior */}
+                        <path d={`M ${cx},${topY} Q ${cx+iRX*0.5},${innerPeakY+innerDomeDepth*0.12} ${cx+iRX},${topY}`}
+                          fill="none" stroke="#444" strokeWidth="0.8" opacity="0.7"/>
+                      </g>
+                    );
+                  })()}
 
                   {/* ── PORCENTAJE ── */}
                   <text x={cx} y={topY + cylH*0.52} textAnchor="middle" dominantBaseline="middle"
