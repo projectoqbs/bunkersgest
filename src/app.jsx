@@ -2396,10 +2396,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             return (
             <div style={{ height:"calc(100vh - 118px)", display:"flex", flexDirection:"column", overflow:"hidden" }}>
-              <div style={{ marginBottom:4, flexShrink:0 }}>
-                <div style={{ fontSize:15, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
-                <div style={{ fontSize:9, color:T.muted }}>— — — línea amarilla = capacidad operativa (90%)</div>
-              </div>
               <div style={{ position:"relative", flex:1, minHeight:0, background:"#e8eef4", borderRadius:12 }}>
                 {/* Izquierda */}
                 <div style={{ position:"absolute", left:8, top:8 }}><TankCard id="TK-112"/></div>
