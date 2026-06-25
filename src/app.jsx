@@ -2360,15 +2360,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {label:"Descargue",val:`${carrosDesc} c`,     color:"#38bdf8", icon:"▼"},
               ];
 
-              const SH=300, sew=SH*0.86, seh=sew*0.20;
-              const sbotY=SH-seh/2-6, scylH=SH*0.52, stopY=sbotY-scylH;
-              const aboveRailing = stopY;
-              const belowCyl = SH - sbotY;
-
               // Calcular marginLeft del panel stats para que el gap con el tanque sea consistente
               const cW = id==="TK-111"?312 : id==="TK-112"?315 : (id==="TK-116"||id==="TK-117")?329 : 260;
               const cH = id==="TK-111"?372 : id==="TK-112"?246 : (id==="TK-116"||id==="TK-117")?259 : 204;
               const svgH = id==="TK-111"?432 : id==="TK-112"?363 : 300;
+              // Usar H real del SVG para que los ratios coincidan con la geometría del tanque
+              const SH=svgH, sew=300*0.86, seh=sew*0.20;
+              const sbotY=SH-seh/2-6, scylH=SH*0.52, stopY=sbotY-scylH;
+              const aboveRailing = stopY;
+              const belowCyl = SH - sbotY;
               const scl = Math.min(cW/300, cH/svgH);
               const rendW = 300*scl;
               const centerOff = (cW - rendW)/2;
