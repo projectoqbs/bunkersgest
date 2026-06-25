@@ -2181,9 +2181,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <clipPath id={`ry-${label}`}>
                       <rect x={lx} y={topY - domeH - 20} width={ew} height={domeH + 20}/>
                     </clipPath>
-                    {/* Clip arco rojo: ancho del tanque, zona justo en topY */}
+                    {/* Clip arco rojo: ancho del tanque, zona topY hasta frente del aro */}
                     <clipPath id={`rr-${label}`}>
-                      <rect x={lx} y={topY - 10} width={ew} height={25}/>
+                      <rect x={cx} y={topY - 10} width={ew/2} height={eh + 20}/>
                     </clipPath>
                     {/* Clip zona interior: mitad derecha (corte transversal) */}
                     <clipPath id={`ci-${label}`}>
@@ -2274,8 +2274,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </g>
                   {/* ── ARO ROJO (cuarto derecho, encima del domo) ── */}
                   <g clipPath={`url(#rr-${label})`}>
-                    {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
-                      <path d={`M ${rx},${rcy} A ${ew/2},${eh/2} 0 0,1 ${cx},${rcy+eh/2}`}
+                    {(()=>{ const rw=7.5; return (
+                      <path d={`M ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${cx},${topY+eh/2}`}
                         fill="none" stroke="#cc2200" strokeWidth={rw}/>
                     ); })()}
                   </g>
