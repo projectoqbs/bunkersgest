@@ -2146,7 +2146,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             // Tanque 3D: perspectiva frontal ligera desde arriba
             // Tanque 3D industrial: paredes negras, interior gris metálico, líquido visible
-            const CilindroSVG = ({pct, color, label, W=300, H=300}) => {
+            const CilindroSVG = ({pct, color, label, producto="", W=300, H=300}) => {
               const cx    = W / 2;
               const ew    = W * 0.86;
               const eh    = ew * 0.20;
@@ -2333,6 +2333,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <circle cx={bx} cy={by} r={br} fill="none" stroke="#cccccc" strokeWidth="1.2"/>
                         <text x={bx} y={by} textAnchor="middle" dominantBaseline="middle"
                           fill="#cc0000" fontSize={W*0.085} fontWeight="900" fontFamily="monospace">{num}</text>
+                        {producto && (
+                          <text x={bx} y={by + br + W*0.055} textAnchor="middle" dominantBaseline="middle"
+                            fill="#ffffff" fontSize={W*0.058} fontWeight="700" fontFamily="monospace"
+                            opacity="0.92">{producto}</text>
+                        )}
                       </g>
                     );
                   })()}
@@ -2366,7 +2371,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {/* SVG + stats a la derecha */}
                     <div style={{ flex:1, minHeight:0, display:"flex", gap:0 }}>
                       <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden" }}>
-                        <CilindroSVG pct={pct} color={color} label={t.id}/>
+                        <CilindroSVG pct={pct} color={color} label={t.id} producto={t.producto||""}/>
                       </div>
                       {/* Panel stats vertical — alineado con cilindro SVG */}
                       {(()=>{
