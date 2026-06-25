@@ -2365,6 +2365,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const aboveRailing = stopY - scylH*0.19*0.05;
               const belowCyl = SH - sbotY;
 
+              // Calcular marginLeft del panel stats para que el gap con el tanque sea consistente
+              const cW = id==="TK-111"?312 : id==="TK-112"?315 : (id==="TK-116"||id==="TK-117")?329 : 260;
+              const cH = id==="TK-111"?372 : id==="TK-112"?246 : (id==="TK-116"||id==="TK-117")?259 : 204;
+              const svgH = id==="TK-111"?432 : id==="TK-112"?363 : 300;
+              const scl = Math.min(cW/300, cH/svgH);
+              const rendW = 300*scl;
+              const centerOff = (cW - rendW)/2;
+              const tankRightPx = 279*scl + centerOff;
+              const emptyRight = cW - tankRightPx;
+              const statsMargin = -(emptyRight - 24.3);
+
               return (
                 <div style={{ width: id==="TK-111" ? 312 : id==="TK-112" ? 315 : (id==="TK-116"||id==="TK-117") ? 329 : 260, height: id==="TK-111" ? 372 : id==="TK-112" ? 246 : (id==="TK-116"||id==="TK-117") ? 259 : 204, display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
                   <div style={{ width:"100%", height:"100%", display:"flex", gap:0 }}>
@@ -2385,7 +2396,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       )}
                     </div>
                     {/* Panel stats vertical alineado con cilindro */}
-                    <div style={{ flexShrink:0, width:68, display:"flex", flexDirection:"column", marginLeft:-18 }}>
+                    <div style={{ flexShrink:0, width:68, display:"flex", flexDirection:"column", marginLeft:statsMargin }}>
                       <div style={{ flex: aboveRailing }}/>
                       <div style={{ flex: scylH, display:"flex", flexDirection:"column", gap:3 }}>
                         {stats.map(s=>(
