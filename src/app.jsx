@@ -2320,6 +2320,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <text x={cx} y={topY + cylH*0.52} textAnchor="middle" dominantBaseline="middle"
                     fill={pct > 15 ? "#ffffff" : "#cccccc"}
                     fontSize={W*0.11} fontWeight="bold" fontFamily="monospace" opacity="0.9">{pct}%</text>
+
+                  {/* ── IDENTIFICADOR (solo TK-111): círculo blanco con número rojo en exterior izq ── */}
+                  {label === "TK-111" && (() => {
+                    const bx = lx + ew * 0.26;   // 26% desde el borde izquierdo
+                    const by = topY + cylH * 0.50; // media altura del cilindro
+                    const br = W * 0.095;           // radio del círculo
+                    const num = label.replace("TK-","");
+                    return (
+                      <g>
+                        <circle cx={bx} cy={by} r={br} fill="#ffffff" opacity="0.95"/>
+                        <circle cx={bx} cy={by} r={br} fill="none" stroke="#cccccc" strokeWidth="1.2"/>
+                        <text x={bx} y={by} textAnchor="middle" dominantBaseline="middle"
+                          fill="#cc0000" fontSize={W*0.085} fontWeight="900" fontFamily="monospace">{num}</text>
+                      </g>
+                    );
+                  })()}
                 </svg>
               );
             };
