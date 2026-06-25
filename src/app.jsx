@@ -274,6 +274,7 @@ export default function App() {
   const [viajesBusqueda, setViajesBusqueda] = useState("");
   const [tankProdEdit, setTankProdEdit] = useState(null);   // {id, val} cuando se edita producto
   const [tankProdSaving, setTankProdSaving] = useState(false);
+  const [tankFullscreen, setTankFullscreen] = useState(false);
   const [viajesFiltroEstado, setViajesFiltroEstado] = useState("");
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
@@ -2394,9 +2395,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               );
             };
 
-            return (
-            <div style={{ height:"calc(100vh - 118px)", display:"flex", flexDirection:"column" }}>
-              <div style={{ position:"relative", flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, overflow:"visible" }}>
+            const TanquesLayout = ({fs}) => (
+              <div style={{ position:"relative", width:"100%", height:"100%", background:"#e8eef4", borderRadius: fs ? 0 : 12, overflow:"visible" }}>
+                {/* Botón fullscreen */}
+                <button onClick={()=>setTankFullscreen(!fs)}
+                  style={{ position:"absolute", top:10, right:10, zIndex:10, background:"#1e3a5f", border:"none", borderRadius:8,
+                    color:"#fff", padding:"6px 12px", cursor:"pointer", fontSize:13, fontWeight:700, display:"flex", alignItems:"center", gap:6, opacity:0.85 }}>
+                  {fs ? "✕ Salir" : "⛶ Presentación"}
+                </button>
                 {/* Izquierda */}
                 <div style={{ position:"absolute", left:8, top:8 }}><TankCard id="TK-112"/></div>
                 <div style={{ position:"absolute", left:8, bottom:8 }}><TankCard id="TK-111"/></div>
@@ -2408,7 +2414,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ position:"absolute", left:"calc(50% - 130px)", top:"calc(50% - 102px)" }}><TankCard id="TK-114"/></div>
                 <div style={{ position:"absolute", left:"calc(50% + 20px)", top:"calc(90% - 204px + 50px)" }}><TankCard id="TK-113"/></div>
               </div>
-            </div>
+            );
+
+            return (
+              <>
+                {/* Modo presentación — overlay pantalla completa */}
+                {tankFullscreen && (
+                  <div style={{ position:"fixed", inset:0, zIndex:9999, background:"#e8eef4" }}
+                    onKeyDown={e=>{ if(e.key==="Escape") setTankFullscreen(false); }} tabIndex={-1}>
+                    <TanquesLayout fs={true}/>
+                  </div>
+                )}
+                <div style={{ height:"calc(100vh - 118px)", display:"flex", flexDirection:"column" }}>
+                  <TanquesLayout fs={false}/>
+                </div>
+              </>
             );
           })()}
 
