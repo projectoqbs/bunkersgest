@@ -2174,6 +2174,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               return (
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
                   <defs>
+                    {/* Clip aro superior: limita líneas amarilla/roja al ancho del tanque */}
+                    <clipPath id={`rc-${label}`}>
+                      <rect x={lx} y={topY - 20} width={ew} height={40}/>
+                    </clipPath>
                     {/* Clip zona interior: TK-111 solo mitad derecha, resto completo */}
                     <clipPath id={`ci-${label}`}>
                       {label === "TK-111"
@@ -2263,16 +2267,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
                   {label === "TK-111" ? <>
-                    {/* Amarillo: solo cuarto posterior-izquierdo (centro trasero → extremo izq) */}
-                    {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo; return (
-                      <path d={`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`}
-                        fill="none" stroke="#f5c400" strokeWidth={yw}/>
-                    ); })()}
-                    {/* Rojo: cuarto derecho, desplazado abajo para que borde sup = línea del aro */}
-                    {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
-                      <path d={`M ${rx},${rcy} A ${ew/2},${eh/2} 0 0,1 ${cx},${rcy+eh/2}`}
-                        fill="none" stroke="#cc2200" strokeWidth={rw}/>
-                    ); })()}
+                    <g clipPath={`url(#rc-${label})`}>
+                      {/* Amarillo: solo cuarto posterior-izquierdo (centro trasero → extremo izq) */}
+                      {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo; return (
+                        <path d={`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`}
+                          fill="none" stroke="#f5c400" strokeWidth={yw}/>
+                      ); })()}
+                      {/* Rojo: cuarto derecho, desplazado abajo para que borde sup = línea del aro */}
+                      {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
+                        <path d={`M ${rx},${rcy} A ${ew/2},${eh/2} 0 0,1 ${cx},${rcy+eh/2}`}
+                          fill="none" stroke="#cc2200" strokeWidth={rw}/>
+                      ); })()}
+                    </g>
                   </> :
                     <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="none" stroke="#444" strokeWidth="2"/>
                   }
