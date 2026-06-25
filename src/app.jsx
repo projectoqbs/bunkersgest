@@ -2263,9 +2263,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
                   {label === "TK-111" ? <>
-                    {/* Amarillo: elipse más grande → queda uniformemente POR FUERA del aro en todo su recorrido */}
+                    {/* Amarillo: solo cuarto posterior-izquierdo (centro trasero → extremo izq) */}
                     {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo; return (
-                      <path d={`M ${cx},${topY+ery} A ${erx},${ery} 0 0,1 ${cx},${topY-ery}`}
+                      <path d={`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`}
                         fill="none" stroke="#f5c400" strokeWidth={yw}/>
                     ); })()}
                     {/* Rojo: elipse más pequeña → queda uniformemente POR DENTRO del aro en todo su recorrido */}
