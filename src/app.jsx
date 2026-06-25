@@ -2357,8 +2357,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const belowCyl = SH - sbotY;
 
               return (
-                <div style={{ minHeight:0, display:"flex", flexDirection:"column", alignItems:"center", height:"100%" }}>
-                  <div style={{ width:cfg.w+"%", height:"100%", display:"flex", gap:0 }}>
+                <div style={{ width:260, height:185, display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
+                  <div style={{ width:"100%", height:"100%", display:"flex", gap:0 }}>
                     {/* SVG */}
                     <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden", position:"relative" }}>
                       <CilindroSVG pct={pct} color={color} label={t.id} producto={t.producto||""}/>
@@ -2394,27 +2394,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               );
             };
 
-            // Altura disponible: pantalla menos header app (~56px) menos padding contenido (24px) menos título (38px)
-            // Cada TankCard: nombre(24px) + svg(flex) + stats(34px) = 58px fijo + svg
-            // Columna centro 3 tanques: svg por tanque = (H - 3*58 - 2*gap8) / 3 = (H - 190) / 3
-            // Para que quepan cómodo fijamos H = calc(100vh - 118px)
             return (
             <div style={{ height:"calc(100vh - 118px)", display:"flex", flexDirection:"column", overflow:"hidden" }}>
               <div style={{ marginBottom:4, flexShrink:0 }}>
                 <div style={{ fontSize:15, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
                 <div style={{ fontSize:9, color:T.muted }}>— — — línea amarilla = capacidad operativa (90%)</div>
               </div>
-              {/* Grid 3×3: celdas iguales → todos los tanques del mismo tamaño */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr 1fr 1fr", gap:4, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:6 }}>
-                <TankCard id="TK-112"/>
-                <TankCard id="TK-115"/>
-                <TankCard id="TK-117"/>
+              {/* Todos los tanques al mismo tamaño fijo — se distribuyen luego */}
+              <div style={{ display:"flex", flexWrap:"wrap", gap:8, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:8, alignContent:"flex-start", overflowY:"auto" }}>
                 <TankCard id="TK-111"/>
-                <TankCard id="TK-114"/>
-                <TankCard id="TK-116"/>
-                <div/>{/* celda vacía col izq fila 3 */}
+                <TankCard id="TK-112"/>
                 <TankCard id="TK-113"/>
-                <div/>{/* celda vacía col der fila 3 */}
+                <TankCard id="TK-114"/>
+                <TankCard id="TK-115"/>
+                <TankCard id="TK-116"/>
+                <TankCard id="TK-117"/>
               </div>
             </div>
             );
