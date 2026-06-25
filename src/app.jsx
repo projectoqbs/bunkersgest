@@ -2369,16 +2369,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600 }}>{t.producto||"—"}</div>
                     </div>
                     {/* SVG + stats a la derecha */}
-                    <div style={{ flex:1, minHeight:0, display:"flex", gap:6 }}>
+                    <div style={{ flex:1, minHeight:0, display:"flex", gap:3 }}>
                       <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden" }}>
                         <CilindroSVG pct={pct} color={color} label={t.id}/>
                       </div>
                       {/* Panel stats vertical */}
-                      <div style={{ flexShrink:0, width:72, display:"flex", flexDirection:"column", gap:4, justifyContent:"center" }}>
+                      <div style={{ flexShrink:0, width:68, display:"flex", flexDirection:"column", gap:3, justifyContent:"space-between", paddingTop:2, paddingBottom:2 }}>
                         {stats.map(s=>(
-                          <div key={s.label} style={{ background:"#0f1e2e", borderRadius:6, padding:"4px 6px",
-                            borderLeft:`3px solid ${s.color}`, display:"flex", flexDirection:"column", gap:1 }}>
-                            <div style={{ fontSize:6.5, color:"#6b8fa8", textTransform:"uppercase", letterSpacing:0.8, lineHeight:1 }}>
+                          <div key={s.label} style={{ flex:1, background:"#0f1e2e", borderRadius:6, padding:"3px 6px",
+                            borderLeft:`3px solid ${s.color}`, display:"flex", flexDirection:"column", justifyContent:"center", gap:1 }}>
+                            <div style={{ fontSize:6.5, color:"#ffffff", textTransform:"uppercase", letterSpacing:0.8, lineHeight:1 }}>
                               {s.icon} {s.label}
                             </div>
                             <div style={{ fontSize:10, fontWeight:800, color:s.color, fontFamily:"monospace", lineHeight:1.2 }}>
