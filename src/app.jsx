@@ -2268,9 +2268,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <path d={`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`}
                         fill="none" stroke="#f5c400" strokeWidth={yw}/>
                     ); })()}
-                    {/* Rojo: elipse más pequeña → queda uniformemente POR DENTRO del aro en todo su recorrido */}
-                    {(()=>{ const rw=7.5, ro=rw/2, erx=ew/2-ro, ery=eh/2-ro; return (
-                      <path d={`M ${cx+erx},${topY} A ${erx},${ery} 0 0,1 ${cx},${topY+ery}`}
+                    {/* Rojo: cuarto derecho, desplazado abajo para que borde sup = línea del aro */}
+                    {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
+                      <path d={`M ${rx},${rcy} A ${ew/2},${eh/2} 0 0,1 ${cx},${rcy+eh/2}`}
                         fill="none" stroke="#cc2200" strokeWidth={rw}/>
                     ); })()}
                   </> :
