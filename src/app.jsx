@@ -2177,9 +2177,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               return (
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
                   <defs>
-                    {/* Clip aro superior: limita líneas amarilla/roja al ancho del tanque */}
+                    {/* Clip aro superior: limita baranda/rojo al ancho del tanque y a la zona del domo */}
                     <clipPath id={`rc-${label}`}>
-                      <rect x={lx} y={topY - 150} width={ew} height={300}/>
+                      <rect x={lx} y={topY - domeH - 20} width={ew} height={domeH + 20}/>
                     </clipPath>
                     {/* Clip zona interior: mitad derecha (corte transversal) */}
                     <clipPath id={`ci-${label}`}>
