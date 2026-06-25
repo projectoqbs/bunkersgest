@@ -2373,20 +2373,37 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden" }}>
                         <CilindroSVG pct={pct} color={color} label={t.id}/>
                       </div>
-                      {/* Panel stats vertical */}
-                      <div style={{ flexShrink:0, width:68, display:"flex", flexDirection:"column", gap:3, justifyContent:"space-between", paddingTop:2, paddingBottom:2 }}>
-                        {stats.map(s=>(
-                          <div key={s.label} style={{ flex:1, background:"#0f1e2e", borderRadius:6, padding:"3px 6px",
-                            borderLeft:`3px solid ${s.color}`, display:"flex", flexDirection:"column", justifyContent:"center", gap:1 }}>
-                            <div style={{ fontSize:6.5, color:"#ffffff", textTransform:"uppercase", letterSpacing:0.8, lineHeight:1 }}>
-                              {s.icon} {s.label}
+                      {/* Panel stats vertical — alineado con cilindro SVG */}
+                      {(()=>{
+                        const SH=300, SW=300;
+                        const sew=SW*0.86, seh=sew*0.20;
+                        const sbotY=SH-seh/2-6, scylH=SH*0.52, stopY=sbotY-scylH;
+                        const sdomeH=scylH*0.19;
+                        const aboveRailing = stopY - sdomeH*0.05; // ≈ nivel baranda
+                        const belowCyl = SH - sbotY;
+                        return (
+                          <div style={{ flexShrink:0, width:68, display:"flex", flexDirection:"column" }}>
+                            {/* espaciador superior hasta la baranda */}
+                            <div style={{ flex: aboveRailing }}/>
+                            {/* stats ocupan exactamente la altura del cilindro */}
+                            <div style={{ flex: scylH, display:"flex", flexDirection:"column", gap:3 }}>
+                              {stats.map(s=>(
+                                <div key={s.label} style={{ flex:1, background:"#0f1e2e", borderRadius:6, padding:"3px 6px",
+                                  borderLeft:`3px solid ${s.color}`, display:"flex", flexDirection:"column", justifyContent:"center", gap:1 }}>
+                                  <div style={{ fontSize:6.5, color:"#ffffff", textTransform:"uppercase", letterSpacing:0.8, lineHeight:1 }}>
+                                    {s.icon} {s.label}
+                                  </div>
+                                  <div style={{ fontSize:10, fontWeight:800, color:s.color, fontFamily:"monospace", lineHeight:1.2 }}>
+                                    {s.val}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            <div style={{ fontSize:10, fontWeight:800, color:s.color, fontFamily:"monospace", lineHeight:1.2 }}>
-                              {s.val}
-                            </div>
+                            {/* espaciador inferior */}
+                            <div style={{ flex: belowCyl }}/>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
