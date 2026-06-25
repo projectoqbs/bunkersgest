@@ -2177,9 +2177,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               return (
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
                   <defs>
-                    {/* Clip baranda amarilla: zona del domo */}
+                    {/* Clip baranda amarilla: solo ancho del tanque, altura libre */}
                     <clipPath id={`ry-${label}`}>
-                      <rect x={lx} y={topY - domeH - 20} width={ew} height={domeH + 26}/>
+                      <rect x={lx} y={topY - domeH - 14} width={ew} height={domeH + 14}/>
                     </clipPath>
                     {/* Clip arco rojo: ancho del tanque, zona topY hasta frente del aro */}
                     <clipPath id={`rr-${label}`}>
@@ -2266,9 +2266,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── BARANDA AMARILLA (encima del domo, borde inferior = topY exacto) ── */}
                   <g clipPath={`url(#ry-${label})`}>
                     {(()=>{ const yw=12.5, half=yw/2, erx=ew/2, ery=eh/2;
-                      /* borde inferior del stroke en topY - eh/2 (borde superior del aro) */
-                      const shift = eh/2 + half;
-                      const d=`M ${cx},${topY-ery-shift} A ${erx},${ery} 0 0,0 ${cx-erx},${topY-shift}`; return (<>
+                      /* centro del arco en topY → borde inferior toca la línea base del domo */
+                      const d=`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`; return (<>
                       <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw}/>
                       <path d={d} fill="none" stroke="#e8eef4" strokeWidth={yw*0.52}
                         strokeDasharray="11 3" strokeDashoffset="11" strokeLinecap="butt"/>
