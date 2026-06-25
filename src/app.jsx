@@ -2138,12 +2138,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             //   TK-113/114/115 = 55% h de 111 → h=30 (55% de 55)
             const CFG = {
               "TK-111": { h: 55, w: 78 },
-              "TK-112": { h: 39, w: 72 },
-              "TK-113": { h: 39, w: 72 },
-              "TK-114": { h: 39, w: 72 },
-              "TK-115": { h: 39, w: 72 },
-              "TK-116": { h: 36, w: 78 },
-              "TK-117": { h: 36, w: 78 },
+              "TK-112": { h: 55, w: 78 },
+              "TK-113": { h: 55, w: 78 },
+              "TK-114": { h: 55, w: 78 },
+              "TK-115": { h: 55, w: 78 },
+              "TK-116": { h: 55, w: 78 },
+              "TK-117": { h: 55, w: 78 },
             };
 
             // Tanque 3D: perspectiva frontal ligera desde arriba
@@ -2157,7 +2157,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const botY  = H - eh/2 - 6;
               const cylH  = H * 0.52;
               const topY  = botY - cylH;
-              const domeH = label === "TK-111" ? cylH * 0.19 : cylH * 0.18;
+              const domeH = cylH * 0.19;
               const peakY = topY - domeH;
 
               // Zona interior (descuenta grosor de pared ~9% cada lado)
@@ -2180,34 +2180,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <clipPath id={`rc-${label}`}>
                       <rect x={lx} y={topY - 150} width={ew} height={300}/>
                     </clipPath>
-                    {/* Clip zona interior: TK-111 solo mitad derecha, resto completo */}
+                    {/* Clip zona interior: mitad derecha (corte transversal) */}
                     <clipPath id={`ci-${label}`}>
-                      {label === "TK-111"
-                        ? <rect x={cx} y={topY} width={iRX} height={cylH+2}/>
-                        : <rect x={iLX} y={topY} width={iRX*2} height={cylH+2}/>
-                      }
+                      <rect x={cx} y={topY} width={iRX} height={cylH+2}/>
                     </clipPath>
 
-                    {/* Gradiente cuerpo:
-                        TK-111 → mitad izq negra (pared sólida), mitad der gris (interior visible)
-                        resto  → oscuro bordes, gris centro */}
+                    {/* Gradiente cuerpo: mitad izq negra (exterior), mitad der gris (interior) */}
                     <linearGradient id={`cg-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      {label === "TK-111" ? <>
-                        <stop offset="0%"   stopColor="#0a0a0a"/>
-                        <stop offset="7%"   stopColor="#0f0f0f"/>
-                        <stop offset="49%"  stopColor="#0f0f0f"/>
-                        <stop offset="51%"  stopColor="#606060"/>
-                        <stop offset="89%"  stopColor="#4e4e4e"/>
-                        <stop offset="97%"  stopColor="#111111"/>
-                        <stop offset="100%" stopColor="#050505"/>
-                      </> : <>
-                        <stop offset="0%"   stopColor="#0a0a0a"/>
-                        <stop offset="7%"   stopColor="#111111"/>
-                        <stop offset="11%"  stopColor="#606060"/>
-                        <stop offset="89%"  stopColor="#4e4e4e"/>
-                        <stop offset="97%"  stopColor="#111111"/>
-                        <stop offset="100%" stopColor="#050505"/>
-                      </>}
+                      <stop offset="0%"   stopColor="#0a0a0a"/>
+                      <stop offset="7%"   stopColor="#0f0f0f"/>
+                      <stop offset="49%"  stopColor="#0f0f0f"/>
+                      <stop offset="51%"  stopColor="#606060"/>
+                      <stop offset="89%"  stopColor="#4e4e4e"/>
+                      <stop offset="97%"  stopColor="#111111"/>
+                      <stop offset="100%" stopColor="#050505"/>
                     </linearGradient>
 
                     {/* Gradiente gris interior (vacío) */}
@@ -2229,15 +2215,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="100%" stopColor="#0a0a0a"/>
                     </linearGradient>
 
-                    {/* Sombra profundidad interior derecha (TK-111): oscurece hacia el borde curvo */}
-                    {label === "TK-111" && (
-                      <linearGradient id={`sd-${label}`} x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%"   stopColor="#000000" stopOpacity="0.0"/>
-                        <stop offset="45%"  stopColor="#000000" stopOpacity="0.08"/>
-                        <stop offset="80%"  stopColor="#000000" stopOpacity="0.35"/>
-                        <stop offset="100%" stopColor="#000000" stopOpacity="0.65"/>
-                      </linearGradient>
-                    )}
+                    {/* Sombra profundidad interior derecha */}
+                    <linearGradient id={`sd-${label}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%"   stopColor="#000000" stopOpacity="0.0"/>
+                      <stop offset="45%"  stopColor="#000000" stopOpacity="0.08"/>
+                      <stop offset="80%"  stopColor="#000000" stopOpacity="0.35"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.65"/>
+                    </linearGradient>
                   </defs>
 
                   {/* ── CUERPO: paredes negras + zona interior gris en gradiente ── */}
@@ -2257,35 +2241,29 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </g>
                   )}
 
-                  {/* ── SOMBRA PROFUNDIDAD (solo TK-111): simula curvatura interior fondo ── */}
-                  {label === "TK-111" && (
-                    <rect x={cx} y={topY} width={iRX} height={cylH}
-                      fill={`url(#sd-${label})`} clipPath={`url(#ci-${label})`}/>
-                  )}
+                  {/* ── SOMBRA PROFUNDIDAD: simula curvatura interior fondo ── */}
+                  <rect x={cx} y={topY} width={iRX} height={cylH}
+                    fill={`url(#sd-${label})`} clipPath={`url(#ci-${label})`}/>
 
                   {/* ── ELIPSE BASE (fondo) ── */}
                   <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
 
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
-                  {label === "TK-111" ? <>
-                    <g clipPath={`url(#rc-${label})`}>
-                      {/* Amarillo: baranda — línea amarilla + rectángulos grises centrados más delgados */}
-                      {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo;
-                        const d=`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`; return (<>
-                        <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw}/>
-                        <path d={d} fill="none" stroke="#e8eef4" strokeWidth={yw*0.52}
-                          strokeDasharray="11 3" strokeDashoffset="11" strokeLinecap="butt"/>
-                      </>); })()}
-                      {/* Rojo: cuarto derecho, desplazado abajo para que borde sup = línea del aro */}
-                      {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
-                        <path d={`M ${rx},${rcy} A ${ew/2},${eh/2} 0 0,1 ${cx},${rcy+eh/2}`}
-                          fill="none" stroke="#cc2200" strokeWidth={rw}/>
-                      ); })()}
-                    </g>
-                  </> :
-                    <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="none" stroke="#444" strokeWidth="2"/>
-                  }
+                  <g clipPath={`url(#rc-${label})`}>
+                    {/* Amarillo: baranda de tubería (cuarto posterior-izquierdo) */}
+                    {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo;
+                      const d=`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`; return (<>
+                      <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw}/>
+                      <path d={d} fill="none" stroke="#e8eef4" strokeWidth={yw*0.52}
+                        strokeDasharray="11 3" strokeDashoffset="11" strokeLinecap="butt"/>
+                    </>); })()}
+                    {/* Rojo: cuarto derecho */}
+                    {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
+                      <path d={`M ${rx},${rcy} A ${ew/2},${eh/2} 0 0,1 ${cx},${rcy+eh/2}`}
+                        fill="none" stroke="#cc2200" strokeWidth={rw}/>
+                    ); })()}
+                  </g>
 
                   {/* ── DOMO CONVEXO ── */}
                   <path d={domePath} fill={`url(#dg-${label})`}/>
@@ -2294,24 +2272,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <path d={`M ${cx-ew*0.22},${topY-domeH*0.28} Q ${cx},${peakY+domeH*0.25} ${cx+ew*0.18},${topY-domeH*0.45}`}
                     fill="none" stroke="#fff" strokeWidth="0.7" opacity="0.05"/>
 
-                  {/* ── CARA INTERNA DEL TECHO (solo TK-111, corte derecho) ── */}
-                  {/* La cara interior del domo se ve cóncava desde dentro: curva que baja desde el aro al pico */}
-                  {label === "TK-111" && (() => {
-                    // Cara interna: del punto en el aro (cx, topY) curva HACIA ABAJO siguiendo la cara interior del domo
-                    // La cara interna tiene un espesor de pared (~wallT) menos que la exterior
-                    const innerDomeDepth = domeH * 0.82; // cara interna algo menos pronunciada que exterior
+                  {/* ── CARA INTERNA DEL TECHO (corte derecho) ── */}
+                  {(()=>{
+                    const innerDomeDepth = domeH * 0.82;
                     const innerPeakY = topY - innerDomeDepth;
-                    // Solo lado derecho (cx → rx)
-                    const innerFacePath = `M ${cx},${topY} Q ${cx + iRX*0.5},${innerPeakY + innerDomeDepth*0.15} ${cx + iRX},${topY} L ${cx + iRX},${topY} Z`;
                     return (
                       <g clipPath={`url(#ci-${label})`}>
-                        {/* Relleno cara interior del domo (gris oscuro, más oscuro en el pico) */}
                         <path d={`M ${cx},${topY} Q ${cx+iRX*0.5},${innerPeakY+innerDomeDepth*0.12} ${cx+iRX},${topY} L ${cx+iRX},${topY-2} Q ${cx+iRX*0.5},${innerPeakY} ${cx},${topY-2} Z`}
                           fill="#2a2a2a"/>
-                        {/* Sombra radial en la cara interna — más oscuro en el pico */}
-                        <path d={`M ${cx},${topY} Q ${cx+iRX*0.5},${innerPeakY+innerDomeDepth*0.12} ${cx+iRX},${topY}`}
-                          fill="none" stroke="#1a1a1a" strokeWidth="2"/>
-                        {/* Línea de unión aro-techo interior */}
                         <path d={`M ${cx},${topY} Q ${cx+iRX*0.5},${innerPeakY+innerDomeDepth*0.12} ${cx+iRX},${topY}`}
                           fill="none" stroke="#444" strokeWidth="0.8" opacity="0.7"/>
                       </g>
@@ -2323,11 +2291,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     fill={pct > 15 ? "#ffffff" : "#cccccc"}
                     fontSize={W*0.11} fontWeight="bold" fontFamily="monospace" opacity="0.9">{pct}%</text>
 
-                  {/* ── IDENTIFICADOR (solo TK-111): círculo blanco con número rojo en exterior izq ── */}
-                  {label === "TK-111" && (() => {
-                    const bx = lx + ew * 0.26;   // 26% desde el borde izquierdo
-                    const by = topY + cylH * 0.50; // media altura del cilindro
-                    const br = W * 0.095;           // radio del círculo
+                  {/* ── IDENTIFICADOR: círculo blanco con número rojo + producto editable ── */}
+                  {(()=>{
+                    const bx = lx + ew * 0.26;
+                    const by = topY + cylH * 0.50;
+                    const br = W * 0.095;
                     const num = label.replace("TK-","");
                     return (
                       <g>
@@ -2383,80 +2351,43 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {label:"Descargue",val:`${carrosDesc} c`,     color:"#38bdf8", icon:"▼"},
               ];
 
-              if (id === "TK-111") return (
-                <div style={{ flex:cfg.h, minHeight:0, display:"flex", flexDirection:"column", alignItems:"center" }}>
-                  <div style={{ width:cfg.w+"%", height:"100%", display:"flex", flexDirection:"column", minHeight:0 }}>
-                    {/* SVG + stats a la derecha */}
-                    <div style={{ flex:1, minHeight:0, display:"flex", gap:0 }}>
-                      <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden", position:"relative" }}>
-                        <CilindroSVG pct={pct} color={color} label={t.id} producto={t.producto||""}/>
-                        {/* Input edición producto — aparece sobre el SVG cuando se hace clic en VLSFO */}
-                        {editProd && (
-                          <div style={{ position:"absolute", bottom:"28%", left:"18%", zIndex:10 }}>
-                            <input autoFocus value={tankProdEdit.val}
-                              onChange={e=>setTankProdEdit({id, val:e.target.value})}
-                              onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
-                              onBlur={()=>guardarProductoTanque(id, tankProdEdit.val)}
-                              style={{ background:"#0f1e2e", border:"2px solid #3b82f6", borderRadius:6,
-                                color:"#fff", fontSize:11, fontWeight:700, padding:"3px 8px",
-                                width:72, textTransform:"uppercase", outline:"none", textAlign:"center" }}/>
-                            {tankProdSaving && <div style={{fontSize:8,color:"#6b8fa8",textAlign:"center"}}>guardando...</div>}
-                          </div>
-                        )}
-                      </div>
-                      {/* Panel stats vertical — alineado con cilindro SVG */}
-                      {(()=>{
-                        const SH=300, SW=300;
-                        const sew=SW*0.86, seh=sew*0.20;
-                        const sbotY=SH-seh/2-6, scylH=SH*0.52, stopY=sbotY-scylH;
-                        const sdomeH=scylH*0.19;
-                        const aboveRailing = stopY - sdomeH*0.05; // ≈ nivel baranda
-                        const belowCyl = SH - sbotY;
-                        return (
-                          <div style={{ flexShrink:0, width:68, display:"flex", flexDirection:"column", marginLeft:-18 }}>
-                            {/* espaciador superior hasta la baranda */}
-                            <div style={{ flex: aboveRailing }}/>
-                            {/* stats ocupan exactamente la altura del cilindro */}
-                            <div style={{ flex: scylH, display:"flex", flexDirection:"column", gap:3 }}>
-                              {stats.map(s=>(
-                                <div key={s.label} style={{ flex:1, background:"#0f1e2e", borderRadius:6, padding:"3px 6px",
-                                  borderLeft:`3px solid ${s.color}`, display:"flex", flexDirection:"column", justifyContent:"center", gap:1 }}>
-                                  <div style={{ fontSize:6.5, color:"#ffffff", textTransform:"uppercase", letterSpacing:0.8, lineHeight:1 }}>
-                                    {s.icon} {s.label}
-                                  </div>
-                                  <div style={{ fontSize:10, fontWeight:800, color:s.color, fontFamily:"monospace", lineHeight:1.2 }}>
-                                    {s.val}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            {/* espaciador inferior */}
-                            <div style={{ flex: belowCyl }}/>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              );
+              const SH=300, sew=SH*0.86, seh=sew*0.20;
+              const sbotY=SH-seh/2-6, scylH=SH*0.52, stopY=sbotY-scylH;
+              const aboveRailing = stopY - scylH*0.19*0.05;
+              const belowCyl = SH - sbotY;
 
               return (
                 <div style={{ flex:cfg.h, minHeight:0, display:"flex", flexDirection:"column", alignItems:"center" }}>
-                  <div style={{ width:cfg.w+"%", height:"100%", display:"flex", flexDirection:"column", minHeight:0 }}>
-                    <div style={{ flexShrink:0, paddingBottom:1, textAlign:"center" }}>
-                      <div style={{ fontSize:11, fontWeight:800, color:T.navy, letterSpacing:1 }}>{t.id}</div>
-                      <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600 }}>{t.producto||"—"}</div>
-                    </div>
-                    <div style={{ flex:1, minHeight:0, overflow:"hidden" }}>
-                      <CilindroSVG pct={pct} color={color} label={t.id}/>
-                    </div>
-                    <div style={{ flexShrink:0, display:"flex", gap:2, paddingTop:2 }}>
-                      {stats.map(s=>(
-                        <div key={s.label} style={{ flex:1, background:"#162535", borderRadius:3, padding:"2px 3px", textAlign:"center" }}>
-                          <div style={{ fontSize:6, color:"#6b8fa8", textTransform:"uppercase", lineHeight:1.2 }}>{s.label}</div>
-                          <div style={{ fontSize:8, fontWeight:700, color:s.color, fontFamily:"monospace", lineHeight:1.3 }}>{s.val}</div>
+                  <div style={{ width:cfg.w+"%", height:"100%", display:"flex", gap:0 }}>
+                    {/* SVG */}
+                    <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden", position:"relative" }}>
+                      <CilindroSVG pct={pct} color={color} label={t.id} producto={t.producto||""}/>
+                      {editProd && (
+                        <div style={{ position:"absolute", bottom:"28%", left:"18%", zIndex:10 }}>
+                          <input autoFocus value={tankProdEdit.val}
+                            onChange={e=>setTankProdEdit({id, val:e.target.value})}
+                            onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
+                            onBlur={()=>guardarProductoTanque(id, tankProdEdit.val)}
+                            style={{ background:"#0f1e2e", border:"2px solid #3b82f6", borderRadius:6,
+                              color:"#fff", fontSize:11, fontWeight:700, padding:"3px 8px",
+                              width:72, textTransform:"uppercase", outline:"none", textAlign:"center" }}/>
+                          {tankProdSaving && <div style={{fontSize:8,color:"#6b8fa8",textAlign:"center"}}>guardando...</div>}
                         </div>
-                      ))}
+                      )}
+                    </div>
+                    {/* Panel stats vertical alineado con cilindro */}
+                    <div style={{ flexShrink:0, width:68, display:"flex", flexDirection:"column", marginLeft:-18 }}>
+                      <div style={{ flex: aboveRailing }}/>
+                      <div style={{ flex: scylH, display:"flex", flexDirection:"column", gap:3 }}>
+                        {stats.map(s=>(
+                          <div key={s.label} style={{ flex:1, background:"#0f1e2e", borderRadius:6, padding:"3px 6px",
+                            borderLeft:`3px solid ${s.color}`, display:"flex", flexDirection:"column", justifyContent:"center", gap:1 }}>
+                            <div style={{ fontSize:6.5, color:"#ffffff", textTransform:"uppercase", letterSpacing:0.8, lineHeight:1 }}>{s.icon} {s.label}</div>
+                            <div style={{ fontSize:10, fontWeight:800, color:s.color, fontFamily:"monospace", lineHeight:1.2 }}>{s.val}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ flex: belowCyl }}/>
                     </div>
                   </div>
                 </div>
