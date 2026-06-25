@@ -2358,11 +2358,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const belowCyl = SH - sbotY;
 
               return (
-                <div style={{ width: id==="TK-111" ? 312 : id==="TK-112" ? 286 : 260, height: id==="TK-111" ? 372 : id==="TK-112" ? 224 : 204, display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
+                <div style={{ width: id==="TK-111" ? 312 : id==="TK-112" ? 315 : 260, height: id==="TK-111" ? 372 : id==="TK-112" ? 246 : 204, display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
                   <div style={{ width:"100%", height:"100%", display:"flex", gap:0 }}>
                     {/* SVG */}
                     <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden", position:"relative" }}>
-                      <CilindroSVG pct={pct} color={color} label={t.id} producto={t.producto||""} H={id==="TK-111" ? 432 : id==="TK-112" ? 330 : 300}/>
+                      <CilindroSVG pct={pct} color={color} label={t.id} producto={t.producto||""} H={id==="TK-111" ? 432 : id==="TK-112" ? 363 : 300}/>
                       {editProd && (
                         <div style={{ position:"absolute", bottom:"28%", left:"18%", zIndex:10 }}>
                           <input autoFocus value={tankProdEdit.val}
