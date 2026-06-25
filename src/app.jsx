@@ -2137,46 +2137,69 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const CFG = {
               "TK-111": { h: 55, w: 78 },
               "TK-112": { h: 39, w: 72 },
-              "TK-113": { h: 30, w: 72 },
-              "TK-114": { h: 30, w: 72 },
-              "TK-115": { h: 30, w: 72 },
+              "TK-113": { h: 39, w: 72 },
+              "TK-114": { h: 39, w: 72 },
+              "TK-115": { h: 39, w: 72 },
               "TK-116": { h: 36, w: 78 },
               "TK-117": { h: 36, w: 78 },
             };
 
             // Tanque 3D: perspectiva frontal ligera desde arriba
-            // Negro exterior con gradiente de profundidad, franja roja, domo convexo hacia arriba
+            // Tanque 3D industrial: paredes negras, interior gris metálico, líquido visible
             const CilindroSVG = ({pct, color, label, W=300, H=300}) => {
-              const cx   = W / 2;
-              const ew   = W * 0.86;          // ancho elipse (perspectiva)
-              const eh   = ew * 0.20;          // alto elipse (aplanamiento 3D)
-              const lx   = cx - ew/2;
-              const rx   = cx + ew/2;
-              const botY = H - eh/2 - 6;       // centro elipse inferior
-              const cylH = H * 0.52;           // altura cuerpo
-              const topY = botY - cylH;         // centro aro superior (borde techo)
-              const domeH = cylH * 0.18;        // altura domo encima del aro
-              const peakY = topY - domeH;       // pico del domo
+              const cx    = W / 2;
+              const ew    = W * 0.86;
+              const eh    = ew * 0.20;
+              const lx    = cx - ew/2;
+              const rx    = cx + ew/2;
+              const botY  = H - eh/2 - 6;
+              const cylH  = H * 0.52;
+              const topY  = botY - cylH;
+              const domeH = cylH * 0.18;
+              const peakY = topY - domeH;
 
-              // Clip para el cuerpo cilíndrico
-              const bodyClip = `M ${lx},${topY} L ${lx},${botY} A ${ew/2},${eh/2} 0 0,0 ${rx},${botY} L ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${lx},${topY} Z`;
+              // Zona interior (descuenta grosor de pared ~9% cada lado)
+              const wall  = ew * 0.09;
+              const iRX   = ew/2 - wall;       // radio interior
+              const iLX   = cx - iRX;
+              const iRX2  = cx + iRX;
 
-              // Domo: curva cuadrática de cada lado hacia el pico (subiendo)
-              const domePath = `M ${lx},${topY} Q ${lx+ew*0.08},${peakY+domeH*0.1} ${cx},${peakY} Q ${rx-ew*0.08},${peakY+domeH*0.1} ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${lx},${topY} Z`;
+              const fillH  = cylH * Math.min(pct, 100) / 100;
+              const fillTopY = botY - fillH;
+              const fc = color || "#3d3d5c";
+
+              const domePath    = `M ${lx},${topY} Q ${lx+ew*0.08},${peakY+domeH*0.1} ${cx},${peakY} Q ${rx-ew*0.08},${peakY+domeH*0.1} ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${lx},${topY} Z`;
               const domeOutline = `M ${lx},${topY} Q ${lx+ew*0.08},${peakY+domeH*0.1} ${cx},${peakY} Q ${rx-ew*0.08},${peakY+domeH*0.1} ${rx},${topY}`;
 
               return (
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
                   <defs>
-                    <clipPath id={`cb-${label}`}><path d={bodyClip}/></clipPath>
+                    {/* Clip zona interior rectangular */}
+                    <clipPath id={`ci-${label}`}>
+                      <rect x={iLX} y={topY} width={iRX*2} height={cylH+2}/>
+                    </clipPath>
 
-                    {/* Gradiente cuerpo: simula superficie cilíndrica con luz desde izq */}
+                    {/* Gradiente paredes negras: oscuro en bordes, gris en centro (interior) */}
                     <linearGradient id={`cg-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%"   stopColor="#2e2e2e"/>
-                      <stop offset="18%"  stopColor="#1a1a1a"/>
-                      <stop offset="55%"  stopColor="#0f0f0f"/>
-                      <stop offset="85%"  stopColor="#080808"/>
-                      <stop offset="100%" stopColor="#030303"/>
+                      <stop offset="0%"   stopColor="#0a0a0a"/>
+                      <stop offset="7%"   stopColor="#111111"/>
+                      <stop offset="11%"  stopColor="#606060"/>
+                      <stop offset="89%"  stopColor="#4e4e4e"/>
+                      <stop offset="93%"  stopColor="#111111"/>
+                      <stop offset="100%" stopColor="#050505"/>
+                    </linearGradient>
+
+                    {/* Gradiente gris interior (vacío) */}
+                    <linearGradient id={`ig-${label}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%"   stopColor="#707070"/>
+                      <stop offset="40%"  stopColor="#686868"/>
+                      <stop offset="100%" stopColor="#505050"/>
+                    </linearGradient>
+
+                    {/* Gradiente líquido vertical */}
+                    <linearGradient id={`lg-${label}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor={fc} stopOpacity="0.9"/>
+                      <stop offset="100%" stopColor={fc} stopOpacity="1"/>
                     </linearGradient>
 
                     {/* Gradiente domo */}
@@ -2184,37 +2207,43 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="0%"   stopColor="#1a1a1a"/>
                       <stop offset="100%" stopColor="#0a0a0a"/>
                     </linearGradient>
-
                   </defs>
 
-                  {/* ── CUERPO PRINCIPAL con gradiente 3D ── */}
+                  {/* ── CUERPO: paredes negras + zona interior gris en gradiente ── */}
                   <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#cg-${label})`}/>
 
+                  {/* ── INTERIOR GRIS (espacio vacío) ── */}
+                  <rect x={iLX} y={topY} width={iRX*2} height={cylH} fill={`url(#ig-${label})`} clipPath={`url(#ci-${label})`}/>
 
-                  {/* ── BORDES LATERALES negros (grosor visual de pared) ── */}
-                  <rect x={lx}    y={topY} width={ew*0.025} height={cylH} fill="#050505"/>
-                  <rect x={rx-ew*0.025} y={topY} width={ew*0.025} height={cylH} fill="#020202"/>
+                  {/* ── LÍQUIDO (sube desde el fondo) ── */}
+                  {pct > 0 && (
+                    <g clipPath={`url(#ci-${label})`}>
+                      <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill={`url(#lg-${label})`}/>
+                      {/* Superficie del líquido */}
+                      <ellipse cx={cx} cy={fillTopY} rx={iRX} ry={eh*0.32} fill={fc}/>
+                      {/* Reflejo en superficie */}
+                      <ellipse cx={cx-iRX*0.2} cy={fillTopY} rx={iRX*0.35} ry={eh*0.12} fill="#ffffff" opacity="0.10"/>
+                    </g>
+                  )}
 
-                  {/* ── ELIPSE INFERIOR (fondo del tanque, da profundidad 3D) ── */}
-                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#111"/>
+                  {/* ── ELIPSE BASE (fondo) ── */}
+                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
 
-                  {/* ── ARO SUPERIOR (unión cuerpo-techo) ── */}
-                  <ellipse cx={cx} cy={topY} rx={ew/2}      ry={eh/2}      fill="#1a1a1a"/>
-                  <ellipse cx={cx} cy={topY} rx={ew/2}      ry={eh/2}      fill="none" stroke="#555" strokeWidth="2"/>
-                  {/* Aro exterior de confinamiento secundario (rojo, como en foto) */}
-                  <ellipse cx={cx} cy={topY} rx={ew/2+2}    ry={eh/2+1.5}  fill="none" stroke="#8b1a1a" strokeWidth="1.5"/>
+                  {/* ── ARO SUPERIOR ── */}
+                  <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
+                  <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="none" stroke="#444" strokeWidth="2"/>
 
-                  {/* ── DOMO CONVEXO (sube hacia arriba) ── */}
+                  {/* ── DOMO CONVEXO ── */}
                   <path d={domePath} fill={`url(#dg-${label})`}/>
-                  {/* Contorno del domo */}
-                  <path d={domeOutline} fill="none" stroke="#3a3a3a" strokeWidth="1.2"/>
-                  {/* Reflejo sutil en domo */}
-                  <path d={`M ${cx-ew*0.25},${topY-domeH*0.3} Q ${cx-ew*0.05},${peakY+domeH*0.2} ${cx+ew*0.15},${topY-domeH*0.5}`}
-                    fill="none" stroke="#fff" strokeWidth="0.6" opacity="0.06"/>
+                  <path d={domeOutline} fill="none" stroke="#333" strokeWidth="1.2"/>
+                  {/* Reflejo sutil domo */}
+                  <path d={`M ${cx-ew*0.22},${topY-domeH*0.28} Q ${cx},${peakY+domeH*0.25} ${cx+ew*0.18},${topY-domeH*0.45}`}
+                    fill="none" stroke="#fff" strokeWidth="0.7" opacity="0.05"/>
 
-                  {/* ── PORCENTAJE centrado en el cuerpo ── */}
+                  {/* ── PORCENTAJE ── */}
                   <text x={cx} y={topY + cylH*0.52} textAnchor="middle" dominantBaseline="middle"
-                    fill="#ffffff" fontSize={W*0.11} fontWeight="bold" fontFamily="monospace" opacity="0.85">{pct}%</text>
+                    fill={pct > 15 ? "#ffffff" : "#cccccc"}
+                    fontSize={W*0.11} fontWeight="bold" fontFamily="monospace" opacity="0.9">{pct}%</text>
                 </svg>
               );
             };
