@@ -2357,7 +2357,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const belowCyl = SH - sbotY;
 
               return (
-                <div style={{ flex:cfg.h, minHeight:0, display:"flex", flexDirection:"column", alignItems:"center" }}>
+                <div style={{ minHeight:0, display:"flex", flexDirection:"column", alignItems:"center", height:"100%" }}>
                   <div style={{ width:cfg.w+"%", height:"100%", display:"flex", gap:0 }}>
                     {/* SVG */}
                     <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden", position:"relative" }}>
@@ -2404,24 +2404,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ fontSize:15, fontWeight:800, color:T.navy }}>Tanques TK-111 al TK-117</div>
                 <div style={{ fontSize:9, color:T.muted }}>— — — línea amarilla = capacidad operativa (90%)</div>
               </div>
-              {/* gridTemplateRows:"1fr" alinea las 3 columnas a la misma altura acotada */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr", gap:12, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:10 }}>
-                {/* Columna izquierda: TK-112 / TK-111 */}
-                <div style={{ display:"flex", flexDirection:"column", gap:6, overflow:"hidden" }}>
-                  <TankCard id="TK-112"/>
-                  <TankCard id="TK-111"/>
-                </div>
-                {/* Columna central: TK-115 / TK-114 / TK-113 */}
-                <div style={{ display:"flex", flexDirection:"column", gap:6, overflow:"hidden" }}>
-                  <TankCard id="TK-115"/>
-                  <TankCard id="TK-114"/>
-                  <TankCard id="TK-113"/>
-                </div>
-                {/* Columna derecha: TK-117 / TK-116 */}
-                <div style={{ display:"flex", flexDirection:"column", gap:6, overflow:"hidden" }}>
-                  <TankCard id="TK-117"/>
-                  <TankCard id="TK-116"/>
-                </div>
+              {/* Grid 3×3: celdas iguales → todos los tanques del mismo tamaño */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr 1fr 1fr", gap:8, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:10 }}>
+                <TankCard id="TK-112"/>
+                <TankCard id="TK-115"/>
+                <TankCard id="TK-117"/>
+                <TankCard id="TK-111"/>
+                <TankCard id="TK-114"/>
+                <TankCard id="TK-116"/>
+                <div/>{/* celda vacía col izq fila 3 */}
+                <TankCard id="TK-113"/>
+                <div/>{/* celda vacía col der fila 3 */}
               </div>
             </div>
             );
