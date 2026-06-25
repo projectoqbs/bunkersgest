@@ -2267,7 +2267,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <path d={`M ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${cx},${topY+eh/2}`}
                       fill="none" stroke="#cc2200" strokeWidth="7.5"/>
                     {/* Amarillo: mitad izquierda → desde centro frontal, por lx, hasta centro trasero */}
-                    <path d={`M ${cx},${topY+eh/2} A ${ew/2},${eh/2} 0 0,0 ${cx},${topY-eh/2}`}
+                    <path d={`M ${cx},${topY+eh/2} A ${ew/2},${eh/2} 0 0,1 ${cx},${topY-eh/2}`}
                       fill="none" stroke="#f5c400" strokeWidth="12.5"/>
                   </> :
                     <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="none" stroke="#444" strokeWidth="2"/>
