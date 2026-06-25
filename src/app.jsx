@@ -2155,7 +2155,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const botY  = H - eh/2 - 6;
               const cylH  = H * 0.52;
               const topY  = botY - cylH;
-              const domeH = label === "TK-111" ? cylH * 0.38 : cylH * 0.18;
+              const domeH = label === "TK-111" ? cylH * 0.19 : cylH * 0.18;
               const peakY = topY - domeH;
 
               // Zona interior (descuenta grosor de pared ~9% cada lado)
