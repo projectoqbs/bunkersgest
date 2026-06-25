@@ -2174,19 +2174,34 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               return (
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{width:"100%",height:"100%",display:"block"}}>
                   <defs>
-                    {/* Clip zona interior rectangular */}
+                    {/* Clip zona interior: TK-111 solo mitad derecha, resto completo */}
                     <clipPath id={`ci-${label}`}>
-                      <rect x={iLX} y={topY} width={iRX*2} height={cylH+2}/>
+                      {label === "TK-111"
+                        ? <rect x={cx} y={topY} width={iRX} height={cylH+2}/>
+                        : <rect x={iLX} y={topY} width={iRX*2} height={cylH+2}/>
+                      }
                     </clipPath>
 
-                    {/* Gradiente paredes negras: oscuro en bordes, gris en centro (interior) */}
+                    {/* Gradiente cuerpo:
+                        TK-111 → mitad izq negra (pared sólida), mitad der gris (interior visible)
+                        resto  → oscuro bordes, gris centro */}
                     <linearGradient id={`cg-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%"   stopColor="#0a0a0a"/>
-                      <stop offset="7%"   stopColor="#111111"/>
-                      <stop offset="11%"  stopColor="#606060"/>
-                      <stop offset="89%"  stopColor="#4e4e4e"/>
-                      <stop offset="97%"  stopColor="#111111"/>
-                      <stop offset="100%" stopColor="#050505"/>
+                      {label === "TK-111" ? <>
+                        <stop offset="0%"   stopColor="#0a0a0a"/>
+                        <stop offset="7%"   stopColor="#0f0f0f"/>
+                        <stop offset="49%"  stopColor="#0f0f0f"/>
+                        <stop offset="51%"  stopColor="#606060"/>
+                        <stop offset="89%"  stopColor="#4e4e4e"/>
+                        <stop offset="97%"  stopColor="#111111"/>
+                        <stop offset="100%" stopColor="#050505"/>
+                      </> : <>
+                        <stop offset="0%"   stopColor="#0a0a0a"/>
+                        <stop offset="7%"   stopColor="#111111"/>
+                        <stop offset="11%"  stopColor="#606060"/>
+                        <stop offset="89%"  stopColor="#4e4e4e"/>
+                        <stop offset="97%"  stopColor="#111111"/>
+                        <stop offset="100%" stopColor="#050505"/>
+                      </>}
                     </linearGradient>
 
                     {/* Gradiente gris interior (vacío) */}
