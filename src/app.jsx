@@ -2362,7 +2362,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
               const SH=300, sew=SH*0.86, seh=sew*0.20;
               const sbotY=SH-seh/2-6, scylH=SH*0.52, stopY=sbotY-scylH;
-              const aboveRailing = stopY - scylH*0.19*0.05;
+              const aboveRailing = stopY;
               const belowCyl = SH - sbotY;
 
               // Calcular marginLeft del panel stats para que el gap con el tanque sea consistente
