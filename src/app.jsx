@@ -2366,7 +2366,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const belowCyl = SH - sbotY;
 
               return (
-                <div style={{ width: id==="TK-111" ? 312 : id==="TK-112" ? 315 : (id==="TK-116"||id==="TK-117") ? 299 : 260, height: id==="TK-111" ? 372 : id==="TK-112" ? 246 : (id==="TK-116"||id==="TK-117") ? 235 : 204, display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
+                <div style={{ width: id==="TK-111" ? 312 : id==="TK-112" ? 315 : (id==="TK-116"||id==="TK-117") ? 329 : 260, height: id==="TK-111" ? 372 : id==="TK-112" ? 246 : (id==="TK-116"||id==="TK-117") ? 259 : 204, display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
                   <div style={{ width:"100%", height:"100%", display:"flex", gap:0 }}>
                     {/* SVG */}
                     <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden", position:"relative" }}>
