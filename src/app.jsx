@@ -2263,10 +2263,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <path d={`M ${cx-ew*0.22},${topY-domeH*0.28} Q ${cx},${peakY+domeH*0.25} ${cx+ew*0.18},${topY-domeH*0.45}`}
                     fill="none" stroke="#fff" strokeWidth="0.7" opacity="0.05"/>
 
-                  {/* ── BARANDA AMARILLA (encima del domo, clippeada hasta topY) ── */}
+                  {/* ── BARANDA AMARILLA (encima del domo, borde inferior = topY exacto) ── */}
                   <g clipPath={`url(#ry-${label})`}>
                     {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo;
-                      const d=`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`; return (<>
+                      /* subir arc por yo para que borde inferior del stroke coincida con topY */
+                      const d=`M ${cx},${topY-ery-yo} A ${erx},${ery} 0 0,0 ${cx-erx},${topY-yo}`; return (<>
                       <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw}/>
                       <path d={d} fill="none" stroke="#e8eef4" strokeWidth={yw*0.52}
                         strokeDasharray="11 3" strokeDashoffset="11" strokeLinecap="butt"/>
