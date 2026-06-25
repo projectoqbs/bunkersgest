@@ -2265,7 +2265,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
                   {/* ── BARANDA AMARILLA (encima del domo, borde inferior = topY exacto) ── */}
                   <g clipPath={`url(#ry-${label})`}>
-                    {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo;
+                    {(()=>{ const yw=12.5, erx=ew/2, ery=eh/2;
+                      /* mismos radios que el domo base para que la curvatura coincida */
                       const d=`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`; return (<>
                       <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw}/>
                       <path d={d} fill="none" stroke="#e8eef4" strokeWidth={yw*0.52}
