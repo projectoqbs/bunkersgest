@@ -2369,7 +2369,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600 }}>{t.producto||"—"}</div>
                     </div>
                     {/* SVG + stats a la derecha */}
-                    <div style={{ flex:1, minHeight:0, display:"flex", gap:3 }}>
+                    <div style={{ flex:1, minHeight:0, display:"flex", gap:0 }}>
                       <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden" }}>
                         <CilindroSVG pct={pct} color={color} label={t.id}/>
                       </div>
