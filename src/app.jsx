@@ -2271,7 +2271,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       {/* Amarillo: solo cuarto posterior-izquierdo (centro trasero → extremo izq) */}
                       {(()=>{ const yw=12.5, yo=yw/2, erx=ew/2+yo, ery=eh/2+yo; return (
                         <path d={`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`}
-                          fill="none" stroke="#f5c400" strokeWidth={yw}/>
+                          fill="none" stroke="#f5c400" strokeWidth={yw}
+                          strokeDasharray="10 7" strokeLinecap="round"/>
                       ); })()}
                       {/* Rojo: cuarto derecho, desplazado abajo para que borde sup = línea del aro */}
                       {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
