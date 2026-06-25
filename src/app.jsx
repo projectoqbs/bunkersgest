@@ -2408,7 +2408,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ position:"absolute", right:8, top:8 }}><TankCard id="TK-117"/></div>
                 <div style={{ position:"absolute", right:8, bottom:8 }}><TankCard id="TK-116"/></div>
                 {/* Centro — escalonados */}
-                <div style={{ position:"absolute", left:"calc(50% - 280px)", top:"calc(8% - 50px)" }}><TankCard id="TK-115"/></div>
+                <div style={{ position:"absolute", left:"calc(50% - 280px)", top:"calc(8% - 100px)" }}><TankCard id="TK-115"/></div>
                 <div style={{ position:"absolute", left:"calc(50% - 130px)", top:"calc(50% - 102px)" }}><TankCard id="TK-114"/></div>
                 <div style={{ position:"absolute", left:"calc(50% + 20px)", bottom:"10%" }}><TankCard id="TK-113"/></div>
               </div>
