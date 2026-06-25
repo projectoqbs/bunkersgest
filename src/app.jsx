@@ -2339,7 +2339,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <text x={bx} y={by + br + W*0.055} textAnchor="middle" dominantBaseline="middle"
                             fill="#ffffff" fontSize={W*0.058} fontWeight="700" fontFamily="monospace"
                             opacity="0.92" style={{cursor:"pointer"}}
-                            onClick={()=>setTankProdEdit({id:label, val:producto})}>{producto} ✎</text>
+                            onClick={()=>setTankProdEdit({id:label, val:producto})}>{producto}</text>
                         )}
                       </g>
                     );
