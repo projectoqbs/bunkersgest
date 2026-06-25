@@ -2265,10 +2265,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
                   {/* ── BARANDA AMARILLA (encima del domo, borde inferior = topY exacto) ── */}
                   <g clipPath={`url(#ry-${label})`}>
-                    {(()=>{ const yw=12.5, half=yw/2, erx=ew/2, ery=eh/2;
-                      /* centro del arco en topY → borde inferior toca la línea base del domo */
-                      const d=`M ${cx},${topY-ery} A ${erx},${ery} 0 0,0 ${cx-erx},${topY}`; return (<>
-                      <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw}/>
+                    {(()=>{ const yw=12.5, half=yw/2;
+                      /* misma curva bezier que el domo, desplazada half hacia arriba */
+                      const d=`M ${lx},${topY-half} Q ${lx+ew*0.08},${peakY+domeH*0.1-half} ${cx},${peakY-half}`; return (<>
+                      <path d={d} fill="none" stroke="#f5c400" strokeWidth={yw} strokeLinecap="round"/>
                       <path d={d} fill="none" stroke="#e8eef4" strokeWidth={yw*0.52}
                         strokeDasharray="11 3" strokeDashoffset="11" strokeLinecap="butt"/>
                     </>); })()}
