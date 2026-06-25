@@ -2263,12 +2263,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
                   {label === "TK-111" ? <>
-                    {/* Rojo: cuarto derecho → desde rx hasta el centro frontal (cx, topY+eh/2) */}
-                    <path d={`M ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${cx},${topY+eh/2}`}
-                      fill="none" stroke="#cc2200" strokeWidth="7.5"/>
-                    {/* Amarillo: mitad izquierda → desde centro frontal, por lx, hasta centro trasero */}
-                    <path d={`M ${cx},${topY+eh/2} A ${ew/2},${eh/2} 0 0,1 ${cx},${topY-eh/2}`}
-                      fill="none" stroke="#f5c400" strokeWidth="12.5"/>
+                    {/* Amarillo encima del aro: desplazado -yw/2 para que su borde inferior = línea del aro */}
+                    {(()=>{ const yw=12.5, ycy=topY-yw/2; return (
+                      <path d={`M ${cx},${ycy+eh/2} A ${ew/2},${eh/2} 0 0,1 ${cx},${ycy-eh/2}`}
+                        fill="none" stroke="#f5c400" strokeWidth={yw}/>
+                    ); })()}
+                    {/* Rojo debajo del aro: desplazado +rw/2 para que su borde superior = línea del aro */}
+                    {(()=>{ const rw=7.5, rcy=topY+rw/2; return (
+                      <path d={`M ${rx},${rcy} A ${ew/2},${eh/2} 0 0,1 ${cx},${rcy+eh/2}`}
+                        fill="none" stroke="#cc2200" strokeWidth={rw}/>
+                    ); })()}
                   </> :
                     <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="none" stroke="#444" strokeWidth="2"/>
                   }
