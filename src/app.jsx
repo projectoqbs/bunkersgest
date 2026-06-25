@@ -2137,13 +2137,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             //   TK-116/117 = 66% h de 111 → h=36 (66% de 55)
             //   TK-113/114/115 = 55% h de 111 → h=30 (55% de 55)
             const CFG = {
-              "TK-111": { h: 55, w: 78 },
-              "TK-112": { h: 55, w: 78 },
-              "TK-113": { h: 55, w: 78 },
-              "TK-114": { h: 55, w: 78 },
-              "TK-115": { h: 55, w: 78 },
-              "TK-116": { h: 55, w: 78 },
-              "TK-117": { h: 55, w: 78 },
+              "TK-111": { h: 55, w: 86 },
+              "TK-112": { h: 55, w: 86 },
+              "TK-113": { h: 55, w: 86 },
+              "TK-114": { h: 55, w: 86 },
+              "TK-115": { h: 55, w: 86 },
+              "TK-116": { h: 55, w: 86 },
+              "TK-117": { h: 55, w: 86 },
             };
 
             // Tanque 3D: perspectiva frontal ligera desde arriba
@@ -2405,7 +2405,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ fontSize:9, color:T.muted }}>— — — línea amarilla = capacidad operativa (90%)</div>
               </div>
               {/* Grid 3×3: celdas iguales → todos los tanques del mismo tamaño */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr 1fr 1fr", gap:8, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:10 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"1fr 1fr 1fr", gap:4, flex:1, minHeight:0, background:"#e8eef4", borderRadius:12, padding:6 }}>
                 <TankCard id="TK-112"/>
                 <TankCard id="TK-115"/>
                 <TankCard id="TK-117"/>
