@@ -2357,7 +2357,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const belowCyl = SH - sbotY;
 
               return (
-                <div style={{ width:260, height: id==="TK-111" ? 204 : 185, display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
+                <div style={{ width:260, height:204, display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
                   <div style={{ width:"100%", height:"100%", display:"flex", gap:0 }}>
                     {/* SVG */}
                     <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden", position:"relative" }}>
