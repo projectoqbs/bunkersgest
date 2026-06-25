@@ -2363,11 +2363,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               if (id === "TK-111") return (
                 <div style={{ flex:cfg.h, minHeight:0, display:"flex", flexDirection:"column", alignItems:"center" }}>
                   <div style={{ width:cfg.w+"%", height:"100%", display:"flex", flexDirection:"column", minHeight:0 }}>
-                    {/* Nombre + producto */}
-                    <div style={{ flexShrink:0, paddingBottom:1, textAlign:"center" }}>
-                      <div style={{ fontSize:11, fontWeight:800, color:T.navy, letterSpacing:1 }}>{t.id}</div>
-                      <div style={{ fontSize:9, color:"#3b82f6", fontWeight:600 }}>{t.producto||"—"}</div>
-                    </div>
                     {/* SVG + stats a la derecha */}
                     <div style={{ flex:1, minHeight:0, display:"flex", gap:0 }}>
                       <div style={{ flex:1, minWidth:0, minHeight:0, overflow:"hidden" }}>
