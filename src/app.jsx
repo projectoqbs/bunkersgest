@@ -2247,8 +2247,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── LÍQUIDO (sube desde el fondo) ── */}
                   {pct > 0 && (
                     <g clipPath={`url(#ci-${label})`}>
-                      {/* Base sólida del color */}
+                      {/* Base sólida del color, oscurecida con overlay */}
                       <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill={fc}/>
+                      <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill="#000000" opacity="0.30"/>
                       {/* Gradiente horizontal 3D encima */}
                       <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill={`url(#lg-${label})`}/>
                       {/* Superficie del líquido: gradiente radial más claro, diferente al frente */}
