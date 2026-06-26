@@ -2162,7 +2162,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const peakY = topY - domeH;
 
               // Zona interior (descuenta grosor de pared ~2% cada lado)
-              const wall  = ew * 0.02;
+              const wall  = ew * 0.01;
               const iRX   = ew/2 - wall;       // radio interior
               const iLX   = cx - iRX;
               const iRX2  = cx + iRX;
