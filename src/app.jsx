@@ -275,6 +275,19 @@ export default function App() {
   const [tankProdEdit, setTankProdEdit] = useState(null);   // {id, val} cuando se edita producto
   const [tankProdSaving, setTankProdSaving] = useState(false);
   const [tankFullscreen, setTankFullscreen] = useState(false);
+  const fsContainerRef = React.useRef(null);
+  const togglePresentation = React.useCallback(() => {
+    if (!document.fullscreenElement) {
+      fsContainerRef.current?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }, []);
+  React.useEffect(() => {
+    const handler = () => setTankFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
   const [viajesFiltroEstado, setViajesFiltroEstado] = useState("");
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
@@ -2434,7 +2447,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const TanquesLayout = ({fs}) => (
               <div style={{ position:"relative", width:"100%", height:"100%", background:"#e8eef4", borderRadius: fs ? 0 : 12, overflow:"visible" }}>
                 {/* Botón fullscreen */}
-                <button onClick={()=>setTankFullscreen(!fs)}
+                <button onClick={fs ? ()=>document.exitFullscreen?.() : togglePresentation}
                   style={{ position:"absolute", top:10, right:10, zIndex:10, background:"#1e3a5f", border:"none", borderRadius:8,
                     color:"#fff", padding:"6px 12px", cursor:"pointer", fontSize:13, fontWeight:700, display:"flex", alignItems:"center", gap:6, opacity:0.85 }}>
                   {fs ? "✕ Salir" : "⛶ Presentación"}
@@ -2454,13 +2467,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             return (
               <>
-                {/* Modo presentación — overlay pantalla completa */}
-                {tankFullscreen && (
-                  <div style={{ position:"fixed", inset:0, zIndex:9999, background:"#e8eef4" }}
-                    onKeyDown={e=>{ if(e.key==="Escape") setTankFullscreen(false); }} tabIndex={-1}>
-                    <TanquesLayout fs={true}/>
-                  </div>
-                )}
+                {/* Contenedor fullscreen nativo */}
+                <div ref={fsContainerRef} style={{ display: tankFullscreen ? "block" : "none", position:"fixed", inset:0, zIndex:9999, background:"#e8eef4" }}>
+                  {tankFullscreen && <TanquesLayout fs={true}/>}
+                </div>
                 <div style={{ height:"calc(100vh - 118px)", display:"flex", flexDirection:"column" }}>
                   <TanquesLayout fs={false}/>
                 </div>
