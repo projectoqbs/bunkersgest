@@ -2440,8 +2440,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {fs ? "✕ Salir" : "⛶ Presentación"}
                 </button>
                 {/* Izquierda */}
-                <div style={{ position:"absolute", left:8, top:-13 }}><TankCard id="TK-112"/></div>
-                <div style={{ position:"absolute", left:8, bottom:8 }}><TankCard id="TK-111"/></div>
+                <div style={{ position:"absolute", left:58, top:-13 }}><TankCard id="TK-112"/></div>
+                <div style={{ position:"absolute", left:58, bottom:8 }}><TankCard id="TK-111"/></div>
                 {/* Derecha */}
                 <div style={{ position:"absolute", right:68, top:8 }}><TankCard id="TK-117"/></div>
                 <div style={{ position:"absolute", right:68, bottom:8 }}><TankCard id="TK-116"/></div>
