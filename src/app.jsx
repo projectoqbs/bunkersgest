@@ -2446,12 +2446,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             const TanquesLayout = ({fs}) => (
               <div style={{ position:"relative", width:"100%", height:"100%", background:"#e8eef4", borderRadius: fs ? 0 : 12, overflow:"visible" }}>
-                {/* Botón fullscreen */}
-                <button onClick={fs ? ()=>document.exitFullscreen?.() : togglePresentation}
-                  style={{ position:"absolute", top:10, right:10, zIndex:10, background:"#1e3a5f", border:"none", borderRadius:8,
-                    color:"#fff", padding:"6px 12px", cursor:"pointer", fontSize:13, fontWeight:700, display:"flex", alignItems:"center", gap:6, opacity:0.85 }}>
-                  {fs ? "✕ Salir" : "⛶ Presentación"}
-                </button>
+                {/* Botón presentación — solo visible fuera de fullscreen */}
+                {!fs && (
+                  <button onClick={togglePresentation}
+                    style={{ position:"absolute", top:10, right:10, zIndex:10, background:"#1e3a5f", border:"none", borderRadius:8,
+                      color:"#fff", padding:"6px 12px", cursor:"pointer", fontSize:13, fontWeight:700, display:"flex", alignItems:"center", gap:6, opacity:0.85 }}>
+                    ⛶ Presentación
+                  </button>
+                )}
                 {/* Izquierda */}
                 <div style={{ position:"absolute", left:58, top:-13 }}><TankCard id="TK-112"/></div>
                 <div style={{ position:"absolute", left:58, bottom:8 }}><TankCard id="TK-111"/></div>
