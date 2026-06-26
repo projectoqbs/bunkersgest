@@ -2478,7 +2478,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <div style={{ fontSize:9, color:"#ffffff66", letterSpacing:2, textTransform:"uppercase" }}>Sistema de Gestión Operativa · Combustible Marino</div>
                       </div>
                     </div>
-                    <button onClick={()=>document.exitFullscreen?.()} style={{ background:"transparent", border:"1px solid #ffffff44", borderRadius:8, color:"#fff", padding:"6px 14px", cursor:"pointer", fontSize:13, fontWeight:700 }}>✕ Salir</button>
                   </div>
                   <div style={{ flex:1, overflow:"hidden" }}>
                     {tankFullscreen && <TanquesLayout fs={true}/>}
