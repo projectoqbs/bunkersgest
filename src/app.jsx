@@ -3102,7 +3102,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <select value={carro.placa} onChange={e=>{
                         const placa = e.target.value;
                         const viaje = viajes.find(v=>v.placa===placa);
-                        const tq = viaje ? tiquetes.find(t=>t.viaje_id===viaje.id || t.id===viaje.tiquete_id) : null;
+                        const tq = viaje ? tiquetes.find(t=>t.viaje_id===viaje.id || t.id===viaje.tiquete_id || (viaje.placa && t.placa===viaje.placa)) : null;
                         const n=[...cmtCarros];
                         n[i] = {...n[i], placa, guia: viaje?.guia||n[i].guia, tiquete: tq?.id||n[i].tiquete, galones_guia: viaje?.gls_netos_guia||""};
                         setCmtCarros(n);
