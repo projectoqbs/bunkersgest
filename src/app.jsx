@@ -2266,8 +2266,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <rect x={cx} y={topY} width={iRX} height={cylH}
                     fill={`url(#sd-${label})`} clipPath={`url(#ci-${label})`}/>
 
-                  {/* ── ELIPSE BASE (fondo) ── */}
+                  {/* ── ELIPSE BASE (fondo): aro exterior negro + interior gris como tanque vacío ── */}
                   <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
+                  <ellipse cx={cx} cy={botY} rx={iRX} ry={eh/2 - wall*0.5} fill={`url(#ig-${label})`}/>
 
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
