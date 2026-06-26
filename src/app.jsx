@@ -1829,7 +1829,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const sede = sedeFiltro;
                     const planta = sede==="MALAMBO" ? plantaFiltro : "";
                     const numCmt = genIdCMT(cmts, sede, planta);
-                    setForm({sede, planta, numero_cmt:numCmt});
+                    setForm({sede, planta, numero_cmt:numCmt, fecha:today()});
                     setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
                     setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
                     setCmtDespues([{tanque:"",producto:"",sonda:"",galones:""}]);
