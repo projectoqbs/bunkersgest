@@ -2158,7 +2158,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const botY  = H - eh/2 - 6;
               const cylH  = H * 0.52;
               const topY  = botY - cylH;
-              const domeH = cylH * 0.19;
+              const domeH = ew * 0.115; // fijo relativo al ancho → misma curvatura en todos los tanques
               const peakY = topY - domeH;
 
               // Zona interior (descuenta grosor de pared ~4% cada lado)
