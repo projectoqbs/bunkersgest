@@ -3099,17 +3099,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       (v.estado === "En Planta" || (v.estado === "Rechazado" && v.autorizado_descargue))
                     );
                     return enPlanta.length > 0 ? (
-                      <select value={carro.placa} onChange={e=>{
-                        const placa = e.target.value;
-                        const activos = viajes.filter(v=>v.placa===placa && (v.estado==="En Planta"||(v.estado==="Rechazado"&&v.autorizado_descargue)));
-                        const viaje = activos.find(v=>matchProducto(v.producto)) || activos[0] || viajes.find(v=>v.placa===placa);
+                      <select value={carro.viaje_id||""} onChange={e=>{
+                        const viajeId = e.target.value;
+                        const viaje = viajes.find(v=>v.id===viajeId);
                         const tq = viaje ? tiquetes.find(t=>t.viaje_id===viaje.id || t.id===viaje.tiquete_id) : null;
                         const n=[...cmtCarros];
-                        n[i] = {...n[i], placa, guia: viaje?.guia||n[i].guia, tiquete: tq?.id||n[i].tiquete, galones_guia: viaje?.gls_netos_guia||""};
+                        n[i] = {...n[i], viaje_id: viajeId, placa: viaje?.placa||"", guia: viaje?.guia||n[i].guia, tiquete: tq?.id||"", galones_guia: viaje?.gls_netos_guia||""};
                         setCmtCarros(n);
                       }} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}>
                         <option value="">Seleccionar placa...</option>
-                        {enPlanta.map(v=><option key={v.id} value={v.placa}>{v.placa} — {v.producto}{v.autorizado_descargue?" [AUTORIZADO]":""}</option>)}
+                        {enPlanta.map(v=><option key={v.id} value={v.id}>{v.placa} — {v.producto}{v.autorizado_descargue?" [AUTORIZADO]":""}</option>)}
                       </select>
                     ) : (
                       <input type="text" placeholder="ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.toUpperCase().replace(/\s/g,"");setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/>
