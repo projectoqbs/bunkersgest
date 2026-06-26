@@ -2161,8 +2161,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const domeH = ew * 0.115; // fijo relativo al ancho → misma curvatura en todos los tanques
               const peakY = topY - domeH;
 
-              // Zona interior (descuenta grosor de pared ~4% cada lado)
-              const wall  = ew * 0.04;
+              // Zona interior (descuenta grosor de pared ~2% cada lado)
+              const wall  = ew * 0.02;
               const iRX   = ew/2 - wall;       // radio interior
               const iLX   = cx - iRX;
               const iRX2  = cx + iRX;
