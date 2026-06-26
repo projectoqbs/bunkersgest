@@ -2468,8 +2468,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             return (
               <>
                 {/* Contenedor fullscreen nativo */}
-                <div ref={fsContainerRef} style={{ display: tankFullscreen ? "block" : "none", position:"fixed", inset:0, zIndex:9999, background:"#e8eef4" }}>
-                  {tankFullscreen && <TanquesLayout fs={true}/>}
+                <div ref={fsContainerRef} style={{ display: tankFullscreen ? "flex" : "none", flexDirection:"column", position:"fixed", inset:0, zIndex:9999, background:"#e8eef4" }}>
+                  {/* Header BunkersGest en modo presentación */}
+                  <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"0 24px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                      <span style={{ fontSize:28 }}>🚢</span>
+                      <div>
+                        <div style={{ fontWeight:800, fontSize:18, color:"#ffffff", letterSpacing:2 }}>BunkersGest <span style={{color:T.orange, fontSize:12, fontWeight:700}}>v2.0</span></div>
+                        <div style={{ fontSize:9, color:"#ffffff66", letterSpacing:2, textTransform:"uppercase" }}>Sistema de Gestión Operativa · Combustible Marino</div>
+                      </div>
+                    </div>
+                    <button onClick={()=>document.exitFullscreen?.()} style={{ background:"transparent", border:"1px solid #ffffff44", borderRadius:8, color:"#fff", padding:"6px 14px", cursor:"pointer", fontSize:13, fontWeight:700 }}>✕ Salir</button>
+                  </div>
+                  <div style={{ flex:1, overflow:"hidden" }}>
+                    {tankFullscreen && <TanquesLayout fs={true}/>}
+                  </div>
                 </div>
                 <div style={{ height:"calc(100vh - 118px)", display:"flex", flexDirection:"column" }}>
                   <TanquesLayout fs={false}/>
