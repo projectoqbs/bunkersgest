@@ -2208,11 +2208,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="100%" stopColor="#505050"/>
                     </linearGradient>
 
-                    {/* Gradiente líquido vertical */}
-                    <linearGradient id={`lg-${label}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%"   stopColor={fc} stopOpacity="0.9"/>
-                      <stop offset="100%" stopColor={fc} stopOpacity="1"/>
+                    {/* Gradiente líquido horizontal: simula curvatura 3D de cara frontal */}
+                    <linearGradient id={`lg-${label}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%"   stopColor="#000000" stopOpacity="0.45"/>
+                      <stop offset="18%"  stopColor={fc}      stopOpacity="0"/>
+                      <stop offset="55%"  stopColor={fc}      stopOpacity="0"/>
+                      <stop offset="78%"  stopColor="#ffffff" stopOpacity="0.10"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.50"/>
                     </linearGradient>
+                    {/* Gradiente superficie líquido: más claro para diferenciarlo de la cara frontal */}
+                    <radialGradient id={`ls-${label}`} cx="40%" cy="40%" r="60%">
+                      <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.22"/>
+                      <stop offset="60%"  stopColor={fc}      stopOpacity="0.85"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.30"/>
+                    </radialGradient>
 
                     {/* Gradiente domo */}
                     <linearGradient id={`dg-${label}`} x1="0" y1="1" x2="0" y2="0">
@@ -2238,11 +2247,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── LÍQUIDO (sube desde el fondo) ── */}
                   {pct > 0 && (
                     <g clipPath={`url(#ci-${label})`}>
+                      {/* Base sólida del color */}
+                      <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill={fc}/>
+                      {/* Gradiente horizontal 3D encima */}
                       <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill={`url(#lg-${label})`}/>
-                      {/* Superficie del líquido */}
-                      <ellipse cx={cx} cy={fillTopY} rx={iRX} ry={eh*0.32} fill={fc}/>
-                      {/* Reflejo en superficie */}
-                      <ellipse cx={cx-iRX*0.2} cy={fillTopY} rx={iRX*0.35} ry={eh*0.12} fill="#ffffff" opacity="0.10"/>
+                      {/* Superficie del líquido: gradiente radial más claro, diferente al frente */}
+                      <ellipse cx={cx} cy={fillTopY} rx={iRX} ry={eh*0.34} fill={`url(#ls-${label})`}/>
+                      {/* Menisco: borde oscuro perimetral de la superficie */}
+                      <ellipse cx={cx} cy={fillTopY} rx={iRX} ry={eh*0.34}
+                        fill="none" stroke="#000000" strokeWidth="1.5" opacity="0.35"/>
+                      {/* Reflejo especular frontal: franja vertical de luz */}
+                      <rect x={cx-iRX*0.08} y={fillTopY+eh*0.1} width={iRX*0.14} height={fillH*0.55}
+                        fill="#ffffff" opacity="0.06" rx="4"/>
                     </g>
                   )}
 
