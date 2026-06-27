@@ -2814,7 +2814,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {/* Menú modo */}
               <div style={{ display:"flex", gap:0, background:T.bg, borderRadius:10, padding:4, marginBottom:20, width:"fit-content", border:`1px solid ${T.border}` }}>
                 {[["MANUAL","✏️ Manual","Ingresa todos los parámetros manualmente"],["AUTO","⚡ Auto","Parámetros calculados del histórico de Laboratorio"],["POR_CARRO","🚛 Por Carro","Selecciona carros analizados del historial"]].map(([key,lbl,tip])=>(
-                  <button key={key} title={tip} onClick={()=>{ setFModo(key); if(key==="AUTO") setTimeout(aplicarAuto,0); }}
+                  <button key={key} title={tip} onClick={()=>{ setFModo(key); if(key==="AUTO") setTimeout(aplicarAuto,0); if(key==="POR_CARRO"){ setFMps([]); tabStateCache.current[activeTabId]={...(tabStateCache.current[activeTabId]||{}),carrosSelIds:[]}; } }}
                     style={{ padding:"7px 18px",borderRadius:8,border:"none",cursor:"pointer",fontWeight:700,fontSize:12,
                       background: fModo===key ? T.orange : "transparent",
                       color: fModo===key ? "#fff" : T.muted,
@@ -2858,8 +2858,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const placasEnPlanta = new Set(enPlantaAhora.map(v=>v.placa));
                 const cntPorProducto = {};
                 enPlantaAhora.forEach(v=>{ const p=v.producto||""; cntPorProducto[p]=(cntPorProducto[p]||0)+1; });
-                // tiquetes cuya placa esté en planta y hayan sido analizados
-                const tiqBase = (tiquetes||[]).filter(t=>t.resultado && placasEnPlanta.has(t.placa) && (t.api_corregido||t.viscosidad||t.azufre));
+                // todos los tiquetes con resultado (aprobado o rechazado) cuya placa esté en planta
+                const tiqBase = (tiquetes||[]).filter(t=>t.resultado && placasEnPlanta.has(t.placa));
                 // agrupar por producto, ordenar por cantidad de carros desc
                 const productosOrden = [...new Set(tiqBase.map(t=>t.producto||""))].sort((a,b)=>(cntPorProducto[b]||0)-(cntPorProducto[a]||0)||(a>b?1:-1));
                 const tiqDisp = productosOrden.flatMap(prod=>
@@ -2916,16 +2916,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               return (
                                 <div key={t.id} onClick={()=>toggleCarro(t.id)}
                                   style={{ padding:"8px 12px", borderBottom:`1px solid ${T.border}`, cursor:"pointer", display:"flex", alignItems:"center", gap:8,
-                                    background: sel?`${T.orange}18`:enPlanta?`#00e5a008`:"transparent", transition:"background 0.12s" }}
+                                    background: sel?`${T.orange}18`:aprobado?`#00e5a008`:"#ef444408", transition:"background 0.12s" }}
                                   onMouseEnter={e=>{ if(!sel) e.currentTarget.style.background=`${T.border}66`; }}
-                                  onMouseLeave={e=>{ e.currentTarget.style.background=sel?`${T.orange}18`:enPlanta?`#00e5a008`:"transparent"; }}>
+                                  onMouseLeave={e=>{ e.currentTarget.style.background=sel?`${T.orange}18`:aprobado?`#00e5a008`:"#ef444408"; }}>
                                   <div style={{ width:15,height:15,borderRadius:3,border:`2px solid ${sel?T.orange:T.border}`,background:sel?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#fff",fontWeight:800,flexShrink:0 }}>
                                     {sel?"✓":""}
                                   </div>
                                   <span style={{ fontWeight:800, fontSize:13, color:T.text, flex:1 }}>{t.placa}</span>
-                                  {enPlanta && <span style={{ background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:4,padding:"1px 5px",fontSize:9,color:"#00e5a0",fontWeight:700 }}>PLANTA</span>}
-                                  <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:5,padding:"1px 6px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:9 }}>
-                                    {aprobado?"✓":"✗"}
+                                  <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:4,padding:"1px 6px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:9,whiteSpace:"nowrap" }}>
+                                    {aprobado?"APROBADO":"RECHAZADO"}
                                   </span>
                                 </div>
                               );
