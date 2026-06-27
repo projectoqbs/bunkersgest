@@ -52,17 +52,29 @@ const NAV_META = {
   cmt:          { label:"CMT",          icon:"📋" },
   tanques:      { label:"Tanques",      icon:"🛢" },
   despacho:     { label:"Despacho",     icon:"🚢" },
-  trazabilidad: { label:"Trazabilidad", icon:"🔍" },
-  usuarios: { label:"Usuarios", icon:"👥" },
+  trazabilidad:  { label:"Trazabilidad",  icon:"🔍" },
+  usuarios:      { label:"Usuarios",      icon:"👥" },
+  programacion:  { label:"Programación",  icon:"📅" },
 };
 
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
   operaciones: ["dashboard","pbs","trazabilidad"],
-  coordinador: ["dashboard","pbs","tanques","trazabilidad"],
+  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
-  administrador:    ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","usuarios"],
+  administrador: [
+    "dashboard",
+    "usuarios",
+    "trazabilidad",
+    "viajes",
+    "tiquetes",
+    "pbs",
+    "cmt",
+    "despacho",
+    "programacion",
+    "tanques",
+  ],
 };
 
 const PBS_PREGUNTAS = [
@@ -272,6 +284,7 @@ export default function App() {
   const [cmtDespues, setCmtDespues] = useState([{tanque:"",producto:"",sonda:"",galones:""}]);
   const [cmtRecepcion, setCmtRecepcion] = useState([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
   const [viajesBusqueda, setViajesBusqueda] = useState("");
+  const [programaciones, setProgramaciones] = useState([]);
   const [tankProdEdit, setTankProdEdit] = useState(null);   // {id, val} cuando se edita producto
   const [tankProdSaving, setTankProdSaving] = useState(false);
   const [tankFullscreen, setTankFullscreen] = useState(false);
@@ -2610,6 +2623,49 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   </div>
 )}
 
+          {nav==="programacion" && (
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
+                <div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Programación de Operaciones</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Planificación de descargues y despachos</div>
+                </div>
+                <Btn color={T.orange} onClick={()=>{ setForm({ fecha: today() }); setModal("programacion"); }}>+ Nueva Programación</Btn>
+              </div>
+
+              <Card>
+                <div style={{ overflowX:"auto" }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                    <thead>
+                      <tr style={{ borderBottom:`2px solid ${T.border}` }}>
+                        {["Fecha","Producto","Operación","Placa / Buque","Volumen (Gls)","Estado",""].map(h=>(
+                          <th key={h} style={{ padding:"10px 14px", textAlign:"left", color:T.muted, fontWeight:600, fontSize:11, textTransform:"uppercase", letterSpacing:1 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(programaciones||[]).length === 0 ? (
+                        <tr><td colSpan={7} style={{ padding:"40px", textAlign:"center", color:T.muted }}>Sin programaciones registradas</td></tr>
+                      ) : (programaciones||[]).map(p=>(
+                        <tr key={p.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                          <td style={{ padding:"12px 14px", color:T.muted }}>{p.fecha}</td>
+                          <td style={{ padding:"12px 14px", color:T.text, fontWeight:600 }}>{p.producto}</td>
+                          <td style={{ padding:"12px 14px", color:T.text }}>{p.operacion}</td>
+                          <td style={{ padding:"12px 14px" }}><span style={{ background:`${T.orange}18`, border:`1px solid ${T.orange}44`, borderRadius:6, padding:"2px 8px", color:T.orange, fontWeight:700 }}>{p.referencia||"—"}</span></td>
+                          <td style={{ padding:"12px 14px", color:T.success, fontWeight:700 }}>{p.volumen ? fmt(Number(p.volumen)) : "—"}</td>
+                          <td style={{ padding:"12px 14px" }}><Badge label={p.estado||"Pendiente"} color={p.estado==="Completado"?"#00e5a0":p.estado==="En curso"?"#f59e0b":"#94a3b8"}/></td>
+                          <td style={{ padding:"12px 14px" }}>
+                            <button onClick={()=>{ setForm({...p}); setModal("programacion"); }} style={{ background:"none", border:"none", color:T.orange, cursor:"pointer", fontSize:12, fontWeight:700 }}>Editar</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+
       {/* ═══ FORMS (inline in content area) ═══ */}
 
       {modal==="viaje" && (
@@ -3253,6 +3309,44 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </div>
         </Modal>
       )}
+
+{modal==="programacion" && (
+  <Modal title={form.id ? "Editar Programación" : "Nueva Programación"} onClose={()=>{ setModal(null); setForm({}); }}>
+    <Grid cols={2}>
+      <Inp label="Fecha" type="date" value={form.fecha||today()} onChange={f("fecha")}/>
+      <Sel label="Producto" value={form.producto||""} onChange={f("producto")}>
+        <option value="">Seleccionar...</option>
+        {[...MATERIAS_PRIMAS,"VLSFO","MGO","HSFO"].map(p=><option key={p}>{p}</option>)}
+      </Sel>
+      <Sel label="Tipo de Operación" value={form.operacion||""} onChange={f("operacion")}>
+        <option value="">Seleccionar...</option>
+        <option>DESCARGUE DE CARROTANQUE</option>
+        <option>ENTREGA A MOTONAVE</option>
+        <option>ENTREGA A CARROTANQUE</option>
+        <option>TRASIEGO DE PRODUCTO</option>
+        <option>PORTEO</option>
+      </Sel>
+      <Inp label="Placa / Buque / Referencia" value={form.referencia||""} onChange={f("referencia")}/>
+      <Inp label="Volumen Estimado (Gls)" type="number" value={form.volumen||""} onChange={f("volumen")}/>
+      <Sel label="Estado" value={form.estado||"Pendiente"} onChange={f("estado")}>
+        <option>Pendiente</option>
+        <option>En curso</option>
+        <option>Completado</option>
+        <option>Cancelado</option>
+      </Sel>
+    </Grid>
+    <Inp label="Observaciones" type="text" value={form.observaciones||""} onChange={f("observaciones")}/>
+    <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:16 }}>
+      <Btn outline onClick={()=>{ setModal(null); setForm({}); }}>Cancelar</Btn>
+      <Btn color={T.orange} onClick={()=>{
+        const id = form.id || `PROG-${Date.now()}`;
+        const nueva = { ...form, id, estado: form.estado||"Pendiente" };
+        setProgramaciones(prev => form.id ? prev.map(p=>p.id===form.id?nueva:p) : [...prev, nueva]);
+        setModal(null); setForm({});
+      }}>{form.id ? "Guardar Cambios" : "Registrar"}</Btn>
+    </div>
+  </Modal>
+)}
 
 {/* TURNO CARRO */}
 {modal==="turno_carro" && (()=>{
