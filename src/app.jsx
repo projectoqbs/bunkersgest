@@ -499,8 +499,10 @@ export default function App() {
     // Si ya existe pestaña para este id, solo activarla
     const existing = tabs.find(t => t.id === id);
     if (existing) { setActiveTabId(id); return; }
-    const initMps = foData?.mps && Array.isArray(foData.mps) ? foData.mps
-      : [{ nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }];
+    const initMps = foData?.mps && Array.isArray(foData.mps) ? foData.mps : [
+      { nombre:"PENDARE",  galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" },
+      { nombre:"FRONTERA", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" },
+    ];
     const initForm = foData
       ? { id:foData.id, tanque:foData.tanque||"TK-116", producto:foData.producto||"VLSFO", fecha:foData.fecha||today(), estado:foData.estado||"PLANEADA" }
       : { tanque:"TK-116", producto:"VLSFO", fecha:today(), estado:"PLANEADA" };
@@ -2742,20 +2744,45 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           )}
 
           {isFormulacionTab && (()=>{
+            const COL_W = 130; // ancho fijo columna MP (equivale a ~7 cols visibles)
             const tabCache = tabStateCache.current[activeTabId] || {};
-            const fForm = tabCache.formulacionForm || { tanque:"TK-116", producto:"VLSFO", fecha:today(), estado:"PLANEADA" };
-            const fMps  = tabCache.formulacionMps  || [{ nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }];
+            const fForm  = tabCache.formulacionForm || { tanque:"TK-116", producto:"VLSFO", fecha:today(), estado:"PLANEADA" };
+            const fMps   = tabCache.formulacionMps  || [
+              { nombre:"PENDARE",  galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" },
+              { nombre:"FRONTERA", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" },
+            ];
+            const fModo  = tabCache.formulacionModo || "MANUAL"; // MANUAL | AUTO | POR_CARRO
             const setFForm = updater => {
               const prev = tabStateCache.current[activeTabId] || {};
               const next = typeof updater==="function" ? updater(prev.formulacionForm||{}) : updater;
               tabStateCache.current[activeTabId] = { ...prev, formulacionForm: next };
-              setTabs(t=>[...t]); // trigger re-render
+              setTabs(t=>[...t]);
             };
             const setFMps = updater => {
               const prev = tabStateCache.current[activeTabId] || {};
               const next = typeof updater==="function" ? updater(prev.formulacionMps||[]) : updater;
               tabStateCache.current[activeTabId] = { ...prev, formulacionMps: next };
               setTabs(t=>[...t]);
+            };
+            const setFModo = modo => {
+              const prev = tabStateCache.current[activeTabId] || {};
+              tabStateCache.current[activeTabId] = { ...prev, formulacionModo: modo };
+              setTabs(t=>[...t]);
+            };
+            // AUTO: calcula promedios históricos por proveedor desde tiquetes
+            const calcAutoParams = (nombreMp) => {
+              const muestras = (tiquetes||[]).filter(t=>(t.proveedor||"").toUpperCase()===(nombreMp||"").toUpperCase() && t.resultado==="APROBADO");
+              if(!muestras.length) return null;
+              const avg = key => { const vals=muestras.map(t=>Number(t[key]||0)).filter(v=>v>0); return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0; };
+              return { api:avg("api_corregido"), visc:avg("viscosidad"), azufre:avg("azufre"), agua:avg("agua_destilacion"), flash:avg("flash_point") };
+            };
+            const aplicarAuto = () => {
+              const nuevasMps = fMps.map(mp=>{
+                const hist = calcAutoParams(mp.nombre);
+                if(!hist) return mp;
+                return { ...mp, api:hist.api?hist.api.toFixed(2):"", visc:hist.visc?hist.visc.toFixed(2):"", azufre:hist.azufre?hist.azufre.toFixed(4):"", agua:hist.agua?hist.agua.toFixed(4):"", flash:hist.flash?hist.flash.toFixed(1):"" };
+              });
+              setFMps(nuevasMps);
             };
             const totalG = fMps.reduce((a,m)=>a+Number(m.galones||0),0);
             const pcts   = fMps.map(m=>Number(m.galones||0)/(totalG||1));
@@ -2775,11 +2802,26 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const PARAM_KEYS = ["galones","api","visc","azufre","agua","flash"];
             return (
             <div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
+              {/* Header */}
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
                 <div>
                   <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>{fForm.id?"Editar Formulación":"Nueva Formulación"}</div>
                   <div style={{ fontSize:11, color:T.muted }}>Cálculo de mezclas y parámetros ponderados</div>
                 </div>
+              </div>
+
+              {/* Menú modo */}
+              <div style={{ display:"flex", gap:0, background:T.bg, borderRadius:10, padding:4, marginBottom:20, width:"fit-content", border:`1px solid ${T.border}` }}>
+                {[["MANUAL","✏️ Manual","Ingresa todos los parámetros manualmente"],["AUTO","⚡ Auto","Parámetros calculados del histórico de Laboratorio"],["POR_CARRO","🚛 Por Carro","(Próximamente)"]].map(([key,lbl,tip])=>(
+                  <button key={key} title={tip} onClick={()=>{ setFModo(key); if(key==="AUTO") setTimeout(aplicarAuto,0); }}
+                    disabled={key==="POR_CARRO"}
+                    style={{ padding:"7px 18px",borderRadius:8,border:"none",cursor:key==="POR_CARRO"?"not-allowed":"pointer",fontWeight:700,fontSize:12,
+                      background: fModo===key ? T.orange : "transparent",
+                      color: fModo===key ? "#fff" : key==="POR_CARRO" ? T.muted+"88" : T.muted,
+                      transition:"all 0.15s" }}>
+                    {lbl}
+                  </button>
+                ))}
               </div>
 
               {/* Campos header */}
@@ -2789,7 +2831,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"].map(t=><option key={t}>{t}</option>)}
                   </select>
                 </div>
-                <div><Lbl>Producto</Lbl>
+                <div><Lbl>Producto Final</Lbl>
                   <select value={fForm.producto||""} onChange={e=>setFForm(p=>({...p,producto:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
                     <option>VLSFO</option><option>HSFO</option><option>MGO</option>
                   </select>
@@ -2799,22 +2841,40 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               </div>
 
+              {/* Aviso AUTO */}
+              {fModo==="AUTO" && (
+                <div style={{ background:"#3b82f618",border:"1px solid #3b82f655",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#3b82f6" }}>
+                  ⚡ <b>Modo Auto:</b> los parámetros se calculan como promedio histórico de tiquetes APROBADOS por proveedor. Solo ingresa los galones. Puedes ajustar los valores manualmente si lo necesitas.
+                </div>
+              )}
+
               {/* Matriz */}
               <Card style={{ marginBottom:16, padding:0, overflow:"hidden" }}>
                 <div style={{ overflowX:"auto" }}>
-                  <table style={{ borderCollapse:"collapse", fontSize:12, minWidth:500, width:"100%" }}>
+                  <table style={{ borderCollapse:"collapse", fontSize:12, tableLayout:"fixed", width: `${120 + COL_W*Math.max(fMps.length,7) + COL_W}px` }}>
+                    <colgroup>
+                      <col style={{ width:120 }}/>
+                      {fMps.map((_,ci)=><col key={ci} style={{ width:COL_W }}/>)}
+                      {/* Relleno invisible para alcanzar ancho de 7 cols */}
+                      {Array.from({length:Math.max(0,7-fMps.length)}).map((_,i)=><col key={`pad-${i}`} style={{ width:COL_W }}/>)}
+                      <col style={{ width:COL_W }}/>
+                    </colgroup>
                     <thead>
                       <tr style={{ background:T.bg }}>
-                        <th style={{ padding:"10px 14px",textAlign:"left",color:T.muted,fontWeight:700,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:2,minWidth:120,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}` }}>Parámetro</th>
+                        <th style={{ padding:"10px 14px",textAlign:"left",color:T.muted,fontWeight:700,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:2,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}` }}>Parámetro</th>
                         {fMps.map((mp,ci)=>(
-                          <th key={ci} style={{ padding:"8px 10px",textAlign:"center",color:T.navy,fontWeight:700,fontSize:12,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}`,minWidth:120 }}>
+                          <th key={ci} style={{ padding:"8px 6px",textAlign:"center",color:T.navy,fontWeight:700,fontSize:12,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}` }}>
                             <div style={{ display:"flex",flexDirection:"column",gap:4,alignItems:"center" }}>
-                              <input value={mp.nombre} onChange={e=>{const n=[...fMps];n[ci].nombre=e.target.value;setFMps(n);}} style={{ width:100,textAlign:"center",background:T.card,border:`1px solid ${T.border}`,borderRadius:4,padding:"3px 6px",color:T.text,fontSize:11,fontWeight:700,outline:"none" }}/>
-                              {fMps.length>1 && <button onClick={()=>setFMps(fMps.filter((_,j)=>j!==ci))} style={{ background:"#ef444420",border:"1px solid #ef444455",borderRadius:4,color:"#ef4444",padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:700 }}>Eliminar</button>}
+                              <input value={mp.nombre} onChange={e=>{const n=[...fMps];n[ci].nombre=e.target.value; if(fModo==="AUTO"){const h=calcAutoParams(e.target.value);if(h){n[ci]={...n[ci],nombre:e.target.value,api:h.api?h.api.toFixed(2):"",visc:h.visc?h.visc.toFixed(2):"",azufre:h.azufre?h.azufre.toFixed(4):"",agua:h.agua?h.agua.toFixed(4):"",flash:h.flash?h.flash.toFixed(1):""};}} setFMps(n);}} style={{ width:COL_W-20,textAlign:"center",background:T.card,border:`1px solid ${T.border}`,borderRadius:4,padding:"3px 6px",color:T.text,fontSize:11,fontWeight:700,outline:"none" }}/>
+                              {fMps.length>2 && <button onClick={()=>setFMps(fMps.filter((_,j)=>j!==ci))} style={{ background:"#ef444420",border:"1px solid #ef444455",borderRadius:4,color:"#ef4444",padding:"2px 6px",cursor:"pointer",fontSize:10,fontWeight:700 }}>Eliminar</button>}
                             </div>
                           </th>
                         ))}
-                        <th style={{ padding:"10px 14px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:11,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,minWidth:120,background:`${T.orange}0a` }}>PONDERADO</th>
+                        {/* Celdas de relleno vacías */}
+                        {Array.from({length:Math.max(0,7-fMps.length)}).map((_,i)=>(
+                          <th key={`pad-${i}`} style={{ borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}`,background:T.bg,opacity:0.3 }}/>
+                        ))}
+                        <th style={{ padding:"10px 8px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:11,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,background:`${T.orange}0a`,position:"sticky",right:0,zIndex:2 }}>PONDERADO</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2826,16 +2886,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         if(key==="azufre"&&esVLSFO){pc=azufreOk?"#00e5a0":"#ef4444";pi=azufreOk?" ✅":" 🔴";}
                         if(key==="agua"){pc=aguaOk?"#00e5a0":"#f59e0b";pi=aguaOk?" ✅":" ⚠️";}
                         if(key==="flash"){pc=flashOk?"#00e5a0":"#f59e0b";pi=flashOk?" ✅":" ⚠️";}
+                        const readOnly = fModo==="AUTO" && !isG; // en AUTO solo galones es editable
                         return (
                           <tr key={key} style={{ borderBottom:`1px solid ${T.border}`,background:ri%2===0?T.bg:"transparent" }}>
                             <td style={{ padding:"8px 14px",fontWeight:700,color:T.muted,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:ri%2===0?T.bg:T.card,zIndex:1,borderRight:`1px solid ${T.border}` }}>{param}</td>
                             {fMps.map((mp,ci)=>(
-                              <td key={ci} style={{ padding:"6px 8px",textAlign:"center",borderRight:`1px solid ${T.border}` }}>
-                                <input type="number" step="any" value={mp[key]||""} onChange={e=>{const n=[...fMps];n[ci][key]=e.target.value;setFMps(n);}}
-                                  style={{ width:100,textAlign:"center",background:T.card,border:`1px solid ${T.border}`,borderRadius:4,padding:"5px 6px",color:T.text,fontSize:12,outline:"none" }} placeholder="0"/>
+                              <td key={ci} style={{ padding:"5px 6px",textAlign:"center",borderRight:`1px solid ${T.border}` }}>
+                                <input type="number" step="any" value={mp[key]||""} readOnly={readOnly}
+                                  onChange={e=>{if(readOnly)return;const n=[...fMps];n[ci][key]=e.target.value;setFMps(n);}}
+                                  style={{ width:COL_W-22,textAlign:"center",background:readOnly?T.bg:T.card,border:`1px solid ${readOnly?"transparent":T.border}`,borderRadius:4,padding:"5px 4px",color:readOnly?T.muted:T.text,fontSize:12,outline:"none",cursor:readOnly?"default":"text" }} placeholder="0"/>
                               </td>
                             ))}
-                            <td style={{ padding:"8px 14px",textAlign:"center",fontWeight:700,color:isG?T.success:pc,fontSize:13,background:`${T.orange}08` }}>
+                            {Array.from({length:Math.max(0,7-fMps.length)}).map((_,i)=>(
+                              <td key={`pad-${i}`} style={{ borderRight:`1px solid ${T.border}`,opacity:0.2 }}/>
+                            ))}
+                            <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:isG?T.success:pc,fontSize:13,background:`${T.orange}08`,position:"sticky",right:0 }}>
                               {isG?fmt(totalG):(pv>0?pv.toFixed(dec):"—")}{pi}
                             </td>
                           </tr>
@@ -2843,19 +2908,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       })}
                       <tr style={{ borderBottom:`1px solid ${T.border}`,background:T.bg }}>
                         <td style={{ padding:"8px 14px",fontWeight:700,color:T.muted,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:1,borderRight:`1px solid ${T.border}` }}>% Total</td>
-                        {fMps.map((mp,ci)=>{ const p=totalG>0?((Number(mp.galones||0)/totalG)*100).toFixed(1):0; return <td key={ci} style={{ padding:"8px 10px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:12,borderRight:`1px solid ${T.border}` }}>{p}%</td>; })}
-                        <td style={{ padding:"8px 14px",textAlign:"center",fontWeight:700,color:T.success,background:`${T.orange}08` }}>100% {totalG>0?"✅":""}</td>
+                        {fMps.map((mp,ci)=>{ const p=totalG>0?((Number(mp.galones||0)/totalG)*100).toFixed(1):0; return <td key={ci} style={{ padding:"8px 6px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:12,borderRight:`1px solid ${T.border}` }}>{p}%</td>; })}
+                        {Array.from({length:Math.max(0,7-fMps.length)}).map((_,i)=><td key={`pad-${i}`} style={{ borderRight:`1px solid ${T.border}`,opacity:0.2 }}/>)}
+                        <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:T.success,background:`${T.orange}08`,position:"sticky",right:0 }}>100% {totalG>0?"✅":""}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </Card>
 
-              <div style={{ marginBottom:20 }}>
-                <button onClick={()=>setFMps(p=>[...p,{nombre:"NUEVA MP",galones:"",api:"",visc:"",azufre:"",agua:"",flash:""}])}
+              <div style={{ marginBottom:20, display:"flex", gap:10, alignItems:"center" }}>
+                <button onClick={()=>{ const nueva={nombre:"NUEVA MP",galones:"",api:"",visc:"",azufre:"",agua:"",flash:""}; setFMps(p=>[...p,nueva]); }}
                   style={{ background:`${T.orange}18`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>
                   + Agregar MP
                 </button>
+                {fModo==="AUTO" && <button onClick={aplicarAuto} style={{ background:"#3b82f618",border:"1px solid #3b82f655",borderRadius:6,color:"#3b82f6",padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>🔄 Recalcular histórico</button>}
               </div>
 
               {/* Cards resumen */}
