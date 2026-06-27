@@ -511,7 +511,8 @@ export default function App() {
       .on("postgres_changes",{event:"*",schema:"public",table:"tiquetes"},  reload)
       .on("postgres_changes",{event:"*",schema:"public",table:"pbs"},       reload)
       .on("postgres_changes",{event:"*",schema:"public",table:"cmts"},      reload)
-      .on("postgres_changes",{event:"*",schema:"public",table:"despachos"}, reload)
+      .on("postgres_changes",{event:"*",schema:"public",table:"despachos"},     reload)
+      .on("postgres_changes",{event:"*",schema:"public",table:"programaciones"},reload)
       .subscribe();
     return ()=>supabase.removeChannel(channel);
   },[perfil]);
@@ -530,7 +531,7 @@ export default function App() {
   }
 
   async function loadData() {
-    const [t,v,tq,p,c,d,pr,permR] = await Promise.all([
+    const [t,v,tq,p,c,d,pr,permR,prog] = await Promise.all([
       supabase.from("tanques").select("*").order("id"),
       supabase.from("viajes").select("*").order("created_at",{ascending:false}),
       supabase.from("tiquetes").select("*").order("created_at",{ascending:false}),
@@ -539,6 +540,7 @@ export default function App() {
       supabase.from("despachos").select("*").order("created_at",{ascending:false}),
       supabase.from("perfiles").select("*").order("nombre"),
       supabase.from("permisos_roles").select("*").order("rol").order("modulo"),
+      supabase.from("programaciones").select("*").order("fecha",{ascending:false}),
     ]);
     if (t.data) setTanques(t.data);
     if (v.data) setViajes(v.data);
@@ -548,6 +550,7 @@ export default function App() {
     if (d.data) setDespachos(d.data);
     if (pr.data) setPerfiles(pr.data);
     if (permR.data) setPermisosRoles(permR.data);
+    if (prog?.data) setProgramaciones(prog.data);
   }
 
   const cedulaToEmail = (cedula) => cedula.includes("@") ? cedula : `${cedula}@quimibuques.com`;
@@ -3338,12 +3341,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     <Inp label="Observaciones" type="text" value={form.observaciones||""} onChange={f("observaciones")}/>
     <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:16 }}>
       <Btn outline onClick={()=>{ setModal(null); setForm({}); }}>Cancelar</Btn>
-      <Btn color={T.orange} onClick={()=>{
-        const id = form.id || `PROG-${Date.now()}`;
-        const nueva = { ...form, id, estado: form.estado||"Pendiente" };
-        setProgramaciones(prev => form.id ? prev.map(p=>p.id===form.id?nueva:p) : [...prev, nueva]);
+      <Btn color={T.orange} disabled={saving} onClick={async ()=>{
+        setSaving(true);
+        const id = form.id || `PROG-${String(Date.now()).slice(-6)}`;
+        const payload = { id, fecha:form.fecha||today(), producto:form.producto||null, operacion:form.operacion||null, referencia:form.referencia||null, volumen:form.volumen?Number(form.volumen):null, estado:form.estado||"Pendiente", observaciones:form.observaciones||null, sede:perfil.sede||null, creado_por:session.user.id };
+        const { error } = form.id
+          ? await supabaseAdmin.from("programaciones").update(payload).eq("id", id)
+          : await supabaseAdmin.from("programaciones").insert([payload]);
+        setSaving(false);
+        if (error) return showToast("Error: "+error.message, false);
+        await loadData();
         setModal(null); setForm({});
-      }}>{form.id ? "Guardar Cambios" : "Registrar"}</Btn>
+      }}>{saving?"Guardando...":form.id ? "Guardar Cambios" : "Registrar"}</Btn>
     </div>
   </Modal>
 )}
