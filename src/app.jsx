@@ -55,13 +55,14 @@ const NAV_META = {
   trazabilidad:  { label:"Trazabilidad",  icon:"🔍" },
   usuarios:      { label:"Usuarios",      icon:"👥" },
   programacion:  { label:"Programación",  icon:"📅" },
+  formulaciones: { label:"Formulaciones", icon:"🧪" },
 };
 
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
   operaciones: ["dashboard","pbs","trazabilidad"],
-  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad"],
+  coordinador: ["dashboard","pbs","tanques","programacion","formulaciones","trazabilidad"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador: [
     "dashboard",
@@ -73,6 +74,7 @@ const NAV_ROL = {
     "cmt",
     "despacho",
     "programacion",
+    "formulaciones",
     "tanques",
   ],
 };
@@ -1115,9 +1117,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <div style={{ width:58, background:T.sidebar, borderRight:`1px solid rgba(255,255,255,0.06)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflow:"visible" }}>
           {(()=>{
             const GRUPOS = {
-              viajes:   { icon:"🚛", label:"LOGÍSTICA",    subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
-              tiquetes: { icon:"🧪", label:"LABORATORIO",  subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
-              pbs:      { icon:"⚙️", label:"OPERACIONES",  subs:[{id:"pbs",label:"PBS",badge:pendPBS},{id:"cmt",label:"CMT",badge:pendCMT}] },
+              viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
+              tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
+              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"pbs",label:"PBS",badge:pendPBS},{id:"cmt",label:"CMT",badge:pendCMT}] },
+              programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs:[{id:"programacion",label:"Programaciones"},{id:"formulaciones",label:"Formulaciones"}] },
             };
             const badges = {};
 
@@ -2633,29 +2636,59 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   </div>
 )}
 
-          {nav==="programacion" && (()=>{
-            /* ── helpers cálculo ponderado ── */
+          {nav==="programacion" && (
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
+                <div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Programaciones</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Planificación de descargues y despachos</div>
+                </div>
+                <Btn color={T.orange} onClick={()=>{ setForm({ fecha: today() }); setModal("programacion"); }}>+ Nueva Programación</Btn>
+              </div>
+              <Card>
+                <div style={{ overflowX:"auto" }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                    <thead>
+                      <tr style={{ borderBottom:`2px solid ${T.border}` }}>
+                        {["Fecha","Producto","Operación","Placa / Buque","Volumen (Gls)","Estado",""].map(h=>(
+                          <th key={h} style={{ padding:"10px 14px", textAlign:"left", color:T.muted, fontWeight:600, fontSize:11, textTransform:"uppercase", letterSpacing:1 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(programaciones||[]).length===0 ? (
+                        <tr><td colSpan={7} style={{ padding:"40px", textAlign:"center", color:T.muted }}>Sin programaciones registradas</td></tr>
+                      ) : (programaciones||[]).map(p=>(
+                        <tr key={p.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                          <td style={{ padding:"12px 14px", color:T.muted }}>{p.fecha}</td>
+                          <td style={{ padding:"12px 14px", fontWeight:600, color:T.text }}>{p.producto}</td>
+                          <td style={{ padding:"12px 14px", color:T.text }}>{p.operacion}</td>
+                          <td style={{ padding:"12px 14px" }}><span style={{ background:`${T.orange}18`, border:`1px solid ${T.orange}44`, borderRadius:6, padding:"2px 8px", color:T.orange, fontWeight:700 }}>{p.referencia||"—"}</span></td>
+                          <td style={{ padding:"12px 14px", color:T.success, fontWeight:700 }}>{p.volumen?fmt(Number(p.volumen)):"—"}</td>
+                          <td style={{ padding:"12px 14px" }}><Badge label={p.estado||"Pendiente"} color={p.estado==="Completado"?"#00e5a0":p.estado==="En curso"?"#f59e0b":"#94a3b8"}/></td>
+                          <td style={{ padding:"12px 14px" }}>
+                            <button onClick={()=>{ setForm({...p}); setModal("programacion"); }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Editar</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {nav==="formulaciones" && (()=>{
             const calcPond = (mpsArr) => {
               const totalG = mpsArr.reduce((a,m)=>a+Number(m.galones||0),0);
               if (!totalG) return { totalG:0, carros:0, api:0, visc:0, azufre:0, agua:0, flash:0 };
               const pcts = mpsArr.map(m=>Number(m.galones||0)/totalG);
-              // API ponderado inverso (via SG)
-              const sgPond = mpsArr.reduce((a,m,i)=>{
-                const api=Number(m.api||0); if(!api) return a;
-                return a + pcts[i]*(141.5/(api+131.5));
-              },0);
+              const sgPond = mpsArr.reduce((a,m,i)=>{ const api=Number(m.api||0); return api?a+pcts[i]*(141.5/(api+131.5)):a; },0);
               const apiPond = sgPond>0 ? 141.5/sgPond-131.5 : 0;
-              // Viscosidad ASTM D341 (logarítmico — Wright)
-              const biPond = mpsArr.reduce((a,m,i)=>{
-                const v=Number(m.visc||0); if(!v) return a;
-                return a + pcts[i]*Math.log10(Math.log10(v+0.7));
-              },0);
+              const biPond = mpsArr.reduce((a,m,i)=>{ const v=Number(m.visc||0); return v?a+pcts[i]*Math.log10(Math.log10(v+0.7)):a; },0);
               const viscPond = biPond ? Math.pow(10,Math.pow(10,biPond))-0.7 : 0;
               return {
-                totalG,
-                carros: totalG/9300,
-                api:    apiPond,
-                visc:   viscPond,
+                totalG, carros:totalG/9300, api:apiPond, visc:viscPond,
                 azufre: mpsArr.reduce((a,m,i)=>a+pcts[i]*Number(m.azufre||0),0),
                 agua:   mpsArr.reduce((a,m,i)=>a+pcts[i]*Number(m.agua||0),0),
                 flash:  mpsArr.reduce((a,m,i)=>a+pcts[i]*Number(m.flash||0),0),
@@ -2663,282 +2696,167 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             };
             const pond = calcPond(mps);
             const esVLSFO = (formFormulacion?.producto||"").toUpperCase()==="VLSFO";
-            const azufreOk  = pond.azufre<=0.48;
-            const aguaOk    = pond.agua<=0.5;
-            const flashOk   = pond.flash>=60;
-            const totalG    = pond.totalG;
+            const azufreOk = pond.azufre<=0.48, aguaOk=pond.agua<=0.5, flashOk=pond.flash>=60;
+            const totalG = pond.totalG;
             const PARAMS = ["Galones","API","Visc (cSt)","Azufre (%)","Agua (%)","Flash (°C)"];
             const PARAM_KEYS = ["galones","api","visc","azufre","agua","flash"];
-
             return (
             <div>
-              {/* ── Header + tabs ── */}
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
-                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Programación de Operaciones</div>
-                  <div style={{ fontSize:11, color:T.muted }}>Planificación de descargues y formulaciones</div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Formulaciones</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Cálculo de mezclas y parámetros ponderados</div>
                 </div>
+                <Btn color={T.orange} onClick={()=>{ setFormFormulacion({producto:"VLSFO",tanque:"TK-116",fecha:today()}); setMps([{nombre:"PENDARE",galones:"",api:"",visc:"",azufre:"",agua:"",flash:""}]); }}>+ Nueva Formulación</Btn>
               </div>
 
-              {/* Tabs */}
-              <div style={{ display:"flex", gap:0, borderBottom:`2px solid ${T.border}`, marginBottom:20 }}>
-                {[["programaciones","📅 Programaciones"],["formulaciones","🧪 Formulaciones"]].map(([key,lbl])=>(
-                  <button key={key} onClick={()=>setProgTab(key)} style={{
-                    padding:"10px 24px", border:"none", background:"none", cursor:"pointer",
-                    fontWeight:700, fontSize:13, color: progTab===key ? T.orange : T.muted,
-                    borderBottom: progTab===key ? `2px solid ${T.orange}` : "2px solid transparent",
-                    marginBottom:-2
-                  }}>{lbl}</button>
-                ))}
-              </div>
-
-              {/* ── TAB 1: Programaciones ── */}
-              {progTab==="programaciones" && (
-                <div>
-                  <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:12 }}>
-                    <Btn color={T.orange} onClick={()=>{ setForm({ fecha: today() }); setModal("programacion"); }}>+ Nueva Programación</Btn>
-                  </div>
-                  <Card>
-                    <div style={{ overflowX:"auto" }}>
-                      <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-                        <thead>
-                          <tr style={{ borderBottom:`2px solid ${T.border}` }}>
-                            {["Fecha","Producto","Operación","Placa / Buque","Volumen (Gls)","Estado",""].map(h=>(
-                              <th key={h} style={{ padding:"10px 14px", textAlign:"left", color:T.muted, fontWeight:600, fontSize:11, textTransform:"uppercase", letterSpacing:1 }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(programaciones||[]).length===0 ? (
-                            <tr><td colSpan={7} style={{ padding:"40px", textAlign:"center", color:T.muted }}>Sin programaciones registradas</td></tr>
-                          ) : (programaciones||[]).map(p=>(
-                            <tr key={p.id} style={{ borderBottom:`1px solid ${T.border}` }}>
-                              <td style={{ padding:"12px 14px", color:T.muted }}>{p.fecha}</td>
-                              <td style={{ padding:"12px 14px", fontWeight:600, color:T.text }}>{p.producto}</td>
-                              <td style={{ padding:"12px 14px", color:T.text }}>{p.operacion}</td>
-                              <td style={{ padding:"12px 14px" }}><span style={{ background:`${T.orange}18`, border:`1px solid ${T.orange}44`, borderRadius:6, padding:"2px 8px", color:T.orange, fontWeight:700 }}>{p.referencia||"—"}</span></td>
-                              <td style={{ padding:"12px 14px", color:T.success, fontWeight:700 }}>{p.volumen?fmt(Number(p.volumen)):"—"}</td>
-                              <td style={{ padding:"12px 14px" }}><Badge label={p.estado||"Pendiente"} color={p.estado==="Completado"?"#00e5a0":p.estado==="En curso"?"#f59e0b":"#94a3b8"}/></td>
-                              <td style={{ padding:"12px 14px" }}>
-                                <button onClick={()=>{ setForm({...p}); setModal("programacion"); }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Editar</button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </Card>
+              <Card>
+                <div style={{ overflowX:"auto" }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                    <thead>
+                      <tr style={{ borderBottom:`2px solid ${T.border}` }}>
+                        {["Fecha","Tanque","Producto","# MPs","Azufre %","Galones","Carros","Estado",""].map(h=>(
+                          <th key={h} style={{ padding:"10px 14px", textAlign:"left", color:T.muted, fontWeight:600, fontSize:11, textTransform:"uppercase", letterSpacing:1 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formulaciones.length===0 ? (
+                        <tr><td colSpan={9} style={{ padding:"40px", textAlign:"center", color:T.muted }}>Sin formulaciones registradas</td></tr>
+                      ) : formulaciones.map(fo=>(
+                        <tr key={fo.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                          <td style={{ padding:"12px 14px", color:T.muted }}>{fo.fecha}</td>
+                          <td style={{ padding:"12px 14px", color:T.text, fontWeight:600 }}>{fo.tanque}</td>
+                          <td style={{ padding:"12px 14px", color:T.text }}>{fo.producto}</td>
+                          <td style={{ padding:"12px 14px", color:T.muted, textAlign:"center" }}>{(fo.mps||[]).length}</td>
+                          <td style={{ padding:"12px 14px" }}><span style={{ color:Number(fo.azufre_planeado)>0.48?"#ef4444":"#00e5a0", fontWeight:700 }}>{Number(fo.azufre_planeado||0).toFixed(4)}%</span></td>
+                          <td style={{ padding:"12px 14px", color:T.success, fontWeight:700 }}>{fmt(Number(fo.total_galones||0))}</td>
+                          <td style={{ padding:"12px 14px", color:T.muted }}>{Number(fo.total_carros||0).toFixed(1)}</td>
+                          <td style={{ padding:"12px 14px" }}><Badge label={fo.estado||"PLANEADA"} color={fo.estado==="APROBADA"?"#00e5a0":fo.estado==="EJECUTADA"?"#38bdf8":"#f59e0b"}/></td>
+                          <td style={{ padding:"12px 14px", display:"flex", gap:8 }}>
+                            <button onClick={()=>{ setFormFormulacion({...fo}); setMps(Array.isArray(fo.mps)?fo.mps:[]); }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Editar</button>
+                            <button onClick={async()=>{ if(!confirm(`¿Eliminar formulación del ${fo.fecha}?`)) return; await supabaseAdmin.from("formulaciones").delete().eq("id",fo.id); await loadData(); }} style={{ background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:12,fontWeight:700 }}>Eliminar</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+              </Card>
 
-              {/* ── TAB 2: Formulaciones ── */}
-              {progTab==="formulaciones" && (
-                <div>
-                  <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginBottom:12 }}>
-                    <Btn color={T.orange} onClick={()=>{
-                      setFormFormulacion({ producto:"VLSFO", tanque:"TK-116", fecha:today() });
-                      setMps([{ nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }]);
-                    }}>+ Nueva Formulación</Btn>
-                  </div>
-
-                  <Card>
-                    <div style={{ overflowX:"auto" }}>
-                      <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-                        <thead>
-                          <tr style={{ borderBottom:`2px solid ${T.border}` }}>
-                            {["Fecha","Tanque","Producto","# MPs","Azufre %","Galones","Carros","Estado",""].map(h=>(
-                              <th key={h} style={{ padding:"10px 14px", textAlign:"left", color:T.muted, fontWeight:600, fontSize:11, textTransform:"uppercase", letterSpacing:1 }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {formulaciones.length===0 ? (
-                            <tr><td colSpan={9} style={{ padding:"40px", textAlign:"center", color:T.muted }}>Sin formulaciones registradas</td></tr>
-                          ) : formulaciones.map(fo=>(
-                            <tr key={fo.id} style={{ borderBottom:`1px solid ${T.border}` }}>
-                              <td style={{ padding:"12px 14px", color:T.muted }}>{fo.fecha}</td>
-                              <td style={{ padding:"12px 14px", color:T.text, fontWeight:600 }}>{fo.tanque}</td>
-                              <td style={{ padding:"12px 14px", color:T.text }}>{fo.producto}</td>
-                              <td style={{ padding:"12px 14px", color:T.muted, textAlign:"center" }}>{(fo.mps||[]).length}</td>
-                              <td style={{ padding:"12px 14px" }}>
-                                <span style={{ color: Number(fo.azufre_planeado)>0.48?"#ef4444":"#00e5a0", fontWeight:700 }}>
-                                  {Number(fo.azufre_planeado||0).toFixed(4)}%
-                                </span>
-                              </td>
-                              <td style={{ padding:"12px 14px", color:T.success, fontWeight:700 }}>{fmt(Number(fo.total_galones||0))}</td>
-                              <td style={{ padding:"12px 14px", color:T.muted }}>{Number(fo.total_carros||0).toFixed(1)}</td>
-                              <td style={{ padding:"12px 14px" }}><Badge label={fo.estado||"PLANEADA"} color={fo.estado==="APROBADA"?"#00e5a0":fo.estado==="EJECUTADA"?"#38bdf8":"#f59e0b"}/></td>
-                              <td style={{ padding:"12px 14px", display:"flex", gap:8 }}>
-                                <button onClick={()=>{
-                                  setFormFormulacion({...fo});
-                                  setMps(Array.isArray(fo.mps)?fo.mps:[]);
-                                }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Editar</button>
-                                <button onClick={async()=>{
-                                  if(!confirm(`¿Eliminar formulación del ${fo.fecha}?`)) return;
-                                  await supabaseAdmin.from("formulaciones").delete().eq("id",fo.id);
-                                  await loadData();
-                                }} style={{ background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:12,fontWeight:700 }}>Eliminar</button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+              {/* MODAL */}
+              {formFormulacion && (
+                <div style={{ position:"fixed",inset:0,zIndex:9000,background:"#00000088",display:"flex",alignItems:"flex-start",justifyContent:"center",overflowY:"auto",padding:"24px 16px" }}>
+                  <div style={{ background:T.card,borderRadius:16,width:"100%",maxWidth:900,boxShadow:"0 20px 60px #0008",padding:"28px 32px" }}>
+                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20 }}>
+                      <div style={{ fontWeight:800,fontSize:18,color:T.navy }}>{formFormulacion.id?"Editar Formulación":"Nueva Formulación"}</div>
+                      <button onClick={()=>setFormFormulacion(null)} style={{ background:"none",border:"none",fontSize:20,cursor:"pointer",color:T.muted }}>✕</button>
                     </div>
-                  </Card>
-
-                  {/* ── MODAL FORMULACIÓN ── */}
-                  {formFormulacion && (
-                    <div style={{ position:"fixed",inset:0,zIndex:9000,background:"#00000088",display:"flex",alignItems:"flex-start",justifyContent:"center",overflowY:"auto",padding:"24px 16px" }}>
-                      <div style={{ background:T.card,borderRadius:16,width:"100%",maxWidth:900,boxShadow:"0 20px 60px #0008",padding:"28px 32px" }}>
-                        {/* Header modal */}
-                        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20 }}>
-                          <div style={{ fontWeight:800,fontSize:18,color:T.navy }}>{formFormulacion.id?"Editar Formulación":"Nueva Formulación"}</div>
-                          <button onClick={()=>setFormFormulacion(null)} style={{ background:"none",border:"none",fontSize:20,cursor:"pointer",color:T.muted }}>✕</button>
-                        </div>
-
-                        {/* Tanque + Producto */}
-                        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20 }}>
-                          <div>
-                            <Lbl>Tanque</Lbl>
-                            <select value={formFormulacion.tanque||""} onChange={e=>setFormFormulacion(p=>({...p,tanque:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
-                              {["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"].map(t=><option key={t}>{t}</option>)}
-                            </select>
-                          </div>
-                          <div>
-                            <Lbl>Producto</Lbl>
-                            <select value={formFormulacion.producto||""} onChange={e=>setFormFormulacion(p=>({...p,producto:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
-                              <option>VLSFO</option><option>HSFO</option><option>MGO</option>
-                            </select>
-                          </div>
-                          <div>
-                            <Lbl>Fecha</Lbl>
-                            <input type="date" value={formFormulacion.fecha||today()} onChange={e=>setFormFormulacion(p=>({...p,fecha:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box" }}/>
-                          </div>
-                        </div>
-
-                        {/* ── MATRIZ TRANSPUESTA: parámetros × MPs ── */}
-                        <div style={{ overflowX:"auto",marginBottom:20,borderRadius:8,border:`1px solid ${T.border}` }}>
-                          <table style={{ borderCollapse:"collapse",fontSize:12,minWidth:500 }}>
-                            <thead>
-                              <tr style={{ background:T.bg }}>
-                                <th style={{ padding:"10px 14px",textAlign:"left",color:T.muted,fontWeight:700,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:2,minWidth:110,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}` }}>Parámetro</th>
-                                {mps.map((mp,ci)=>(
-                                  <th key={ci} style={{ padding:"8px 10px",textAlign:"center",color:T.navy,fontWeight:700,fontSize:12,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}`,minWidth:110 }}>
-                                    <div style={{ display:"flex",flexDirection:"column",gap:4,alignItems:"center" }}>
-                                      <input value={mp.nombre} onChange={e=>{const n=[...mps];n[ci].nombre=e.target.value;setMps(n);}} style={{ width:90,textAlign:"center",background:T.card,border:`1px solid ${T.border}`,borderRadius:4,padding:"3px 6px",color:T.text,fontSize:11,fontWeight:700,outline:"none" }}/>
-                                      {mps.length>1 && <button onClick={()=>setMps(mps.filter((_,j)=>j!==ci))} style={{ background:"#ef444420",border:"1px solid #ef444455",borderRadius:4,color:"#ef4444",padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:700 }}>Eliminar</button>}
-                                    </div>
-                                  </th>
-                                ))}
-                                <th style={{ padding:"10px 14px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:11,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,minWidth:110,background:`${T.orange}0a` }}>PONDERADO</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {PARAMS.map((param,ri)=>{
-                                const key=PARAM_KEYS[ri];
-                                const isGalones=key==="galones";
-                                const pondVal = key==="galones" ? totalG
-                                  : key==="api"    ? pond.api
-                                  : key==="visc"   ? pond.visc
-                                  : key==="azufre" ? pond.azufre
-                                  : key==="agua"   ? pond.agua
-                                  : pond.flash;
-                                const decimals = ["azufre","agua"].includes(key)?4:2;
-                                let pondColor=T.text, pondIcon="";
-                                if(key==="azufre"&&esVLSFO){ pondColor=azufreOk?"#00e5a0":"#ef4444"; pondIcon=azufreOk?" ✅":" 🔴"; }
-                                if(key==="agua"){ pondColor=aguaOk?"#00e5a0":"#f59e0b"; pondIcon=aguaOk?" ✅":" ⚠️"; }
-                                if(key==="flash"){ pondColor=flashOk?"#00e5a0":"#f59e0b"; pondIcon=flashOk?" ✅":" ⚠️"; }
-                                return (
-                                  <tr key={key} style={{ borderBottom:`1px solid ${T.border}`, background: ri%2===0?T.bg:"transparent" }}>
-                                    <td style={{ padding:"8px 14px",fontWeight:700,color:T.muted,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:ri%2===0?T.bg:T.card,zIndex:1,borderRight:`1px solid ${T.border}` }}>{param}</td>
-                                    {mps.map((mp,ci)=>(
-                                      <td key={ci} style={{ padding:"6px 8px",textAlign:"center",borderRight:`1px solid ${T.border}` }}>
-                                        <input type="number" step="any" value={mp[key]||""} onChange={e=>{const n=[...mps];n[ci][key]=e.target.value;setMps(n);}}
-                                          style={{ width:90,textAlign:"center",background:T.card,border:`1px solid ${T.border}`,borderRadius:4,padding:"5px 6px",color:T.text,fontSize:12,outline:"none" }}
-                                          placeholder="0"/>
-                                      </td>
-                                    ))}
-                                    <td style={{ padding:"8px 14px",textAlign:"center",fontWeight:700,color:isGalones?T.success:pondColor,fontSize:13,background:`${T.orange}08` }}>
-                                      {isGalones ? fmt(totalG) : (pondVal>0?pondVal.toFixed(decimals):"—")}{pondIcon}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                              {/* fila % Total */}
-                              <tr style={{ borderBottom:`1px solid ${T.border}`, background:T.bg }}>
-                                <td style={{ padding:"8px 14px",fontWeight:700,color:T.muted,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:1,borderRight:`1px solid ${T.border}` }}>% Total</td>
-                                {mps.map((mp,ci)=>{
-                                  const pct=totalG>0?((Number(mp.galones||0)/totalG)*100).toFixed(1):0;
-                                  return <td key={ci} style={{ padding:"8px 10px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:12,borderRight:`1px solid ${T.border}` }}>{pct}%</td>;
-                                })}
-                                <td style={{ padding:"8px 14px",textAlign:"center",fontWeight:700,color:T.success,background:`${T.orange}08` }}>100% {totalG>0?"✅":""}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {/* Botón agregar MP */}
-                        <div style={{ marginBottom:20 }}>
-                          <button onClick={()=>setMps(p=>[...p,{nombre:"NUEVA MP",galones:"",api:"",visc:"",azufre:"",agua:"",flash:""}])}
-                            style={{ background:`${T.orange}18`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>
-                            + Agregar MP
-                          </button>
-                        </div>
-
-                        {/* Cards resumen */}
-                        {totalG>0 && (
-                          <div style={{ marginBottom:20 }}>
-                            <div style={{ fontSize:12,color:T.muted,marginBottom:8 }}>
-                              Total: <b style={{color:T.success}}>{fmt(totalG)} Gls</b> = <b style={{color:T.text}}>{pond.carros.toFixed(1)} carros</b>
-                              {esVLSFO && !azufreOk && <span style={{ marginLeft:12,color:"#ef4444",fontWeight:700 }}>⚠️ AZUFRE SOBRE LÍMITE VLSFO (≤0.48%)</span>}
-                            </div>
-                            <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10 }}>
-                              {[
-                                { label:"🔥 AZUFRE",  val:`${pond.azufre.toFixed(4)}%`, sub: esVLSFO?(azufreOk?"✅ OK VLSFO":"🔴 SOBRE LÍMITE"):"", color: esVLSFO&&!azufreOk?"#ef4444":T.success },
-                                { label:"📊 API",      val:`${pond.api.toFixed(2)}°`,    sub:"(Info)", color:T.text },
-                                { label:"💧 AGUA",     val:`${pond.agua.toFixed(4)}%`,   sub:aguaOk?"✅ OK":"⚠️ >0.5%", color:aguaOk?"#00e5a0":"#f59e0b" },
-                                { label:"📈 VISCOSIDAD",val:`${pond.visc.toFixed(2)} cSt`,sub:"@ 50°C", color:T.text },
-                                { label:"🔥 FLASH PT", val:`${pond.flash.toFixed(1)}°C`, sub:flashOk?"✅ ≥60°C":"⚠️ <60°C", color:flashOk?"#00e5a0":"#f59e0b" },
-                              ].map(c=>(
-                                <div key={c.label} style={{ background:T.bg,borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}` }}>
-                                  <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>{c.label}</div>
-                                  <div style={{ fontSize:18,fontWeight:800,color:c.color }}>{c.val}</div>
-                                  <div style={{ fontSize:10,color:c.color,marginTop:2 }}>{c.sub}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Botones */}
-                        <div style={{ display:"flex",justifyContent:"flex-end",gap:10 }}>
-                          <Btn outline onClick={()=>setFormFormulacion(null)}>Cancelar</Btn>
-                          <Btn color={T.orange} disabled={saving} onClick={async()=>{
-                            if(!totalG) return showToast("Ingresa galones para al menos una MP",false);
-                            setSaving(true);
-                            const payload = {
-                              fecha: formFormulacion.fecha||today(),
-                              tanque: formFormulacion.tanque||null,
-                              producto: formFormulacion.producto||null,
-                              mps, api_planeado: pond.api, visc_planeado: pond.visc,
-                              azufre_planeado: pond.azufre, agua_planeada: pond.agua,
-                              flash_point_planeado: pond.flash, total_galones: totalG,
-                              total_carros: pond.carros, estado: formFormulacion.estado||"PLANEADA",
-                              created_by: session.user.id,
-                            };
-                            const {error} = formFormulacion.id
-                              ? await supabaseAdmin.from("formulaciones").update(payload).eq("id",formFormulacion.id)
-                              : await supabaseAdmin.from("formulaciones").insert([payload]);
-                            setSaving(false);
-                            if(error) return showToast("Error: "+error.message,false);
-                            await loadData();
-                            setFormFormulacion(null);
-                            showToast("✅ Formulación guardada");
-                          }}>{saving?"Guardando...":"💾 Guardar Formulación"}</Btn>
-                        </div>
+                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20 }}>
+                      <div><Lbl>Tanque</Lbl>
+                        <select value={formFormulacion.tanque||""} onChange={e=>setFormFormulacion(p=>({...p,tanque:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
+                          {["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"].map(t=><option key={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div><Lbl>Producto</Lbl>
+                        <select value={formFormulacion.producto||""} onChange={e=>setFormFormulacion(p=>({...p,producto:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
+                          <option>VLSFO</option><option>HSFO</option><option>MGO</option>
+                        </select>
+                      </div>
+                      <div><Lbl>Fecha</Lbl>
+                        <input type="date" value={formFormulacion.fecha||today()} onChange={e=>setFormFormulacion(p=>({...p,fecha:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box" }}/>
                       </div>
                     </div>
-                  )}
+                    <div style={{ overflowX:"auto",marginBottom:20,borderRadius:8,border:`1px solid ${T.border}` }}>
+                      <table style={{ borderCollapse:"collapse",fontSize:12,minWidth:500 }}>
+                        <thead>
+                          <tr style={{ background:T.bg }}>
+                            <th style={{ padding:"10px 14px",textAlign:"left",color:T.muted,fontWeight:700,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:2,minWidth:110,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}` }}>Parámetro</th>
+                            {mps.map((mp,ci)=>(
+                              <th key={ci} style={{ padding:"8px 10px",textAlign:"center",color:T.navy,fontWeight:700,fontSize:12,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}`,minWidth:110 }}>
+                                <div style={{ display:"flex",flexDirection:"column",gap:4,alignItems:"center" }}>
+                                  <input value={mp.nombre} onChange={e=>{const n=[...mps];n[ci].nombre=e.target.value;setMps(n);}} style={{ width:90,textAlign:"center",background:T.card,border:`1px solid ${T.border}`,borderRadius:4,padding:"3px 6px",color:T.text,fontSize:11,fontWeight:700,outline:"none" }}/>
+                                  {mps.length>1 && <button onClick={()=>setMps(mps.filter((_,j)=>j!==ci))} style={{ background:"#ef444420",border:"1px solid #ef444455",borderRadius:4,color:"#ef4444",padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:700 }}>Eliminar</button>}
+                                </div>
+                              </th>
+                            ))}
+                            <th style={{ padding:"10px 14px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:11,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,minWidth:110,background:`${T.orange}0a` }}>PONDERADO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {PARAMS.map((param,ri)=>{
+                            const key=PARAM_KEYS[ri], isG=key==="galones";
+                            const pondVal=isG?totalG:key==="api"?pond.api:key==="visc"?pond.visc:key==="azufre"?pond.azufre:key==="agua"?pond.agua:pond.flash;
+                            const dec=["azufre","agua"].includes(key)?4:2;
+                            let pc=T.text,pi="";
+                            if(key==="azufre"&&esVLSFO){pc=azufreOk?"#00e5a0":"#ef4444";pi=azufreOk?" ✅":" 🔴";}
+                            if(key==="agua"){pc=aguaOk?"#00e5a0":"#f59e0b";pi=aguaOk?" ✅":" ⚠️";}
+                            if(key==="flash"){pc=flashOk?"#00e5a0":"#f59e0b";pi=flashOk?" ✅":" ⚠️";}
+                            return (
+                              <tr key={key} style={{ borderBottom:`1px solid ${T.border}`,background:ri%2===0?T.bg:"transparent" }}>
+                                <td style={{ padding:"8px 14px",fontWeight:700,color:T.muted,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:ri%2===0?T.bg:T.card,zIndex:1,borderRight:`1px solid ${T.border}` }}>{param}</td>
+                                {mps.map((mp,ci)=>(
+                                  <td key={ci} style={{ padding:"6px 8px",textAlign:"center",borderRight:`1px solid ${T.border}` }}>
+                                    <input type="number" step="any" value={mp[key]||""} onChange={e=>{const n=[...mps];n[ci][key]=e.target.value;setMps(n);}}
+                                      style={{ width:90,textAlign:"center",background:T.card,border:`1px solid ${T.border}`,borderRadius:4,padding:"5px 6px",color:T.text,fontSize:12,outline:"none" }} placeholder="0"/>
+                                  </td>
+                                ))}
+                                <td style={{ padding:"8px 14px",textAlign:"center",fontWeight:700,color:isG?T.success:pc,fontSize:13,background:`${T.orange}08` }}>
+                                  {isG?fmt(totalG):(pondVal>0?pondVal.toFixed(dec):"—")}{pi}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          <tr style={{ borderBottom:`1px solid ${T.border}`,background:T.bg }}>
+                            <td style={{ padding:"8px 14px",fontWeight:700,color:T.muted,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:1,borderRight:`1px solid ${T.border}` }}>% Total</td>
+                            {mps.map((mp,ci)=>{ const pct=totalG>0?((Number(mp.galones||0)/totalG)*100).toFixed(1):0; return <td key={ci} style={{ padding:"8px 10px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:12,borderRight:`1px solid ${T.border}` }}>{pct}%</td>; })}
+                            <td style={{ padding:"8px 14px",textAlign:"center",fontWeight:700,color:T.success,background:`${T.orange}08` }}>100% {totalG>0?"✅":""}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{ marginBottom:20 }}>
+                      <button onClick={()=>setMps(p=>[...p,{nombre:"NUEVA MP",galones:"",api:"",visc:"",azufre:"",agua:"",flash:""}])}
+                        style={{ background:`${T.orange}18`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>
+                        + Agregar MP
+                      </button>
+                    </div>
+                    {totalG>0 && (
+                      <div style={{ marginBottom:20 }}>
+                        <div style={{ fontSize:12,color:T.muted,marginBottom:8 }}>
+                          Total: <b style={{color:T.success}}>{fmt(totalG)} Gls</b> = <b style={{color:T.text}}>{pond.carros.toFixed(1)} carros</b>
+                          {esVLSFO&&!azufreOk&&<span style={{marginLeft:12,color:"#ef4444",fontWeight:700}}>⚠️ AZUFRE SOBRE LÍMITE VLSFO (≤0.48%)</span>}
+                        </div>
+                        <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10 }}>
+                          {[
+                            {label:"🔥 AZUFRE",   val:`${pond.azufre.toFixed(4)}%`,  sub:esVLSFO?(azufreOk?"✅ OK VLSFO":"🔴 SOBRE LÍMITE"):"", color:esVLSFO&&!azufreOk?"#ef4444":T.success},
+                            {label:"📊 API",       val:`${pond.api.toFixed(2)}°`,     sub:"(Info)", color:T.text},
+                            {label:"💧 AGUA",      val:`${pond.agua.toFixed(4)}%`,    sub:aguaOk?"✅ OK":"⚠️ >0.5%", color:aguaOk?"#00e5a0":"#f59e0b"},
+                            {label:"📈 VISCOSIDAD",val:`${pond.visc.toFixed(2)} cSt`, sub:"@ 50°C (ASTM D341)", color:T.text},
+                            {label:"🔥 FLASH PT",  val:`${pond.flash.toFixed(1)}°C`,  sub:flashOk?"✅ ≥60°C":"⚠️ <60°C", color:flashOk?"#00e5a0":"#f59e0b"},
+                          ].map(c=>(
+                            <div key={c.label} style={{ background:T.bg,borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}` }}>
+                              <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>{c.label}</div>
+                              <div style={{ fontSize:18,fontWeight:800,color:c.color }}>{c.val}</div>
+                              <div style={{ fontSize:10,color:c.color,marginTop:2 }}>{c.sub}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ display:"flex",justifyContent:"flex-end",gap:10 }}>
+                      <Btn outline onClick={()=>setFormFormulacion(null)}>Cancelar</Btn>
+                      <Btn color={T.orange} disabled={saving} onClick={async()=>{
+                        if(!totalG) return showToast("Ingresa galones para al menos una MP",false);
+                        setSaving(true);
+                        const payload={fecha:formFormulacion.fecha||today(),tanque:formFormulacion.tanque||null,producto:formFormulacion.producto||null,mps,api_planeado:pond.api,visc_planeado:pond.visc,azufre_planeado:pond.azufre,agua_planeada:pond.agua,flash_point_planeado:pond.flash,total_galones:totalG,total_carros:pond.carros,estado:formFormulacion.estado||"PLANEADA",created_by:session.user.id};
+                        const {error}=formFormulacion.id?await supabaseAdmin.from("formulaciones").update(payload).eq("id",formFormulacion.id):await supabaseAdmin.from("formulaciones").insert([payload]);
+                        setSaving(false);
+                        if(error) return showToast("Error: "+error.message,false);
+                        await loadData(); setFormFormulacion(null); showToast("✅ Formulación guardada");
+                      }}>{saving?"Guardando...":"💾 Guardar Formulación"}</Btn>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
