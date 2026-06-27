@@ -2844,7 +2844,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {/* Aviso AUTO */}
               {fModo==="AUTO" && (
                 <div style={{ background:"#3b82f618",border:"1px solid #3b82f655",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#3b82f6" }}>
-                  ⚡ <b>Modo Auto:</b> los parámetros se calculan como promedio histórico de tiquetes APROBADOS por proveedor. Solo ingresa los galones. Puedes ajustar los valores manualmente si lo necesitas.
+                  ⚡ <b>Modo Auto:</b> los parámetros se calculan como promedio histórico de tiquetes APROBADOS por producto. Solo ingresa los galones. Puedes ajustar los valores manualmente si lo necesitas.
                 </div>
               )}
 
@@ -2889,72 +2889,63 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{ fontSize:12,color:T.muted,marginBottom:10 }}>
                       🚛 <b style={{color:T.text}}>Selecciona los carros analizados</b> para incluir en la formulación. Los parámetros se toman directamente del tiquete de laboratorio.
                     </div>
-                    <div style={{ overflowX:"auto", borderRadius:8, border:`1px solid ${T.border}` }}>
-                      <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
-                        <thead>
-                          <tr style={{ background:T.bg }}>
-                            {["","Placa","Tiquete","Fecha","API","Visc","Azufre%","Agua%","Flash°C","Gls Rec.","Resultado"].map(h=>(
-                              <th key={h} style={{ padding:"8px 12px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:10,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap" }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tiqDisp.length===0 ? (
-                            <tr><td colSpan={11} style={{padding:"30px",textAlign:"center",color:T.muted}}>Sin tiquetes analizados</td></tr>
-                          ) : (()=>{
-                            const rows = [];
-                            let lastProd = null;
-                            tiqDisp.forEach(t=>{
-                              const prod = t.producto||"";
-                              if(prod!==lastProd){
-                                lastProd=prod;
-                                const cnt = cntPorProducto[prod]||0;
-                                rows.push(
-                                  <tr key={`grp-${prod}`} style={{ background:`${T.navy}cc` }}>
-                                    <td colSpan={11} style={{ padding:"6px 14px", fontWeight:800, fontSize:11, color:"#ffffff", letterSpacing:1, textTransform:"uppercase" }}>
-                                      {prod}
-                                      {cnt>0 && <span style={{ marginLeft:10, background:T.orange, color:"#fff", borderRadius:10, padding:"1px 8px", fontSize:10, fontWeight:700 }}>{cnt} en planta</span>}
-                                    </td>
-                                  </tr>
-                                );
-                              }
+                    {/* Columnas por producto */}
+                    <div style={{ display:"flex", gap:10, overflowX:"auto", paddingBottom:4 }}>
+                      {productosOrden.map(prod=>{
+                        const tiqProd = tiqDisp.filter(t=>(t.producto||"")=== prod);
+                        const cnt = cntPorProducto[prod]||0;
+                        const selEnProd = tiqProd.filter(t=>selIds.includes(t.id)).length;
+                        return (
+                          <div key={prod} style={{ minWidth:220, flexShrink:0, border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden" }}>
+                            {/* Header columna */}
+                            <div style={{ background:T.navy, padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                              <div style={{ fontWeight:800, fontSize:11, color:"#fff", textTransform:"uppercase", letterSpacing:1 }}>{prod}</div>
+                              <div style={{ display:"flex", gap:5, alignItems:"center" }}>
+                                {cnt>0 && <span style={{ background:T.orange, color:"#fff", borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:700 }}>{cnt} en planta</span>}
+                                {selEnProd>0 && <span style={{ background:"#00e5a0", color:"#071422", borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:700 }}>✓{selEnProd}</span>}
+                              </div>
+                            </div>
+                            {/* Filas de carros */}
+                            {tiqProd.map(t=>{
                               const sel = selIds.includes(t.id);
                               const aprobado = t.resultado==="APROBADO";
                               const enPlanta = placasEnPlanta.has(t.placa);
-                              rows.push(
-                                <tr key={t.id} onClick={()=>toggleCarro(t.id)}
-                                  style={{ borderBottom:`1px solid ${T.border}`, cursor:"pointer", background: sel?`${T.orange}18`:enPlanta?`${T.success}08`:"transparent", transition:"background 0.1s" }}
-                                  onMouseEnter={e=>{ if(!sel) e.currentTarget.style.background=`${T.border}55`; }}
-                                  onMouseLeave={e=>{ if(!sel) e.currentTarget.style.background=sel?`${T.orange}18`:enPlanta?`${T.success}08`:"transparent"; }}>
-                                  <td style={{ padding:"8px 12px" }}>
-                                    <div style={{ width:16,height:16,borderRadius:4,border:`2px solid ${sel?T.orange:T.border}`,background:sel?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:800 }}>
-                                      {sel?"✓":""}
+                              return (
+                                <div key={t.id} onClick={()=>toggleCarro(t.id)}
+                                  style={{ padding:"10px 12px", borderBottom:`1px solid ${T.border}`, cursor:"pointer",
+                                    background: sel?`${T.orange}18`:enPlanta?`#00e5a008`:"transparent", transition:"background 0.12s" }}
+                                  onMouseEnter={e=>{ if(!sel) e.currentTarget.style.background=`${T.border}66`; }}
+                                  onMouseLeave={e=>{ e.currentTarget.style.background=sel?`${T.orange}18`:enPlanta?`#00e5a008`:"transparent"; }}>
+                                  {/* Placa + checkbox */}
+                                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                                    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                                      <div style={{ width:15,height:15,borderRadius:3,border:`2px solid ${sel?T.orange:T.border}`,background:sel?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#fff",fontWeight:800,flexShrink:0 }}>
+                                        {sel?"✓":""}
+                                      </div>
+                                      <span style={{ fontWeight:800, fontSize:13, color:T.text }}>{t.placa}</span>
+                                      {enPlanta && <span style={{ background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:4,padding:"1px 5px",fontSize:9,color:"#00e5a0",fontWeight:700 }}>PLANTA</span>}
                                     </div>
-                                  </td>
-                                  <td style={{ padding:"8px 12px",fontWeight:700,color:T.text }}>
-                                    {t.placa}
-                                    {enPlanta && <span style={{ marginLeft:6,background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:4,padding:"1px 5px",fontSize:9,color:"#00e5a0",fontWeight:700 }}>EN PLANTA</span>}
-                                  </td>
-                                  <td style={{ padding:"8px 12px",color:"#00b4ff",fontWeight:700,fontFamily:"monospace",whiteSpace:"nowrap" }}>{t.id}</td>
-                                  <td style={{ padding:"8px 12px",color:T.muted,whiteSpace:"nowrap" }}>{t.fecha}</td>
-                                  <td style={{ padding:"8px 12px",color:T.text }}>{t.api_corregido}°</td>
-                                  <td style={{ padding:"8px 12px",color:T.text }}>{t.viscosidad}</td>
-                                  <td style={{ padding:"8px 12px",color:Number(t.azufre)>0.48?"#ef4444":T.text }}>{Number(t.azufre||0).toFixed(4)}</td>
-                                  <td style={{ padding:"8px 12px",color:T.text }}>{Number(t.agua_destilacion||0).toFixed(4)}</td>
-                                  <td style={{ padding:"8px 12px",color:Number(t.flash_point||0)<60?"#f59e0b":T.text }}>{t.flash_point}</td>
-                                  <td style={{ padding:"8px 12px",color:T.success,fontWeight:700 }}>{t.galones_recibidos?fmt(Number(t.galones_recibidos)):"—"}</td>
-                                  <td style={{ padding:"8px 12px" }}>
-                                    <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:6,padding:"2px 8px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:10 }}>
-                                      {t.resultado}
+                                    <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:5,padding:"1px 6px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:9 }}>
+                                      {aprobado?"✓ OK":"✗"}
                                     </span>
-                                  </td>
-                                </tr>
+                                  </div>
+                                  {/* Params en grid */}
+                                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"2px 8px", fontSize:10, color:T.muted }}>
+                                    <span>TQ: <b style={{color:"#00b4ff",fontFamily:"monospace"}}>{t.id}</b></span>
+                                    <span>Fecha: <b style={{color:T.text}}>{t.fecha}</b></span>
+                                    <span>API: <b style={{color:T.text}}>{t.api_corregido}°</b></span>
+                                    <span>Visc: <b style={{color:T.text}}>{t.viscosidad}</b></span>
+                                    <span>S: <b style={{color:Number(t.azufre)>0.48?"#ef4444":T.text}}>{Number(t.azufre||0).toFixed(4)}%</b></span>
+                                    <span>H₂O: <b style={{color:T.text}}>{Number(t.agua_destilacion||0).toFixed(4)}%</b></span>
+                                    <span>Flash: <b style={{color:Number(t.flash_point||0)<60?"#f59e0b":T.text}}>{t.flash_point}°C</b></span>
+                                    <span>Gls: <b style={{color:T.success}}>{t.galones_recibidos?fmt(Number(t.galones_recibidos)):"—"}</b></span>
+                                  </div>
+                                </div>
                               );
-                            });
-                            return rows;
-                          })()}
-                        </tbody>
-                      </table>
+                            })}
+                          </div>
+                        );
+                      })}
                     </div>
                     {selIds.length>0 && (
                       <div style={{ marginTop:8,fontSize:11,color:T.orange,fontWeight:700 }}>
