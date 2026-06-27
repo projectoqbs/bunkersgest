@@ -2645,11 +2645,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 return a + pcts[i]*(141.5/(api+131.5));
               },0);
               const apiPond = sgPond>0 ? 141.5/sgPond-131.5 : 0;
+              // Viscosidad ASTM D341 (logarítmico — Wright)
+              const biPond = mpsArr.reduce((a,m,i)=>{
+                const v=Number(m.visc||0); if(!v) return a;
+                return a + pcts[i]*Math.log10(Math.log10(v+0.7));
+              },0);
+              const viscPond = biPond ? Math.pow(10,Math.pow(10,biPond))-0.7 : 0;
               return {
                 totalG,
                 carros: totalG/9300,
                 api:    apiPond,
-                visc:   mpsArr.reduce((a,m,i)=>a+pcts[i]*Number(m.visc||0),0),
+                visc:   viscPond,
                 azufre: mpsArr.reduce((a,m,i)=>a+pcts[i]*Number(m.azufre||0),0),
                 agua:   mpsArr.reduce((a,m,i)=>a+pcts[i]*Number(m.agua||0),0),
                 flash:  mpsArr.reduce((a,m,i)=>a+pcts[i]*Number(m.flash||0),0),
