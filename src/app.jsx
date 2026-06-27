@@ -55,14 +55,13 @@ const NAV_META = {
   trazabilidad:  { label:"Trazabilidad",  icon:"🔍" },
   usuarios:      { label:"Usuarios",      icon:"👥" },
   programacion:  { label:"Programación",  icon:"📅" },
-  formulaciones: { label:"Formulaciones", icon:"🧪" },
 };
 
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
   operaciones: ["dashboard","pbs","trazabilidad"],
-  coordinador: ["dashboard","pbs","tanques","programacion","formulaciones","trazabilidad"],
+  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador: [
     "dashboard",
@@ -74,7 +73,6 @@ const NAV_ROL = {
     "cmt",
     "despacho",
     "programacion",
-    "formulaciones",
     "tanques",
   ],
 };
