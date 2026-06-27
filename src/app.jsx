@@ -2853,18 +2853,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const selIds = tabCache.carrosSelIds || [];
                 const setSelIds = ids => { tabStateCache.current[activeTabId] = {...(tabStateCache.current[activeTabId]||{}), carrosSelIds:ids}; setTabs(t=>[...t]); };
                 // tiquetes con resultado registrado
-                const tiqBase = (tiquetes||[]).filter(t=>t.resultado&&(t.api_corregido||t.viscosidad||t.azufre));
-                // contar cuántas placas de cada producto están actualmente En Planta
+                // solo carros actualmente En Planta con tiquete analizado
                 const enPlantaAhora = (viajes||[]).filter(v=>v.estado==="En Planta");
+                const placasEnPlanta = new Set(enPlantaAhora.map(v=>v.placa));
                 const cntPorProducto = {};
                 enPlantaAhora.forEach(v=>{ const p=v.producto||""; cntPorProducto[p]=(cntPorProducto[p]||0)+1; });
-                // agrupar tiquetes por producto, ordenar grupos por presencia en planta desc luego por nombre
+                // tiquetes cuya placa esté en planta y hayan sido analizados
+                const tiqBase = (tiquetes||[]).filter(t=>t.resultado && placasEnPlanta.has(t.placa) && (t.api_corregido||t.viscosidad||t.azufre));
+                // agrupar por producto, ordenar por cantidad de carros desc
                 const productosOrden = [...new Set(tiqBase.map(t=>t.producto||""))].sort((a,b)=>(cntPorProducto[b]||0)-(cntPorProducto[a]||0)||(a>b?1:-1));
-                // dentro de cada grupo: primero los En Planta, luego por fecha desc
-                const placasEnPlanta = new Set(enPlantaAhora.map(v=>v.placa));
                 const tiqDisp = productosOrden.flatMap(prod=>
-                  tiqBase.filter(t=>(t.producto||"")=== prod)
-                    .sort((a,b)=>(placasEnPlanta.has(b.placa)?1:0)-(placasEnPlanta.has(a.placa)?1:0)||(b.fecha||"").localeCompare(a.fecha||""))
+                  tiqBase.filter(t=>(t.producto||"")=== prod).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""))
                 );
                 const toggleCarro = (id) => {
                   const nuevo = selIds.includes(id) ? selIds.filter(x=>x!==id) : [...selIds,id];
@@ -2872,7 +2871,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   // Actualizar fMps desde selección
                   const selTiq = tiqDisp.filter(t=>nuevo.includes(t.id));
                   const nuevasMps = selTiq.map(t=>({
-                    nombre: t.producto||t.proveedor||t.placa||"",
+                    nombre: t.placa||(t.producto||""),
                     galones: t.galones_recibidos?String(t.galones_recibidos):"",
                     api:   t.api_corregido?String(Number(t.api_corregido).toFixed(2)):"",
                     visc:  t.viscosidad?String(Number(t.viscosidad).toFixed(2)):"",
