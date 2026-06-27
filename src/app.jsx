@@ -2660,7 +2660,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
-                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Programaciones</div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Ordenes de Trabajo</div>
                   <div style={{ fontSize:11, color:T.muted }}>Planificación de descargues y despachos</div>
                 </div>
                 <Btn color={T.orange} onClick={()=>{ setForm({ fecha: today() }); setModal("programacion"); }}>+ Nueva Programación</Btn>
