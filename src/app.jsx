@@ -2769,9 +2769,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               tabStateCache.current[activeTabId] = { ...prev, formulacionModo: modo };
               setTabs(t=>[...t]);
             };
-            // AUTO: calcula promedios históricos por proveedor desde tiquetes
+            // AUTO: busca en campo 'producto' del tiquete (ej: "PENDARE TFG" matchea "PENDARE")
             const calcAutoParams = (nombreMp) => {
-              const muestras = (tiquetes||[]).filter(t=>(t.proveedor||"").toUpperCase()===(nombreMp||"").toUpperCase() && t.resultado==="APROBADO");
+              const key = (nombreMp||"").toUpperCase().trim();
+              const muestras = (tiquetes||[]).filter(t=> t.resultado==="APROBADO" && ((t.producto||"").toUpperCase().includes(key) || (t.proveedor||"").toUpperCase().includes(key)));
               if(!muestras.length) return null;
               const avg = key => { const vals=muestras.map(t=>Number(t[key]||0)).filter(v=>v>0); return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0; };
               return { api:avg("api_corregido"), visc:avg("viscosidad"), azufre:avg("azufre"), agua:avg("agua_destilacion"), flash:avg("flash_point") };
@@ -2851,12 +2852,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {/* Matriz */}
               <Card style={{ marginBottom:16, padding:0, overflow:"hidden" }}>
                 <div style={{ overflowX:"auto" }}>
-                  <table style={{ borderCollapse:"collapse", fontSize:12, tableLayout:"fixed", width: `${120 + COL_W*Math.max(fMps.length,7) + COL_W}px` }}>
+                  <table style={{ borderCollapse:"collapse", fontSize:12, tableLayout:"fixed", minWidth:`${120 + COL_W*7 + COL_W}px`, width:`${120 + COL_W*fMps.length + COL_W}px` }}>
                     <colgroup>
                       <col style={{ width:120 }}/>
                       {fMps.map((_,ci)=><col key={ci} style={{ width:COL_W }}/>)}
-                      {/* Relleno invisible para alcanzar ancho de 7 cols */}
-                      {Array.from({length:Math.max(0,7-fMps.length)}).map((_,i)=><col key={`pad-${i}`} style={{ width:COL_W }}/>)}
                       <col style={{ width:COL_W }}/>
                     </colgroup>
                     <thead>
@@ -2870,11 +2869,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             </div>
                           </th>
                         ))}
-                        {/* Celdas de relleno vacías */}
-                        {Array.from({length:Math.max(0,7-fMps.length)}).map((_,i)=>(
-                          <th key={`pad-${i}`} style={{ borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}`,background:T.bg,opacity:0.3 }}/>
-                        ))}
-                        <th style={{ padding:"10px 8px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:11,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,background:`${T.orange}0a`,position:"sticky",right:0,zIndex:2 }}>PONDERADO</th>
+                        <th style={{ padding:"10px 8px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:11,textTransform:"uppercase",borderBottom:`2px solid ${T.border}`,background:`${T.orange}0a` }}>PONDERADO</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2897,10 +2892,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                   style={{ width:COL_W-22,textAlign:"center",background:readOnly?T.bg:T.card,border:`1px solid ${readOnly?"transparent":T.border}`,borderRadius:4,padding:"5px 4px",color:readOnly?T.muted:T.text,fontSize:12,outline:"none",cursor:readOnly?"default":"text" }} placeholder="0"/>
                               </td>
                             ))}
-                            {Array.from({length:Math.max(0,7-fMps.length)}).map((_,i)=>(
-                              <td key={`pad-${i}`} style={{ borderRight:`1px solid ${T.border}`,opacity:0.2 }}/>
-                            ))}
-                            <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:isG?T.success:pc,fontSize:13,background:`${T.orange}08`,position:"sticky",right:0 }}>
+                            <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:isG?T.success:pc,fontSize:13,background:`${T.orange}08` }}>
                               {isG?fmt(totalG):(pv>0?pv.toFixed(dec):"—")}{pi}
                             </td>
                           </tr>
@@ -2909,8 +2901,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <tr style={{ borderBottom:`1px solid ${T.border}`,background:T.bg }}>
                         <td style={{ padding:"8px 14px",fontWeight:700,color:T.muted,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:1,borderRight:`1px solid ${T.border}` }}>% Total</td>
                         {fMps.map((mp,ci)=>{ const p=totalG>0?((Number(mp.galones||0)/totalG)*100).toFixed(1):0; return <td key={ci} style={{ padding:"8px 6px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:12,borderRight:`1px solid ${T.border}` }}>{p}%</td>; })}
-                        {Array.from({length:Math.max(0,7-fMps.length)}).map((_,i)=><td key={`pad-${i}`} style={{ borderRight:`1px solid ${T.border}`,opacity:0.2 }}/>)}
-                        <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:T.success,background:`${T.orange}08`,position:"sticky",right:0 }}>100% {totalG>0?"✅":""}</td>
+                        <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:T.success,background:`${T.orange}08` }}>100% {totalG>0?"✅":""}</td>
                       </tr>
                     </tbody>
                   </table>
