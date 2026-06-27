@@ -286,6 +286,9 @@ export default function App() {
   const [viajesBusqueda, setViajesBusqueda] = useState("");
   const [programaciones, setProgramaciones] = useState([]);
   const [formulaciones, setFormulaciones] = useState([]);
+  const [ordenesTrabaio, setOrdenesTrabajo] = useState([]);
+  const [otModal, setOtModal] = useState(null); // null | {step:1|2|3, trasiegos, formulacionId, recircHoras}
+  const [otSaving, setOtSaving] = useState(false);
   const [progTab, setProgTab] = useState("programaciones"); // "programaciones" | "formulaciones"
   const [formFormulacion, setFormFormulacion] = useState(null); // null=cerrado, {}=nuevo, {id,...}=editar
   const [mps, setMps] = useState([ // materias primas en el modal formulación
@@ -580,6 +583,7 @@ export default function App() {
     if (permR.data) setPermisosRoles(permR.data);
     if (prog?.data) setProgramaciones(prog.data);
     try { const form2 = await supabase.from("formulaciones").select("*").order("created_at",{ascending:false}); if (form2?.data) setFormulaciones(form2.data); } catch(_) {}
+    try { const ot = await supabase.from("ordenes_trabajo").select("*").order("created_at",{ascending:false}); if (ot?.data) setOrdenesTrabajo(ot.data); } catch(_) {}
   }
 
   const cedulaToEmail = (cedula) => cedula.includes("@") ? cedula : `${cedula}@quimibuques.com`;
@@ -2656,47 +2660,110 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   </div>
 )}
 
-          {nav==="programacion" && (
+          {nav==="programacion" && (()=>{
+            const estadoColor = e => e==="COMPLETADA"?"#00e5a0":e==="RECIRCULANDO"?"#38bdf8":e==="DESCARGANDO"?"#f59e0b":e==="TRASIEGOS"?"#a78bfa":e==="RECHAZADA"?"#ef4444":"#94a3b8";
+            const activas = (ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado));
+            const cerradas = (ordenesTrabaio||[]).filter(o=>["COMPLETADA","RECHAZADA"].includes(o.estado));
+            return (
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
-                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Ordenes de Trabajo</div>
-                  <div style={{ fontSize:11, color:T.muted }}>Planificación de descargues y despachos</div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Órdenes de Trabajo</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Trasiegos · Descargues · Recirculación</div>
                 </div>
-                <Btn color={T.orange} onClick={()=>{ setForm({ fecha: today() }); setModal("programacion"); }}>+ Nueva Programación</Btn>
+                <Btn color={T.orange} onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",formulacionId:"",recircHoras:4})}>+ Nueva Orden</Btn>
               </div>
-              <Card>
-                <div style={{ overflowX:"auto" }}>
-                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-                    <thead>
-                      <tr style={{ borderBottom:`2px solid ${T.border}` }}>
-                        {["Fecha","Producto","Operación","Placa / Buque","Volumen (Gls)","Estado",""].map(h=>(
-                          <th key={h} style={{ padding:"10px 14px", textAlign:"left", color:T.muted, fontWeight:600, fontSize:11, textTransform:"uppercase", letterSpacing:1 }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(programaciones||[]).length===0 ? (
-                        <tr><td colSpan={7} style={{ padding:"40px", textAlign:"center", color:T.muted }}>Sin programaciones registradas</td></tr>
-                      ) : (programaciones||[]).map(p=>(
-                        <tr key={p.id} style={{ borderBottom:`1px solid ${T.border}` }}>
-                          <td style={{ padding:"12px 14px", color:T.muted }}>{p.fecha}</td>
-                          <td style={{ padding:"12px 14px", fontWeight:600, color:T.text }}>{p.producto}</td>
-                          <td style={{ padding:"12px 14px", color:T.text }}>{p.operacion}</td>
-                          <td style={{ padding:"12px 14px" }}><span style={{ background:`${T.orange}18`, border:`1px solid ${T.orange}44`, borderRadius:6, padding:"2px 8px", color:T.orange, fontWeight:700 }}>{p.referencia||"—"}</span></td>
-                          <td style={{ padding:"12px 14px", color:T.success, fontWeight:700 }}>{p.volumen?fmt(Number(p.volumen)):"—"}</td>
-                          <td style={{ padding:"12px 14px" }}><Badge label={p.estado||"Pendiente"} color={p.estado==="Completado"?"#00e5a0":p.estado==="En curso"?"#f59e0b":"#94a3b8"}/></td>
-                          <td style={{ padding:"12px 14px" }}>
-                            <button onClick={()=>{ setForm({...p}); setModal("programacion"); }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Editar</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+              {/* Órdenes activas */}
+              {activas.length===0 && cerradas.length===0 && (
+                <Card><div style={{ padding:40,textAlign:"center",color:T.muted }}>Sin órdenes de trabajo registradas</div></Card>
+              )}
+              {activas.length>0 && (
+                <div style={{ marginBottom:24 }}>
+                  <div style={{ fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:10 }}>En progreso</div>
+                  <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+                    {activas.map(ot=>{
+                      const desc = (ot.descargues||[]);
+                      const totalPlan = desc.reduce((a,d)=>a+Number(d.galones_planeado||0),0);
+                      const totalDesc = desc.reduce((a,d)=>a+Number(d.galones_descargado||0),0);
+                      const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
+                      const fo = formulaciones.find(f=>f.id===ot.formulacion_id);
+                      return (
+                        <Card key={ot.id} style={{ padding:16 }}>
+                          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10 }}>
+                            <div style={{ display:"flex",gap:12,alignItems:"center" }}>
+                              <div style={{ fontWeight:800,fontSize:16,color:T.navy }}>{ot.numero_ot}</div>
+                              <Badge label={ot.estado} color={estadoColor(ot.estado)}/>
+                              <span style={{ fontSize:12,color:T.muted }}>{fo?.producto||""} · {ot.tanque_destino}</span>
+                            </div>
+                            <button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id}]); setActiveTabId(id); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Ver / Gestionar →</button>
+                          </div>
+                          {/* Progreso descargues */}
+                          {ot.estado==="DESCARGANDO" && (
+                            <div style={{ marginBottom:8 }}>
+                              <div style={{ display:"flex",justifyContent:"space-between",fontSize:11,color:T.muted,marginBottom:4 }}>
+                                <span>Descargues: {fmt(totalDesc)} / {fmt(totalPlan)} gls</span>
+                                <span style={{ fontWeight:700,color:T.orange }}>{pct}%</span>
+                              </div>
+                              <div style={{ background:T.border,borderRadius:4,height:6 }}>
+                                <div style={{ width:`${pct}%`,background:T.orange,height:6,borderRadius:4,transition:"width 0.3s" }}/>
+                              </div>
+                            </div>
+                          )}
+                          {ot.estado==="RECIRCULANDO" && (
+                            <div style={{ fontSize:11,color:"#38bdf8" }}>⏱️ Recirculando — {ot.recirculacion_tiempo_total} min programados</div>
+                          )}
+                          {/* Pasos */}
+                          <div style={{ display:"flex",gap:8,marginTop:6 }}>
+                            {[["TRASIEGOS","TRASIEGOS"],["DESCARGANDO","DESCARGUES"],["RECIRCULANDO","RECIRCULAR"]].map(([st,lbl],i)=>{
+                              const estados = ["TRASIEGOS","DESCARGANDO","RECIRCULANDO","COMPLETADA"];
+                              const idxActual = estados.indexOf(ot.estado);
+                              const idxEste = i;
+                              const done = idxActual>idxEste+1; // +1 porque TRASIEGOS es idx 0
+                              const activo = idxActual===idxEste;
+                              return <span key={st} style={{ fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10,background:done?"#00e5a022":activo?`${T.orange}22`:`${T.border}`,color:done?"#00e5a0":activo?T.orange:T.muted,border:`1px solid ${done?"#00e5a055":activo?T.orange:T.border}` }}>{done?"✅ ":activo?"⏳ ":"⏸️ "}{lbl}</span>;
+                            })}
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
-              </Card>
+              )}
+
+              {/* Cerradas */}
+              {cerradas.length>0 && (
+                <div>
+                  <div style={{ fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:10 }}>Completadas / Rechazadas</div>
+                  <Card style={{ padding:0 }}>
+                    <table style={{ width:"100%",borderCollapse:"collapse",fontSize:13 }}>
+                      <thead>
+                        <tr style={{ borderBottom:`2px solid ${T.border}` }}>
+                          {["OT","Tanque","Formulación","Estado","Fecha",""].map(h=><th key={h} style={{ padding:"10px 14px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:11,textTransform:"uppercase" }}>{h}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cerradas.map(ot=>{
+                          const fo = formulaciones.find(f=>f.id===ot.formulacion_id);
+                          return (
+                            <tr key={ot.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                              <td style={{ padding:"10px 14px",fontWeight:700,color:T.navy }}>{ot.numero_ot}</td>
+                              <td style={{ padding:"10px 14px",color:T.text }}>{ot.tanque_destino}</td>
+                              <td style={{ padding:"10px 14px",color:T.muted }}>{fo?.producto||"—"} {fo?.fecha?`(${fo.fecha})`:""}</td>
+                              <td style={{ padding:"10px 14px" }}><Badge label={ot.estado} color={estadoColor(ot.estado)}/></td>
+                              <td style={{ padding:"10px 14px",color:T.muted,fontSize:11 }}>{(ot.created_at||"").slice(0,10)}</td>
+                              <td style={{ padding:"10px 14px" }}><button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id}]); setActiveTabId(id); }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Ver →</button></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </Card>
+                </div>
+              )}
             </div>
-          )}
+            );
+          })()}
 
           {nav==="formulaciones" && (
             <div>
@@ -2732,6 +2799,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{ padding:"12px 14px" }}><Badge label={fo.estado||"PLANEADA"} color={fo.estado==="APROBADA"?"#00e5a0":fo.estado==="EJECUTADA"?"#38bdf8":"#f59e0b"}/></td>
                           <td style={{ padding:"12px 14px", display:"flex", gap:8 }}>
                             <button onClick={()=>openFormulacionTab(fo)} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Editar</button>
+                            <button onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",formulacionId:fo.id,recircHoras:4})} style={{ background:"none",border:"none",color:"#38bdf8",cursor:"pointer",fontSize:12,fontWeight:700 }}>+ OT</button>
                             <button onClick={async()=>{ if(!confirm(`¿Eliminar formulación del ${fo.fecha}?`)) return; await supabaseAdmin.from("formulaciones").delete().eq("id",fo.id); await loadData(); }} style={{ background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:12,fontWeight:700 }}>Eliminar</button>
                           </td>
                         </tr>
@@ -3077,6 +3145,182 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             );
           })()}
+
+      {/* ═══ ORDEN DE TRABAJO — TAB DETALLE ═══ */}
+      {activeTab?.type==="orden_trabajo" && (()=>{
+        const otId = activeTab.otId;
+        const ot = (ordenesTrabaio||[]).find(o=>o.id===otId);
+        if(!ot) return <div style={{ padding:40,textAlign:"center",color:T.muted }}>Cargando orden...</div>;
+        const fo = formulaciones.find(f=>f.id===ot.formulacion_id);
+        const desc = ot.descargues||[];
+        const tras = ot.trasiegos||[];
+        const totalPlan = desc.reduce((a,d)=>a+Number(d.galones_planeado||0),0);
+        const totalDesc = desc.reduce((a,d)=>a+Number(d.galones_descargado||0),0);
+        const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
+        const estadoColor = e=>e==="COMPLETADA"?"#00e5a0":e==="RECIRCULANDO"?"#38bdf8":e==="DESCARGANDO"?"#f59e0b":e==="TRASIEGOS"?"#a78bfa":e==="RECHAZADA"?"#ef4444":"#94a3b8";
+
+        const actualizarOT = async(patch) => {
+          await supabaseAdmin.from("ordenes_trabajo").update({...patch,updated_at:new Date().toISOString()}).eq("id",ot.id);
+          await loadData();
+        };
+
+        return (
+          <div style={{ padding:24, maxWidth:900 }}>
+            {/* Header */}
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20 }}>
+              <div>
+                <div style={{ fontWeight:800,fontSize:22,color:T.navy }}>{ot.numero_ot}</div>
+                <div style={{ fontSize:12,color:T.muted,marginTop:2 }}>{fo?.producto||""} · {ot.tanque_destino} · {(ot.created_at||"").slice(0,10)}</div>
+              </div>
+              <Badge label={ot.estado} color={estadoColor(ot.estado)}/>
+            </div>
+
+            {/* PASO 1: TRASIEGOS */}
+            <Card style={{ marginBottom:16,padding:16 }}>
+              <div style={{ fontWeight:700,fontSize:13,color:T.navy,marginBottom:10 }}>
+                {ot.estado==="TRASIEGOS"?"⏳":"✅"} PASO 1 — TRASIEGOS
+              </div>
+              {tras.length===0 ? (
+                <div style={{ color:T.muted,fontSize:12 }}>Sin trasiegos requeridos</div>
+              ) : (
+                <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                  <thead><tr style={{ borderBottom:`1px solid ${T.border}` }}>
+                    {["Origen","Galones","Destino","Estado",""].map(h=><th key={h} style={{ padding:"6px 10px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:10,textTransform:"uppercase" }}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {tras.map((t,i)=>(
+                      <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
+                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{t.origen}</td>
+                        <td style={{ padding:"8px 10px",color:T.success,fontWeight:700 }}>{fmt(Number(t.galones||0))}</td>
+                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{t.destino}</td>
+                        <td style={{ padding:"8px 10px" }}><span style={{ fontSize:10,fontWeight:700,color:t.completado?"#00e5a0":"#f59e0b" }}>{t.completado?"✅ Completado":"⏳ Pendiente"}</span></td>
+                        <td style={{ padding:"8px 10px" }}>
+                          {!t.completado && ot.estado==="TRASIEGOS" && (
+                            <button onClick={async()=>{
+                              const nuevo = tras.map((tr,j)=>j===i?{...tr,completado:true,fecha:new Date().toISOString()}:tr);
+                              const todosOk = nuevo.every(tr=>tr.completado);
+                              await actualizarOT({trasiegos:nuevo,...(todosOk?{estado:"DESCARGANDO",fecha_inicio_descargue:new Date().toISOString()}:{})});
+                            }} style={{ background:"#00e5a022",border:"1px solid #00e5a055",color:"#00e5a0",borderRadius:5,padding:"3px 10px",cursor:"pointer",fontSize:11,fontWeight:700 }}>Marcar ✅</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {ot.estado==="TRASIEGOS" && (tras.length===0 || tras.every(t=>t.completado)) && (
+                <div style={{ marginTop:10 }}>
+                  <button onClick={()=>actualizarOT({estado:"DESCARGANDO",fecha_inicio_descargue:new Date().toISOString()})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Iniciar Descargues →</button>
+                </div>
+              )}
+            </Card>
+
+            {/* PASO 2: DESCARGUES */}
+            <Card style={{ marginBottom:16,padding:16 }}>
+              <div style={{ fontWeight:700,fontSize:13,color:T.navy,marginBottom:10 }}>
+                {ot.estado==="COMPLETADA"||ot.estado==="RECIRCULANDO"?"✅":"⏳"} PASO 2 — DESCARGUES
+                {ot.estado==="DESCARGANDO" && <span style={{ marginLeft:10,fontSize:11,color:T.orange }}>{pct}% completado</span>}
+              </div>
+              {desc.length===0 ? <div style={{ color:T.muted,fontSize:12 }}>Sin descargues</div> : (
+                <>
+                  {ot.estado==="DESCARGANDO" && (
+                    <div style={{ background:T.border,borderRadius:4,height:8,marginBottom:12 }}>
+                      <div style={{ width:`${pct}%`,background:T.orange,height:8,borderRadius:4,transition:"width 0.3s" }}/>
+                    </div>
+                  )}
+                  <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                    <thead><tr style={{ borderBottom:`2px solid ${T.border}` }}>
+                      {["Producto/Placa","Planeado (gls)","Descargado (gls)","Falta","Estado","Acción"].map(h=><th key={h} style={{ padding:"6px 10px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:10,textTransform:"uppercase" }}>{h}</th>)}
+                    </tr></thead>
+                    <tbody>
+                      {desc.map((d,i)=>{
+                        const plan=Number(d.galones_planeado||0), real=Number(d.galones_descargado||0), falta=Math.max(0,plan-real);
+                        const dpct=plan>0?Math.round(real/plan*100):0;
+                        return (
+                          <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
+                            <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{d.producto||d.nombre||""}{d.placa?` / ${d.placa}`:""}</td>
+                            <td style={{ padding:"8px 10px",color:T.muted }}>{fmt(plan)}</td>
+                            <td style={{ padding:"8px 10px",color:T.success,fontWeight:700 }}>{fmt(real)}</td>
+                            <td style={{ padding:"8px 10px",color:falta>0?"#f59e0b":T.success,fontWeight:700 }}>{falta>0?fmt(falta):"✅"}</td>
+                            <td style={{ padding:"8px 10px" }}><span style={{ fontSize:10,fontWeight:700,color:dpct>=100?"#00e5a0":dpct>0?"#f59e0b":T.muted }}>{dpct>=100?"✅ Completo":dpct>0?`${dpct}%`:"⏸️ Pendiente"}</span></td>
+                            <td style={{ padding:"8px 10px" }}>
+                              {ot.estado==="DESCARGANDO" && dpct<100 && (
+                                <div style={{ display:"flex",gap:4,alignItems:"center" }}>
+                                  <input type="number" placeholder="gls descargados" style={{ width:110,padding:"3px 6px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,background:T.card,color:T.text,outline:"none" }}
+                                    onKeyDown={async e=>{ if(e.key==="Enter"){
+                                      const val=Number(e.target.value||0);
+                                      const nuevo=desc.map((dd,j)=>j===i?{...dd,galones_descargado:Math.min(plan,real+val)}:dd);
+                                      const todos=nuevo.every(dd=>Number(dd.galones_descargado||0)>=Number(dd.galones_planeado||0));
+                                      await actualizarOT({descargues:nuevo,...(todos?{estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"}:{})});
+                                      e.target.value="";
+                                    }}}/>
+                                  <span style={{ fontSize:9,color:T.muted }}>↵</span>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      <tr style={{ background:T.bg }}>
+                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.muted,fontSize:11 }}>TOTAL</td>
+                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{fmt(totalPlan)}</td>
+                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.success }}>{fmt(totalDesc)}</td>
+                        <td style={{ padding:"8px 10px",fontWeight:700,color:totalPlan-totalDesc>0?"#f59e0b":"#00e5a0" }}>{totalPlan-totalDesc>0?fmt(totalPlan-totalDesc):"✅"}</td>
+                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.orange }}>{pct}%</td>
+                        <td/>
+                      </tr>
+                    </tbody>
+                  </table>
+                  {ot.estado==="DESCARGANDO" && pct>=100 && (
+                    <div style={{ marginTop:10 }}>
+                      <button onClick={()=>actualizarOT({estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Iniciar Recirculación →</button>
+                    </div>
+                  )}
+                </>
+              )}
+            </Card>
+
+            {/* PASO 3: RECIRCULACIÓN */}
+            <Card style={{ marginBottom:16,padding:16 }}>
+              <div style={{ fontWeight:700,fontSize:13,color:T.navy,marginBottom:10 }}>
+                {ot.estado==="COMPLETADA"?"✅":ot.estado==="RECIRCULANDO"?"⏳":"⏸️"} PASO 3 — RECIRCULACIÓN
+              </div>
+              <div style={{ fontSize:12,color:T.muted,marginBottom:8 }}>Tiempo programado: <b style={{ color:T.text }}>{ot.recirculacion_tiempo_total} min ({(ot.recirculacion_tiempo_total/60).toFixed(1)}h)</b></div>
+              {ot.estado==="RECIRCULANDO" && (
+                <div style={{ marginBottom:10 }}>
+                  <div style={{ fontSize:11,color:"#38bdf8",marginBottom:4 }}>Iniciado: {ot.fecha_inicio_recirculacion?new Date(ot.fecha_inicio_recirculacion).toLocaleString("es-CO"):""}</div>
+                  <button onClick={()=>actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada"})} style={{ background:"#00e5a0",border:"none",color:"#071422",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✅ Recirculación Completada → Enviar a Lab</button>
+                </div>
+              )}
+              {ot.estado==="COMPLETADA" && (
+                <div style={{ fontSize:12,color:"#00e5a0",fontWeight:700 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
+              )}
+            </Card>
+
+            {/* Análisis planeado */}
+            {fo && (
+              <Card style={{ padding:16 }}>
+                <div style={{ fontWeight:700,fontSize:12,color:T.muted,marginBottom:10,textTransform:"uppercase" }}>Análisis Planeado (Formulación)</div>
+                <div style={{ display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10 }}>
+                  {[["API",fo.api_planeado,"°"],["Visc",fo.visc_planeado," cSt"],["Azufre",fo.azufre_planeado,"%"],["Agua",fo.agua_planeada,"%"],["Flash",fo.flash_point_planeado,"°C"]].map(([lbl,val,u])=>(
+                    <div key={lbl} style={{ background:T.bg,borderRadius:8,padding:"10px 12px",border:`1px solid ${T.border}`,textAlign:"center" }}>
+                      <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:3 }}>{lbl}</div>
+                      <div style={{ fontSize:16,fontWeight:800,color:T.text }}>{Number(val||0).toFixed(2)}{u}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Botones peligrosos */}
+            {!["COMPLETADA","RECHAZADA"].includes(ot.estado) && (
+              <div style={{ marginTop:16,display:"flex",gap:10 }}>
+                <button onClick={async()=>{ if(!confirm("¿Rechazar esta OT?")) return; await actualizarOT({estado:"RECHAZADA"}); }} style={{ background:"#ef444422",border:"1px solid #ef444455",color:"#ef4444",borderRadius:6,padding:"7px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✗ Rechazar OT</button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ═══ FORMS (inline in content area) ═══ */}
 
@@ -3765,6 +4009,193 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     </div>
   </Modal>
 )}
+
+{/* ═══ MODAL NUEVA OT ═══ */}
+{otModal && (()=>{
+  const m = otModal;
+  const setM = patch => setOtModal(p=>({...p,...patch}));
+  const fo = formulaciones.find(f=>f.id===m.formulacionId);
+  const foMps = fo?.mps||[];
+  const pond = fo ? {api:fo.api_planeado,visc:fo.visc_planeado,azufre:fo.azufre_planeado,agua:fo.agua_planeada,flash:fo.flash_point_planeado} : {};
+  const TANQUES_LIST = (tanques||[]).map(t=>t.id);
+
+  const crearOT = async()=>{
+    if(!m.formulacionId) return showToast("Selecciona una formulación",false);
+    setOtSaving(true);
+    // Generar número OT
+    const countRes = await supabase.from("ordenes_trabajo").select("id",{count:"exact",head:true});
+    const num = String((countRes.count||0)+1).padStart(3,"0");
+    const numeroOt = `OT-${num}`;
+    // Descargues desde mps de formulación
+    const descargues = foMps.map(mp=>({
+      producto: mp._producto||mp.nombre||"",
+      placa: mp._placa||"",
+      galones_planeado: Number(mp.galones||0),
+      galones_descargado: 0,
+      estado: "pendiente",
+    })).filter(d=>d.galones_planeado>0);
+    const trasiegos = m.necesitaTrasiego==="si" ? (m.trasiegos||[]).filter(t=>t.origen&&t.destino&&t.galones).map(t=>({...t,completado:false})) : [];
+    const estadoInicial = trasiegos.length>0 ? "TRASIEGOS" : "DESCARGANDO";
+    const payload = {
+      numero_ot: numeroOt,
+      formulacion_id: m.formulacionId,
+      tanque_destino: fo?.tanque||"",
+      estado: estadoInicial,
+      trasiegos,
+      descargues,
+      recirculacion_tiempo_total: Number(m.recircHoras||4)*60,
+      sede: perfil?.sede||null,
+      creado_por: session.user.id,
+      ...(estadoInicial==="DESCARGANDO"?{fecha_inicio_descargue:new Date().toISOString()}:{fecha_inicio_trasiegos:new Date().toISOString()}),
+    };
+    const {error} = await supabaseAdmin.from("ordenes_trabajo").insert([payload]);
+    setOtSaving(false);
+    if(error) return showToast("Error: "+error.message,false);
+    await loadData();
+    setOtModal(null);
+    showToast(`✅ ${numeroOt} creada exitosamente`);
+  };
+
+  return (
+    <div style={{ position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center" }} onClick={e=>{ if(e.target===e.currentTarget) setOtModal(null); }}>
+      <div style={{ background:T.card,borderRadius:14,padding:28,width:"min(700px,95vw)",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 60px #00000066" }}>
+        {/* Header con pasos */}
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22 }}>
+          <div style={{ fontWeight:800,fontSize:17,color:T.navy }}>Nueva Orden de Trabajo</div>
+          <button onClick={()=>setOtModal(null)} style={{ background:"none",border:"none",color:T.muted,fontSize:20,cursor:"pointer" }}>✕</button>
+        </div>
+        <div style={{ display:"flex",gap:6,marginBottom:22 }}>
+          {[["1","Trasiegos"],["2","Descargues"],["3","Recirculación"]].map(([n,lbl])=>(
+            <div key={n} style={{ flex:1,padding:"7px 10px",borderRadius:8,textAlign:"center",fontSize:11,fontWeight:700,
+              background:m.step===Number(n)?T.orange:Number(n)<m.step?"#00e5a022":T.bg,
+              color:m.step===Number(n)?"#fff":Number(n)<m.step?"#00e5a0":T.muted,
+              border:`1px solid ${m.step===Number(n)?T.orange:Number(n)<m.step?"#00e5a055":T.border}` }}>
+              {Number(n)<m.step?"✅ ":""}{lbl}
+            </div>
+          ))}
+        </div>
+
+        {/* PASO 1 */}
+        {m.step===1 && (
+          <div>
+            <div style={{ fontWeight:700,fontSize:13,color:T.text,marginBottom:14 }}>¿Necesitas abrir espacio (trasiegos)?</div>
+            <div style={{ display:"flex",gap:10,marginBottom:18 }}>
+              {["si","no"].map(v=>(
+                <button key={v} onClick={()=>setM({necesitaTrasiego:v})} style={{ flex:1,padding:"10px",borderRadius:8,border:`2px solid ${m.necesitaTrasiego===v?T.orange:T.border}`,background:m.necesitaTrasiego===v?`${T.orange}18`:"transparent",color:m.necesitaTrasiego===v?T.orange:T.muted,fontWeight:700,fontSize:13,cursor:"pointer",textTransform:"uppercase" }}>{v==="si"?"Sí":"No"}</button>
+              ))}
+            </div>
+            {m.necesitaTrasiego==="si" && (
+              <div>
+                {(m.trasiegos||[]).map((tr,i)=>(
+                  <div key={i} style={{ display:"grid",gridTemplateColumns:"1fr auto 1fr auto",gap:8,alignItems:"end",marginBottom:10,padding:12,background:T.bg,borderRadius:8,border:`1px solid ${T.border}` }}>
+                    <div>
+                      <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>ORIGEN</div>
+                      <select value={tr.origen} onChange={e=>{ const n=[...m.trasiegos];n[i]={...n[i],origen:e.target.value};setM({trasiegos:n}); }} style={{ width:"100%",padding:"7px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12 }}>
+                        <option value="">Seleccionar...</option>
+                        {TANQUES_LIST.map(t=><option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>GALONES</div>
+                      <input type="number" value={tr.galones} onChange={e=>{ const n=[...m.trasiegos];n[i]={...n[i],galones:e.target.value};setM({trasiegos:n}); }} placeholder="0" style={{ width:90,padding:"7px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12,outline:"none" }}/>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>DESTINO</div>
+                      <select value={tr.destino} onChange={e=>{ const n=[...m.trasiegos];n[i]={...n[i],destino:e.target.value};setM({trasiegos:n}); }} style={{ width:"100%",padding:"7px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12 }}>
+                        <option value="">Seleccionar...</option>
+                        {TANQUES_LIST.filter(t=>t!==tr.origen).map(t=><option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <button onClick={()=>setM({trasiegos:m.trasiegos.filter((_,j)=>j!==i)})} style={{ background:"#ef444418",border:"1px solid #ef444455",color:"#ef4444",borderRadius:6,padding:"7px 10px",cursor:"pointer",fontWeight:700,fontSize:12,alignSelf:"flex-end" }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={()=>setM({trasiegos:[...m.trasiegos,{origen:"",destino:"",galones:""}]})} style={{ background:"transparent",border:`1px dashed ${T.border}`,color:T.muted,borderRadius:6,padding:"7px 16px",cursor:"pointer",fontSize:12,fontWeight:600,width:"100%",marginBottom:14 }}>+ Agregar trasiego</button>
+              </div>
+            )}
+            <div style={{ display:"flex",justifyContent:"flex-end" }}>
+              <button onClick={()=>setM({step:2})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13 }}>Siguiente: Descargues →</button>
+            </div>
+          </div>
+        )}
+
+        {/* PASO 2 */}
+        {m.step===2 && (
+          <div>
+            <div style={{ fontWeight:700,fontSize:13,color:T.text,marginBottom:12 }}>Selecciona la formulación</div>
+            <select value={m.formulacionId} onChange={e=>setM({formulacionId:e.target.value})} style={{ width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:13,marginBottom:16,outline:"none" }}>
+              <option value="">— Seleccionar formulación —</option>
+              {formulaciones.filter(f=>f.estado==="PLANEADA"||!f.estado).map(f=><option key={f.id} value={f.id}>{f.fecha} · {f.tanque} · {f.producto} ({fmt(Number(f.total_galones||0))} gls)</option>)}
+            </select>
+            {fo && (
+              <div style={{ background:T.bg,borderRadius:10,padding:14,border:`1px solid ${T.border}`,marginBottom:16 }}>
+                <div style={{ fontSize:11,color:T.muted,fontWeight:700,marginBottom:10,textTransform:"uppercase" }}>Desglose de Descargues — Tanque {fo.tanque}</div>
+                <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                  <thead><tr style={{ borderBottom:`1px solid ${T.border}` }}>
+                    {["Producto / Placa","Gls Planeado","Carrotanques"].map(h=><th key={h} style={{ padding:"6px 10px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:10,textTransform:"uppercase" }}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {foMps.filter(mp=>Number(mp.galones||0)>0).map((mp,i)=>(
+                      <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
+                        <td style={{ padding:"7px 10px",fontWeight:700,color:T.text }}>{mp._producto||mp.nombre}{mp.nombre&&mp._producto?` / ${mp.nombre}`:""}</td>
+                        <td style={{ padding:"7px 10px",color:T.success,fontWeight:700 }}>{fmt(Number(mp.galones||0))}</td>
+                        <td style={{ padding:"7px 10px",color:T.muted }}>{(Number(mp.galones||0)/9300).toFixed(1)}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ background:`${T.orange}08` }}>
+                      <td style={{ padding:"7px 10px",fontWeight:800,color:T.text }}>TOTAL</td>
+                      <td style={{ padding:"7px 10px",fontWeight:800,color:T.success }}>{fmt(Number(fo.total_galones||0))}</td>
+                      <td style={{ padding:"7px 10px",fontWeight:700,color:T.muted }}>{(Number(fo.total_galones||0)/9300).toFixed(1)} carros</td>
+                    </tr>
+                  </tbody>
+                </table>
+                {fo.producto==="VLSFO" && (
+                  <div style={{ marginTop:10,display:"flex",gap:8,flexWrap:"wrap" }}>
+                    {[["Azufre",Number(fo.azufre_planeado||0).toFixed(4)+"%",Number(fo.azufre_planeado||0)<=0.5],["Agua",Number(fo.agua_planeada||0).toFixed(4)+"%",true],["Flash",Number(fo.flash_point_planeado||0).toFixed(1)+"°C",Number(fo.flash_point_planeado||0)>=60]].map(([lbl,val,ok])=>(
+                      <span key={lbl} style={{ fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:6,background:ok?"#00e5a018":"#ef444418",border:`1px solid ${ok?"#00e5a055":"#ef444455"}`,color:ok?"#00e5a0":"#ef4444" }}>{lbl}: {val} {ok?"✅":"🔴"}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <div style={{ display:"flex",justifyContent:"space-between" }}>
+              <button onClick={()=>setM({step:1})} style={{ background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13 }}>← Atrás</button>
+              <button onClick={()=>{ if(!m.formulacionId) return showToast("Selecciona una formulación",false); setM({step:3}); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13 }}>Siguiente: Recirculación →</button>
+            </div>
+          </div>
+        )}
+
+        {/* PASO 3 */}
+        {m.step===3 && (
+          <div>
+            <div style={{ fontWeight:700,fontSize:13,color:T.text,marginBottom:14 }}>Tanque destino: <span style={{ color:T.orange }}>{fo?.tanque||"—"}</span></div>
+            <div style={{ marginBottom:18 }}>
+              <div style={{ fontSize:11,color:T.muted,fontWeight:600,marginBottom:6 }}>TIEMPO DE RECIRCULACIÓN (horas)</div>
+              <input type="number" min={1} max={24} value={m.recircHoras} onChange={e=>setM({recircHoras:e.target.value})} style={{ width:100,padding:"9px 14px",borderRadius:8,border:`2px solid ${T.orange}`,background:T.card,color:T.text,fontSize:18,fontWeight:700,outline:"none",textAlign:"center" }}/>
+              <span style={{ marginLeft:10,fontSize:12,color:T.muted }}>= {Number(m.recircHoras||4)*60} minutos</span>
+            </div>
+            {fo && (
+              <div style={{ background:T.bg,borderRadius:10,padding:14,border:`1px solid ${T.border}`,marginBottom:18 }}>
+                <div style={{ fontSize:11,color:T.muted,fontWeight:700,marginBottom:10 }}>ANÁLISIS PONDERADO PLANEADO</div>
+                <div style={{ display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8 }}>
+                  {[["API",fo.api_planeado,"°"],["Visc",fo.visc_planeado," cSt"],["Azufre",fo.azufre_planeado,"%"],["Agua",fo.agua_planeada,"%"],["Flash",fo.flash_point_planeado,"°C"]].map(([lbl,val,u])=>(
+                    <div key={lbl} style={{ background:T.card,borderRadius:8,padding:"10px",border:`1px solid ${T.border}`,textAlign:"center" }}>
+                      <div style={{ fontSize:9,color:T.muted,fontWeight:600,marginBottom:3 }}>{lbl}</div>
+                      <div style={{ fontSize:15,fontWeight:800,color:T.text }}>{Number(val||0).toFixed(2)}{u}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div style={{ display:"flex",justifyContent:"space-between" }}>
+              <button onClick={()=>setM({step:2})} style={{ background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13 }}>← Atrás</button>
+              <button onClick={crearOT} disabled={otSaving} style={{ background:"#00e5a0",border:"none",color:"#071422",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:800,fontSize:13 }}>{otSaving?"Creando...":"✅ Crear Orden de Trabajo"}</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+})()}
 
 {/* TURNO CARRO */}
 {modal==="turno_carro" && (()=>{
