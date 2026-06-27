@@ -2875,6 +2875,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const selTiq = tiqDisp.filter(t=>nuevo.includes(t.id));
                   const nuevasMps = selTiq.map(t=>({
                     nombre: t.placa||(t.producto||""),
+                    _producto: t.producto||"",
                     galones: galonesDeViaje[t.placa]?String(galonesDeViaje[t.placa]):(t.galones_recibidos?String(t.galones_recibidos):""),
                     api:   t.api_corregido?String(Number(t.api_corregido).toFixed(2)):"",
                     visc:  t.viscosidad?String(Number(t.viscosidad).toFixed(2)):"",
@@ -2956,7 +2957,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <th style={{ padding:"10px 14px",textAlign:"left",color:T.muted,fontWeight:700,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:2,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}` }}>Parámetro</th>
                         {fMps.map((mp,ci)=>(
                           <th key={ci} style={{ padding:"8px 6px",textAlign:"center",color:T.navy,fontWeight:700,fontSize:12,borderBottom:`2px solid ${T.border}`,borderRight:`1px solid ${T.border}` }}>
-                            <div style={{ display:"flex",flexDirection:"column",gap:4,alignItems:"center" }}>
+                            <div style={{ display:"flex",flexDirection:"column",gap:3,alignItems:"center" }}>
+                              {mp._producto && <div style={{ fontSize:9,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.5,textAlign:"center",lineHeight:1.2 }}>{mp._producto}</div>}
                               <input value={mp.nombre} onChange={e=>{const n=[...fMps];n[ci].nombre=e.target.value; if(fModo==="AUTO"){const h=calcAutoParams(e.target.value);if(h){n[ci]={...n[ci],nombre:e.target.value,api:h.api?h.api.toFixed(2):"",visc:h.visc?h.visc.toFixed(2):"",azufre:h.azufre?h.azufre.toFixed(4):"",agua:h.agua?h.agua.toFixed(4):"",flash:h.flash?h.flash.toFixed(1):""};}} setFMps(n);}} style={{ width:COL_W-20,textAlign:"center",background:T.card,border:`1px solid ${T.border}`,borderRadius:4,padding:"3px 6px",color:T.text,fontSize:11,fontWeight:700,outline:"none" }}/>
                               {fMps.length>2 && <button onClick={()=>setFMps(fMps.filter((_,j)=>j!==ci))} style={{ background:"#ef444420",border:"1px solid #ef444455",borderRadius:4,color:"#ef4444",padding:"2px 6px",cursor:"pointer",fontSize:10,fontWeight:700 }}>Eliminar</button>}
                             </div>
