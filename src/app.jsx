@@ -2987,7 +2987,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             </div>
                           </th>
                         ))}
-                        <th style={{ padding:"10px 8px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:11,textTransform:"uppercase",position:"sticky",right:0,background:`${T.orange}12`,zIndex:3,borderBottom:`2px solid ${T.border}`,borderLeft:`2px solid ${T.orange}44` }}>TOTAL</th>
+                        <th style={{ padding:"10px 8px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:11,textTransform:"uppercase",position:"sticky",right:0,background:T.bg,zIndex:3,borderBottom:`2px solid ${T.border}`,borderLeft:`2px solid ${T.orange}` }}>TOTAL</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3011,7 +3011,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                   style={{ width:COL_W-22,textAlign:"center",background:readOnly?T.bg:T.card,border:`1px solid ${readOnly?"transparent":T.border}`,borderRadius:4,padding:"5px 4px",color:readOnly?T.muted:T.text,fontSize:12,outline:"none",cursor:readOnly?"default":"text" }} placeholder="0"/>
                               </td>
                             ))}
-                            <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:isG?T.success:pc,fontSize:13,position:"sticky",right:0,background:`${T.orange}08`,zIndex:2,borderLeft:`2px solid ${T.orange}44` }}>
+                            <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:isG?T.success:pc,fontSize:13,position:"sticky",right:0,background:T.bg,zIndex:2,borderLeft:`2px solid ${T.orange}` }}>
                               {isG?fmt(totalG):(pv>0?pv.toFixed(dec):"—")}{pi}
                             </td>
                           </tr>
@@ -3020,7 +3020,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <tr style={{ borderBottom:`1px solid ${T.border}`,background:T.bg }}>
                         <td style={{ padding:"8px 14px",fontWeight:700,color:T.muted,fontSize:11,textTransform:"uppercase",position:"sticky",left:0,background:T.bg,zIndex:2,borderRight:`1px solid ${T.border}` }}>% Total</td>
                         {fMps.map((mp,ci)=>{ const p=totalG>0?((Number(mp.galones||0)/totalG)*100).toFixed(1):0; return <td key={ci} style={{ padding:"8px 6px",textAlign:"center",color:T.orange,fontWeight:700,fontSize:12,borderRight:`1px solid ${T.border}` }}>{p}%</td>; })}
-                        <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:T.success,position:"sticky",right:0,background:`${T.orange}08`,zIndex:2,borderLeft:`2px solid ${T.orange}44` }}>100% {totalG>0?"✅":""}</td>
+                        <td style={{ padding:"8px 10px",textAlign:"center",fontWeight:700,color:T.success,position:"sticky",right:0,background:T.bg,zIndex:2,borderLeft:`2px solid ${T.orange}` }}>100% {totalG>0?"✅":""}</td>
                       </tr>
                     </tbody>
                   </table>
