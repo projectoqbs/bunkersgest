@@ -2912,34 +2912,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               const enPlanta = placasEnPlanta.has(t.placa);
                               return (
                                 <div key={t.id} onClick={()=>toggleCarro(t.id)}
-                                  style={{ padding:"10px 12px", borderBottom:`1px solid ${T.border}`, cursor:"pointer",
+                                  style={{ padding:"8px 12px", borderBottom:`1px solid ${T.border}`, cursor:"pointer", display:"flex", alignItems:"center", gap:8,
                                     background: sel?`${T.orange}18`:enPlanta?`#00e5a008`:"transparent", transition:"background 0.12s" }}
                                   onMouseEnter={e=>{ if(!sel) e.currentTarget.style.background=`${T.border}66`; }}
                                   onMouseLeave={e=>{ e.currentTarget.style.background=sel?`${T.orange}18`:enPlanta?`#00e5a008`:"transparent"; }}>
-                                  {/* Placa + checkbox */}
-                                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                                    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                                      <div style={{ width:15,height:15,borderRadius:3,border:`2px solid ${sel?T.orange:T.border}`,background:sel?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#fff",fontWeight:800,flexShrink:0 }}>
-                                        {sel?"✓":""}
-                                      </div>
-                                      <span style={{ fontWeight:800, fontSize:13, color:T.text }}>{t.placa}</span>
-                                      {enPlanta && <span style={{ background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:4,padding:"1px 5px",fontSize:9,color:"#00e5a0",fontWeight:700 }}>PLANTA</span>}
-                                    </div>
-                                    <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:5,padding:"1px 6px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:9 }}>
-                                      {aprobado?"✓ OK":"✗"}
-                                    </span>
+                                  <div style={{ width:15,height:15,borderRadius:3,border:`2px solid ${sel?T.orange:T.border}`,background:sel?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#fff",fontWeight:800,flexShrink:0 }}>
+                                    {sel?"✓":""}
                                   </div>
-                                  {/* Params en grid */}
-                                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"2px 8px", fontSize:10, color:T.muted }}>
-                                    <span>TQ: <b style={{color:"#00b4ff",fontFamily:"monospace"}}>{t.id}</b></span>
-                                    <span>Fecha: <b style={{color:T.text}}>{t.fecha}</b></span>
-                                    <span>API: <b style={{color:T.text}}>{t.api_corregido}°</b></span>
-                                    <span>Visc: <b style={{color:T.text}}>{t.viscosidad}</b></span>
-                                    <span>S: <b style={{color:Number(t.azufre)>0.48?"#ef4444":T.text}}>{Number(t.azufre||0).toFixed(4)}%</b></span>
-                                    <span>H₂O: <b style={{color:T.text}}>{Number(t.agua_destilacion||0).toFixed(4)}%</b></span>
-                                    <span>Flash: <b style={{color:Number(t.flash_point||0)<60?"#f59e0b":T.text}}>{t.flash_point}°C</b></span>
-                                    <span>Gls: <b style={{color:T.success}}>{t.galones_recibidos?fmt(Number(t.galones_recibidos)):"—"}</b></span>
-                                  </div>
+                                  <span style={{ fontWeight:800, fontSize:13, color:T.text, flex:1 }}>{t.placa}</span>
+                                  {enPlanta && <span style={{ background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:4,padding:"1px 5px",fontSize:9,color:"#00e5a0",fontWeight:700 }}>PLANTA</span>}
+                                  <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:5,padding:"1px 6px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:9 }}>
+                                    {aprobado?"✓":"✗"}
+                                  </span>
                                 </div>
                               );
                             })}
