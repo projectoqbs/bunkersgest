@@ -2915,17 +2915,40 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               const enPlanta = placasEnPlanta.has(t.placa);
                               return (
                                 <div key={t.id} onClick={()=>toggleCarro(t.id)}
-                                  style={{ padding:"8px 12px", borderBottom:`1px solid ${T.border}`, cursor:"pointer", display:"flex", alignItems:"center", gap:8,
+                                  style={{ padding:"8px 12px", borderBottom:`1px solid ${T.border}`, cursor:"pointer",
                                     background: sel?`${T.orange}18`:aprobado?`#00e5a008`:"#ef444408", transition:"background 0.12s" }}
                                   onMouseEnter={e=>{ if(!sel) e.currentTarget.style.background=`${T.border}66`; }}
                                   onMouseLeave={e=>{ e.currentTarget.style.background=sel?`${T.orange}18`:aprobado?`#00e5a008`:"#ef444408"; }}>
-                                  <div style={{ width:15,height:15,borderRadius:3,border:`2px solid ${sel?T.orange:T.border}`,background:sel?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#fff",fontWeight:800,flexShrink:0 }}>
-                                    {sel?"✓":""}
+                                  {/* Fila superior: checkbox + placa + badge */}
+                                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                                    <div style={{ width:15,height:15,borderRadius:3,border:`2px solid ${sel?T.orange:T.border}`,background:sel?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#fff",fontWeight:800,flexShrink:0 }}>
+                                      {sel?"✓":""}
+                                    </div>
+                                    <span style={{ fontWeight:800, fontSize:13, color:T.text, flex:1 }}>{t.placa}</span>
+                                    <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:4,padding:"1px 6px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:9,whiteSpace:"nowrap" }}>
+                                      {aprobado?"APROBADO":"RECHAZADO"}
+                                    </span>
                                   </div>
-                                  <span style={{ fontWeight:800, fontSize:13, color:T.text, flex:1 }}>{t.placa}</span>
-                                  <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:4,padding:"1px 6px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:9,whiteSpace:"nowrap" }}>
-                                    {aprobado?"APROBADO":"RECHAZADO"}
-                                  </span>
+                                  {/* Parámetros fuera de spec solo si rechazado */}
+                                  {!aprobado && (()=>{
+                                    const azufre=Number(t.azufre||0), agua=Number(t.agua_destilacion||0), flash=Number(t.flash_point||0), api=Number(t.api_corregido||0), visc=Number(t.viscosidad||0);
+                                    const params=[
+                                      {lbl:"API",    val:`${api.toFixed(2)}°`,  bad: api<10||api>40 },
+                                      {lbl:"Visc",   val:`${visc.toFixed(1)}`,   bad: visc>700 },
+                                      {lbl:"Azufre", val:`${azufre.toFixed(4)}%`,bad: azufre>0.5 },
+                                      {lbl:"Agua",   val:`${agua.toFixed(4)}%`,  bad: agua>0.5 },
+                                      {lbl:"Flash",  val:`${flash.toFixed(1)}°C`,bad: flash<60 },
+                                    ];
+                                    return (
+                                      <div style={{ display:"flex", flexWrap:"wrap", gap:"3px 8px", marginTop:5, paddingLeft:23 }}>
+                                        {params.map(p=>(
+                                          <span key={p.lbl} style={{ fontSize:9, fontWeight:700, color:p.bad?"#ef4444":T.muted }}>
+                                            {p.lbl}: <b style={{ color:p.bad?"#ef4444":T.text }}>{p.val}</b>
+                                          </span>
+                                        ))}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               );
                             })}
