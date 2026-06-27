@@ -2853,12 +2853,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const selIds = tabCache.carrosSelIds || [];
                 const setSelIds = ids => { tabStateCache.current[activeTabId] = {...(tabStateCache.current[activeTabId]||{}), carrosSelIds:ids}; setTabs(t=>[...t]); };
                 // tiquetes con resultado registrado
-                // solo carros actualmente En Planta con tiquete analizado
-                const enPlantaAhora = (viajes||[]).filter(v=>v.estado==="En Planta");
-                const placasEnPlanta = new Set(enPlantaAhora.map(v=>v.placa));
+                // carros en planta (aprobados) o rechazados (aún en planta físicamente)
+                const viajesEnPlanta = (viajes||[]).filter(v=>v.estado==="En Planta"||v.estado==="Rechazado");
+                const enPlantaAhora  = (viajes||[]).filter(v=>v.estado==="En Planta");
+                const placasEnPlanta = new Set(viajesEnPlanta.map(v=>v.placa));
                 const cntPorProducto = {};
                 enPlantaAhora.forEach(v=>{ const p=v.producto||""; cntPorProducto[p]=(cntPorProducto[p]||0)+1; });
-                // todos los tiquetes con resultado (aprobado o rechazado) cuya placa esté en planta
+                // todos los tiquetes con resultado cuya placa esté en planta o rechazada
                 const tiqBase = (tiquetes||[]).filter(t=>t.resultado && placasEnPlanta.has(t.placa));
                 // agrupar por producto, ordenar por cantidad de carros desc
                 const productosOrden = [...new Set(tiqBase.map(t=>t.producto||""))].sort((a,b)=>(cntPorProducto[b]||0)-(cntPorProducto[a]||0)||(a>b?1:-1));
