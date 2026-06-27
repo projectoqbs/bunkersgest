@@ -2865,6 +2865,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const tiqDisp = productosOrden.flatMap(prod=>
                   tiqBase.filter(t=>(t.producto||"")=== prod).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""))
                 );
+                // mapa placa → galones del viaje en planta
+                const galonesDeViaje = {};
+                enPlantaAhora.forEach(v=>{ if(v.placa && v.gls_netos_guia) galonesDeViaje[v.placa]=v.gls_netos_guia; });
                 const toggleCarro = (id) => {
                   const nuevo = selIds.includes(id) ? selIds.filter(x=>x!==id) : [...selIds,id];
                   setSelIds(nuevo);
@@ -2872,7 +2875,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const selTiq = tiqDisp.filter(t=>nuevo.includes(t.id));
                   const nuevasMps = selTiq.map(t=>({
                     nombre: t.placa||(t.producto||""),
-                    galones: t.galones_recibidos?String(t.galones_recibidos):"",
+                    galones: galonesDeViaje[t.placa]?String(galonesDeViaje[t.placa]):(t.galones_recibidos?String(t.galones_recibidos):""),
                     api:   t.api_corregido?String(Number(t.api_corregido).toFixed(2)):"",
                     visc:  t.viscosidad?String(Number(t.viscosidad).toFixed(2)):"",
                     azufre:t.azufre?String(Number(t.azufre).toFixed(4)):"",
