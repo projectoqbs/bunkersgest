@@ -1140,7 +1140,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
               pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"pbs",label:"PBS",badge:pendPBS},{id:"cmt",label:"CMT",badge:pendCMT}] },
-              programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs:[{id:"programacion",label:"Programaciones"},{id:"formulaciones",label:"Formulaciones"}] },
+              programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs:[{id:"programacion",label:"Ordenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
             };
             const badges = {};
 
