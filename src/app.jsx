@@ -2813,12 +2813,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
               {/* Menú modo */}
               <div style={{ display:"flex", gap:0, background:T.bg, borderRadius:10, padding:4, marginBottom:20, width:"fit-content", border:`1px solid ${T.border}` }}>
-                {[["MANUAL","✏️ Manual","Ingresa todos los parámetros manualmente"],["AUTO","⚡ Auto","Parámetros calculados del histórico de Laboratorio"],["POR_CARRO","🚛 Por Carro","(Próximamente)"]].map(([key,lbl,tip])=>(
+                {[["MANUAL","✏️ Manual","Ingresa todos los parámetros manualmente"],["AUTO","⚡ Auto","Parámetros calculados del histórico de Laboratorio"],["POR_CARRO","🚛 Por Carro","Selecciona carros analizados del historial"]].map(([key,lbl,tip])=>(
                   <button key={key} title={tip} onClick={()=>{ setFModo(key); if(key==="AUTO") setTimeout(aplicarAuto,0); }}
-                    disabled={key==="POR_CARRO"}
-                    style={{ padding:"7px 18px",borderRadius:8,border:"none",cursor:key==="POR_CARRO"?"not-allowed":"pointer",fontWeight:700,fontSize:12,
+                    style={{ padding:"7px 18px",borderRadius:8,border:"none",cursor:"pointer",fontWeight:700,fontSize:12,
                       background: fModo===key ? T.orange : "transparent",
-                      color: fModo===key ? "#fff" : key==="POR_CARRO" ? T.muted+"88" : T.muted,
+                      color: fModo===key ? "#fff" : T.muted,
                       transition:"all 0.15s" }}>
                     {lbl}
                   </button>
@@ -2848,6 +2847,90 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   ⚡ <b>Modo Auto:</b> los parámetros se calculan como promedio histórico de tiquetes APROBADOS por proveedor. Solo ingresa los galones. Puedes ajustar los valores manualmente si lo necesitas.
                 </div>
               )}
+
+              {/* ── POR CARRO ── */}
+              {fModo==="POR_CARRO" && (()=>{
+                const selIds = tabCache.carrosSelIds || [];
+                const setSelIds = ids => { tabStateCache.current[activeTabId] = {...(tabStateCache.current[activeTabId]||{}), carrosSelIds:ids}; setTabs(t=>[...t]); };
+                // tiquetes con resultado registrado (aprobados o rechazados), ordenados por fecha desc
+                const tiqDisp = [...(tiquetes||[])].filter(t=>t.resultado&&(t.api_corregido||t.viscosidad||t.azufre)).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
+                const toggleCarro = (id) => {
+                  const nuevo = selIds.includes(id) ? selIds.filter(x=>x!==id) : [...selIds,id];
+                  setSelIds(nuevo);
+                  // Actualizar fMps desde selección
+                  const selTiq = tiqDisp.filter(t=>nuevo.includes(t.id));
+                  const nuevasMps = selTiq.map(t=>({
+                    nombre: t.producto||t.proveedor||t.placa||"",
+                    galones: t.galones_recibidos?String(t.galones_recibidos):"",
+                    api:   t.api_corregido?String(Number(t.api_corregido).toFixed(2)):"",
+                    visc:  t.viscosidad?String(Number(t.viscosidad).toFixed(2)):"",
+                    azufre:t.azufre?String(Number(t.azufre).toFixed(4)):"",
+                    agua:  t.agua_destilacion?String(Number(t.agua_destilacion).toFixed(4)):"",
+                    flash: t.flash_point?String(Number(t.flash_point).toFixed(1)):"",
+                    _tiquete_id: t.id,
+                    _placa: t.placa,
+                  }));
+                  setFMps(nuevasMps.length ? nuevasMps : [{nombre:"PENDARE",galones:"",api:"",visc:"",azufre:"",agua:"",flash:""}]);
+                };
+                return (
+                  <div style={{ marginBottom:20 }}>
+                    <div style={{ fontSize:12,color:T.muted,marginBottom:10 }}>
+                      🚛 <b style={{color:T.text}}>Selecciona los carros analizados</b> para incluir en la formulación. Los parámetros se toman directamente del tiquete de laboratorio.
+                    </div>
+                    <div style={{ overflowX:"auto", borderRadius:8, border:`1px solid ${T.border}` }}>
+                      <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+                        <thead>
+                          <tr style={{ background:T.bg }}>
+                            {["","No. Tiquete","Fecha","Placa","Producto","API","Visc","Azufre%","Agua%","Flash","Gls Rec.","Resultado"].map(h=>(
+                              <th key={h} style={{ padding:"8px 12px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:10,textTransform:"uppercase",borderBottom:`2px solid ${T.border}` }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tiqDisp.length===0 ? (
+                            <tr><td colSpan={12} style={{padding:"30px",textAlign:"center",color:T.muted}}>Sin tiquetes analizados</td></tr>
+                          ) : tiqDisp.map(t=>{
+                            const sel = selIds.includes(t.id);
+                            const aprobado = t.resultado==="APROBADO";
+                            return (
+                              <tr key={t.id} onClick={()=>toggleCarro(t.id)}
+                                style={{ borderBottom:`1px solid ${T.border}`, cursor:"pointer", background: sel?`${T.orange}14`:"transparent", transition:"background 0.1s" }}
+                                onMouseEnter={e=>{ if(!sel) e.currentTarget.style.background=`${T.border}55`; }}
+                                onMouseLeave={e=>{ if(!sel) e.currentTarget.style.background="transparent"; }}>
+                                <td style={{ padding:"8px 12px" }}>
+                                  <div style={{ width:16,height:16,borderRadius:4,border:`2px solid ${sel?T.orange:T.border}`,background:sel?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:800 }}>
+                                    {sel?"✓":""}
+                                  </div>
+                                </td>
+                                <td style={{ padding:"8px 12px",color:"#00b4ff",fontWeight:700,fontFamily:"monospace",whiteSpace:"nowrap" }}>{t.id}</td>
+                                <td style={{ padding:"8px 12px",color:T.muted,whiteSpace:"nowrap" }}>{t.fecha}</td>
+                                <td style={{ padding:"8px 12px",fontWeight:700,color:T.text }}>{t.placa}</td>
+                                <td style={{ padding:"8px 12px",color:T.text }}>{t.producto}</td>
+                                <td style={{ padding:"8px 12px",color:T.text }}>{t.api_corregido}°</td>
+                                <td style={{ padding:"8px 12px",color:T.text }}>{t.viscosidad}</td>
+                                <td style={{ padding:"8px 12px",color:Number(t.azufre)>0.48?"#ef4444":T.text }}>{Number(t.azufre||0).toFixed(4)}</td>
+                                <td style={{ padding:"8px 12px",color:T.text }}>{Number(t.agua_destilacion||0).toFixed(4)}</td>
+                                <td style={{ padding:"8px 12px",color:Number(t.flash_point||0)<60?"#f59e0b":T.text }}>{t.flash_point}°C</td>
+                                <td style={{ padding:"8px 12px",color:T.success,fontWeight:700 }}>{t.galones_recibidos?fmt(Number(t.galones_recibidos)):"—"}</td>
+                                <td style={{ padding:"8px 12px" }}>
+                                  <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:6,padding:"2px 8px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:10 }}>
+                                    {t.resultado}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {selIds.length>0 && (
+                      <div style={{ marginTop:8,fontSize:11,color:T.orange,fontWeight:700 }}>
+                        {selIds.length} carro(s) seleccionado(s) → matriz actualizada abajo ↓
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Matriz */}
               <Card style={{ marginBottom:16, padding:0, overflow:"hidden" }}>
