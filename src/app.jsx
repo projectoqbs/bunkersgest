@@ -3320,7 +3320,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <button onClick={()=>actualizarOT({estado:"DESCARGANDO",fecha_inicio_descargue:new Date().toISOString()})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Iniciar Descargues →</button>
                 </div>
               )}
-              {["coordinador","administrador"].includes(perfil?.rol) && tras.length>0 && (
+              {tras.length>0 && (
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center" }}>
                   <span style={{ fontSize:10,color:T.muted,fontWeight:600 }}>CMT TRASIEGOS:</span>
                   {tras.map((t,i)=>{
@@ -3441,7 +3441,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </>
                 );
               })()}
-              {["coordinador","administrador"].includes(perfil?.rol) && desc.length>0 && (
+              {desc.length>0 && (
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center" }}>
                   <span style={{ fontSize:10,color:T.muted,fontWeight:600 }}>CMT DESCARGUES:</span>
                   {[...new Set(desc.map(d=>normalizarProducto(d.producto||d.nombre||"")).filter(Boolean))].map(prod=>{
@@ -3472,7 +3472,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {ot.estado==="COMPLETADA" && (
                 <div>
                   <div style={{ fontSize:12,color:"#00e5a0",fontWeight:700,marginBottom:10 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
-                  {["coordinador","administrador"].includes(perfil?.rol) && (
+                  {(true) && (
                     <div>
                       <div style={{ fontSize:11,color:T.muted,fontWeight:600,marginBottom:8 }}>CREAR CMT POR PRODUCTO:</div>
                       <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
