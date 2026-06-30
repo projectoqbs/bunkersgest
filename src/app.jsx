@@ -882,7 +882,6 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
   await calcularGalonesConSetter(tanque, ullage, temp, api, index, esDespues ? setCmtDespues : setCmtAntes);
 }
   function abrirCmtDesdeOt(ot, productoBase) {
-    const descarguesProducto = (ot.descargues||[]).filter(d => normalizarProducto(d.producto||d.nombre||"") === productoBase);
     const sedeActual = ot.sede || perfil?.sede || "MALAMBO";
     const plantaActual = sedeActual === "MALAMBO" ? (perfil?.planta || "PLANTA 1") : "";
     const numeroCmt = genIdCMT(cmts, sedeActual, plantaActual);
@@ -896,12 +895,9 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       fecha: today(),
       tipo_operacion: "DESCARGUE DE CARROTANQUE",
     });
-    setCmtProducto(productoBase);
-    setCmtDespues([{tanque: ot.tanque_destino||"", producto: productoBase, sonda:"", galones:""}]);
-    setCmtCarros(descarguesProducto.length > 0
-      ? descarguesProducto.map(d => ({placa: d.placa||"", guia:"", tiquete:"", pbs_id:""}))
-      : [{placa:"", guia:"", tiquete:"", pbs_id:""}]
-    );
+    setCmtProducto(productoBase || "");
+    setCmtDespues([{tanque: ot.tanque_destino||"", producto: productoBase||"", sonda:"", galones:""}]);
+    setCmtCarros([{placa:"", guia:"", tiquete:"", pbs_id:""}]);
     setCmtAntes([{tanque:"", sonda:"", galones:""}]);
     setModal("cmt");
   }
@@ -3321,24 +3317,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               )}
               {tras.length>0 && (
-                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center" }}>
-                  <span style={{ fontSize:10,color:T.muted,fontWeight:600 }}>CMT TRASIEGOS:</span>
-                  {tras.map((t,i)=>{
-                    const label = `${t.origen}→${t.destino}`;
-                    const yaExiste = (cmts||[]).some(c=>c.ot_id===ot.id && (c.tanques_antes||[]).some(ta=>ta.tanque===t.origen) && (c.tanques_despues||[]).some(td=>td.tanque===t.destino));
-                    return (
-                      <button key={i} disabled={yaExiste} onClick={()=>{
-                        setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede:ot.sede||perfil?.sede||"MALAMBO",planta:ot.planta||perfil?.planta||"PLANTA 1",fecha:today(),numero_cmt:genIdCMT(cmts,ot.sede||perfil?.sede||"MALAMBO",ot.planta||perfil?.planta||"PLANTA 1")});
-                        setCmtProducto(fo?.producto||"");
-                        setCmtAntes([{tanque:t.origen,sonda:"",galones:""}]);
-                        setCmtDespues([{tanque:t.destino,producto:fo?.producto||"",sonda:"",galones:""}]);
-                        setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
-                        setNav("cmt"); setModal("cmt");
-                      }} style={{ background:yaExiste?"#38bdf822":"#38bdf8",border:yaExiste?"1px solid #38bdf855":"none",color:yaExiste?"#38bdf8":"#071422",borderRadius:6,padding:"5px 12px",cursor:yaExiste?"default":"pointer",fontWeight:700,fontSize:11 }}>
-                        {yaExiste?`✅ CMT: ${label}`:`+ CMT: ${label}`}
-                      </button>
-                    );
-                  })}
+                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}` }}>
+                  <button onClick={()=>{
+                    const sede=ot.sede||perfil?.sede||"MALAMBO", planta=ot.planta||perfil?.planta||"PLANTA 1";
+                    setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),numero_cmt:genIdCMT(cmts,sede,planta)});
+                    setCmtProducto(fo?.producto||"");
+                    setCmtAntes([{tanque:tras[0]?.origen||"",sonda:"",galones:""}]);
+                    setCmtDespues([{tanque:tras[0]?.destino||"",producto:fo?.producto||"",sonda:"",galones:""}]);
+                    setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
+                    setNav("cmt"); setModal("cmt");
+                  }} style={{ background:"#38bdf8",border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
                 </div>
               )}
             </Card>
@@ -3442,17 +3430,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 );
               })()}
               {desc.length>0 && (
-                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center" }}>
-                  <span style={{ fontSize:10,color:T.muted,fontWeight:600 }}>CMT DESCARGUES:</span>
-                  {[...new Set(desc.map(d=>normalizarProducto(d.producto||d.nombre||"")).filter(Boolean))].map(prod=>{
-                    const yaExiste = (cmts||[]).some(c=>c.ot_id===ot.id && c.producto===prod && c.tipo_operacion==="DESCARGUE DE CARROTANQUE");
-                    return (
-                      <button key={prod} disabled={yaExiste} onClick={()=>abrirCmtDesdeOt(ot,prod)}
-                        style={{ background:yaExiste?"#f59e0b22":"#f59e0b",border:yaExiste?"1px solid #f59e0b55":"none",color:yaExiste?"#f59e0b":"#071422",borderRadius:6,padding:"5px 12px",cursor:yaExiste?"default":"pointer",fontWeight:700,fontSize:11 }}>
-                        {yaExiste?`✅ CMT: ${prod}`:`+ CMT: ${prod}`}
-                      </button>
-                    );
-                  })}
+                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}` }}>
+                  <button onClick={()=>abrirCmtDesdeOt(ot, "")}
+                    style={{ background:"#f59e0b",border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
                 </div>
               )}
             </Card>
