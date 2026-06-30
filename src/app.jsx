@@ -3400,8 +3400,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </Card>
             )}
 
-            {/* Botones peligrosos */}
-            {!["COMPLETADA","RECHAZADA"].includes(ot.estado) && (
+            {/* Botones peligrosos — solo coordinador y administrador */}
+            {!["COMPLETADA","RECHAZADA"].includes(ot.estado) && ["coordinador","administrador"].includes(perfil?.rol) && (
               <div style={{ marginTop:16,display:"flex",gap:10 }}>
                 <button onClick={async()=>{ if(!confirm("¿Rechazar esta OT?")) return; await actualizarOT({estado:"RECHAZADA"}); }} style={{ background:"#ef444422",border:"1px solid #ef444455",color:"#ef4444",borderRadius:6,padding:"7px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✗ Rechazar OT</button>
               </div>
