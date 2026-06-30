@@ -3365,7 +3365,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {/* Filas agrupadas */}
                     {grupos.map(grupo => {
                       const gPlan = grupo.galones_planeado;
-                      const gReal = cmtsDeEstaOT.filter(c=>normalizarProducto(c.producto||"")===grupo.productoBase).reduce((a,c)=>a+Number(c.total_movido||0),0);
+                      const gReal = totalPlan>0 ? (gPlan/totalPlan)*totalDesc : 0;
                       const gFalta = Math.max(0, gPlan - gReal);
                       const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
                       return (
