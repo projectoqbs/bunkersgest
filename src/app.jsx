@@ -3320,6 +3320,27 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <button onClick={()=>actualizarOT({estado:"DESCARGANDO",fecha_inicio_descargue:new Date().toISOString()})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Iniciar Descargues →</button>
                 </div>
               )}
+              {["coordinador","administrador"].includes(perfil?.rol) && tras.length>0 && (
+                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center" }}>
+                  <span style={{ fontSize:10,color:T.muted,fontWeight:600 }}>CMT TRASIEGOS:</span>
+                  {tras.map((t,i)=>{
+                    const label = `${t.origen}→${t.destino}`;
+                    const yaExiste = (cmts||[]).some(c=>c.ot_id===ot.id && (c.tanques_antes||[]).some(ta=>ta.tanque===t.origen) && (c.tanques_despues||[]).some(td=>td.tanque===t.destino));
+                    return (
+                      <button key={i} disabled={yaExiste} onClick={()=>{
+                        setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede:ot.sede||perfil?.sede||"MALAMBO",planta:ot.planta||perfil?.planta||"PLANTA 1",fecha:today(),numero_cmt:genIdCMT(cmts,ot.sede||perfil?.sede||"MALAMBO",ot.planta||perfil?.planta||"PLANTA 1")});
+                        setCmtProducto(fo?.producto||"");
+                        setCmtAntes([{tanque:t.origen,sonda:"",galones:""}]);
+                        setCmtDespues([{tanque:t.destino,producto:fo?.producto||"",sonda:"",galones:""}]);
+                        setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
+                        setNav("cmt"); setModal("cmt");
+                      }} style={{ background:yaExiste?"#38bdf822":"#38bdf8",border:yaExiste?"1px solid #38bdf855":"none",color:yaExiste?"#38bdf8":"#071422",borderRadius:6,padding:"5px 12px",cursor:yaExiste?"default":"pointer",fontWeight:700,fontSize:11 }}>
+                        {yaExiste?`✅ CMT: ${label}`:`+ CMT: ${label}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </Card>
 
             {/* PASO 2: DESCARGUES */}
@@ -3420,6 +3441,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </>
                 );
               })()}
+              {["coordinador","administrador"].includes(perfil?.rol) && desc.length>0 && (
+                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center" }}>
+                  <span style={{ fontSize:10,color:T.muted,fontWeight:600 }}>CMT DESCARGUES:</span>
+                  {[...new Set(desc.map(d=>normalizarProducto(d.producto||d.nombre||"")).filter(Boolean))].map(prod=>{
+                    const yaExiste = (cmts||[]).some(c=>c.ot_id===ot.id && c.producto===prod && c.tipo_operacion==="DESCARGUE DE CARROTANQUE");
+                    return (
+                      <button key={prod} disabled={yaExiste} onClick={()=>abrirCmtDesdeOt(ot,prod)}
+                        style={{ background:yaExiste?"#f59e0b22":"#f59e0b",border:yaExiste?"1px solid #f59e0b55":"none",color:yaExiste?"#f59e0b":"#071422",borderRadius:6,padding:"5px 12px",cursor:yaExiste?"default":"pointer",fontWeight:700,fontSize:11 }}>
+                        {yaExiste?`✅ CMT: ${prod}`:`+ CMT: ${prod}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </Card>
 
             {/* PASO 3: RECIRCULACIÓN */}
