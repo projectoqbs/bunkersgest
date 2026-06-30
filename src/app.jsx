@@ -2987,9 +2987,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const tiqDisp = productosOrden.flatMap(prod=>
                   tiqBase.filter(t=>(t.producto||"")=== prod).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""))
                 );
-                // mapa placa → galones del viaje en planta
+                // mapa placa → galones del viaje en planta (incluye rechazados autorizados)
                 const galonesDeViaje = {};
-                enPlantaAhora.forEach(v=>{ if(v.placa && v.gls_netos_guia) galonesDeViaje[v.placa]=v.gls_netos_guia; });
+                viajesEnPlanta.forEach(v=>{ if(v.placa && v.gls_netos_guia) galonesDeViaje[v.placa]=v.gls_netos_guia; });
                 const toggleCarro = (id) => {
                   const nuevo = selIds.includes(id) ? selIds.filter(x=>x!==id) : [...selIds,id];
                   setSelIds(nuevo);
