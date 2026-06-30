@@ -3321,7 +3321,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                   {cmtsDeEstaOT.filter(c=>c.tipo_operacion==="TRASIEGO DE PRODUCTO").map(c=>(
                     <span key={c.id} style={{ background:"#38bdf822",border:"1px solid #38bdf855",color:"#38bdf8",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
-                >
+                      onClick={()=>{ setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setModal("cmt"); }}>
                       📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
                     </span>
                   ))}
@@ -3365,7 +3365,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {/* Filas agrupadas */}
                     {grupos.map(grupo => {
                       const gPlan = grupo.galones_planeado;
-                      const gReal = totalPlan>0 ? (gPlan/totalPlan)*totalDesc : 0;
+                      const gReal = cmtsDeEstaOT.reduce((sum,c)=>{
+                        const tdList = c.tanques_despues||[];
+                        const taList = c.tanques_antes||[];
+                        return sum + tdList
+                          .filter(td=>normalizarProducto(td.producto||"")===grupo.productoBase)
+                          .reduce((s,td)=>{
+                            const ta = taList.find(t=>t.tanque===td.tanque);
+                            return s + Math.max(0, Number(td.galones||0)-Number(ta?.galones||0));
+                          },0);
+                      },0);
                       const gFalta = Math.max(0, gPlan - gReal);
                       const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
                       return (
@@ -3441,7 +3450,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                   {cmtsDeEstaOT.filter(c=>c.tipo_operacion!=="TRASIEGO DE PRODUCTO").map(c=>(
                     <span key={c.id} style={{ background:"#f59e0b22",border:"1px solid #f59e0b55",color:"#f59e0b",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
-                >
+                      onClick={()=>{ setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setModal("cmt"); }}>
                       📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
                     </span>
                   ))}
@@ -3469,7 +3478,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                     {cmtsDeEstaOT.map(c=>(
                       <span key={c.id} style={{ background:"#00e5a022",border:"1px solid #00e5a055",color:"#00e5a0",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
-                  >
+                        onClick={()=>{ setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setModal("cmt"); }}>
                         📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
                       </span>
                     ))}
