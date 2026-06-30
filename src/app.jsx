@@ -3452,22 +3452,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {ot.estado==="COMPLETADA" && (
                 <div>
                   <div style={{ fontSize:12,color:"#00e5a0",fontWeight:700,marginBottom:10 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
-                  {(true) && (
-                    <div>
-                      <div style={{ fontSize:11,color:T.muted,fontWeight:600,marginBottom:8 }}>CREAR CMT POR PRODUCTO:</div>
-                      <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
-                        {[...new Set((ot.descargues||[]).map(d=>normalizarProducto(d.producto||d.nombre||"")).filter(Boolean))].map(prod=>{
-                          const yaExiste = (cmts||[]).some(c=>c.ot_id===ot.id && c.producto===prod);
-                          return (
-                            <button key={prod} onClick={()=>{ setNav("cmt"); setTimeout(()=>abrirCmtDesdeOt(ot,prod),50); }} disabled={yaExiste}
-                              style={{ background:yaExiste?"#00e5a022":"#00e5a0",border:yaExiste?"1px solid #00e5a055":"none",color:yaExiste?"#00e5a0":"#071422",borderRadius:6,padding:"7px 16px",cursor:yaExiste?"default":"pointer",fontWeight:700,fontSize:12 }}>
-                              {yaExiste?`✅ CMT: ${prod}`:`+ CMT: ${prod}`}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                  <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}` }}>
+                    <button onClick={()=>abrirCmtDesdeOt(ot,"")}
+                      style={{ background:"#00e5a0",border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
+                  </div>
                 </div>
               )}
             </Card>
