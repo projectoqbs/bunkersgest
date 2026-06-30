@@ -111,7 +111,7 @@ const NAV_META = {
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
-  operaciones: ["dashboard","pbs","trazabilidad","programacion"],
+  operaciones: ["dashboard","pbs","trazabilidad"],
   coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador: [
@@ -1196,7 +1196,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const GRUPOS = {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
-              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"pbs",label:"PBS",badge:pendPBS},{id:"cmt",label:"CMT",badge:pendCMT}] },
+              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo"},{id:"cmt",label:"CMT",badge:pendCMT},{id:"pbs",label:"PBS",badge:pendPBS}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
             };
             const badges = {};
