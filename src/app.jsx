@@ -2974,9 +2974,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const selIds = tabCache.carrosSelIds || [];
                 const setSelIds = ids => { tabStateCache.current[activeTabId] = {...(tabStateCache.current[activeTabId]||{}), carrosSelIds:ids}; setTabs(t=>[...t]); };
                 // tiquetes con resultado registrado
-                // carros en planta (aprobados) o rechazados (aún en planta físicamente)
+                // carros físicamente en planta: aprobados o rechazados (no En Ruta ni Descargado)
                 const viajesEnPlanta = (viajes||[]).filter(v=>v.estado==="En Planta"||v.estado==="Rechazado");
-                const enPlantaAhora  = (viajes||[]).filter(v=>v.estado==="En Planta");
+                const enPlantaAhora  = viajesEnPlanta;
                 const placasEnPlanta = new Set(viajesEnPlanta.map(v=>v.placa));
                 const cntPorProducto = {};
                 enPlantaAhora.forEach(v=>{ const p=v.producto||""; cntPorProducto[p]=(cntPorProducto[p]||0)+1; });
