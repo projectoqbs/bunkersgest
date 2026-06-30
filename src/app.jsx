@@ -3368,12 +3368,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       const gReal = cmtsDeEstaOT.reduce((sum,c)=>{
                         const tdList = c.tanques_despues||[];
                         const taList = c.tanques_antes||[];
-                        return sum + tdList
-                          .filter(td=>normalizarProducto(td.producto||"")===grupo.productoBase)
-                          .reduce((s,td)=>{
-                            const ta = taList.find(t=>t.tanque===td.tanque);
-                            return s + Math.max(0, Number(td.galones||0)-Number(ta?.galones||0));
-                          },0);
+                        const tieneProductoEnTanques = tdList.some(td=>td.producto);
+                        if(tieneProductoEnTanques){
+                          return sum + tdList
+                            .filter(td=>normalizarProducto(td.producto||"")===grupo.productoBase)
+                            .reduce((s,td)=>{
+                              const ta = taList.find(t=>t.tanque===td.tanque);
+                              return s + Math.max(0, Number(td.galones||0)-Number(ta?.galones||0));
+                            },0);
+                        } else {
+                          // CMT sin producto por tanque
+                          const prodCmt = normalizarProducto(c.producto||"");
+                          if(prodCmt && prodCmt===grupo.productoBase){
+                            return sum + Number(c.total_movido||0);
+                          } else if(!prodCmt){
+                            // Sin producto alguno: distribuir proporcionalmente
+                            return sum + (totalPlan>0?(gPlan/totalPlan)*Number(c.total_movido||0):0);
+                          }
+                          return sum;
+                        }
                       },0);
                       const gFalta = Math.max(0, gPlan - gReal);
                       const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
@@ -3844,7 +3857,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <select value={row.tanque} onChange={e=>{
                         const val=e.target.value;
                         const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
-                        setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]) nd[i]={...nd[i],tanque:val}; return nd;});
+                        setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]){const tq=tanques.find(t=>t.id===val); nd[i]={...nd[i],tanque:val,producto:normalizarProducto(tq?.producto||"")};} return nd;});
                         calcularGalones(val,na[i].sonda,na[i].temp,na[i].api,false,i);
                       }} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none"}}>
                         <option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}
@@ -3874,7 +3887,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <select value={row.tanque} onChange={e=>{
                       const val=e.target.value;
                       const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
-                      setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]) nd[i]={...nd[i],tanque:val}; return nd;});
+                      setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]){const tq=tanques.find(t=>t.id===val); nd[i]={...nd[i],tanque:val,producto:normalizarProducto(tq?.producto||"")};} return nd;});
                       calcularGalones(val,na[i].sonda,na[i].temp,na[i].api,false,i);
                     }} style={{width:"100%",background:"#ffffff",border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none"}}><option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}</select>
                     </div>
