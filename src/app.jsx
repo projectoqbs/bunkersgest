@@ -3258,7 +3258,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const desc = ot.descargues||[];
         const tras = ot.trasiegos||[];
         const totalPlan = desc.reduce((a,d)=>a+Number(d.galones_planeado||0),0);
-        const totalDesc = desc.reduce((a,d)=>a+Number(d.galones_descargado||0),0);
+        const cmtsDeEstaOT = (cmts||[]).filter(c=>c.ot_id===ot.id);
+        const totalDesc = cmtsDeEstaOT.reduce((a,c)=>a+Number(c.total_movido||0),0);
         const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
         const estadoColor = e=>e==="COMPLETADA"?"#00e5a0":e==="RECIRCULANDO"?"#38bdf8":e==="DESCARGANDO"?"#f59e0b":e==="TRASIEGOS"?"#a78bfa":e==="RECHAZADA"?"#ef4444":"#94a3b8";
 
@@ -3317,7 +3318,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               )}
               {tras.length>0 && (
-                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}` }}>
+                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
+                  {cmtsDeEstaOT.filter(c=>c.tipo_operacion==="TRASIEGO DE PRODUCTO").map(c=>(
+                    <span key={c.id} style={{ background:"#38bdf822",border:"1px solid #38bdf855",color:"#38bdf8",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
+                >
+                      📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
+                    </span>
+                  ))}
                   <button onClick={()=>{
                     const sede=ot.sede||perfil?.sede||"MALAMBO", planta=ot.planta||perfil?.planta||"PLANTA 1";
                     setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),numero_cmt:genIdCMT(cmts,sede,planta)});
@@ -3357,7 +3364,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </div>
                     {/* Filas agrupadas */}
                     {grupos.map(grupo => {
-                      const gPlan = grupo.galones_planeado, gReal = grupo.galones_descargado;
+                      const gPlan = grupo.galones_planeado;
+                      const gReal = cmtsDeEstaOT.filter(c=>normalizarProducto(c.producto||"")===grupo.productoBase).reduce((a,c)=>a+Number(c.total_movido||0),0);
                       const gFalta = Math.max(0, gPlan - gReal);
                       const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
                       return (
@@ -3430,7 +3438,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 );
               })()}
               {desc.length>0 && (
-                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}` }}>
+                <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
+                  {cmtsDeEstaOT.filter(c=>c.tipo_operacion!=="TRASIEGO DE PRODUCTO").map(c=>(
+                    <span key={c.id} style={{ background:"#f59e0b22",border:"1px solid #f59e0b55",color:"#f59e0b",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
+                >
+                      📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
+                    </span>
+                  ))}
                   <button onClick={()=>abrirCmtDesdeOt(ot, "")}
                     style={{ background:"#f59e0b",border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
                 </div>
@@ -3452,7 +3466,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {ot.estado==="COMPLETADA" && (
                 <div>
                   <div style={{ fontSize:12,color:"#00e5a0",fontWeight:700,marginBottom:10 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
-                  <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}` }}>
+                  <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
+                    {cmtsDeEstaOT.map(c=>(
+                      <span key={c.id} style={{ background:"#00e5a022",border:"1px solid #00e5a055",color:"#00e5a0",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
+                  >
+                        📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
+                      </span>
+                    ))}
                     <button onClick={()=>abrirCmtDesdeOt(ot,"")}
                       style={{ background:"#00e5a0",border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
                   </div>
