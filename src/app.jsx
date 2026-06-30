@@ -341,6 +341,8 @@ export default function App() {
   const [otModal, setOtModal] = useState(null); // null | {step:1|2|3, trasiegos, formulacionId, recircHoras}
   const [otSaving, setOtSaving] = useState(false);
   const [progTab, setProgTab] = useState("programaciones"); // "programaciones" | "formulaciones"
+  const [modalVinculacionOT, setModalVinculacionOT] = useState({mostrar:false, cmtId:null, cmtNumero:null});
+  const [otVincSeleccionada, setOtVincSeleccionada] = useState("");
   const [formFormulacion, setFormFormulacion] = useState(null); // null=cerrado, {}=nuevo, {id,...}=editar
   const [mps, setMps] = useState([ // materias primas en el modal formulación
     { nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }
@@ -879,6 +881,47 @@ async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter
 async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
   await calcularGalonesConSetter(tanque, ullage, temp, api, index, esDespues ? setCmtDespues : setCmtAntes);
 }
+  function abrirCmtDesdeOt(ot, productoBase) {
+    const descarguesProducto = (ot.descargues||[]).filter(d => normalizarProducto(d.producto||d.nombre||"") === productoBase);
+    const sedeActual = ot.sede || perfil?.sede || "MALAMBO";
+    const plantaActual = sedeActual === "MALAMBO" ? (perfil?.planta || "PLANTA 1") : "";
+    const numeroCmt = genIdCMT(cmts, sedeActual, plantaActual);
+    setForm({
+      numero_cmt: numeroCmt,
+      ot_id: ot.id,
+      ot_numero: ot.numero_ot,
+      bloqueado_ot: true,
+      sede: sedeActual,
+      planta: plantaActual,
+      fecha: today(),
+      tipo_operacion: "DESCARGUE DE CARROTANQUE",
+    });
+    setCmtProducto(productoBase);
+    setCmtDespues([{tanque: ot.tanque_destino||"", producto: productoBase, sonda:"", galones:""}]);
+    setCmtCarros(descarguesProducto.length > 0
+      ? descarguesProducto.map(d => ({placa: d.placa||"", guia:"", tiquete:"", pbs_id:""}))
+      : [{placa:"", guia:"", tiquete:"", pbs_id:""}]
+    );
+    setCmtAntes([{tanque:"", sonda:"", galones:""}]);
+    setModal("cmt");
+  }
+
+  async function handleConfirmarVinculacionOT(ot_id, ot_numero) {
+    if (ot_id) {
+      await supabaseAdmin.from("cmts").update({ot_id, ot_numero}).eq("id", modalVinculacionOT.cmtId);
+    }
+    await loadData();
+    const num = modalVinculacionOT.cmtNumero;
+    setModalVinculacionOT({mostrar:false, cmtId:null, cmtNumero:null});
+    setOtVincSeleccionada("");
+    setForm({});
+    setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
+    setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
+    setCmtDespues([{tanque:"",producto:"",sonda:"",galones:""}]);
+    setCmtRecepcion([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
+    showToast(ot_id ? `✅ CMT ${num} vinculado a ${ot_numero}` : `✅ CMT ${num} guardado como autónomo`);
+  }
+
   async function guardarCMT(e) {
     e.preventDefault(); setSaving(true);
 
@@ -966,6 +1009,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       const id = `${numeroCmt}`;
       const {error} = await supabaseAdmin.from("cmts").insert([{
         id, numero_cmt:numeroCmt, pbs_id:form.pbs_id||null,
+        ot_id:form.ot_id||null, ot_numero:form.ot_numero||null,
         tiquete_entrada:form.tiquete_entrada||null, fecha:form.fecha||today(),
         producto:cmtProducto,
         tipo_operacion:form.tipo_operacion, tanques_antes:cmtAntes,
@@ -995,12 +1039,20 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
-      await loadData(); setModal(null); setForm({});
-      setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
-      setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
-      setCmtDespues([{tanque:"",producto:"",sonda:"",galones:""}]);
-      setCmtRecepcion([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
-      showToast(`CMT ${form.numero_cmt} registrado — ${fmt(totalMovido)} Gls`);
+      await loadData();
+      if (form.ot_id) {
+        // Vino desde OT → cerrar directo
+        setModal(null); setForm({});
+        setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
+        setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
+        setCmtDespues([{tanque:"",producto:"",sonda:"",galones:""}]);
+        setCmtRecepcion([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
+        showToast(`✅ CMT ${numeroCmt} vinculado a ${form.ot_numero}`);
+      } else {
+        // CMT autónomo → preguntar si vincular a OT
+        setModal(null);
+        setModalVinculacionOT({mostrar:true, cmtId:id, cmtNumero:numeroCmt});
+      }
     }
   }
 
@@ -2098,6 +2150,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <thead>
                         <tr style={{background:T.bg}}>
                           <th style={thStyle}>N° CMT</th>
+                          <th style={thStyle}>OT</th>
                           <th style={thStyle}>Fecha</th>
                           <th style={thStyle}>Tipo Operación</th>
                           <th style={thStyle}>Producto</th>
@@ -2122,6 +2175,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <React.Fragment key={c.id}>
                           <tr onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{cursor:"pointer",background:bgRow,transition:"background 0.15s",borderTop:`1px solid ${T.border}`}} onMouseEnter={e=>{if(!expandido)e.currentTarget.style.background="#dde6f0"}} onMouseLeave={e=>{if(!expandido)e.currentTarget.style.background=bgRow}}>
                             <td style={tdStyle}><span style={{color:"#00e5a0",fontWeight:700,letterSpacing:0.5}}>{c.numero_cmt||c.id}</span></td>
+                            <td style={tdStyle}>{c.ot_numero ? <span style={{color:"#38bdf8",fontWeight:600,fontSize:11}}>{c.ot_numero}</span> : <span style={{color:T.muted,fontSize:10}}>Autónomo</span>}</td>
                             <td style={tdStyle}><span style={{color:T.muted}}>{c.fecha}</span></td>
                             <td style={tdStyle}><Badge label={c.tipo_operacion||"—"} color="#00e5a0"/></td>
                             <td style={tdStyle}><span style={{color:"#f59e0b"}}>{c.producto||"—"}</span></td>
@@ -3381,7 +3435,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               )}
               {ot.estado==="COMPLETADA" && (
-                <div style={{ fontSize:12,color:"#00e5a0",fontWeight:700 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
+                <div>
+                  <div style={{ fontSize:12,color:"#00e5a0",fontWeight:700,marginBottom:10 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
+                  {["coordinador","administrador"].includes(perfil?.rol) && (
+                    <div>
+                      <div style={{ fontSize:11,color:T.muted,fontWeight:600,marginBottom:8 }}>CREAR CMT POR PRODUCTO:</div>
+                      <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+                        {[...new Set((ot.descargues||[]).map(d=>normalizarProducto(d.producto||d.nombre||"")).filter(Boolean))].map(prod=>{
+                          const yaExiste = (cmts||[]).some(c=>c.ot_id===ot.id && c.producto===prod);
+                          return (
+                            <button key={prod} onClick={()=>{ setNav("cmt"); setTimeout(()=>abrirCmtDesdeOt(ot,prod),50); }} disabled={yaExiste}
+                              style={{ background:yaExiste?"#00e5a022":"#00e5a0",border:yaExiste?"1px solid #00e5a055":"none",color:yaExiste?"#00e5a0":"#071422",borderRadius:6,padding:"7px 16px",cursor:yaExiste?"default":"pointer",fontWeight:700,fontSize:12 }}>
+                              {yaExiste?`✅ CMT: ${prod}`:`+ CMT: ${prod}`}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </Card>
 
@@ -3679,6 +3751,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             )}
             <div style={{marginLeft:"auto",fontSize:11,color:T.muted}}>Generado automáticamente</div>
           </div>
+          {form.ot_numero && (
+            <div style={{gridColumn:"1/-1",background:"#00e5a018",border:"1px solid #00e5a033",borderRadius:8,padding:"10px 14px",marginBottom:12}}>
+              <div style={{fontSize:10,color:T.muted,fontWeight:600,marginBottom:2}}>VINCULADO A ORDEN DE TRABAJO</div>
+              <div style={{fontSize:13,fontWeight:700,color:"#00e5a0",fontFamily:"monospace"}}>{form.ot_numero} <span style={{fontSize:10,color:T.muted,fontWeight:400}}>(no editable)</span></div>
+            </div>
+          )}
           <div style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:18,flexWrap:"nowrap"}}>
             <div style={{width:155,flexShrink:0}}><Inp label="Fecha" type="date" value={form.fecha||today()} onChange={f("fecha")}/></div>
             <div style={{width:260,flexShrink:0}}><Sel label="Tipo de Operación" value={form.tipo_operacion||""} onChange={f("tipo_operacion")}>
@@ -4053,6 +4131,31 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </div>
         </Modal>
       )}
+
+{modalVinculacionOT.mostrar && (()=>{
+  const otsDisponibles = (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA" && !(cmts||[]).some(c=>c.ot_id===o.id));
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:T.card,borderRadius:12,padding:28,width:440,maxWidth:"95vw",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+        <div style={{fontWeight:800,fontSize:16,color:T.navy,marginBottom:16}}>¿Vincular a una Orden de Trabajo?</div>
+        <div style={{background:"#00e5a018",border:"1px solid #00e5a033",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#00e5a0",marginBottom:16}}>✅ CMT {modalVinculacionOT.cmtNumero} creado exitosamente</div>
+        <div style={{fontSize:11,color:T.muted,fontWeight:600,marginBottom:6}}>ÓRDENES DISPONIBLES</div>
+        {otsDisponibles.length===0 ? (
+          <div style={{background:T.bg,borderRadius:8,padding:"12px 14px",color:T.muted,fontSize:12,textAlign:"center",marginBottom:16}}>No hay OTs completadas disponibles<br/><span style={{fontSize:11}}>El CMT se guardará como autónomo</span></div>
+        ) : (
+          <select value={otVincSeleccionada} onChange={e=>setOtVincSeleccionada(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.bg,color:T.text,fontSize:13,marginBottom:16,outline:"none"}}>
+            <option value="">— No vincular (autónomo) —</option>
+            {otsDisponibles.map(o=><option key={o.id} value={o.id}>{o.numero_ot} · {o.tanque_destino}</option>)}
+          </select>
+        )}
+        <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+          <button onClick={()=>handleConfirmarVinculacionOT(null,null)} style={{background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"8px 16px",cursor:"pointer",fontWeight:700,fontSize:12}}>Guardar autónomo</button>
+          <button onClick={()=>{ if(!otVincSeleccionada) return; const o=(ordenesTrabaio||[]).find(x=>x.id===otVincSeleccionada); handleConfirmarVinculacionOT(otVincSeleccionada,o?.numero_ot); }} disabled={!otVincSeleccionada} style={{background:otVincSeleccionada?"#00e5a0":"#00e5a044",border:"none",color:otVincSeleccionada?"#071422":"#00e5a088",borderRadius:6,padding:"8px 20px",cursor:otVincSeleccionada?"pointer":"default",fontWeight:700,fontSize:12}}>Vincular a OT</button>
+        </div>
+      </div>
+    </div>
+  );
+})()}
 
 {modal==="programacion" && (
   <Modal title={form.id ? "Editar Programación" : "Nueva Programación"} onClose={()=>{ setModal(null); setForm({}); }}>
