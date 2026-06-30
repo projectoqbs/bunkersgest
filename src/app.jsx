@@ -111,7 +111,7 @@ const NAV_META = {
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
-  operaciones: ["dashboard","pbs","trazabilidad"],
+  operaciones: ["dashboard","pbs","trazabilidad","programacion"],
   coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador: [
@@ -1197,7 +1197,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
               pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"pbs",label:"PBS",badge:pendPBS},{id:"cmt",label:"CMT",badge:pendCMT}] },
-              programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs:[{id:"programacion",label:"Ordenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
+              programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
             };
             const badges = {};
 
@@ -2722,9 +2722,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
                   <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Órdenes de Trabajo</div>
-                  <div style={{ fontSize:11, color:T.muted }}>Trasiegos · Descargues · Recirculación</div>
+                  <div style={{ fontSize:11, color:T.muted }}>{perfil?.rol==="operaciones" ? "Órdenes asignadas para ejecución" : "Trasiegos · Descargues · Recirculación"}</div>
                 </div>
-                <Btn color={T.orange} onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",formulacionId:"",recircHoras:4})}>+ Nueva Orden</Btn>
+                {perfil?.rol!=="operaciones" && <Btn color={T.orange} onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",formulacionId:"",recircHoras:4})}>+ Nueva Orden</Btn>}
               </div>
 
               {/* Órdenes activas */}
