@@ -3362,12 +3362,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </div>
                     )}
                     {/* Encabezados */}
-                    <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 0.8fr 1.4fr 0.3fr",gap:8,paddingBottom:8,borderBottom:`1px solid ${T.border}`,fontSize:10,fontWeight:600,color:T.muted,marginBottom:6 }}>
+                    <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,paddingBottom:8,borderBottom:`1px solid ${T.border}`,fontSize:10,fontWeight:600,color:T.muted,marginBottom:6 }}>
                       <div>PRODUCTO</div>
                       <div style={{ textAlign:"right" }}>PLANEADO</div>
                       <div style={{ textAlign:"right" }}>DESCARGADO</div>
                       <div style={{ textAlign:"right",color:"#ef4444" }}>PENDIENTE</div>
-                      <div style={{ textAlign:"right" }}>CARROS</div>
                       <div style={{ textAlign:"center" }}>ACCIÓN</div>
                       <div></div>
                     </div>
@@ -3383,7 +3382,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       return (
                         <div key={grupo.productoBase} style={{ marginBottom:6 }}>
                           {/* Fila principal */}
-                          <div onClick={() => toggleOtExpandir(grupo.productoBase)} style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 0.8fr 1.4fr 0.3fr",gap:8,padding:"9px 10px",background:T.card,borderRadius:6,cursor:"pointer",borderLeft:`3px solid ${gPct>=100?"#00e5a0":T.orange}`,transition:"background 0.15s" }}
+                          <div onClick={() => toggleOtExpandir(grupo.productoBase)} style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,padding:"9px 10px",background:T.card,borderRadius:6,cursor:"pointer",borderLeft:`3px solid ${gPct>=100?"#00e5a0":T.orange}`,transition:"background 0.15s" }}
                             onMouseEnter={e=>e.currentTarget.style.background=T.bg}
                             onMouseLeave={e=>e.currentTarget.style.background=T.card}
                           >
@@ -3391,7 +3390,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <div style={{ textAlign:"right",color:T.muted,fontSize:12 }}>{fmtNum(gPlan)}</div>
                             <div style={{ textAlign:"right",color:T.success,fontWeight:700,fontSize:12 }}>{fmtNum(gReal)}</div>
                             <div style={{ textAlign:"right",color:"#ef4444",fontWeight:700,fontSize:12 }}>{fmtNum(Math.max(0,gPlan-gReal))}</div>
-                            <div style={{ textAlign:"right",color:T.muted,fontSize:10 }}>{grupo.carrotanques}</div>
                             <div style={{ textAlign:"center" }}>
                               {ot.estado==="DESCARGANDO" && gPct<100 && (
                                 <div style={{ display:"flex",gap:4,alignItems:"center",justifyContent:"center" }} onClick={e=>e.stopPropagation()}>
@@ -3434,12 +3432,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       );
                     })}
                     {/* Fila total */}
-                    <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 0.8fr 1.4fr 0.3fr",gap:8,padding:"10px",background:T.bg,borderRadius:6,marginTop:8,borderTop:`2px solid ${T.orange}`,fontWeight:700,fontSize:12 }}>
+                    <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,padding:"10px",background:T.bg,borderRadius:6,marginTop:8,borderTop:`2px solid ${T.orange}`,fontWeight:700,fontSize:12 }}>
                       <div style={{ color:T.muted }}>TOTAL</div>
                       <div style={{ textAlign:"right",color:T.text }}>{fmt(totalPlan)}</div>
                       <div style={{ textAlign:"right",color:T.success }}>{fmt(totalDesc)}</div>
                       <div style={{ textAlign:"right",color:"#ef4444" }}>{fmt(Math.max(0,totalPlan-totalDesc))}</div>
-                      <div style={{ textAlign:"right",color:T.muted,fontSize:10 }}>{(totalPlan/9300).toFixed(1)}</div>
                       <div style={{ textAlign:"center",color:T.orange }}>{pct}%</div>
                       <div></div>
                     </div>
