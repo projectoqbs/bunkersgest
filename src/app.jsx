@@ -16,6 +16,57 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 const MATERIAS_PRIMAS = ["FRONTERA","PENDARE","ALBERTA","CARRIZALES NORTE P","CARRIZALES NORTE B","OMI","VIGIA","KIMBO","CUERVA","SOGAMOSO","TK205","RUMBA","MATEGUAFA","DESTILADO REFISAMAG"];
+
+const PRODUCTO_NORMALIZACION = {
+  "PENDARE": "PENDARE",
+  "PENDARE TFG": "PENDARE",
+  "PENDARE REGULAR": "PENDARE",
+  "CARRIZALES NORTE B": "CARRIZALES NORTE",
+  "CARRIZALES NORTE P": "CARRIZALES NORTE",
+  "CARRIZALES NORTE": "CARRIZALES NORTE",
+  "OMI": "OMI",
+  "OMI TFG": "OMI",
+  "FRONTERA": "FRONTERA",
+  "VASCONIA": "VASCONIA",
+  "CUERVA": "CUERVA",
+  "ALBERTA": "ALBERTA",
+  "VIGIA": "VIGIA",
+};
+
+function normalizarProducto(producto) {
+  return PRODUCTO_NORMALIZACION[producto?.trim()] || producto;
+}
+
+function agruparDescarguesPorProducto(descarguesArray) {
+  if (!descarguesArray || descarguesArray.length === 0) return [];
+  const agrupados = {};
+  descarguesArray.forEach(d => {
+    const productoBase = normalizarProducto(d.producto || d.nombre || "");
+    if (!agrupados[productoBase]) {
+      agrupados[productoBase] = { productoBase, galones_planeado: 0, galones_descargado: 0, plancas: [], estado: "pendiente" };
+    }
+    agrupados[productoBase].galones_planeado += Number(d.galones_planeado || 0);
+    agrupados[productoBase].galones_descargado += Number(d.galones_descargado || 0);
+    agrupados[productoBase].plancas.push({
+      id: d.id,
+      placa: d.placa,
+      galones: Number(d.galones_planeado || 0),
+      producto_original: d.producto || d.nombre || "",
+      galones_descargados: Number(d.galones_descargado || 0),
+      estado: d.estado,
+      _idx: descarguesArray.indexOf(d),
+    });
+    if (d.estado === "descargando") agrupados[productoBase].estado = "descargando";
+  });
+  return Object.values(agrupados).map(g => ({
+    ...g,
+    carrotanques: (g.galones_planeado / 9300).toFixed(1),
+  }));
+}
+
+function fmtNum(num) {
+  return Number(num).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
 const TABLA13 = {1:4.0346,2:4.0043,3:3.9745,4:3.9451,5:3.9162,6:3.8877,7:3.8596,8:3.8319,9:3.8046,10:3.7777,11:3.7511,12:3.7249,13:3.6991,14:3.6737,15:3.6486,16:3.6238,17:3.5994,18:3.5753,19:3.5515,20:3.528,21:3.5048,22:3.482,23:3.4594,24:3.4371,25:3.4151,26:3.3934,27:3.372,28:3.3508,29:3.3299,30:3.3093,31:3.2888,32:3.2687,33:3.2489,34:3.2292,35:3.2097,36:3.1906,37:3.1716,38:3.1529,39:3.1343,40:3.116,41:3.0979,42:3.0801,43:3.0624,44:3.0449,45:3.0276,46:3.0105,47:2.9937,48:2.9769,49:2.9604,50:2.9441};
 const tabla13Factor = api => {
   if (!api || api <= 0) return "";
@@ -310,6 +361,8 @@ export default function App() {
     document.addEventListener("fullscreenchange", handler);
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
+  const [otExpandidos, setOtExpandidos] = useState({});
+  const toggleOtExpandir = (productoBase) => setOtExpandidos(prev => ({ ...prev, [productoBase]: !prev[productoBase] }));
   const [viajesFiltroEstado, setViajesFiltroEstado] = useState("");
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
@@ -3221,63 +3274,98 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {ot.estado==="COMPLETADA"||ot.estado==="RECIRCULANDO"?"✅":"⏳"} PASO 2 — DESCARGUES
                 {ot.estado==="DESCARGANDO" && <span style={{ marginLeft:10,fontSize:11,color:T.orange }}>{pct}% completado</span>}
               </div>
-              {desc.length===0 ? <div style={{ color:T.muted,fontSize:12 }}>Sin descargues</div> : (
-                <>
-                  {ot.estado==="DESCARGANDO" && (
-                    <div style={{ background:T.border,borderRadius:4,height:8,marginBottom:12 }}>
-                      <div style={{ width:`${pct}%`,background:T.orange,height:8,borderRadius:4,transition:"width 0.3s" }}/>
+              {desc.length===0 ? <div style={{ color:T.muted,fontSize:12 }}>Sin descargues</div> : (() => {
+                const grupos = agruparDescarguesPorProducto(desc);
+                return (
+                  <>
+                    {ot.estado==="DESCARGANDO" && (
+                      <div style={{ background:T.border,borderRadius:4,height:8,marginBottom:12 }}>
+                        <div style={{ width:`${pct}%`,background:T.orange,height:8,borderRadius:4,transition:"width 0.3s" }}/>
+                      </div>
+                    )}
+                    {/* Encabezados */}
+                    <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 0.8fr 1.4fr 0.3fr",gap:8,paddingBottom:8,borderBottom:`1px solid ${T.border}`,fontSize:10,fontWeight:600,color:T.muted,marginBottom:6 }}>
+                      <div>PRODUCTO</div>
+                      <div style={{ textAlign:"right" }}>PLANEADO</div>
+                      <div style={{ textAlign:"right" }}>DESCARGADO</div>
+                      <div style={{ textAlign:"right" }}>CARROS</div>
+                      <div style={{ textAlign:"center" }}>ACCIÓN</div>
+                      <div></div>
                     </div>
-                  )}
-                  <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                    <thead><tr style={{ borderBottom:`2px solid ${T.border}` }}>
-                      {["Producto/Placa","Planeado (gls)","Descargado (gls)","Falta","Estado","Acción"].map(h=><th key={h} style={{ padding:"6px 10px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:10,textTransform:"uppercase" }}>{h}</th>)}
-                    </tr></thead>
-                    <tbody>
-                      {desc.map((d,i)=>{
-                        const plan=Number(d.galones_planeado||0), real=Number(d.galones_descargado||0), falta=Math.max(0,plan-real);
-                        const dpct=plan>0?Math.round(real/plan*100):0;
-                        return (
-                          <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
-                            <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{d.producto||d.nombre||""}{d.placa?` / ${d.placa}`:""}</td>
-                            <td style={{ padding:"8px 10px",color:T.muted }}>{fmt(plan)}</td>
-                            <td style={{ padding:"8px 10px",color:T.success,fontWeight:700 }}>{fmt(real)}</td>
-                            <td style={{ padding:"8px 10px",color:falta>0?"#f59e0b":T.success,fontWeight:700 }}>{falta>0?fmt(falta):"✅"}</td>
-                            <td style={{ padding:"8px 10px" }}><span style={{ fontSize:10,fontWeight:700,color:dpct>=100?"#00e5a0":dpct>0?"#f59e0b":T.muted }}>{dpct>=100?"✅ Completo":dpct>0?`${dpct}%`:"⏸️ Pendiente"}</span></td>
-                            <td style={{ padding:"8px 10px" }}>
-                              {ot.estado==="DESCARGANDO" && dpct<100 && (
-                                <div style={{ display:"flex",gap:4,alignItems:"center" }}>
-                                  <input type="number" placeholder="gls descargados" style={{ width:110,padding:"3px 6px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,background:T.card,color:T.text,outline:"none" }}
+                    {/* Filas agrupadas */}
+                    {grupos.map(grupo => {
+                      const gPlan = grupo.galones_planeado, gReal = grupo.galones_descargado;
+                      const gFalta = Math.max(0, gPlan - gReal);
+                      const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
+                      return (
+                        <div key={grupo.productoBase} style={{ marginBottom:6 }}>
+                          {/* Fila principal */}
+                          <div onClick={() => toggleOtExpandir(grupo.productoBase)} style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 0.8fr 1.4fr 0.3fr",gap:8,padding:"9px 10px",background:T.card,borderRadius:6,cursor:"pointer",borderLeft:`3px solid ${gPct>=100?"#00e5a0":T.orange}`,transition:"background 0.15s" }}
+                            onMouseEnter={e=>e.currentTarget.style.background=T.bg}
+                            onMouseLeave={e=>e.currentTarget.style.background=T.card}
+                          >
+                            <div style={{ fontWeight:700,color:T.text,fontSize:12 }}>{grupo.productoBase}</div>
+                            <div style={{ textAlign:"right",color:T.muted,fontSize:12 }}>{fmtNum(gPlan)}</div>
+                            <div style={{ textAlign:"right",color:T.success,fontWeight:700,fontSize:12 }}>{fmtNum(gReal)}</div>
+                            <div style={{ textAlign:"right",color:T.muted,fontSize:10 }}>{grupo.carrotanques}</div>
+                            <div style={{ textAlign:"center" }}>
+                              {ot.estado==="DESCARGANDO" && gPct<100 && (
+                                <div style={{ display:"flex",gap:4,alignItems:"center",justifyContent:"center" }} onClick={e=>e.stopPropagation()}>
+                                  <input type="number" placeholder="gls" style={{ width:90,padding:"3px 6px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,background:T.bg,color:T.text,outline:"none" }}
                                     onKeyDown={async e=>{ if(e.key==="Enter"){
-                                      const val=Number(e.target.value||0);
-                                      const nuevo=desc.map((dd,j)=>j===i?{...dd,galones_descargado:Math.min(plan,real+val)}:dd);
-                                      const todos=nuevo.every(dd=>Number(dd.galones_descargado||0)>=Number(dd.galones_planeado||0));
+                                      const val = Number(e.target.value || 0);
+                                      const nuevo = desc.map(dd => {
+                                        const pb = normalizarProducto(dd.producto || dd.nombre || "");
+                                        if (pb !== grupo.productoBase) return dd;
+                                        const ddPlan = Number(dd.galones_planeado || 0);
+                                        const ddReal = Number(dd.galones_descargado || 0);
+                                        const ddFalta = Math.max(0, ddPlan - ddReal);
+                                        const ddAgregar = Math.min(ddFalta, val * (ddFalta / Math.max(1, gFalta)));
+                                        return { ...dd, galones_descargado: Math.min(ddPlan, ddReal + ddAgregar) };
+                                      });
+                                      const todos = nuevo.every(dd => Number(dd.galones_descargado||0) >= Number(dd.galones_planeado||0));
                                       await actualizarOT({descargues:nuevo,...(todos?{estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"}:{})});
                                       e.target.value="";
                                     }}}/>
                                   <span style={{ fontSize:9,color:T.muted }}>↵</span>
                                 </div>
                               )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      <tr style={{ background:T.bg }}>
-                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.muted,fontSize:11 }}>TOTAL</td>
-                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{fmt(totalPlan)}</td>
-                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.success }}>{fmt(totalDesc)}</td>
-                        <td style={{ padding:"8px 10px",fontWeight:700,color:totalPlan-totalDesc>0?"#f59e0b":"#00e5a0" }}>{totalPlan-totalDesc>0?fmt(totalPlan-totalDesc):"✅"}</td>
-                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.orange }}>{pct}%</td>
-                        <td/>
-                      </tr>
-                    </tbody>
-                  </table>
-                  {ot.estado==="DESCARGANDO" && pct>=100 && (
-                    <div style={{ marginTop:10 }}>
-                      <button onClick={()=>actualizarOT({estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Iniciar Recirculación →</button>
+                              {gPct>=100 && <span style={{ fontSize:10,fontWeight:700,color:"#00e5a0" }}>✅ Completo</span>}
+                            </div>
+                            <div style={{ textAlign:"center",color:T.muted,fontSize:12 }}>{otExpandidos[grupo.productoBase]?"▲":"▼"}</div>
+                          </div>
+                          {/* Detalle expandido */}
+                          {otExpandidos[grupo.productoBase] && (
+                            <div style={{ background:T.bg,padding:"8px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid #38bdf8` }}>
+                              <div style={{ marginBottom:6,fontWeight:600,color:"#38bdf8" }}>Placas individuales:</div>
+                              {grupo.plancas.map((p,pi) => (
+                                <div key={p.id||pi} style={{ display:"flex",justifyContent:"space-between",marginBottom:3,paddingLeft:8 }}>
+                                  <span>├─ {p.placa||"—"} <span style={{ color:T.muted }}>({p.producto_original})</span></span>
+                                  <span style={{ color:T.success,fontWeight:500 }}>{fmtNum(p.galones)} gls</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {/* Fila total */}
+                    <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 0.8fr 1.4fr 0.3fr",gap:8,padding:"10px",background:T.bg,borderRadius:6,marginTop:8,borderTop:`2px solid ${T.orange}`,fontWeight:700,fontSize:12 }}>
+                      <div style={{ color:T.muted }}>TOTAL</div>
+                      <div style={{ textAlign:"right",color:T.text }}>{fmt(totalPlan)}</div>
+                      <div style={{ textAlign:"right",color:T.success }}>{fmt(totalDesc)}</div>
+                      <div style={{ textAlign:"right",color:T.muted,fontSize:10 }}>{(totalPlan/9300).toFixed(1)}</div>
+                      <div style={{ textAlign:"center",color:T.orange }}>{pct}%</div>
+                      <div></div>
                     </div>
-                  )}
-                </>
-              )}
+                    {ot.estado==="DESCARGANDO" && pct>=100 && (
+                      <div style={{ marginTop:10 }}>
+                        <button onClick={()=>actualizarOT({estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Iniciar Recirculación →</button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </Card>
 
             {/* PASO 3: RECIRCULACIÓN */}
@@ -4129,25 +4217,47 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             {fo && (
               <div style={{ background:T.bg,borderRadius:10,padding:14,border:`1px solid ${T.border}`,marginBottom:16 }}>
                 <div style={{ fontSize:11,color:T.muted,fontWeight:700,marginBottom:10,textTransform:"uppercase" }}>Desglose de Descargues — Tanque {fo.tanque}</div>
-                <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                  <thead><tr style={{ borderBottom:`1px solid ${T.border}` }}>
-                    {["Producto / Placa","Gls Planeado","Carrotanques"].map(h=><th key={h} style={{ padding:"6px 10px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:10,textTransform:"uppercase" }}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>
-                    {foMps.filter(mp=>Number(mp.galones||0)>0).map((mp,i)=>(
-                      <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
-                        <td style={{ padding:"7px 10px",fontWeight:700,color:T.text }}>{mp._producto||mp.nombre}{mp.nombre&&mp._producto?` / ${mp.nombre}`:""}</td>
-                        <td style={{ padding:"7px 10px",color:T.success,fontWeight:700 }}>{fmt(Number(mp.galones||0))}</td>
-                        <td style={{ padding:"7px 10px",color:T.muted }}>{(Number(mp.galones||0)/9300).toFixed(1)}</td>
-                      </tr>
-                    ))}
-                    <tr style={{ background:`${T.orange}08` }}>
-                      <td style={{ padding:"7px 10px",fontWeight:800,color:T.text }}>TOTAL</td>
-                      <td style={{ padding:"7px 10px",fontWeight:800,color:T.success }}>{fmt(Number(fo.total_galones||0))}</td>
-                      <td style={{ padding:"7px 10px",fontWeight:700,color:T.muted }}>{(Number(fo.total_galones||0)/9300).toFixed(1)} carros</td>
-                    </tr>
-                  </tbody>
-                </table>
+                {(() => {
+                  const mpsFiltrados = foMps.filter(mp=>Number(mp.galones||0)>0);
+                  const descPrev = mpsFiltrados.map(mp=>({ producto: mp._producto||mp.nombre||"", placa: mp._placa||mp.nombre||"", galones_planeado: Number(mp.galones||0), galones_descargado:0 }));
+                  const grupos = agruparDescarguesPorProducto(descPrev);
+                  return (
+                    <>
+                      <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 0.8fr 0.3fr",gap:8,paddingBottom:6,borderBottom:`1px solid ${T.border}`,fontSize:10,fontWeight:600,color:T.muted,marginBottom:6 }}>
+                        <div>PRODUCTO</div><div style={{ textAlign:"right" }}>GLS PLANEADO</div><div style={{ textAlign:"right" }}>CARROS</div><div></div>
+                      </div>
+                      {grupos.map(g => (
+                        <div key={g.productoBase} style={{ marginBottom:4 }}>
+                          <div onClick={()=>toggleOtExpandir("prev_"+g.productoBase)} style={{ display:"grid",gridTemplateColumns:"2fr 1fr 0.8fr 0.3fr",gap:8,padding:"8px 10px",background:T.card,borderRadius:6,cursor:"pointer",borderLeft:`3px solid ${T.orange}`,fontSize:12 }}
+                            onMouseEnter={e=>e.currentTarget.style.background=T.bg}
+                            onMouseLeave={e=>e.currentTarget.style.background=T.card}
+                          >
+                            <div style={{ fontWeight:700,color:T.text }}>{g.productoBase}</div>
+                            <div style={{ textAlign:"right",color:T.success,fontWeight:700 }}>{fmtNum(g.galones_planeado)}</div>
+                            <div style={{ textAlign:"right",color:T.muted }}>{g.carrotanques}</div>
+                            <div style={{ textAlign:"center",color:T.muted }}>{otExpandidos["prev_"+g.productoBase]?"▲":"▼"}</div>
+                          </div>
+                          {otExpandidos["prev_"+g.productoBase] && (
+                            <div style={{ background:T.bg,padding:"6px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid #38bdf8` }}>
+                              {g.plancas.map((p,pi)=>(
+                                <div key={pi} style={{ display:"flex",justifyContent:"space-between",marginBottom:2,paddingLeft:8 }}>
+                                  <span>├─ {p.placa||"—"} <span style={{ color:T.muted }}>({p.producto_original})</span></span>
+                                  <span style={{ color:T.success }}>{fmtNum(p.galones)} gls</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 0.8fr 0.3fr",gap:8,padding:"8px 10px",background:`${T.orange}08`,borderRadius:6,marginTop:6,fontWeight:800,fontSize:12,borderTop:`1px solid ${T.border}` }}>
+                        <div style={{ color:T.text }}>TOTAL</div>
+                        <div style={{ textAlign:"right",color:T.success }}>{fmt(Number(fo.total_galones||0))}</div>
+                        <div style={{ textAlign:"right",color:T.muted }}>{(Number(fo.total_galones||0)/9300).toFixed(1)} carros</div>
+                        <div></div>
+                      </div>
+                    </>
+                  );
+                })()}
                 {fo.producto==="VLSFO" && (
                   <div style={{ marginTop:10,display:"flex",gap:8,flexWrap:"wrap" }}>
                     {[["Azufre",Number(fo.azufre_planeado||0).toFixed(4)+"%",Number(fo.azufre_planeado||0)<=0.5],["Agua",Number(fo.agua_planeada||0).toFixed(4)+"%",true],["Flash",Number(fo.flash_point_planeado||0).toFixed(1)+"°C",Number(fo.flash_point_planeado||0)>=60]].map(([lbl,val,ok])=>(
