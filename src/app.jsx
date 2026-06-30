@@ -3259,7 +3259,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const tras = ot.trasiegos||[];
         const totalPlan = desc.reduce((a,d)=>a+Number(d.galones_planeado||0),0);
         const cmtsDeEstaOT = (cmts||[]).filter(c=>c.ot_id===ot.id);
-        const totalDesc = cmtsDeEstaOT.reduce((a,c)=>a+Number(c.total_movido||0),0);
+        const totalDesc = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>{
+          const tiq=tiquetes.find(t=>t.placa===carro.placa);
+          return s+Number(tiq?.galones_recibidos||0);
+        },0),0);
         const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
         const estadoColor = e=>e==="COMPLETADA"?"#00e5a0":e==="RECIRCULANDO"?"#38bdf8":e==="DESCARGANDO"?"#f59e0b":e==="TRASIEGOS"?"#a78bfa":e==="RECHAZADA"?"#ef4444":"#94a3b8";
 
@@ -3366,27 +3369,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {grupos.map(grupo => {
                       const gPlan = grupo.galones_planeado;
                       const gReal = cmtsDeEstaOT.reduce((sum,c)=>{
-                        const tdList = c.tanques_despues||[];
-                        const taList = c.tanques_antes||[];
-                        const tieneProductoEnTanques = tdList.some(td=>td.producto);
-                        if(tieneProductoEnTanques){
-                          return sum + tdList
-                            .filter(td=>normalizarProducto(td.producto||"")===grupo.productoBase)
-                            .reduce((s,td)=>{
-                              const ta = taList.find(t=>t.tanque===td.tanque);
-                              return s + Math.max(0, Number(td.galones||0)-Number(ta?.galones||0));
-                            },0);
-                        } else {
-                          // CMT sin producto por tanque
-                          const prodCmt = normalizarProducto(c.producto||"");
-                          if(prodCmt && prodCmt===grupo.productoBase){
-                            return sum + Number(c.total_movido||0);
-                          } else if(!prodCmt){
-                            // Sin producto alguno: distribuir proporcionalmente
-                            return sum + (totalPlan>0?(gPlan/totalPlan)*Number(c.total_movido||0):0);
-                          }
-                          return sum;
-                        }
+                        return sum + (c.carros||[]).reduce((s,carro)=>{
+                          const tiq = tiquetes.find(t=>t.placa===carro.placa);
+                          if(!tiq) return s;
+                          if(normalizarProducto(tiq.producto||"")!==grupo.productoBase) return s;
+                          return s + Number(tiq.galones_recibidos||0);
+                        },0);
                       },0);
                       const gFalta = Math.max(0, gPlan - gReal);
                       const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
