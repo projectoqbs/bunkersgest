@@ -3259,10 +3259,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const tras = ot.trasiegos||[];
         const totalPlan = desc.reduce((a,d)=>a+Number(d.galones_planeado||0),0);
         const cmtsDeEstaOT = (cmts||[]).filter(c=>c.ot_id===ot.id);
-        const totalDesc = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>{
-          const tiq=tiquetes.find(t=>t.placa===carro.placa);
-          return s+Number(tiq?.galones_recibidos||0);
-        },0),0);
+        const glsDescargadosCarro = (carro)=>{
+          const tiq=tiquetes.find(t=>t.id===carro.tiquete);
+          const factor=Number(tiq?.factor_tabla13||0), pesoNeto=Number(carro.peso_neto||0);
+          return (factor>0&&pesoNeto>0)?Math.round(pesoNeto/factor):Number(carro.galones_descargados||0);
+        };
+        const prodCarro = (carro)=>normalizarProducto((tiquetes.find(t=>t.id===carro.tiquete))?.producto||"");
+        const totalDesc = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>s+glsDescargadosCarro(carro),0),0);
         const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
         const estadoColor = e=>e==="COMPLETADA"?"#00e5a0":e==="RECIRCULANDO"?"#38bdf8":e==="DESCARGANDO"?"#f59e0b":e==="TRASIEGOS"?"#a78bfa":e==="RECHAZADA"?"#ef4444":"#94a3b8";
 
@@ -3368,14 +3371,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {/* Filas agrupadas */}
                     {grupos.map(grupo => {
                       const gPlan = grupo.galones_planeado;
-                      const gReal = cmtsDeEstaOT.reduce((sum,c)=>{
-                        return sum + (c.carros||[]).reduce((s,carro)=>{
-                          const tiq = tiquetes.find(t=>t.placa===carro.placa);
-                          if(!tiq) return s;
-                          if(normalizarProducto(tiq.producto||"")!==grupo.productoBase) return s;
-                          return s + Number(tiq.galones_recibidos||0);
-                        },0);
-                      },0);
+                      const gReal = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>{
+                        if(prodCarro(carro)!==grupo.productoBase) return s;
+                        return s+glsDescargadosCarro(carro);
+                      },0),0);
                       const gFalta = Math.max(0, gPlan - gReal);
                       const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
                       return (
