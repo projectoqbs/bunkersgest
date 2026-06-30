@@ -1196,7 +1196,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const GRUPOS = {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
-              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo"},{id:"cmt",label:"CMT",badge:pendCMT},{id:"pbs",label:"PBS",badge:pendPBS}] },
+              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"pbs",label:"PBS"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
             };
             const badges = {};
