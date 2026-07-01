@@ -3820,14 +3820,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{width:200,flexShrink:0}}>
               <Lbl>Producto del CMT</Lbl>
               {(()=>{
-                const prodAprobados = [...new Set(
+                const prodEnPlanta = [...new Set(
                   viajes
-                    .filter(v => v.estado === "En Planta")
-                    .filter(v => tiquetes.some(t => (t.viaje_id === v.id || t.id === v.tiquete_id) && t.resultado === "APROBADO"))
-                    .map(v => (v.producto||"").toUpperCase())
+                    .filter(v => v.estado === "En Planta" || (v.estado === "Rechazado" && v.autorizado_descargue))
+                    .map(v => normalizarProducto(v.producto||""))
                     .filter(Boolean)
                 )];
-                const opciones = [...new Set([...prodAprobados, "VLSFO", "HSFO"])].sort();
+                const opciones = [...new Set([...MATERIAS_PRIMAS, "VLSFO", "HSFO", "MGO", ...prodEnPlanta])].sort();
                 return (
                   <select value={cmtProducto} onChange={e=>{
                     const val = e.target.value;
