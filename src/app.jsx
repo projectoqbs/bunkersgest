@@ -2474,11 +2474,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <rect x={cx} y={topY} width={iRX} height={cylH}
                     fill={`url(#sd-${label})`} clipPath={`url(#ci-${label})`}/>
 
-                  {/* ── ELIPSE BASE (fondo) ── */}
-                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
+                  {/* ── ELIPSE BASE (fondo) — solo mitad derecha (interior visible) ── */}
+                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d" clipPath={`url(#ci-${label})`}/>
 
-                  {/* ── ARO SUPERIOR ── */}
-                  <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
+                  {/* ── ARO SUPERIOR — solo mitad derecha (interior visible) ── */}
+                  <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a" clipPath={`url(#ci-${label})`}/>
 
                   {/* ── DOMO CONVEXO ── */}
                   <path d={domePath} fill={`url(#dg-${label})`}/>
