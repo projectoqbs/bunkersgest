@@ -2447,13 +2447,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
                   {/* ── ELIPSE BASE (fondo) ── */}
                   <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
-                  {/* Tapa exterior: cubre la mitad izquierda de la elipse base para que la pared quede sólida */}
-                  <rect x={lx} y={botY - eh/2} width={ew/2 + 1} height={eh} fill="#0a0a0a"/>
+                  {/* Semi-elipse izquierda: tapa exactamente la mitad izquierda siguiendo la curva */}
+                  <path d={`M ${cx},${botY-eh/2} A ${ew/2},${eh/2} 0 0,0 ${lx},${botY} A ${ew/2},${eh/2} 0 0,0 ${cx},${botY+eh/2} Z`} fill="#0a0a0a"/>
 
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
-                  {/* Tapa exterior: cubre la mitad izquierda del aro superior */}
-                  <rect x={lx} y={topY - eh/2} width={ew/2 + 1} height={eh} fill="#0a0a0a"/>
+                  {/* Semi-elipse izquierda: tapa exactamente la mitad izquierda del aro */}
+                  <path d={`M ${cx},${topY-eh/2} A ${ew/2},${eh/2} 0 0,0 ${lx},${topY} A ${ew/2},${eh/2} 0 0,0 ${cx},${topY+eh/2} Z`} fill="#0a0a0a"/>
 
                   {/* ── DOMO CONVEXO ── */}
                   <path d={domePath} fill={`url(#dg-${label})`}/>
