@@ -2412,12 +2412,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="80%"  stopColor="#000000" stopOpacity="0.35"/>
                       <stop offset="100%" stopColor="#000000" stopOpacity="0.65"/>
                     </linearGradient>
-                    {/* Gradiente piso interior: gris claro en centro, oscuro en bordes */}
-                    <radialGradient id={`bf-${label}`} cx="50%" cy="50%" r="50%">
-                      <stop offset="0%"   stopColor="#8a8a8a"/>
-                      <stop offset="45%"  stopColor="#606060"/>
-                      <stop offset="100%" stopColor="#1a1a1a"/>
-                    </radialGradient>
                   </defs>
 
                   {/* ── CUERPO: paredes negras + zona interior gris en gradiente ── */}
@@ -2451,7 +2445,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     fill={`url(#sd-${label})`} clipPath={`url(#ci-${label})`}/>
 
                   {/* ── ELIPSE BASE (fondo) ── */}
-                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill={`url(#bf-${label})`} clipPath={`url(#ci-${label})`}/>
+                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
+                  {/* Semi-elipse izquierda: tapa exactamente la mitad izquierda siguiendo la curva */}
+                  <path d={`M ${cx+2},${botY-eh/2-1} A ${ew/2+2},${eh/2+1} 0 0,0 ${lx-2},${botY} A ${ew/2+2},${eh/2+1} 0 0,0 ${cx+2},${botY+eh/2+1} Z`} fill="#000000"/>
 
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
