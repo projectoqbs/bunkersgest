@@ -95,8 +95,8 @@ function AppBtn({children,color,sm,disabled,onClick}){
 
 function TInp({value,onChange,step,disabled}){
   return (
-    <input type="number" step={step||"any"} value={value} onChange={onChange} disabled={disabled}
-      style={{width:"100%",background:disabled?"#f5f7fa":TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"5px 8px",color:TH.text,fontSize:12,outline:"none",boxSizing:"border-box",textAlign:"right",MozAppearance:"textfield",appearance:"textfield"}}/>
+    <input type="text" inputMode="decimal" value={value} onChange={onChange} disabled={disabled}
+      style={{width:"100%",background:disabled?"#f5f7fa":TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"5px 8px",color:TH.text,fontSize:12,outline:"none",boxSizing:"border-box",textAlign:"right"}}/>
   );
 }
 
@@ -291,32 +291,36 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
       </div>
 
       {tab==="nuevo"&&<>
-        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:8,padding:20,marginBottom:16,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
-          {secHeader("📋","Informacion General")}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:0,columnGap:16}}>
-            <AppInp label="Motonave" value={motonave} onChange={e=>setMotonave(e.target.value.toUpperCase())} placeholder="NOMBRE DEL BUQUE"/>
-            <AppInp label="Fecha" type="date" value={fecha} onChange={e=>setFecha(e.target.value)}/>
-            <AppInp label="Operador" value={operador} onChange={e=>setOperador(e.target.value.toUpperCase())}/>
-            <AppInp label="Observaciones" value={obs} onChange={e=>setObs(e.target.value.toUpperCase())} placeholder="OPCIONAL"/>
-          </div>
-        </div>
+
 
         <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:8,padding:20,marginBottom:16,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
           {secHeader("⚓","Calados y Trim","Ingresa los calados de proa y popa al inicio y al final de la operacion")}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr auto auto",gap:0,columnGap:16,alignItems:"end"}}>
-            <AppInp label="Proa Inicial (m)" type="number" step="0.01" value={calados.proaIni} onChange={e=>setCalados(c=>({...c,proaIni:e.target.value}))}/>
-            <AppInp label="Popa Inicial (m)" type="number" step="0.01" value={calados.popaIni} onChange={e=>setCalados(c=>({...c,popaIni:e.target.value}))}/>
-            <AppInp label="Proa Final (m)" type="number" step="0.01" value={calados.proaFin} onChange={e=>setCalados(c=>({...c,proaFin:e.target.value}))}/>
-            <AppInp label="Popa Final (m)" type="number" step="0.01" value={calados.popaFin} onChange={e=>setCalados(c=>({...c,popaFin:e.target.value}))}/>
-            <div style={{marginBottom:12,textAlign:"center",padding:"10px 20px",background:"#f0f4f8",borderRadius:6,border:"2px solid "+tcDir(trimI.dir)}}>
-              <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Trim Inicial</div>
-              <div style={{fontSize:24,fontWeight:900,color:tcDir(trimI.dir)}}>{trimI.val.toFixed(2)}m</div>
-              <div style={{fontSize:11,fontWeight:700,color:tcDir(trimI.dir)}}>{trimI.dir}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            {/* INICIAL */}
+            <div style={{background:"#f8fafc",borderRadius:8,padding:16,border:"1px solid "+TH.border}}>
+              <div style={{fontSize:10,color:TH.navy,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:12,borderBottom:"2px solid "+TH.orange,paddingBottom:6}}>▶ Calados Iniciales</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",columnGap:12}}>
+                <AppInp label="Proa Inicial (m)" type="number" step="0.01" value={calados.proaIni} onChange={e=>setCalados(c=>({...c,proaIni:e.target.value}))}/>
+                <AppInp label="Popa Inicial (m)" type="number" step="0.01" value={calados.popaIni} onChange={e=>setCalados(c=>({...c,popaIni:e.target.value}))}/>
+              </div>
+              <div style={{textAlign:"center",padding:"10px",background:"#ffffff",borderRadius:6,border:"2px solid "+tcDir(trimI.dir)}}>
+                <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Trim Inicial</div>
+                <div style={{fontSize:28,fontWeight:900,color:tcDir(trimI.dir)}}>{trimI.val.toFixed(2)}m</div>
+                <div style={{fontSize:12,fontWeight:700,color:tcDir(trimI.dir)}}>{trimI.dir}</div>
+              </div>
             </div>
-            <div style={{marginBottom:12,textAlign:"center",padding:"10px 20px",background:"#f0f4f8",borderRadius:6,border:"2px solid "+tcDir(trimF.dir)}}>
-              <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Trim Final</div>
-              <div style={{fontSize:24,fontWeight:900,color:tcDir(trimF.dir)}}>{trimF.val.toFixed(2)}m</div>
-              <div style={{fontSize:11,fontWeight:700,color:tcDir(trimF.dir)}}>{trimF.dir}</div>
+            {/* FINAL */}
+            <div style={{background:"#f8fafc",borderRadius:8,padding:16,border:"1px solid "+TH.border}}>
+              <div style={{fontSize:10,color:TH.navy,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:12,borderBottom:"2px solid "+TH.navy,paddingBottom:6}}>◼ Calados Finales</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",columnGap:12}}>
+                <AppInp label="Proa Final (m)" type="number" step="0.01" value={calados.proaFin} onChange={e=>setCalados(c=>({...c,proaFin:e.target.value}))}/>
+                <AppInp label="Popa Final (m)" type="number" step="0.01" value={calados.popaFin} onChange={e=>setCalados(c=>({...c,popaFin:e.target.value}))}/>
+              </div>
+              <div style={{textAlign:"center",padding:"10px",background:"#ffffff",borderRadius:6,border:"2px solid "+tcDir(trimF.dir)}}>
+                <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Trim Final</div>
+                <div style={{fontSize:28,fontWeight:900,color:tcDir(trimF.dir)}}>{trimF.val.toFixed(2)}m</div>
+                <div style={{fontSize:12,fontWeight:700,color:tcDir(trimF.dir)}}>{trimF.dir}</div>
+              </div>
             </div>
           </div>
         </div>
