@@ -3596,33 +3596,35 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       )}
 
       {modal==="tiquete" && (()=>{
-        const esAdmin = perfil.rol === "administrador";
+        const esLab = perfil.rol === "laboratorio" || perfil.rol === "administrador";
+        const soloVista = !!form.id && !esLab;
         const tieneViaje = !!form.viaje_id;
-        const soloLab = !esAdmin && tieneViaje;
+        const soloLab = !esLab && tieneViaje;
         const tipoA = form.tipo_analisis||"Tiquetes MP";
         const esMP = tipoA === "Tiquetes MP";
         const tituloModal = form.id
-          ? `Editar ${esMP?"Tiquete":("Análisis "+tipoA.replace("Tiquetes MP",""))} ${form.id}`
+          ? `${soloVista?"Ver":"Editar"} ${esMP?"Tiquete":("Análisis "+tipoA.replace("Tiquetes MP",""))} ${form.id}`
           : esMP ? "Tiquete de Ingreso de Materia Prima"
           : `Análisis ${tipoA}`;
         return (
         <Modal title={tituloModal} onClose={()=>setModal(null)} wide inline>
           <Section title="Identificación" color="#00b4ff">
             <Grid cols={esMP?2:3}>
-              <Inp label="Proveedor / Campo Origen" type="text" value={form.proveedor||""} onChange={f("proveedor")}/>
-              <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloLab}/>
-              {esMP && <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")} readOnly={soloLab}/>}
-              {esMP && <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")}/>}
-              {esMP && <Inp label="Nombre Conductor" type="text" value={form.nombre_conductor||""} onChange={f("nombre_conductor")}/>}
-              {esMP && <Inp label="Fecha Cargue" type="date" value={form.fecha_cargue||""} onChange={f("fecha_cargue")} readOnly={soloLab}/>}
-              <Inp label="Fecha de Análisis" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")} readOnly={esMP&&soloLab}/>
+              <Inp label="Proveedor / Campo Origen" type="text" value={form.proveedor||""} onChange={f("proveedor")} readOnly={soloVista}/>
+              <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloVista||soloLab}/>
+              {esMP && <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")} readOnly={soloVista||soloLab}/>}
+              {esMP && <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")} readOnly={soloVista}/>}
+              {esMP && <Inp label="Nombre Conductor" type="text" value={form.nombre_conductor||""} onChange={f("nombre_conductor")} readOnly={soloVista}/>}
+              {esMP && <Inp label="Fecha Cargue" type="date" value={form.fecha_cargue||""} onChange={f("fecha_cargue")} readOnly={soloVista||soloLab}/>}
+              <Inp label="Fecha de Análisis" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")} readOnly={soloVista||(esMP&&soloLab)}/>
             </Grid>
           </Section>
           <Section title="Análisis API" color="#00b4ff">
             <Grid cols={7}>
-              <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={e=>{const v=e.target.value;const d=v.split(".");if(d[1]&&d[1].length>1)return;setForm(p=>({...p,api_reportado:v}));}}/>
-              <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={e=>{const v=e.target.value;const d=v.split(".");if(d[1]&&d[1].length>1)return;setForm(p=>({...p,api_observado:v}));}}/>
-              <Inp label="API Corregido 60°F" type="number" step="0.1" value={form.api_corregido||""} onChange={e=>{
+              <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={e=>{const v=e.target.value;const d=v.split(".");if(d[1]&&d[1].length>1)return;setForm(p=>({...p,api_reportado:v}));}} readOnly={soloVista}/>
+              <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={e=>{const v=e.target.value;const d=v.split(".");if(d[1]&&d[1].length>1)return;setForm(p=>({...p,api_observado:v}));}} readOnly={soloVista}/>
+              <Inp label="API Corregido 60°F" type="number" step="0.1" value={form.api_corregido||""} readOnly={soloVista} onChange={e=>{
+                if(soloVista) return;
                 const v=e.target.value; const d=v.split("."); if(d[1]&&d[1].length>1)return;
                 const api = Number(v||0);
                 const temp = Number(form.temp_observada||0);
@@ -3638,7 +3640,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   return next;
                 });
               }}/>
-              <Inp label="Temperatura Obs. (°C)" type="number" step="0.1" value={form.temp_observada||""} onChange={e=>{
+              <Inp label="Temperatura Obs. (°C)" type="number" step="0.1" value={form.temp_observada||""} readOnly={soloVista} onChange={e=>{
+                if(soloVista) return;
                 const temp = e.target.value;
                 const api = Number(form.api_corregido||0);
                 setForm(prev=>{
@@ -3660,19 +3663,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </Section>
           <Section title="Calidad" color="#00b4ff">
             <Grid cols={5}>
-              <Inp label="Agua Destilación (%)" type="number" step="0.01" value={form.agua_destilacion||""} onChange={f("agua_destilacion")}/>
-              <Inp label="Flash Point (°C)" type="number" value={form.flash_point||""} onChange={f("flash_point")}/>
-              <Inp label="Viscosidad 50°C (cSt)" type="number" step="0.1" value={form.viscosidad||""} onChange={f("viscosidad")}/>
-              <Inp label="Azufre (%)" type="number" step="0.001" value={form.azufre||""} onChange={f("azufre")}/>
-              <Inp label="TSA" type="number" step="0.01" value={form.tsa||""} onChange={f("tsa")}/>
+              <Inp label="Agua Destilación (%)" type="number" step="0.01" value={form.agua_destilacion||""} onChange={f("agua_destilacion")} readOnly={soloVista}/>
+              <Inp label="Flash Point (°C)" type="number" value={form.flash_point||""} onChange={f("flash_point")} readOnly={soloVista}/>
+              <Inp label="Viscosidad 50°C (cSt)" type="number" step="0.1" value={form.viscosidad||""} onChange={f("viscosidad")} readOnly={soloVista}/>
+              <Inp label="Azufre (%)" type="number" step="0.001" value={form.azufre||""} onChange={f("azufre")} readOnly={soloVista}/>
+              <Inp label="TSA" type="number" step="0.01" value={form.tsa||""} onChange={f("tsa")} readOnly={soloVista}/>
             </Grid>
           </Section>
           <Section title="Observaciones">
-            <Inp label="Observaciones" type="text" value={form.observaciones||""} onChange={f("observaciones")}/>
+            <Inp label="Observaciones" type="text" value={form.observaciones||""} onChange={f("observaciones")} readOnly={soloVista}/>
           </Section>
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
-            <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
-            <Btn color="#00b4ff" onClick={guardarTiquete} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Tiquete":"Emitir Tiquete"}</Btn>
+            <Btn outline onClick={()=>setModal(null)}>{soloVista?"Cerrar":"Cancelar"}</Btn>
+            {!soloVista && <Btn color="#00b4ff" onClick={guardarTiquete} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Tiquete":"Emitir Tiquete"}</Btn>}
           </div>
         </Modal>
         );
