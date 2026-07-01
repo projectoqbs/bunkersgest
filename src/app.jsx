@@ -885,6 +885,11 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     const sedeActual = ot.sede || perfil?.sede || "MALAMBO";
     const plantaActual = sedeActual === "MALAMBO" ? (perfil?.planta || "PLANTA 1") : "";
     const numeroCmt = genIdCMT(cmts, sedeActual, plantaActual);
+    const tanquesOT = [...new Set([
+      ot.tanque_destino,
+      ...(ot.trasiegos||[]).map(t=>t.origen),
+      ...(ot.trasiegos||[]).map(t=>t.destino),
+    ].filter(Boolean))];
     setForm({
       numero_cmt: numeroCmt,
       ot_id: ot.id,
@@ -894,6 +899,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       planta: plantaActual,
       fecha: today(),
       tipo_operacion: "DESCARGUE DE CARROTANQUE",
+      tanques_ot: tanquesOT,
     });
     setCmtProducto(productoBase || "");
     setCmtDespues([{tanque: ot.tanque_destino||"", producto: productoBase||"", sonda:"", galones:""}]);
@@ -3335,7 +3341,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   ))}
                   <button onClick={()=>{
                     const sede=ot.sede||perfil?.sede||"MALAMBO", planta=ot.planta||perfil?.planta||"PLANTA 1";
-                    setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),numero_cmt:genIdCMT(cmts,sede,planta)});
+                    const tanquesOT=[...new Set([ot.tanque_destino,...(tras||[]).map(t=>t.origen),...(tras||[]).map(t=>t.destino)].filter(Boolean))];
+                    setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),numero_cmt:genIdCMT(cmts,sede,planta),tanques_ot:tanquesOT});
                     setCmtProducto(fo?.producto||"");
                     setCmtAntes([{tanque:tras[0]?.origen||"",sonda:"",galones:""}]);
                     setCmtDespues([{tanque:tras[0]?.destino||"",producto:fo?.producto||"",sonda:"",galones:""}]);
@@ -3833,7 +3840,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             {(()=>{
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
               const cmtPlanta = form.planta || perfil?.planta || "PLANTA 1";
-              const tanquesDisponibles = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
+              const tanquesBase = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
+              const tanquesDisponibles = form.tanques_ot?.length ? tanquesBase.filter(t=>form.tanques_ot.includes(t.id)) : tanquesBase;
               const esTrasiego = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
               const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
               return cmtAntes.map((row,i)=>{
@@ -3905,7 +3913,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             {(()=>{
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
               const cmtPlanta = form.planta || perfil?.planta || "PLANTA 1";
-              const tanquesDisponibles = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
+              const tanquesBase = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
+              const tanquesDisponibles = form.tanques_ot?.length ? tanquesBase.filter(t=>form.tanques_ot.includes(t.id)) : tanquesBase;
               const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
               return cmtRecepcion.map((rec,i)=>(
                 <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
