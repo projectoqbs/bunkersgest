@@ -2448,7 +2448,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* Mitad izquierda base: negro puro */}
                   <path d={`M ${cx},${botY-eh/2} A ${ew/2},${eh/2} 0 0,0 ${lx},${botY} A ${ew/2},${eh/2} 0 0,0 ${cx},${botY+eh/2} Z`} fill="#000000"/>
                   {/* Mitad derecha base: color producto si hay nivel, gris interior si vacío */}
-                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill={pct > 0 ? fc : "#686868"} clipPath={`url(#ci-${label})`}/>
+                  <path d={`M ${cx},${botY-eh/2} A ${ew/2},${eh/2} 0 0,1 ${rx},${botY} A ${ew/2},${eh/2} 0 0,1 ${cx},${botY+eh/2} Z`} fill={pct > 0 ? fc : "#686868"}/>
 
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
