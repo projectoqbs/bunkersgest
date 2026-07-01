@@ -2447,9 +2447,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
                   {/* ── ELIPSE BASE (fondo) ── */}
                   <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
+                  {/* Tapa exterior: cubre la mitad izquierda de la elipse base para que la pared quede sólida */}
+                  <rect x={lx} y={botY - eh/2} width={ew/2 + 1} height={eh} fill="#0a0a0a"/>
 
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
+                  {/* Tapa exterior: cubre la mitad izquierda del aro superior */}
+                  <rect x={lx} y={topY - eh/2} width={ew/2 + 1} height={eh} fill="#0a0a0a"/>
 
                   {/* ── DOMO CONVEXO ── */}
                   <path d={domePath} fill={`url(#dg-${label})`}/>
