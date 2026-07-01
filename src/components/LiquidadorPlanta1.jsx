@@ -70,6 +70,9 @@ function calcF13(api){
   return TABLA13[lo]+(api-lo)*(TABLA13[hi]-TABLA13[lo]);
 }
 
+
+function pf(v){return parseFloat(String(v).replace(",","."))||0;}
+function pfn(v){const r=parseFloat(String(v).replace(",","."));return isNaN(r)?NaN:r;}
 function fmtN(n,dec=2){
   if(n===null||n===undefined||isNaN(n))return "—";
   return Number(n).toLocaleString("es-CO",{minimumFractionDigits:dec,maximumFractionDigits:dec});
@@ -117,7 +120,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
   const [filasT,setFilasT]=useState(initT);
 
   const mkTrim=(popa,proa)=>{
-    const po=parseFloat(popa)||0,pr=parseFloat(proa)||0;
+    const po=pf(popa),pr=pf(proa);
     const val=Math.abs(po-pr);
     const dir=po>pr?"POPA":pr>po?"PROA":"CERO";
     return{val,dir};
@@ -127,7 +130,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
 
   function calcB(f,trim,s,t,a){
     const tabla=TB[f.tanque];if(!tabla||!f.activo)return null;
-    const sv=parseFloat(s),tv=parseFloat(t),av=parseFloat(a);
+    const sv=pfn(s),tv=pfn(t),av=pfn(a);
     if(isNaN(sv))return null;
     const m3=interpolarBarcaza(tabla,sv,trim.val,trim.dir);
     if(m3===null)return null;
@@ -140,7 +143,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
   }
   function calcT(f,s,t,a){
     const tabla=TK[f.tanque];if(!tabla||!f.activo)return null;
-    const sv=parseFloat(s),tv=parseFloat(t),av=parseFloat(a);
+    const sv=pfn(s),tv=pfn(t),av=pfn(a);
     if(isNaN(sv))return null;
     const glsB=interpolarTKT(tabla,sv);
     if(glsB===null)return null;
