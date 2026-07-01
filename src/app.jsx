@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
+import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
 
 // CSS global: todos los inputs de texto en mayúsculas
 const _style = document.createElement("style");
@@ -106,13 +107,14 @@ const NAV_META = {
   trazabilidad:  { label:"Trazabilidad",  icon:"🔍" },
   usuarios:      { label:"Usuarios",      icon:"👥" },
   programacion:  { label:"Programación",  icon:"📅" },
+  liquidador:    { label:"Liquidador",    icon:"💧" },
 };
 
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
-  operaciones: ["dashboard","pbs","trazabilidad"],
-  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad"],
+  operaciones: ["dashboard","pbs","trazabilidad","liquidador"],
+  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad","liquidador"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador: [
     "dashboard",
@@ -4264,6 +4266,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       }}>{saving?"Guardando...":form.id ? "Guardar Cambios" : "Registrar"}</Btn>
     </div>
   </Modal>
+)}
+
+{/* LIQUIDADOR PLANTA 1 */}
+{nav==="liquidador" && (
+  <LiquidadorPlanta1
+    supabase={supabase}
+    session={session}
+    perfil={perfil}
+    showToast={showToast}
+  />
 )}
 
 {/* ═══ MODAL NUEVA OT ═══ */}
