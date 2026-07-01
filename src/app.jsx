@@ -127,6 +127,7 @@ const NAV_ROL = {
     "despacho",
     "programacion",
     "tanques",
+    "liquidador",
   ],
 };
 
@@ -1170,7 +1171,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const horas = (new Date() - new Date(created_at)) / 1000 / 3600;
   return horas <= 72;
 };
-  const ALL_MODULOS = ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","programacion","usuarios"];
+  const ALL_MODULOS = ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","programacion","usuarios","liquidador"];
   const navItems = perfil.rol === "administrador"
     ? NAV_ROL.administrador
     : ALL_MODULOS.filter(m => {
@@ -1254,6 +1255,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
               pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"pbs",label:"PBS"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
+              liquidador:   { icon:"💧", label:"LIQUIDADOR",    subs:[{id:"liquidador",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
             };
             const badges = {};
 
@@ -4276,6 +4278,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     perfil={perfil}
     showToast={showToast}
   />
+)}
+
+{/* LIQUIDADOR PLANTA 2 */}
+{nav==="liquidador_p2" && (
+  <div style={{padding:40,textAlign:"center",color:"#64748b"}}>
+    <div style={{fontSize:40,marginBottom:12}}>🚧</div>
+    <div style={{fontSize:18,fontWeight:700,color:"#e2e8f0",marginBottom:8}}>Liquidador Planta 2</div>
+    <div style={{fontSize:13}}>En construcción — próximamente disponible</div>
+  </div>
 )}
 
 {/* ═══ MODAL NUEVA OT ═══ */}
