@@ -2018,11 +2018,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               )}
 
               {(()=>{
-                const tiposUnicos = [...new Set(cmts.map(c=>c.tipo_operacion).filter(Boolean))];
+                const tiposUnicos = [...new Set(cmts.map(c=>(c.tipo_operacion||"").toUpperCase().trim()).filter(Boolean))];
                 const cmtsFinal = cmtsFiltrados.filter(c=>{
                   const q = cmtBusqueda.toUpperCase();
                   const matchQ = !q || (c.numero_cmt||c.id||"").toUpperCase().includes(q) || (c.operador||"").toUpperCase().includes(q) || (c.producto||"").toUpperCase().includes(q) || (c.placa||"").toUpperCase().includes(q);
-                  const matchTipo = !cmtFiltroTipo || c.tipo_operacion===cmtFiltroTipo;
+                  const matchTipo = !cmtFiltroTipo || (c.tipo_operacion||"").toUpperCase().trim()===cmtFiltroTipo;
                   const matchFD = !cmtFiltroFechaD || (c.fecha||"")>=cmtFiltroFechaD;
                   const matchFH = !cmtFiltroFechaH || (c.fecha||"")<=cmtFiltroFechaH;
                   return matchQ && matchTipo && matchFD && matchFH;
