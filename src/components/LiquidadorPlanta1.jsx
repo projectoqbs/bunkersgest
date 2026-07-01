@@ -21,7 +21,7 @@ function interp(x,x0,x1,y0,y1){if(x1===x0)return y0;return y0+(y1-y0)*(x-x0)/(x1
 
 function interpolarBarcaza(tabla,sonda,trimVal,trimDir){
   if(!tabla||tabla.length===0||sonda===null||sonda===undefined||isNaN(sonda))return null;
-  let tf=trimDir==="POPA"?-trimVal:trimDir==="PROA"?trimVal:0;
+  let tf=trimDir==="POPA"?trimVal:trimDir==="PROA"?-trimVal:0; // PROA->negativo(cols popa), POPA->positivo(cols proa)
   tf=Math.max(-0.7,Math.min(1.0,tf));
   let ci0=0,ci1=1;
   for(let i=0;i<TRIM_VALS.length-1;i++){
