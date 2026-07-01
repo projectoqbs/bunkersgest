@@ -3822,7 +3822,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {(()=>{
                 const prodEnPlanta = [...new Set(
                   viajes
-                    .filter(v => v.estado === "En Planta" || (v.estado === "Rechazado" && v.autorizado_descargue))
+                    .filter(v => v.estado === "En Planta" || v.estado === "Rechazado")
                     .map(v => normalizarProducto(v.producto||""))
                     .filter(Boolean)
                 )];
@@ -4025,7 +4025,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const enPlanta = viajes.filter(v =>
                       !placasUsadas.includes(v.placa) &&
                       matchProducto(v.producto) &&
-                      (v.estado === "En Planta" || (v.estado === "Rechazado" && v.autorizado_descargue))
+                      (v.estado === "En Planta" || v.estado === "Rechazado")
                     );
                     return enPlanta.length > 0 ? (
                       <select value={carro.viaje_id||""} onChange={e=>{
