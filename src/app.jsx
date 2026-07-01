@@ -2362,25 +2362,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <rect x={cx} y={topY} width={iRX} height={cylH+2}/>
                     </clipPath>
 
-                    {/* Filtro sombra drop shadow tanque */}
-                    <filter id={`fs-${label}`} x="-30%" y="-15%" width="180%" height="160%">
-                      <feDropShadow dx="6" dy="14" stdDeviation="10" floodColor="#000000" floodOpacity="0.75"/>
-                    </filter>
-                    {/* Gradiente sombra de piso (proyectada) */}
-                    <radialGradient id={`gs-${label}`} cx="50%" cy="20%" rx="50%" ry="80%">
-                      <stop offset="0%"   stopColor="#000000" stopOpacity="0.45"/>
-                      <stop offset="60%"  stopColor="#000000" stopOpacity="0.18"/>
-                      <stop offset="100%" stopColor="#000000" stopOpacity="0.0"/>
-                    </radialGradient>
-                    {/* Gradiente borde luz izquierda / sombra derecha (rim light) */}
-                    <linearGradient id={`rl-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.07"/>
-                      <stop offset="8%"   stopColor="#ffffff" stopOpacity="0.03"/>
-                      <stop offset="50%"  stopColor="#000000" stopOpacity="0.0"/>
-                      <stop offset="88%"  stopColor="#000000" stopOpacity="0.18"/>
-                      <stop offset="100%" stopColor="#000000" stopOpacity="0.40"/>
-                    </linearGradient>
-
                     {/* Gradiente cuerpo: mitad izq negra (exterior), mitad der gris (interior) */}
                     <linearGradient id={`cg-${label}`} x1="0" y1="0" x2="1" y2="0">
                       <stop offset="0%"   stopColor="#0a0a0a"/>
@@ -2434,17 +2415,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </linearGradient>
                   </defs>
 
-                  {/* ── SOMBRA DE PISO (proyectada debajo del tanque) ── */}
-                  <ellipse cx={cx + 8} cy={botY + eh*0.32} rx={ew*0.56} ry={eh*0.38}
-                    fill={`url(#gs-${label})`}/>
-
-                  {/* ── GRUPO CON DROP SHADOW (todo el cuerpo del tanque) ── */}
-                  <g filter={`url(#fs-${label})`}>
-
-                  {/* ── ELIPSE BASE + ARO SUPERIOR primero (quedan tapadas por la pared exterior) ── */}
-                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
-                  <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
-
                   {/* ── CUERPO: paredes negras + zona interior gris en gradiente ── */}
                   <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#cg-${label})`}/>
 
@@ -2471,15 +2441,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </g>
                   )}
 
-                  {/* ── RIM LIGHT: luz izquierda + sombra borde derecho ── */}
-                  <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#rl-${label})`}/>
-
                   {/* ── SOMBRA PROFUNDIDAD: simula curvatura interior fondo ── */}
                   <rect x={cx} y={topY} width={iRX} height={cylH}
                     fill={`url(#sd-${label})`} clipPath={`url(#ci-${label})`}/>
 
-                  {/* ── TAPA EXTERIOR IZQUIERDA: rect sólido para asegurar que la pared cubre las elipses ── */}
-                  <rect x={lx} y={topY} width={ew/2} height={cylH} fill={`url(#cg-${label})`}/>
+                  {/* ── ELIPSE BASE (fondo) ── */}
+                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
+
+                  {/* ── ARO SUPERIOR ── */}
+                  <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
 
                   {/* ── DOMO CONVEXO ── */}
                   <path d={domePath} fill={`url(#dg-${label})`}/>
@@ -2519,8 +2489,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </g>
                     );
                   })()}
-
-                  </g>{/* fin grupo drop shadow */}
 
                   {/* ── PORCENTAJE ── */}
                   <text x={cx + ew/4} y={topY + cylH*0.52} textAnchor="middle" dominantBaseline="middle"
