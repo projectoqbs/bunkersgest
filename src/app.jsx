@@ -163,11 +163,11 @@ const genId = (prefix, list) => `${prefix}-${String((list?.length||0)+1).padStar
 
 // Colores por producto para tanques Varec
 const getProductColor = (producto) => {
-  if (!producto) return "#2a2a2a";
+  if (!producto) return "#1a1a1a";
   const upperProd = String(producto).toUpperCase();
-  if (upperProd === "MGO" || upperProd === "DIESEL") return "#1abc9c"; // Verde turquesa
-  if (upperProd === "VLSFO" || upperProd === "HSFO") return "#3d3d5c"; // Azul-negro distinguible del gris interior
-  return "#6b4423"; // Marrón oscuro para materia prima (PENDARE, etc.)
+  if (upperProd === "MGO" || upperProd === "DIESEL") return "#3b2200"; // Crudo claro/diesel: marrón oscuro ámbar
+  if (upperProd === "VLSFO" || upperProd === "HSFO") return "#0d0800"; // Bunker pesado: negro-café
+  return "#1a0d00"; // Materia prima cruda: marrón-negro
 };
 
 // Genera el ID interno del CMT (registro DB)
@@ -2380,19 +2380,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="100%" stopColor="#505050"/>
                     </linearGradient>
 
-                    {/* Gradiente líquido horizontal: simula curvatura 3D de cara frontal */}
+                    {/* Gradiente líquido horizontal: crudo viscoso opaco con curvatura 3D */}
                     <linearGradient id={`lg-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%"   stopColor="#000000" stopOpacity="0.45"/>
-                      <stop offset="18%"  stopColor={fc}      stopOpacity="0"/>
-                      <stop offset="55%"  stopColor={fc}      stopOpacity="0"/>
-                      <stop offset="78%"  stopColor="#ffffff" stopOpacity="0.10"/>
-                      <stop offset="100%" stopColor="#000000" stopOpacity="0.50"/>
+                      <stop offset="0%"   stopColor="#000000" stopOpacity="0.70"/>
+                      <stop offset="15%"  stopColor="#000000" stopOpacity="0.20"/>
+                      <stop offset="50%"  stopColor="#3a1800" stopOpacity="0.10"/>
+                      <stop offset="75%"  stopColor="#000000" stopOpacity="0.25"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.75"/>
                     </linearGradient>
-                    {/* Gradiente superficie líquido: más claro para diferenciarlo de la cara frontal */}
-                    <radialGradient id={`ls-${label}`} cx="40%" cy="40%" r="60%">
-                      <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.22"/>
-                      <stop offset="60%"  stopColor={fc}      stopOpacity="0.85"/>
-                      <stop offset="100%" stopColor="#000000" stopOpacity="0.30"/>
+                    {/* Superficie crudo: oscura con leve brillo ámbar-metálico, sin transparencia */}
+                    <radialGradient id={`ls-${label}`} cx="35%" cy="35%" r="65%">
+                      <stop offset="0%"   stopColor="#5c3010" stopOpacity="0.90"/>
+                      <stop offset="40%"  stopColor={fc}      stopOpacity="1.00"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="1.00"/>
                     </radialGradient>
 
                     {/* Gradiente domo */}
@@ -2401,6 +2401,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="100%" stopColor="#0a0a0a"/>
                     </linearGradient>
 
+                    {/* Gradiente vertical oscuridad profundidad crudo */}
+                    <linearGradient id="vd" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#000000" stopOpacity="0.0"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.6"/>
+                    </linearGradient>
                     {/* Sombra profundidad interior derecha */}
                     <linearGradient id={`sd-${label}`} x1="0" y1="0" x2="1" y2="0">
                       <stop offset="0%"   stopColor="#000000" stopOpacity="0.0"/>
@@ -2419,9 +2424,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── LÍQUIDO (sube desde el fondo) ── */}
                   {pct > 0 && (
                     <g clipPath={`url(#ci-${label})`}>
-                      {/* Base sólida del color, oscurecida con overlay */}
+                      {/* Base sólida del color: crudo oscuro opaco */}
                       <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill={fc}/>
-                      <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill="#000000" opacity="0.30"/>
+                      {/* Gradiente vertical: más oscuro abajo (profundidad) */}
+                      <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill="url(#vd)" opacity="0.55"/>
                       {/* Gradiente horizontal 3D encima */}
                       <rect x={iLX} y={fillTopY} width={iRX*2} height={fillH+2} fill={`url(#lg-${label})`}/>
                       {/* Superficie del líquido: gradiente radial más claro, diferente al frente */}
@@ -2429,9 +2435,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       {/* Menisco: borde oscuro perimetral de la superficie */}
                       <ellipse cx={cx} cy={fillTopY} rx={iRX} ry={eh*0.34}
                         fill="none" stroke="#000000" strokeWidth="1.5" opacity="0.35"/>
-                      {/* Reflejo especular frontal: franja vertical de luz */}
-                      <rect x={cx-iRX*0.08} y={fillTopY+eh*0.1} width={iRX*0.14} height={fillH*0.55}
-                        fill="#ffffff" opacity="0.06" rx="4"/>
+                      {/* Reflejo especular mínimo: crudo viscoso casi sin brillo */}
+                      <rect x={cx-iRX*0.06} y={fillTopY+eh*0.15} width={iRX*0.08} height={fillH*0.3}
+                        fill="#7a3a10" opacity="0.12" rx="3"/>
                     </g>
                   )}
 
