@@ -2362,6 +2362,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <rect x={cx} y={topY} width={iRX} height={cylH+2}/>
                     </clipPath>
 
+                    {/* Filtro sombra drop shadow tanque */}
+                    <filter id={`fs-${label}`} x="-20%" y="-10%" width="160%" height="140%">
+                      <feDropShadow dx="4" dy="8" stdDeviation="6" floodColor="#000000" floodOpacity="0.55"/>
+                    </filter>
+                    {/* Gradiente sombra de piso (proyectada) */}
+                    <radialGradient id={`gs-${label}`} cx="50%" cy="20%" rx="50%" ry="80%">
+                      <stop offset="0%"   stopColor="#000000" stopOpacity="0.45"/>
+                      <stop offset="60%"  stopColor="#000000" stopOpacity="0.18"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.0"/>
+                    </radialGradient>
+                    {/* Gradiente borde luz izquierda / sombra derecha (rim light) */}
+                    <linearGradient id={`rl-${label}`} x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.07"/>
+                      <stop offset="8%"   stopColor="#ffffff" stopOpacity="0.03"/>
+                      <stop offset="50%"  stopColor="#000000" stopOpacity="0.0"/>
+                      <stop offset="88%"  stopColor="#000000" stopOpacity="0.18"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.40"/>
+                    </linearGradient>
+
                     {/* Gradiente cuerpo: mitad izq negra (exterior), mitad der gris (interior) */}
                     <linearGradient id={`cg-${label}`} x1="0" y1="0" x2="1" y2="0">
                       <stop offset="0%"   stopColor="#0a0a0a"/>
@@ -2415,8 +2434,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </linearGradient>
                   </defs>
 
+                  {/* ── SOMBRA DE PISO (proyectada debajo del tanque) ── */}
+                  <ellipse cx={cx} cy={botY + eh*0.25} rx={ew*0.52} ry={eh*0.32}
+                    fill={`url(#gs-${label})`}/>
+
                   {/* ── CUERPO: paredes negras + zona interior gris en gradiente ── */}
-                  <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#cg-${label})`}/>
+                  <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#cg-${label})`} filter={`url(#fs-${label})`}/>
 
                   {/* ── INTERIOR GRIS (espacio vacío) ── */}
                   <rect x={iLX} y={topY} width={iRX*2} height={cylH} fill={`url(#ig-${label})`} clipPath={`url(#ci-${label})`}/>
@@ -2440,6 +2463,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         fill="#7a3a10" opacity="0.12" rx="3"/>
                     </g>
                   )}
+
+                  {/* ── RIM LIGHT: luz izquierda + sombra borde derecho ── */}
+                  <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#rl-${label})`}/>
 
                   {/* ── SOMBRA PROFUNDIDAD: simula curvatura interior fondo ── */}
                   <rect x={cx} y={topY} width={iRX} height={cylH}
