@@ -2372,11 +2372,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="100%" stopColor="#050505"/>
                     </linearGradient>
 
-                    {/* Gradiente gris interior (vacío) */}
+                    {/* Gradiente gris interior (vacío) - horizontal 3D */}
                     <linearGradient id={`ig-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%"   stopColor="#707070"/>
-                      <stop offset="40%"  stopColor="#686868"/>
-                      <stop offset="100%" stopColor="#505050"/>
+                      <stop offset="0%"   stopColor="#888888"/>
+                      <stop offset="35%"  stopColor="#747474"/>
+                      <stop offset="100%" stopColor="#404040"/>
+                    </linearGradient>
+                    {/* Gradiente vertical interior: oscuro arriba y abajo, claro al centro */}
+                    <linearGradient id={`iv-${label}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#000000" stopOpacity="0.55"/>
+                      <stop offset="18%"  stopColor="#000000" stopOpacity="0.20"/>
+                      <stop offset="45%"  stopColor="#000000" stopOpacity="0.0"/>
+                      <stop offset="72%"  stopColor="#000000" stopOpacity="0.15"/>
+                      <stop offset="100%" stopColor="#000000" stopOpacity="0.60"/>
                     </linearGradient>
 
                     {/* Gradiente líquido horizontal: crudo viscoso opaco con curvatura 3D */}
@@ -2419,6 +2427,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
                   {/* ── INTERIOR GRIS (espacio vacío) ── */}
                   <rect x={iLX} y={topY} width={iRX*2} height={cylH} fill={`url(#ig-${label})`} clipPath={`url(#ci-${label})`}/>
+                  {/* Sombra curvatura interna: oscurece bordes arriba/abajo simulando cilindro */}
+                  <rect x={iLX} y={topY} width={iRX*2} height={cylH} fill={`url(#iv-${label})`} clipPath={`url(#ci-${label})`}/>
 
                   {/* ── LÍQUIDO (sube desde el fondo) ── */}
                   {pct > 0 && (
