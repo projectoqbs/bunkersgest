@@ -2362,11 +2362,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <rect x={cx} y={topY} width={iRX} height={cylH+2}/>
                     </clipPath>
 
-                    {/* Gradiente cuerpo: mitad izq negra (exterior), mitad der gris (interior) */}
+                    {/* Gradiente cuerpo: mitad izq negra pura (exterior), mitad der gris (interior) */}
                     <linearGradient id={`cg-${label}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%"   stopColor="#0a0a0a"/>
-                      <stop offset="7%"   stopColor="#0f0f0f"/>
-                      <stop offset="49%"  stopColor="#0f0f0f"/>
+                      <stop offset="0%"   stopColor="#000000"/>
+                      <stop offset="49%"  stopColor="#000000"/>
                       <stop offset="51%"  stopColor="#606060"/>
                       <stop offset="89%"  stopColor="#4e4e4e"/>
                       <stop offset="97%"  stopColor="#111111"/>
