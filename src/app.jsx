@@ -4028,7 +4028,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         n[i] = {...n[i], viaje_id: viajeId, placa: viaje?.placa||"", guia: viaje?.guia||n[i].guia, tiquete: tq?.id||"", galones_guia: viaje?.gls_netos_guia||""};
                         setCmtCarros(n);
                       }} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}>
-                        <option value="">Seleccionar placa...</option>
+                        <option value="">{carro.placa ? `${carro.placa} (actual)` : "Seleccionar placa..."}</option>
                         {enPlanta.map(v=><option key={v.id} value={v.id}>{v.placa} — {v.producto}{v.autorizado_descargue?" [AUTORIZADO]":""}</option>)}
                       </select>
                     ) : (
