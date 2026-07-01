@@ -2441,6 +2441,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── GRUPO CON DROP SHADOW (todo el cuerpo del tanque) ── */}
                   <g filter={`url(#fs-${label})`}>
 
+                  {/* ── ELIPSE BASE + ARO SUPERIOR primero (quedan tapadas por la pared exterior) ── */}
+                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
+                  <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
+
                   {/* ── CUERPO: paredes negras + zona interior gris en gradiente ── */}
                   <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#cg-${label})`}/>
 
@@ -2474,11 +2478,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <rect x={cx} y={topY} width={iRX} height={cylH}
                     fill={`url(#sd-${label})`} clipPath={`url(#ci-${label})`}/>
 
-                  {/* ── ELIPSE BASE (fondo) — solo mitad derecha (interior visible) ── */}
-                  <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d" clipPath={`url(#ci-${label})`}/>
-
-                  {/* ── ARO SUPERIOR — solo mitad derecha (interior visible) ── */}
-                  <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a" clipPath={`url(#ci-${label})`}/>
+                  {/* ── TAPA EXTERIOR IZQUIERDA: rect sólido para asegurar que la pared cubre las elipses ── */}
+                  <rect x={lx} y={topY} width={ew/2} height={cylH} fill={`url(#cg-${label})`}/>
 
                   {/* ── DOMO CONVEXO ── */}
                   <path d={domePath} fill={`url(#dg-${label})`}/>
