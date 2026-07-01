@@ -3426,11 +3426,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           {/* Detalle expandido */}
                           {otExpandidos[grupo.productoBase] && (
                             <div style={{ background:T.bg,padding:"8px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid #38bdf8` }}>
-                              <div style={{ marginBottom:6,fontWeight:600,color:"#38bdf8" }}>Placas individuales:</div>
-                              {grupo.plancas.map((p,pi) => (
-                                <div key={p.id||pi} style={{ display:"flex",justifyContent:"space-between",marginBottom:3,paddingLeft:8 }}>
-                                  <span>├─ {p.placa||"—"} <span style={{ color:T.muted }}>({p.producto_original})</span></span>
-                                  <span style={{ color:T.success,fontWeight:500 }}>{fmtNum(p.galones)} gls</span>
+                              <div style={{ marginBottom:6,fontWeight:600,color:"#38bdf8" }}>Carros descargados:</div>
+                              {cmtsDeEstaOT.flatMap(c=>(c.carros||[]).filter(cr=>prodCarro(cr)===grupo.productoBase).map(cr=>({cr,cmt:c}))).map(({cr,cmt},pi) => (
+                                <div key={pi} style={{ display:"flex",justifyContent:"space-between",marginBottom:3,paddingLeft:8 }}>
+                                  <span>├─ {cr.placa||"—"} <span style={{ color:T.muted }}>({cmt.numero_cmt})</span></span>
+                                  <span style={{ color:T.success,fontWeight:500 }}>{fmtNum(glsDescargadosCarro(cr))} gls</span>
                                 </div>
                               ))}
                             </div>
