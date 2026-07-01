@@ -96,9 +96,18 @@ function AppBtn({children,color,sm,disabled,onClick}){
   return <button onClick={onClick} disabled={disabled} style={{background:bg,color:"#fff",border:"2px solid "+bg,borderRadius:6,padding:sm?"5px 14px":"9px 20px",fontWeight:700,fontSize:sm?11:13,cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,whiteSpace:"nowrap",fontFamily:"system-ui,sans-serif"}}>{children}</button>;
 }
 
-function TInp({value,onChange,step,disabled}){
+function TInp({value,onChange,step,disabled,navCol}){
+  const handleKey=(e)=>{
+    if(e.key==="Enter"&&navCol!==undefined){
+      e.preventDefault();
+      const all=[...document.querySelectorAll('[data-liqcol="'+navCol+'"]')];
+      const i=all.indexOf(e.target);
+      if(i>=0&&i<all.length-1)all[i+1].focus();
+    }
+  };
   return (
     <input type="text" inputMode="decimal" value={value} onChange={onChange} disabled={disabled}
+      onKeyDown={handleKey} data-liqcol={navCol}
       style={{width:"100%",background:disabled?"#f5f7fa":TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"5px 8px",color:TH.text,fontSize:12,outline:"none",boxSizing:"border-box",textAlign:"right"}}/>
   );
 }
@@ -220,14 +229,14 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
             {PRODUCTOS.map(p=><option key={p}>{p}</option>)}
           </select>
         </td>
-        <td style={{padding:"4px 6px",minWidth:80}}><TInp value={f.sIni} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"sIni",e.target.value)}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tIni} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"tIni",e.target.value)}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"aIni",e.target.value)}/></td>
+        <td style={{padding:"4px 6px",minWidth:80}}><TInp value={f.sIni} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"sIni",e.target.value)} navCol={0}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tIni} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"tIni",e.target.value)} navCol={1}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"aIni",e.target.value)} navCol={2}/></td>
         <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{ri?fmtN(ri.glsB,0):"—"}</td>
         <td style={{...tdR,color:TH.success,fontWeight:700}}>{ri?fmtN(ri.glsN,0):"—"}</td>
-        <td style={{padding:"4px 6px",minWidth:80}}><TInp value={f.sFin} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"sFin",e.target.value)}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"tFin",e.target.value)}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"aFin",e.target.value)}/></td>
+        <td style={{padding:"4px 6px",minWidth:80}}><TInp value={f.sFin} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"sFin",e.target.value)} navCol={3}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"tFin",e.target.value)} navCol={4}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} step="0.1" disabled={!f.activo} onChange={e=>setFB(idx,"aFin",e.target.value)} navCol={5}/></td>
         <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{rf?fmtN(rf.glsB,0):"—"}</td>
         <td style={{...tdR,color:TH.success,fontWeight:700}}>{rf?fmtN(rf.glsN,0):"—"}</td>
         <td style={{...tdR,fontWeight:800,fontSize:13,color:ent!==null?(ent>=0?TH.navy:TH.danger):TH.muted}}>{ent!==null?fmtN(ent,0):"—"}</td>
@@ -250,14 +259,14 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
             {PRODUCTOS.map(p=><option key={p}>{p}</option>)}
           </select>
         </td>
-        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sIni} step="1" disabled={!f.activo} onChange={e=>setFT(idx,"sIni",e.target.value)}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tIni} step="0.1" disabled={!f.activo} onChange={e=>setFT(idx,"tIni",e.target.value)}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} step="0.1" disabled={!f.activo} onChange={e=>setFT(idx,"aIni",e.target.value)}/></td>
+        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sIni} step="1" disabled={!f.activo} onChange={e=>setFT(idx,"sIni",e.target.value)} navCol={10}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tIni} step="0.1" disabled={!f.activo} onChange={e=>setFT(idx,"tIni",e.target.value)} navCol={11}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} step="0.1" disabled={!f.activo} onChange={e=>setFT(idx,"aIni",e.target.value)} navCol={12}/></td>
         <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{ri?fmtN(ri.glsB,0):"—"}</td>
         <td style={{...tdR,color:"#92400e",fontWeight:700}}>{ri?fmtN(ri.glsN,0):"—"}</td>
-        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sFin} step="1" disabled={!f.activo} onChange={e=>setFT(idx,"sFin",e.target.value)}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} step="0.1" disabled={!f.activo} onChange={e=>setFT(idx,"tFin",e.target.value)}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} step="0.1" disabled={!f.activo} onChange={e=>setFT(idx,"aFin",e.target.value)}/></td>
+        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sFin} step="1" disabled={!f.activo} onChange={e=>setFT(idx,"sFin",e.target.value)} navCol={13}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} step="0.1" disabled={!f.activo} onChange={e=>setFT(idx,"tFin",e.target.value)} navCol={14}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} step="0.1" disabled={!f.activo} onChange={e=>setFT(idx,"aFin",e.target.value)} navCol={15}/></td>
         <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{rf?fmtN(rf.glsB,0):"—"}</td>
         <td style={{...tdR,color:"#92400e",fontWeight:700}}>{rf?fmtN(rf.glsN,0):"—"}</td>
         <td style={{...tdR,fontWeight:800,fontSize:13,color:ent!==null?(ent>=0?TH.navy:TH.danger):TH.muted}}>{ent!==null?fmtN(ent,0):"—"}</td>
