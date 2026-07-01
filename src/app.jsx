@@ -4044,8 +4044,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     );
                   })()}
                   </div>
-                  <div><Lbl>Guía</Lbl><input type="text" value={carro.guia} onChange={e=>{const n=[...cmtCarros];n[i].guia=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
-                  <div><Lbl>Tiquete</Lbl><input type="text" value={carro.tiquete} onChange={e=>{const n=[...cmtCarros];n[i].tiquete=e.target.value.toUpperCase();setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/></div>
+                  <div><Lbl>Guía</Lbl><input type="text" readOnly value={carro.guia||""} style={{width:"100%",background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
+                  <div><Lbl>Tiquete</Lbl><input type="text" readOnly value={carro.tiquete||""} style={{width:"100%",background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(10,1fr)",gap:8,alignItems:"end"}}>
                   <div><Lbl>Hora Inicio</Lbl><input type="time" value={carro.hora_inicio||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_inicio=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
