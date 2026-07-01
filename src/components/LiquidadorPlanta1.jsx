@@ -208,7 +208,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
     const ent=(ri&&rf)?ri.glsN-rf.glsN:null;
     const bg=f.activo?"#ffffff":"#f8f9fa";
     return(
-      <tr style={{background:bg,opacity:f.activo?1:0.55,borderBottom:"1px solid "+TH.border}}>
+      <tr key={f.tanque} style={{background:bg,opacity:f.activo?1:0.55,borderBottom:"1px solid "+TH.border}}>
         <td style={tdC}><input type="checkbox" checked={f.activo} onChange={e=>setFB(idx,"activo",e.target.checked)}/></td>
         <td style={{...tdC,fontWeight:800,color:TH.navy,fontSize:13}}>{f.tanque}</td>
         <td style={{padding:"4px 6px"}}>
@@ -238,7 +238,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
     const ent=(ri&&rf)?ri.glsN-rf.glsN:null;
     const bg=f.activo?"#ffffff":"#f8f9fa";
     return(
-      <tr style={{background:bg,opacity:f.activo?1:0.55,borderBottom:"1px solid "+TH.border}}>
+      <tr key={f.tanque} style={{background:bg,opacity:f.activo?1:0.55,borderBottom:"1px solid "+TH.border}}>
         <td style={tdC}><input type="checkbox" checked={f.activo} onChange={e=>setFT(idx,"activo",e.target.checked)}/></td>
         <td style={{...tdC,fontWeight:800,color:"#92400e",fontSize:13}}>{f.tanque}</td>
         <td style={{padding:"4px 6px"}}>
@@ -297,34 +297,33 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
           {secHeader("⚓","Calados y Trim","Ingresa los calados de proa y popa al inicio y al final de la operacion")}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
             {/* INICIAL */}
-            <div style={{background:"#f8fafc",borderRadius:8,padding:16,border:"1px solid "+TH.border}}>
-              <div style={{fontSize:10,color:TH.navy,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:12,borderBottom:"2px solid "+TH.orange,paddingBottom:6}}>▶ Calados Iniciales</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",columnGap:12}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12,alignItems:"center",background:"#f8fafc",borderRadius:8,padding:16,border:"1px solid "+TH.border}}>
+              <div>
+                <div style={{fontSize:9,color:TH.navy,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:10,borderBottom:"2px solid "+TH.orange,paddingBottom:5}}>▶ Calados Iniciales</div>
                 <AppInp label="Proa Inicial (m)" type="number" step="0.01" value={calados.proaIni} onChange={e=>setCalados(c=>({...c,proaIni:e.target.value}))}/>
                 <AppInp label="Popa Inicial (m)" type="number" step="0.01" value={calados.popaIni} onChange={e=>setCalados(c=>({...c,popaIni:e.target.value}))}/>
               </div>
-              <div style={{textAlign:"center",padding:"10px",background:"#ffffff",borderRadius:6,border:"2px solid "+tcDir(trimI.dir)}}>
-                <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Trim Inicial</div>
-                <div style={{fontSize:28,fontWeight:900,color:tcDir(trimI.dir)}}>{trimI.val.toFixed(2)}m</div>
-                <div style={{fontSize:12,fontWeight:700,color:tcDir(trimI.dir)}}>{trimI.dir}</div>
+              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+tcDir(trimI.dir),minWidth:90}}>
+                <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Trim Inicial</div>
+                <div style={{fontSize:26,fontWeight:900,color:tcDir(trimI.dir),lineHeight:1}}>{trimI.val.toFixed(2)}m</div>
+                <div style={{fontSize:12,fontWeight:700,color:tcDir(trimI.dir),marginTop:4}}>{trimI.dir}</div>
               </div>
             </div>
             {/* FINAL */}
-            <div style={{background:"#f8fafc",borderRadius:8,padding:16,border:"1px solid "+TH.border}}>
-              <div style={{fontSize:10,color:TH.navy,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:12,borderBottom:"2px solid "+TH.navy,paddingBottom:6}}>◼ Calados Finales</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",columnGap:12}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12,alignItems:"center",background:"#f8fafc",borderRadius:8,padding:16,border:"1px solid "+TH.border}}>
+              <div>
+                <div style={{fontSize:9,color:TH.navy,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:10,borderBottom:"2px solid "+TH.navy,paddingBottom:5}}>◼ Calados Finales</div>
                 <AppInp label="Proa Final (m)" type="number" step="0.01" value={calados.proaFin} onChange={e=>setCalados(c=>({...c,proaFin:e.target.value}))}/>
                 <AppInp label="Popa Final (m)" type="number" step="0.01" value={calados.popaFin} onChange={e=>setCalados(c=>({...c,popaFin:e.target.value}))}/>
               </div>
-              <div style={{textAlign:"center",padding:"10px",background:"#ffffff",borderRadius:6,border:"2px solid "+tcDir(trimF.dir)}}>
-                <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Trim Final</div>
-                <div style={{fontSize:28,fontWeight:900,color:tcDir(trimF.dir)}}>{trimF.val.toFixed(2)}m</div>
-                <div style={{fontSize:12,fontWeight:700,color:tcDir(trimF.dir)}}>{trimF.dir}</div>
+              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+tcDir(trimF.dir),minWidth:90}}>
+                <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Trim Final</div>
+                <div style={{fontSize:26,fontWeight:900,color:tcDir(trimF.dir),lineHeight:1}}>{trimF.val.toFixed(2)}m</div>
+                <div style={{fontSize:12,fontWeight:700,color:tcDir(trimF.dir),marginTop:4}}>{trimF.dir}</div>
               </div>
             </div>
           </div>
         </div>
-
         <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:8,padding:20,marginBottom:16,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
           {secHeader("🛢️","Barcaza QBS-002","Sonda en CM (ullage) — doble interpolacion por trim")}
           <div style={{overflowX:"auto"}}>
@@ -336,7 +335,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
                   ))}
                 </tr>
               </thead>
-              <tbody>{filasB.map((f,i)=><FilaB key={f.tanque} f={f} idx={i}/>)}</tbody>
+              <tbody>{filasB.map((f,i)=>FilaB({f,idx:i}))}</tbody>
             </table>
           </div>
         </div>
@@ -352,7 +351,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
                   ))}
                 </tr>
               </thead>
-              <tbody>{filasT.map((f,i)=><FilaT key={f.tanque} f={f} idx={i}/>)}</tbody>
+              <tbody>{filasT.map((f,i)=>FilaT({f,idx:i}))}</tbody>
             </table>
           </div>
         </div>
