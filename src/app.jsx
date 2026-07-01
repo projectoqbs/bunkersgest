@@ -2363,8 +2363,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </clipPath>
 
                     {/* Filtro sombra drop shadow tanque */}
-                    <filter id={`fs-${label}`} x="-20%" y="-10%" width="160%" height="140%">
-                      <feDropShadow dx="4" dy="8" stdDeviation="6" floodColor="#000000" floodOpacity="0.55"/>
+                    <filter id={`fs-${label}`} x="-30%" y="-15%" width="180%" height="160%">
+                      <feDropShadow dx="6" dy="14" stdDeviation="10" floodColor="#000000" floodOpacity="0.75"/>
                     </filter>
                     {/* Gradiente sombra de piso (proyectada) */}
                     <radialGradient id={`gs-${label}`} cx="50%" cy="20%" rx="50%" ry="80%">
@@ -2435,11 +2435,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </defs>
 
                   {/* ── SOMBRA DE PISO (proyectada debajo del tanque) ── */}
-                  <ellipse cx={cx} cy={botY + eh*0.25} rx={ew*0.52} ry={eh*0.32}
+                  <ellipse cx={cx + 8} cy={botY + eh*0.32} rx={ew*0.56} ry={eh*0.38}
                     fill={`url(#gs-${label})`}/>
 
+                  {/* ── GRUPO CON DROP SHADOW (todo el cuerpo del tanque) ── */}
+                  <g filter={`url(#fs-${label})`}>
+
                   {/* ── CUERPO: paredes negras + zona interior gris en gradiente ── */}
-                  <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#cg-${label})`} filter={`url(#fs-${label})`}/>
+                  <rect x={lx} y={topY} width={ew} height={cylH} fill={`url(#cg-${label})`}/>
 
                   {/* ── INTERIOR GRIS (espacio vacío) ── */}
                   <rect x={iLX} y={topY} width={iRX*2} height={cylH} fill={`url(#ig-${label})`} clipPath={`url(#ci-${label})`}/>
@@ -2515,6 +2518,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </g>
                     );
                   })()}
+
+                  </g>{/* fin grupo drop shadow */}
 
                   {/* ── PORCENTAJE ── */}
                   <text x={cx + ew/4} y={topY + cylH*0.52} textAnchor="middle" dominantBaseline="middle"
