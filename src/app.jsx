@@ -2448,7 +2448,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {/* ── ELIPSE BASE (fondo) ── */}
                   <ellipse cx={cx} cy={botY} rx={ew/2} ry={eh/2} fill="#0d0d0d"/>
                   {/* Semi-elipse izquierda: tapa exactamente la mitad izquierda siguiendo la curva */}
-                  <path d={`M ${cx},${botY-eh/2} A ${ew/2},${eh/2} 0 0,0 ${lx},${botY} A ${ew/2},${eh/2} 0 0,0 ${cx},${botY+eh/2} Z`} fill="#0a0a0a"/>
+                  <path d={`M ${cx+2},${botY-eh/2-1} A ${ew/2+2},${eh/2+1} 0 0,0 ${lx-2},${botY} A ${ew/2+2},${eh/2+1} 0 0,0 ${cx+2},${botY+eh/2+1} Z`} fill="#000000"/>
 
                   {/* ── ARO SUPERIOR ── */}
                   <ellipse cx={cx} cy={topY} rx={ew/2} ry={eh/2} fill="#1a1a1a"/>
