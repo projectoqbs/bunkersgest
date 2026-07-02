@@ -51,12 +51,10 @@ function interpolarTKT(tabla,sondaMM){
 
 function calcVCF(api,tempC){
   if(!api||!tempC||isNaN(api)||isNaN(tempC))return null;
-  let alpha;
-  if(api<=14.9)alpha=0.00038400;
-  else if(api<=29.9)alpha=0.00038618+(api-15)*0.0000018;
-  else if(api<=44.9)alpha=0.00034122+(api-30)*0.0000018;
-  else alpha=0.00030782+(api-45)*0.0000018;
-  const d=tempC-15;
+  // ASTM Tabla 6B: convertir API a densidad, usar K0/K1
+  const rho15=(141.5/(131.5+api))*999.016;
+  const alpha=(186.9696+0.486926*rho15)/(rho15*rho15);
+  const d=tempC-15.5556; // referencia 60°F
   return Math.exp(-alpha*d*(1+0.8*alpha*d));
 }
 
