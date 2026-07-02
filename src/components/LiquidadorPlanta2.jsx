@@ -111,10 +111,21 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast}){
   useEffect(()=>{
     async function cargarTablas(){
       setLoadingTablas(true);
-      const {data,error}=await supabase.from("aforo").select("tanque,ullage_mm,galones_brutos").order("tanque").order("ullage_mm");
-      if(error){console.error("Error cargando aforo:",error);setLoadingTablas(false);return;}
+      const PAGE=5000;
+      let all=[], from=0, done=false;
+      while(!done){
+        const {data,error}=await supabase.from("aforo")
+          .select("tanque,ullage_mm,galones_brutos")
+          .order("tanque").order("ullage_mm")
+          .range(from,from+PAGE-1);
+        if(error){console.error("Error cargando aforo:",error);setLoadingTablas(false);return;}
+        if(!data||data.length===0)break;
+        all=all.concat(data);
+        if(data.length<PAGE)done=true;
+        else from+=PAGE;
+      }
       const tbl={};
-      for(const row of data){
+      for(const row of all){
         if(!tbl[row.tanque])tbl[row.tanque]=[];
         tbl[row.tanque].push([row.ullage_mm,row.galones_brutos]);
       }
