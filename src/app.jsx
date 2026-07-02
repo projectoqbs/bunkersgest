@@ -1230,26 +1230,26 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       {toast && <div style={{ position:"fixed", top:18, right:18, zIndex:9999, background:toast.ok?T.success:T.danger, borderRadius:8, padding:"12px 20px", color:"#ffffff", fontSize:13, fontWeight:700, boxShadow:"0 4px 16px rgba(0,0,0,0.25)", maxWidth:360 }}>{toast.msg}</div>}
 
       {/* Header */}
-      <div style={{ background:"#0B0D13", borderBottom:`2px solid ${T.orange}`, padding:"0 20px", height:68, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+      <div style={{ background:"#ffffff", borderBottom:`3px solid ${T.orange}`, padding:"0 20px", height:68, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:0 }}>
-          {/* Logo barcos en contenedor blanco */}
-          <div style={{ height:56, width:Math.round(56*693/340), overflow:"hidden", borderRadius:10, background:"#ffffff", flexShrink:0, padding:"3px 6px", boxSizing:"border-box" }}>
+          {/* Logo barcos */}
+          <div style={{ height:56, width:Math.round(56*693/340), overflow:"hidden", flexShrink:0 }}>
             <img src="/logo.svg" alt="BunkersGest" style={{ height:"100%", width:"auto", display:"block", objectFit:"contain" }}/>
           </div>
-          {/* Separador vertical azul */}
+          {/* Separador vertical */}
           <div style={{ width:2, height:44, background:T.orange, borderRadius:2, margin:"0 18px", flexShrink:0 }}/>
           <div>
             <div style={{ fontWeight:900, fontSize:22, letterSpacing:0.5, lineHeight:1.1, fontFamily:"Arial Black, system-ui, sans-serif" }}>
-              <span style={{ color:"#ffffff" }}>Bunkers</span><span style={{ color:T.orange }}>Gest</span>
-              <span style={{ color:"#ffffff55", fontSize:11, fontWeight:500, marginLeft:8, letterSpacing:0 }}>v2.0</span>
+              <span style={{ color:"#121212" }}>Bunkers</span><span style={{ color:T.orange }}>Gest</span>
+              <span style={{ color:"#12121255", fontSize:11, fontWeight:500, marginLeft:8, letterSpacing:0 }}>v2.0</span>
             </div>
-            <div style={{ fontSize:9, color:"#ffffff55", letterSpacing:2, textTransform:"uppercase", marginTop:3 }}>Sistema de Gestión Operativa de Combustible Marino</div>
+            <div style={{ fontSize:9, color:"#6E7781", letterSpacing:2, textTransform:"uppercase", marginTop:3 }}>Sistema de Gestión Operativa de Combustible Marino</div>
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
           <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:13, fontWeight:700, color:"#ffffff" }}>{(perfil.nombre||"").split(" ")[0]}</div>
-            <div style={{ fontSize:10, color:"#60b4ff" }}>{rol.icon} {rol.label} · {perfil.sede||"MALAMBO"} · <span style={{color:T.success}}>● EN VIVO</span></div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#121212" }}>{(perfil.nombre||"").split(" ")[0]}</div>
+            <div style={{ fontSize:10, color:T.orange }}>{rol.icon} {rol.label} · {perfil.sede||"MALAMBO"} · <span style={{color:T.success}}>● EN VIVO</span></div>
           </div>
           <Btn sm color={T.danger} onClick={handleLogout}>Salir</Btn>
         </div>
