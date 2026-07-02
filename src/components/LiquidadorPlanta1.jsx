@@ -223,9 +223,9 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
     const ri=calcB(f,trimI,f.sIni,f.tIni,f.aIni);
     const rf=calcB(f,trimF,f.sFin,f.tFin,f.aFin);
     const ent=(ri&&rf)?ri.glsN-rf.glsN:null;
-    const bg=f.activo?"#ffffff":"#f8f9fa";
+    const bg=!f.activo?"#f8f9fa":idx%2===0?"#ffffff":"#eef4fb";
     return(
-      <tr key={f.tanque} style={{background:bg,opacity:f.activo?1:0.55,borderBottom:"1px solid "+TH.border}}>
+      <tr key={f.tanque} style={{background:bg,opacity:f.activo?1:0.5,borderBottom:"1px solid "+TH.border}}>
         <td style={tdC}><input type="checkbox" checked={f.activo} onChange={e=>setFB(idx,"activo",e.target.checked)}/></td>
         <td style={{...tdC,fontWeight:800,color:TH.navy,fontSize:13}}>{f.tanque}</td>
         <td style={{padding:"4px 6px"}}>
@@ -253,9 +253,9 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
     const ri=calcT(f,f.sIni,f.tIni,f.aIni);
     const rf=calcT(f,f.sFin,f.tFin,f.aFin);
     const ent=(ri&&rf)?ri.glsN-rf.glsN:null;
-    const bg=f.activo?"#ffffff":"#f8f9fa";
+    const bg=!f.activo?"#f8f9fa":idx%2===0?"#ffffff":"#eef4fb";
     return(
-      <tr key={f.tanque} style={{background:bg,opacity:f.activo?1:0.55,borderBottom:"1px solid "+TH.border}}>
+      <tr key={f.tanque} style={{background:bg,opacity:f.activo?1:0.5,borderBottom:"1px solid "+TH.border}}>
         <td style={tdC}><input type="checkbox" checked={f.activo} onChange={e=>setFT(idx,"activo",e.target.checked)}/></td>
         <td style={{...tdC,fontWeight:800,color:"#92400e",fontSize:13}}>{f.tanque}</td>
         <td style={{padding:"4px 6px"}}>
