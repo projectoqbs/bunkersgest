@@ -47,7 +47,10 @@ function interpolarBarcaza(tabla,sonda,trimVal,trimDir){
   const t0=TRIM_VALS[ci0],t1=ci0===ci1?TRIM_VALS[ci0]+0.001:TRIM_VALS[ci1];
   const vt0=interp(sonda,s0,s1,tabla[ri0][ci0+1],tabla[ri1][ci0+1]);
   const vt1=interp(sonda,s0,s1,tabla[ri0][ci1+1],tabla[ri1][ci1+1]);
-  return Math.max(0,interp(tf,t0,t1,vt0,vt1));
+  const raw=Math.max(0,interp(tf,t0,t1,vt0,vt1));
+  // Tanques Grupo-B con trim PROA: en zona near-full la columna popa puede dar
+  // menos que t00 (efecto invertido). Se clampea a t00 para no penalizar.
+  return (!proaAumentaVol&&trimDir==="PROA")?Math.max(raw,t00v):raw;
 }
 
 function interpolarTKT(tabla,sondaMM){
