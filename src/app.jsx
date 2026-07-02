@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
 import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
+import LiquidadorPlanta2 from "./components/LiquidadorPlanta2";
 
 // CSS global: todos los inputs de texto en mayúsculas
 const _style = document.createElement("style");
@@ -4282,11 +4283,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
 {/* LIQUIDADOR PLANTA 2 */}
 {nav==="liquidador_p2" && (
-  <div style={{padding:40,textAlign:"center",color:"#64748b"}}>
-    <div style={{fontSize:40,marginBottom:12}}>🚧</div>
-    <div style={{fontSize:18,fontWeight:700,color:"#e2e8f0",marginBottom:8}}>Liquidador Planta 2</div>
-    <div style={{fontSize:13}}>En construcción — próximamente disponible</div>
-  </div>
+  <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast}/>
 )}
 
 {/* ═══ MODAL NUEVA OT ═══ */}
