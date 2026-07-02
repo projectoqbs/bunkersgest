@@ -1225,10 +1225,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       {/* Header */}
       <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"0 24px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <img src="/logo.svg" alt="BunkersGest" style={{ height:52, width:52, objectFit:"contain", borderRadius:8, background:"#ffffff" }}/>
+          <div style={{ height:52, width:Math.round(52*693/340), overflow:"hidden", borderRadius:6, flexShrink:0 }}>
+            <img src="/logo.svg" alt="BunkersGest" style={{ height:52, width:"auto", display:"block" }}/>
+          </div>
           <div>
-            <div style={{ fontWeight:800, fontSize:17, color:"#ffffff", letterSpacing:1.5 }}>BunkersGest <span style={{color:T.orange, fontSize:11, fontWeight:700}}>v2.0</span></div>
-            <div style={{ fontSize:9, color:"#ffffff66", letterSpacing:1.5, textTransform:"uppercase" }}>Sistema de Gestión Operativa · Combustible Marino</div>
+            <div style={{ fontWeight:900, fontSize:20, letterSpacing:1, lineHeight:1.1 }}>
+              <span style={{ color:"#ffffff" }}>Bunkers</span><span style={{ color:T.orange }}>Gest</span>
+              <span style={{ color:"#ffffff88", fontSize:11, fontWeight:600, marginLeft:6 }}>v2.0</span>
+            </div>
+            <div style={{ fontSize:9, color:"#ffffff55", letterSpacing:1.5, textTransform:"uppercase", marginTop:2 }}>Sistema de Gestión Operativa · Combustible Marino</div>
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
