@@ -1230,17 +1230,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       {toast && <div style={{ position:"fixed", top:18, right:18, zIndex:9999, background:toast.ok?T.success:T.danger, borderRadius:8, padding:"12px 20px", color:"#ffffff", fontSize:13, fontWeight:700, boxShadow:"0 4px 16px rgba(0,0,0,0.25)", maxWidth:360 }}>{toast.msg}</div>}
 
       {/* Header */}
-      <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"0 24px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <div style={{ height:52, width:Math.round(52*693/340), overflow:"hidden", borderRadius:6, flexShrink:0 }}>
-            <img src="/logo.svg" alt="BunkersGest" style={{ height:52, width:"auto", display:"block" }}/>
+      <div style={{ background:"#0B0D13", borderBottom:`2px solid ${T.orange}`, padding:"0 20px", height:68, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:0 }}>
+          {/* Logo barcos — filter convierte a silueta blanca sobre fondo oscuro */}
+          <div style={{ height:58, width:Math.round(58*693/340), overflow:"hidden", flexShrink:0 }}>
+            <img src="/logo.svg" alt="BunkersGest" style={{ height:58, width:"auto", display:"block", filter:"brightness(0) invert(1)" }}/>
           </div>
+          {/* Separador vertical azul */}
+          <div style={{ width:2, height:44, background:T.orange, borderRadius:2, margin:"0 18px", flexShrink:0 }}/>
           <div>
-            <div style={{ fontWeight:900, fontSize:20, letterSpacing:1, lineHeight:1.1 }}>
+            <div style={{ fontWeight:900, fontSize:22, letterSpacing:0.5, lineHeight:1.1, fontFamily:"Arial Black, system-ui, sans-serif" }}>
               <span style={{ color:"#ffffff" }}>Bunkers</span><span style={{ color:T.orange }}>Gest</span>
-              <span style={{ color:"#ffffff88", fontSize:11, fontWeight:600, marginLeft:6 }}>v2.0</span>
+              <span style={{ color:"#ffffff55", fontSize:11, fontWeight:500, marginLeft:8, letterSpacing:0 }}>v2.0</span>
             </div>
-            <div style={{ fontSize:9, color:"#ffffff55", letterSpacing:1.5, textTransform:"uppercase", marginTop:2 }}>Sistema de Gestión Operativa · Combustible Marino</div>
+            <div style={{ fontSize:9, color:"#ffffff55", letterSpacing:2, textTransform:"uppercase", marginTop:3 }}>Sistema de Gestión Operativa de Combustible Marino</div>
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
