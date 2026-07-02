@@ -108,7 +108,7 @@ const NAV_META = {
   trazabilidad:  { label:"Trazabilidad",  icon:"🔍" },
   usuarios:      { label:"Usuarios",      icon:"👥" },
   programacion:  { label:"Programación",  icon:"📅" },
-  liquidador:    { label:"Liquidador",    icon:"💧" },
+  liquidador:    { label:"Liquidador",    icon:"🔢" },
 };
 
 const NAV_ROL = {
@@ -1256,7 +1256,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
               pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"pbs",label:"PBS"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
-              liquidador:   { icon:"💧", label:"LIQUIDADOR",    subs:[{id:"liquidador",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
+              liquidador:   { icon:"🔢", label:"LIQUIDADOR",    subs:[{id:"liquidador",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
             };
             const badges = {};
 
