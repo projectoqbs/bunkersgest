@@ -1241,7 +1241,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <div>
             <div style={{ fontWeight:900, fontSize:22, letterSpacing:0.5, lineHeight:1.1, fontFamily:"Arial Black, system-ui, sans-serif" }}>
               <span style={{ color:"#121212" }}>Bunkers</span><span style={{ color:T.orange }}>Gest</span>
-              <span style={{ color:"#12121255", fontSize:11, fontWeight:500, marginLeft:8, letterSpacing:0 }}>v2.0</span>
             </div>
             <div style={{ fontSize:9, color:"#6E7781", letterSpacing:2, textTransform:"uppercase", marginTop:3 }}>Sistema de Gestión Operativa de Combustible Marino</div>
           </div>
