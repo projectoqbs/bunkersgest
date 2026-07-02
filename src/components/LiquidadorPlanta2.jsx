@@ -101,55 +101,64 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
   const [operador,setOperador]=useState("");
   const [obs,setObs]=useState("");
   const [saving,setSaving]=useState(false);
-  // Usar caché del App si está disponible, sino cargar localmente
-  const [tablaLocal,setTablaLocal]=useState({});
-  const [loadingLocal,setLoadingLocal]=useState(false);
 
-  const tablas = Object.keys(afoCache).length>0 ? afoCache : tablaLocal;
-  const loadingTablas = Object.keys(afoCache).length===0 ? (afoCacheLoading||loadingLocal) : false;
+  // Cache local de lookups ya consultados: { "TK-111:1250": [galB_lo, galB_hi, mm_lo, mm_hi] }
+  const lookupCache = useState({})[0];
 
   const initFilas=()=>TANQUES_P2.map(t=>({tanque:t,producto:"VLSFO",activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
   const [filas,setFilas]=useState(initFilas);
-
-  // Solo cargar localmente si el caché del App aún no está listo
-  useEffect(()=>{
-    if(Object.keys(afoCache).length>0||afoCacheLoading) return;
-    async function fetchTanque(tk){
-      const PAGE=1000; let rows=[], from=0;
-      while(true){
-        const {data,error}=await supabase.from("aforo")
-          .select("ullage_mm,galones_brutos").eq("tanque",tk).order("ullage_mm")
-          .range(from,from+PAGE-1);
-        if(error||!data||data.length===0)break;
-        rows=rows.concat(data);
-        if(data.length<PAGE)break;
-        from+=PAGE;
-      }
-      return {tk,rows};
-    }
-    async function cargar(){
-      setLoadingLocal(true);
-      try{
-        const results=await Promise.all(TANQUES_P2.map(tk=>fetchTanque(tk)));
-        const tbl={};
-        for(const {tk,rows} of results) tbl[tk]=rows.map(r=>[r.ullage_mm,r.galones_brutos]);
-        setTablaLocal(tbl);
-      }catch(e){console.error("Error cargando aforo:",e);}
-      setLoadingLocal(false);
-    }
-    cargar();
-  },[supabase,afoCache,afoCacheLoading]);
+  // Resultados interpolados por tanque+campo: { "TK-111:sIni": galB }
+  const [interpResults,setInterpResults]=useState({});
+  const debounceRef = useState({})[0];
 
   useEffect(()=>{
     if(perfil?.nombre&&!operador)setOperador(perfil.nombre);
   },[perfil]);
 
-  function calcFila(f,ullage,temp,api){
-    const u=pfn(ullage),t=pfn(temp),a=pfn(api);
-    const tabla=tablas[f.tanque];
-    if(!tabla||isNaN(u))return null;
-    const glsB=interpolarAforo(tabla,u);
-    if(glsB===null)return null;
+  // Consulta bajo demanda: 2 filas vecinas para interpolar
+  async function lookupAforo(tanque, ullage_mm){
+    const key=`${tanque}:${ullage_mm}`;
+    if(lookupCache[key]!==undefined) return lookupCache[key];
+    // Usar afoCache si está disponible
+    if(Object.keys(afoCache).length>0){
+      const tabla=afoCache[tanque];
+      if(tabla) return lookupCache[key]=interpolarAforo(tabla,ullage_mm);
+    }
+    // Consulta Supabase: fila inferior y superior
+    const [r1,r2]=await Promise.all([
+      supabase.from("aforo").select("ullage_mm,galones_brutos").eq("tanque",tanque).lte("ullage_mm",ullage_mm).order("ullage_mm",{ascending:false}).limit(1),
+      supabase.from("aforo").select("ullage_mm,galones_brutos").eq("tanque",tanque).gte("ullage_mm",ullage_mm).order("ullage_mm",{ascending:true}).limit(1),
+    ]);
+    const lo=r1.data?.[0], hi=r2.data?.[0];
+    let val=null;
+    if(lo&&hi) val=interp(ullage_mm,lo.ullage_mm,hi.ullage_mm,lo.galones_brutos,hi.galones_brutos);
+    else if(lo) val=lo.galones_brutos;
+    else if(hi) val=hi.galones_brutos;
+    lookupCache[key]=val;
+    return val;
+  }
+
+  // Cuando cambia ullage en una fila, lanzar lookup con debounce
+  function triggerLookup(tanque, campo, ullage_mm){
+    const u=pfn(ullage_mm);
+    if(isNaN(u)||u<=0){
+      setInterpResults(p=>({...p,[`${tanque}:${campo}`]:null}));
+      return;
+    }
+    const dkey=`${tanque}:${campo}`;
+    if(debounceRef[dkey]) clearTimeout(debounceRef[dkey]);
+    debounceRef[dkey]=setTimeout(async()=>{
+      const glsB=await lookupAforo(tanque,u);
+      setInterpResults(p=>({...p,[dkey]:glsB}));
+    },400);
+  }
+
+  function getGlsB(tanque, campo){ return interpResults[`${tanque}:${campo}`]??null; }
+
+  function calcFila(f,ullage,temp,api,campo){
+    const glsB=getGlsB(f.tanque,campo);
+    if(glsB===null||isNaN(pfn(ullage))||pfn(ullage)<=0) return null;
+    const t=pfn(temp),a=pfn(api);
     const vcf=(!isNaN(t)&&!isNaN(a))?calcVCF(a,t):null;
     const glsN=vcf?glsB*vcf:null;
     const f13=(!isNaN(a)&&a>0)?calcF13(a):null;
@@ -161,8 +170,8 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
     let gBI=0,gBF=0,gNI=0,gNF=0,mI=0,mF=0,hasNI=false,hasNF=false,hasMI=false,hasMF=false;
     for(const f of filas){
       if(!f.activo)continue;
-      const ri=calcFila(f,f.sIni,f.tIni,f.aIni);
-      const rf=calcFila(f,f.sFin,f.tFin,f.aFin);
+      const ri=calcFila(f,f.sIni,f.tIni,f.aIni,"sIni");
+      const rf=calcFila(f,f.sFin,f.tFin,f.aFin,"sFin");
       if(ri){gBI+=ri.glsB;if(ri.glsN){gNI+=ri.glsN;hasNI=true;}if(ri.mt){mI+=ri.mt;hasMI=true;}}
       if(rf){gBF+=rf.glsB;if(rf.glsN){gNF+=rf.glsN;hasNF=true;}if(rf.mt){mF+=rf.mt;hasMF=true;}}
     }
@@ -211,8 +220,8 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
   const tdR={padding:"5px 8px",textAlign:"right",fontSize:12};
 
   const FilaP2=({f,idx})=>{
-    const ri=calcFila(f,f.sIni,f.tIni,f.aIni);
-    const rf=calcFila(f,f.sFin,f.tFin,f.aFin);
+    const ri=calcFila(f,f.sIni,f.tIni,f.aIni,"sIni");
+    const rf=calcFila(f,f.sFin,f.tFin,f.aFin,"sFin");
     const entB=(ri&&rf)?ri.glsB-rf.glsB:null;
     const ent=(ri?.glsN!=null&&rf?.glsN!=null)?ri.glsN-rf.glsN:null;
     const bg=f.activo?"#ffffff":"#f8f9fa";
@@ -227,7 +236,7 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
           </select>
         </td>
         {/* INI */}
-        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sIni} disabled={!f.activo} onChange={e=>setF(idx,"sIni",e.target.value)} navRow={idx} navCol={0}/></td>
+        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sIni} disabled={!f.activo} onChange={e=>{setF(idx,"sIni",e.target.value);triggerLookup(f.tanque,"sIni",e.target.value);}} navRow={idx} navCol={0}/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tIni} disabled={!f.activo} onChange={e=>setF(idx,"tIni",e.target.value)} navRow={idx} navCol={1}/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} disabled={!f.activo} onChange={e=>setF(idx,"aIni",e.target.value)} navRow={idx} navCol={2}/></td>
         <td style={tdR}>{ri?fmtN(ri.glsB,0):"—"}</td>
@@ -235,7 +244,7 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
         <td style={tdR}>{ri?.glsN!=null?fmtN(ri.glsN,0):"—"}</td>
         <td style={tdR}>{ri?.mt!=null?fmtN(ri.mt,3):"—"}</td>
         {/* FIN */}
-        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>setF(idx,"sFin",e.target.value)} navRow={idx} navCol={3}/></td>
+        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>{setF(idx,"sFin",e.target.value);triggerLookup(f.tanque,"sFin",e.target.value);}} navRow={idx} navCol={3}/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} disabled={!f.activo} onChange={e=>setF(idx,"tFin",e.target.value)} navRow={idx} navCol={4}/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} disabled={!f.activo} onChange={e=>setF(idx,"aFin",e.target.value)} navRow={idx} navCol={5}/></td>
         <td style={tdR}>{rf?fmtN(rf.glsB,0):"—"}</td>
@@ -251,14 +260,6 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
   };
 
   const t=tots();
-
-  if(loadingTablas){
-    return(
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:200,color:TH.muted,fontSize:14}}>
-        Cargando tablas de aforo...
-      </div>
-    );
-  }
 
   return(
     <div style={{fontFamily:"system-ui,sans-serif",background:TH.bg,minHeight:"100vh",padding:"24px 16px"}}>
