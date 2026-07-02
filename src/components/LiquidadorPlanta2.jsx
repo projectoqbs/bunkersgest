@@ -224,9 +224,9 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
     const rf=calcFila(f,f.sFin,f.tFin,f.aFin,"sFin");
     const entB=(ri&&rf)?ri.glsB-rf.glsB:null;
     const ent=(ri?.glsN!=null&&rf?.glsN!=null)?ri.glsN-rf.glsN:null;
-    const bg=f.activo?"#ffffff":"#f8f9fa";
+    const bg=!f.activo?"#f8f9fa":idx%2===0?"#ffffff":"#eef4fb";
     return(
-      <tr key={f.tanque} style={{background:bg,opacity:f.activo?1:0.55,borderBottom:"1px solid "+TH.border}}>
+      <tr key={f.tanque} style={{background:bg,opacity:f.activo?1:0.5,borderBottom:"1px solid "+TH.border}}>
         <td style={tdC}><input type="checkbox" checked={f.activo} onChange={e=>setF(idx,"activo",e.target.checked)}/></td>
         <td style={{...tdC,fontWeight:800,color:TH.navy,fontSize:13}}>{f.tanque}</td>
         <td style={{padding:"4px 6px"}}>
