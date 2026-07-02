@@ -68,18 +68,26 @@ function AppBtn({children,color,sm,disabled,onClick}){
   return <button onClick={onClick} disabled={disabled} style={{background:bg,color:"#fff",border:"2px solid "+bg,borderRadius:6,padding:sm?"5px 14px":"9px 20px",fontWeight:700,fontSize:sm?11:13,cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,whiteSpace:"nowrap",fontFamily:"system-ui,sans-serif"}}>{children}</button>;
 }
 
-function TInp({value,onChange,step,disabled,navCol}){
+function TInp({value,onChange,disabled,navRow,navCol}){
   const handleKey=(e)=>{
-    if(e.key==="Enter"&&navCol!==undefined){
+    const nav=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter","Tab","Backspace","Delete"];
+    const isNum=/^[0-9.,-]$/.test(e.key);
+    if(!isNum&&!nav.includes(e.key)&&!e.ctrlKey&&!e.metaKey){e.preventDefault();return;}
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"].includes(e.key)&&navRow!==undefined){
       e.preventDefault();
-      const all=[...document.querySelectorAll('[data-liqp2col="'+navCol+'"]')];
-      const i=all.indexOf(e.target);
-      if(i>=0&&i<all.length-1)all[i+1].focus();
+      const all=[...document.querySelectorAll("[data-p2r][data-p2c]")].filter(el=>!el.disabled);
+      let r=navRow,c=navCol;
+      if(e.key==="ArrowDown"||e.key==="Enter")r++;
+      else if(e.key==="ArrowUp")r--;
+      else if(e.key==="ArrowRight")c++;
+      else if(e.key==="ArrowLeft")c--;
+      const t=all.find(el=>+el.dataset.p2r===r&&+el.dataset.p2c===c);
+      if(t)t.focus();
     }
   };
   return (
     <input type="text" inputMode="decimal" value={value} onChange={onChange} disabled={disabled}
-      onKeyDown={handleKey} data-liqp2col={navCol}
+      onKeyDown={handleKey} data-p2r={navRow} data-p2c={navCol}
       style={{width:"100%",background:disabled?"#f5f7fa":TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"5px 8px",color:TH.text,fontSize:12,outline:"none",boxSizing:"border-box",textAlign:"right"}}/>
   );
 }
@@ -203,17 +211,17 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast}){
           </select>
         </td>
         {/* INI */}
-        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sIni} disabled={!f.activo} onChange={e=>setF(idx,"sIni",e.target.value)} navCol={0}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tIni} disabled={!f.activo} onChange={e=>setF(idx,"tIni",e.target.value)} navCol={1}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} disabled={!f.activo} onChange={e=>setF(idx,"aIni",e.target.value)} navCol={2}/></td>
+        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sIni} disabled={!f.activo} onChange={e=>setF(idx,"sIni",e.target.value)} navRow={idx} navCol={0}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tIni} disabled={!f.activo} onChange={e=>setF(idx,"tIni",e.target.value)} navRow={idx} navCol={1}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} disabled={!f.activo} onChange={e=>setF(idx,"aIni",e.target.value)} navRow={idx} navCol={2}/></td>
         <td style={tdR}>{ri?fmtN(ri.glsB,0):"—"}</td>
         <td style={tdR}>{ri?.vcf!=null?fmtN(ri.vcf,4):"—"}</td>
         <td style={tdR}>{ri?.glsN!=null?fmtN(ri.glsN,0):"—"}</td>
         <td style={tdR}>{ri?.mt!=null?fmtN(ri.mt,3):"—"}</td>
         {/* FIN */}
-        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>setF(idx,"sFin",e.target.value)} navCol={3}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} disabled={!f.activo} onChange={e=>setF(idx,"tFin",e.target.value)} navCol={4}/></td>
-        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} disabled={!f.activo} onChange={e=>setF(idx,"aFin",e.target.value)} navCol={5}/></td>
+        <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>setF(idx,"sFin",e.target.value)} navRow={idx} navCol={3}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} disabled={!f.activo} onChange={e=>setF(idx,"tFin",e.target.value)} navRow={idx} navCol={4}/></td>
+        <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} disabled={!f.activo} onChange={e=>setF(idx,"aFin",e.target.value)} navRow={idx} navCol={5}/></td>
         <td style={tdR}>{rf?fmtN(rf.glsB,0):"—"}</td>
         <td style={tdR}>{rf?.vcf!=null?fmtN(rf.vcf,4):"—"}</td>
         <td style={tdR}>{rf?.glsN!=null?fmtN(rf.glsN,0):"—"}</td>
@@ -353,7 +361,7 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast}){
                 </tr>
               </thead>
               <tbody>
-                {filas.map((f,idx)=><FilaP2 key={f.tanque} f={f} idx={idx}/>)}
+                {filas.map((f,idx)=>FilaP2({f,idx}))}
               </tbody>
               <tfoot>
                 <tr style={{background:"#f0f4f8",fontWeight:800}}>
