@@ -1232,9 +1232,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       {/* Header */}
       <div style={{ background:"#0B0D13", borderBottom:`2px solid ${T.orange}`, padding:"0 20px", height:68, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:0 }}>
-          {/* Logo barcos — filter convierte a silueta blanca sobre fondo oscuro */}
-          <div style={{ height:58, width:Math.round(58*693/340), overflow:"hidden", flexShrink:0 }}>
-            <img src="/logo.svg" alt="BunkersGest" style={{ height:58, width:"auto", display:"block", filter:"brightness(0) invert(1)" }}/>
+          {/* Logo barcos en contenedor blanco */}
+          <div style={{ height:56, width:Math.round(56*693/340), overflow:"hidden", borderRadius:10, background:"#ffffff", flexShrink:0, padding:"3px 6px", boxSizing:"border-box" }}>
+            <img src="/logo.svg" alt="BunkersGest" style={{ height:"100%", width:"auto", display:"block", objectFit:"contain" }}/>
           </div>
           {/* Separador vertical azul */}
           <div style={{ width:2, height:44, background:T.orange, borderRadius:2, margin:"0 18px", flexShrink:0 }}/>
