@@ -369,6 +369,9 @@ export default function App() {
   const [programaciones, setProgramaciones] = useState([]);
   const [formulaciones, setFormulaciones] = useState([]);
   const [ordenesTrabaio, setOrdenesTrabajo] = useState([]);
+  // Cache aforo Planta 2 — se carga una sola vez al iniciar sesión
+  const [afoP2, setAfoP2] = useState({});
+  const [afoP2Loading, setAfoP2Loading] = useState(false);
   const [otModal, setOtModal] = useState(null); // null | {step:1|2|3, trasiegos, formulacionId, recircHoras}
   const [otSaving, setOtSaving] = useState(false);
   const [progTab, setProgTab] = useState("programaciones"); // "programaciones" | "formulaciones"
@@ -644,7 +647,35 @@ export default function App() {
       setSedeFiltro(sedeInicial);
       setPlantaFiltro(esGlobal ? null : (data?.planta || (sedeInicial === "MALAMBO" ? "PLANTA 1" : "N/A")));
       loadData();
+      precargarAforoP2();
     }
+  }
+
+  // Precarga aforo Planta 2 en background al iniciar sesión
+  async function precargarAforoP2(){
+    if(afoP2Loading||Object.keys(afoP2).length>0) return;
+    setAfoP2Loading(true);
+    const TANQUES=["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
+    async function fetchTk(tk){
+      const PAGE=1000; let rows=[], from=0;
+      while(true){
+        const {data,error}=await supabase.from("aforo")
+          .select("ullage_mm,galones_brutos").eq("tanque",tk).order("ullage_mm")
+          .range(from,from+PAGE-1);
+        if(error||!data||data.length===0)break;
+        rows=rows.concat(data);
+        if(data.length<PAGE)break;
+        from+=PAGE;
+      }
+      return {tk,rows};
+    }
+    try{
+      const results=await Promise.all(TANQUES.map(tk=>fetchTk(tk)));
+      const tbl={};
+      for(const {tk,rows} of results) tbl[tk]=rows.map(r=>[r.ullage_mm,r.galones_brutos]);
+      setAfoP2(tbl);
+    }catch(e){console.error("Error precargando aforo P2:",e);}
+    setAfoP2Loading(false);
   }
 
   async function loadData() {
@@ -4317,7 +4348,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
 {/* LIQUIDADOR PLANTA 2 */}
 {nav==="liquidador_p2" && (
-  <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast}/>
+  <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading}/>
 )}
 
 {/* ═══ MODAL NUEVA OT ═══ */}

@@ -92,7 +92,7 @@ function TInp({value,onChange,disabled,navRow,navCol}){
   );
 }
 
-export default function LiquidadorPlanta2({supabase,session,perfil,showToast}){
+export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afoCache={},afoCacheLoading=false}){
   const [tab,setTab]=useState("nuevo");
   const [historial,setHistorial]=useState([]);
   const [loadingHist,setLoadingHist]=useState(false);
@@ -101,43 +101,44 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast}){
   const [operador,setOperador]=useState("");
   const [obs,setObs]=useState("");
   const [saving,setSaving]=useState(false);
-  const [loadingTablas,setLoadingTablas]=useState(true);
-  const [tablas,setTablas]=useState({});
+  // Usar caché del App si está disponible, sino cargar localmente
+  const [tablaLocal,setTablaLocal]=useState({});
+  const [loadingLocal,setLoadingLocal]=useState(false);
+
+  const tablas = Object.keys(afoCache).length>0 ? afoCache : tablaLocal;
+  const loadingTablas = Object.keys(afoCache).length===0 ? (afoCacheLoading||loadingLocal) : false;
 
   const initFilas=()=>TANQUES_P2.map(t=>({tanque:t,producto:"VLSFO",activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
   const [filas,setFilas]=useState(initFilas);
 
-  // Cargar tablas de aforo desde Supabase
+  // Solo cargar localmente si el caché del App aún no está listo
   useEffect(()=>{
+    if(Object.keys(afoCache).length>0||afoCacheLoading) return;
     async function fetchTanque(tk){
-      const PAGE=1000;
-      let rows=[], from=0;
+      const PAGE=1000; let rows=[], from=0;
       while(true){
         const {data,error}=await supabase.from("aforo")
-          .select("ullage_mm,galones_brutos")
-          .eq("tanque",tk).order("ullage_mm")
+          .select("ullage_mm,galones_brutos").eq("tanque",tk).order("ullage_mm")
           .range(from,from+PAGE-1);
         if(error||!data||data.length===0)break;
         rows=rows.concat(data);
         if(data.length<PAGE)break;
         from+=PAGE;
       }
-      return {tk, rows};
+      return {tk,rows};
     }
-    async function cargarTablas(){
-      setLoadingTablas(true);
+    async function cargar(){
+      setLoadingLocal(true);
       try{
         const results=await Promise.all(TANQUES_P2.map(tk=>fetchTanque(tk)));
         const tbl={};
-        for(const {tk,rows} of results){
-          tbl[tk]=rows.map(r=>[r.ullage_mm,r.galones_brutos]);
-        }
-        setTablas(tbl);
+        for(const {tk,rows} of results) tbl[tk]=rows.map(r=>[r.ullage_mm,r.galones_brutos]);
+        setTablaLocal(tbl);
       }catch(e){console.error("Error cargando aforo:",e);}
-      setLoadingTablas(false);
+      setLoadingLocal(false);
     }
-    cargarTablas();
-  },[supabase]);
+    cargar();
+  },[supabase,afoCache,afoCacheLoading]);
 
   useEffect(()=>{
     if(perfil?.nombre&&!operador)setOperador(perfil.nombre);
