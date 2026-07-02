@@ -312,10 +312,11 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
                 <AppInp label="Proa Inicial (m)" type="number" step="0.01" value={calados.proaIni} onChange={e=>setCalados(c=>({...c,proaIni:e.target.value}))}/>
                 <AppInp label="Popa Inicial (m)" type="number" step="0.01" value={calados.popaIni} onChange={e=>setCalados(c=>({...c,popaIni:e.target.value}))}/>
               </div>
-              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+tcDir(trimI.dir),minWidth:90}}>
+              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+(trimI.dir==="POPA"&&trimI.val>0.7?"#f59e0b":tcDir(trimI.dir)),minWidth:90}}>
                 <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Trim Inicial</div>
                 <div style={{fontSize:26,fontWeight:900,color:tcDir(trimI.dir),lineHeight:1}}>{trimI.val.toFixed(2)}m</div>
                 <div style={{fontSize:12,fontWeight:700,color:tcDir(trimI.dir),marginTop:4}}>{trimI.dir}</div>
+                {trimI.dir==="POPA"&&trimI.val>0.7&&<div style={{fontSize:9,color:"#f59e0b",fontWeight:700,marginTop:4}}>⚠ Fuera de tabla (máx 0.7m)</div>}
               </div>
             </div>
             {/* FINAL */}
@@ -325,10 +326,11 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
                 <AppInp label="Proa Final (m)" type="number" step="0.01" value={calados.proaFin} onChange={e=>setCalados(c=>({...c,proaFin:e.target.value}))}/>
                 <AppInp label="Popa Final (m)" type="number" step="0.01" value={calados.popaFin} onChange={e=>setCalados(c=>({...c,popaFin:e.target.value}))}/>
               </div>
-              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+tcDir(trimF.dir),minWidth:90}}>
+              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+(trimF.dir==="POPA"&&trimF.val>0.7?"#f59e0b":tcDir(trimF.dir)),minWidth:90}}>
                 <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Trim Final</div>
                 <div style={{fontSize:26,fontWeight:900,color:tcDir(trimF.dir),lineHeight:1}}>{trimF.val.toFixed(2)}m</div>
                 <div style={{fontSize:12,fontWeight:700,color:tcDir(trimF.dir),marginTop:4}}>{trimF.dir}</div>
+                {trimF.dir==="POPA"&&trimF.val>0.7&&<div style={{fontSize:9,color:"#f59e0b",fontWeight:700,marginTop:4}}>⚠ Fuera de tabla (máx 0.7m)</div>}
               </div>
             </div>
           </div>
