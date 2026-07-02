@@ -110,11 +110,11 @@ const TANQUES_BARCAZA = {
 const ROLES = {
   logistica:   { label:"Logística",          color:"#f59e0b", icon:"🚛" },
   laboratorio: { label:"Laboratorio",        color:"#00b4ff", icon:"🧪" },
-  operaciones: { label:"Operaciones",        color:"#fb923c", icon:"⚙️" },
-  coordinador: { label:"Coordinador Planta", color:"#00e5a0", icon:"📋" },
-  despacho:    { label:"Despacho",           color:"#c084fc", icon:"🚢" },
-  gerencia:    { label:"Gerencia",           color:"#fb7185", icon:"📊" },
-  administrador: { label:"Administrador", color:"#FF6B35", icon:"👑" },
+  operaciones: { label:"Operaciones",        color:"#005fa3", icon:"⚙️" },
+  coordinador: { label:"Coordinador Planta", color:"#00B894", icon:"📋" },
+  despacho:    { label:"Despacho",           color:"#003B73", icon:"🚢" },
+  gerencia:    { label:"Gerencia",           color:"#6E7781", icon:"📊" },
+  administrador: { label:"Administrador", color:"#0077CC", icon:"👑" },
 };
 
 const NAV_META = {
@@ -207,9 +207,16 @@ const genIdCMT = (cmts, sede, planta) => {
 // ─── UI COMPONENTS ─────────────────────────────────────────────────────────────
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const T = {
-  navy:"#003D5C", sidebar:"#2D3142", orange:"#FF6B35", success:"#00B894",
-  danger:"#D63031", bg:"#e8eaf0", text:"#1E1E24", card:"#ffffff",
-  border:"#e0e0e0", muted:"#6b7a99",
+  navy:"#003B73",   // Azul Marino corporativo
+  sidebar:"#002855",
+  orange:"#0077CC", // Azul Operativo (acento corporativo)
+  success:"#00B894",
+  danger:"#D63031",
+  bg:"#f0f4f8",
+  text:"#121212",   // Negro VLSFO
+  card:"#ffffff",
+  border:"#d1d9e0",
+  muted:"#6E7781",  // Gris Metálico
 };
 
 function Badge({ label, color }) {
@@ -1289,9 +1296,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               width:42, height:42, border:"none", borderRadius:8, cursor:"pointer",
               display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
               transition:"background 0.15s, transform 0.15s",
-              background: active ? T.orange : isHov ? "rgba(255,107,53,0.2)" : "transparent",
+              background: active ? T.orange : isHov ? "rgba(0,119,204,0.25)" : "transparent",
               transform: isHov ? "scale(1.08)" : "scale(1)",
-              color: active ? "#ffffff" : isHov ? T.orange : "rgba(255,255,255,0.45)",
+              color: active ? "#ffffff" : isHov ? "#60b4ff" : "rgba(255,255,255,0.45)",
               position:"relative", outline:"none",
             });
 
@@ -1345,7 +1352,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             return (
                               <button key={sub.id} onClick={()=>{setNav(sub.id);setNavHovered(null);setAnalisisNav("");}}
                                 style={{width:"100%",textAlign:"left",background:subActive?T.orange:"transparent",border:"none",borderLeft:`3px solid ${subActive?T.orange:"transparent"}`,padding:"9px 16px",color:subActive?"#ffffff":"rgba(255,255,255,0.65)",fontSize:12,fontFamily:"system-ui,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.12s, color 0.12s",boxSizing:"border-box",fontWeight:subActive?700:400}}
-                                onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background="rgba(255,107,53,0.15)"; e.currentTarget.style.color="#ffffff";} }}
+                                onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background="rgba(0,119,204,0.15)"; e.currentTarget.style.color="#ffffff";} }}
                                 onMouseLeave={e=>{ if(!subActive){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(255,255,255,0.65)";} }}>
                                 <span>{sub.label}</span>
                                 {sub.badge>0&&<span style={{background:T.danger,color:"#fff",fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{sub.badge}</span>}
