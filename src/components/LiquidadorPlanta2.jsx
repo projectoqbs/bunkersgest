@@ -1,5 +1,6 @@
 // LiquidadorPlanta2.jsx — tanques estacionarios TK-111 a TK-117, ullage en MM
 import { useState, useEffect } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const M3_TO_GAL = 264.172;
 const TANQUES_P2 = ["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
@@ -254,6 +255,22 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast}){
       {tab==="historial" && (
         <div style={{background:TH.card,borderRadius:10,padding:20,border:"1px solid "+TH.border}}>
           <div style={{fontWeight:700,color:TH.navy,marginBottom:12,fontSize:14}}>Historial de Liquidaciones</div>
+          {!loadingHist&&historial.length>0&&(
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:11,color:TH.muted,marginBottom:8,fontWeight:600,textTransform:"uppercase",letterSpacing:0.8}}>Galones Entregados por Operación</div>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={[...historial].reverse().map(l=>({name:(l.motonave||"").substring(0,10)+(l.fecha?(" "+l.fecha.slice(5)):""),gls:l.gls_entregados||0}))} margin={{top:4,right:8,left:0,bottom:36}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
+                  <XAxis dataKey="name" tick={{fontSize:9,fill:TH.muted}} tickLine={false} axisLine={false} interval={0} angle={-35} textAnchor="end"/>
+                  <YAxis tick={{fontSize:9,fill:TH.muted}} tickLine={false} axisLine={false} tickFormatter={v=>v>=1000?(v/1000).toFixed(0)+"k":v} width={38}/>
+                  <Tooltip formatter={(v)=>[Number(v).toLocaleString("es-CO"),"Gls Netos"]} labelStyle={{fontSize:11,fontWeight:700}} contentStyle={{fontSize:11,borderRadius:6,border:"1px solid #d1d9e0"}}/>
+                  <Bar dataKey="gls" radius={[4,4,0,0]}>
+                    {[...historial].reverse().map((_,i)=><Cell key={i} fill={i===historial.length-1?"#e85d04":"#16a34a"}/>)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
           {loadingHist?(
             <div style={{color:TH.muted,fontSize:13}}>Cargando...</div>
           ):historial.length===0?(
