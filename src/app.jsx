@@ -3,6 +3,26 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import * as XLSX from "xlsx";
 import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
 import LiquidadorPlanta2 from "./components/LiquidadorPlanta2";
+import { LayoutDashboard, Truck, FlaskConical, Settings2, ClipboardList, Cylinder, Ship, Search, Users, CalendarDays, Calculator, RefreshCw, Crown, BarChart2, Package, Lock } from "lucide-react";
+
+const ICON_MAP = {
+  dashboard:    LayoutDashboard,
+  viajes:       Truck,
+  tiquetes:     FlaskConical,
+  pbs:          Settings2,
+  cmt:          ClipboardList,
+  tanques:      Cylinder,
+  despacho:     Ship,
+  trazabilidad: Search,
+  usuarios:     Users,
+  programacion: CalendarDays,
+  liquidador:   Calculator,
+};
+function NavIcon({id, size=17, color}){
+  const Ic=ICON_MAP[id];
+  if(!Ic)return null;
+  return <Ic size={size} color={color||"currentColor"} strokeWidth={1.8}/>;
+}
 
 // CSS global: todos los inputs de texto en mayúsculas
 const _style = document.createElement("style");
@@ -1205,7 +1225,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       {/* Header */}
       <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"0 24px", height:64, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <span style={{ fontSize:28 }}>🚢</span>
+          <Ship size={28} color="#ffffff" strokeWidth={1.5}/>
           <div>
             <div style={{ fontWeight:800, fontSize:18, color:"#ffffff", letterSpacing:2 }}>BunkersGest <span style={{color:T.orange, fontSize:12, fontWeight:700}}>v2.0</span></div>
             <div style={{ fontSize:9, color:"#ffffff66", letterSpacing:2, textTransform:"uppercase" }}>Sistema de Gestión Operativa · Combustible Marino</div>
@@ -1309,7 +1329,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div key={id} style={{position:"relative", width:40}}
                     onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
                     <button style={{...btnStyle(active, isHov, rol.color)}}>
-                      {grupo.icon}
+                      <NavIcon id={id} size={17}/>
                     </button>
                     {isHov && (
                       <div style={flyoutBase} onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
@@ -1341,7 +1361,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div key={id} style={{position:"relative", width:40}}
                   onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
                   <button onClick={()=>setNav(id)} style={btnStyle(active, isHov, rol.color)}>
-                    {m.icon}
+                    {ICON_MAP[id] ? <NavIcon id={id} size={17}/> : m.icon}
                     {badge>0&&<span style={{position:"absolute",top:2,right:2,background:"#ff4d4d",color:"#fff",fontSize:8,fontWeight:700,borderRadius:8,padding:"1px 4px",lineHeight:1}}>{badge}</span>}
                   </button>
                   {isHov && <div style={tooltipBase}><div style={tooltipInner}>{m.label}</div></div>}
@@ -1351,7 +1371,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             items.push(
               <div key="reload" style={{position:"relative", width:40, marginTop:"auto"}}
                 onMouseEnter={()=>onEnter("reload")} onMouseLeave={onLeave}>
-                <button onClick={loadData} style={btnStyle(false, navHovered==="reload", "#6b8fa8")}>🔄</button>
+                <button onClick={loadData} style={btnStyle(false, navHovered==="reload", "#6b8fa8")}><RefreshCw size={16} strokeWidth={1.8}/></button>
                 {navHovered==="reload" && <div style={tooltipBase}><div style={tooltipInner}>Actualizar</div></div>}
               </div>
             );
