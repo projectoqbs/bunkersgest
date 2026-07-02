@@ -1234,7 +1234,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
           <div style={{ textAlign:"right" }}>
             <div style={{ fontSize:13, fontWeight:700, color:"#ffffff" }}>{(perfil.nombre||"").split(" ")[0]}</div>
-            <div style={{ fontSize:10, color:T.orange }}>{rol.icon} {rol.label} · {perfil.sede||"MALAMBO"} · <span style={{color:T.success}}>● EN VIVO</span></div>
+            <div style={{ fontSize:10, color:"#60b4ff" }}>{rol.icon} {rol.label} · {perfil.sede||"MALAMBO"} · <span style={{color:T.success}}>● EN VIVO</span></div>
           </div>
           <Btn sm color={T.danger} onClick={handleLogout}>Salir</Btn>
         </div>
@@ -1269,7 +1269,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
         {/* Sidebar */}
-        <div style={{ width:58, background:T.sidebar, borderRight:`1px solid rgba(255,255,255,0.06)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflow:"visible" }}>
+        <div style={{ width:58, background:"#002855", borderRight:`1px solid rgba(0,119,204,0.2)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflow:"visible" }}>
           {(()=>{
             const GRUPOS = {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
@@ -1295,7 +1295,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               paddingLeft:6, zIndex:9999, pointerEvents:"auto",
             };
             const flyoutInner = {
-              background:T.sidebar,
+              background:"#002855",
               border:`1px solid rgba(255,255,255,0.1)`,
               borderLeft:`3px solid ${T.orange}`,
               borderRadius:"0 8px 8px 0",
@@ -1309,7 +1309,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               paddingLeft:8, zIndex:9999, pointerEvents:"none",
             };
             const tooltipInner = {
-              background:T.sidebar, border:`1px solid rgba(255,255,255,0.1)`, borderRadius:6,
+              background:"#001f47", border:`1px solid rgba(0,119,204,0.25)`, borderRadius:6,
               padding:"5px 12px", fontSize:11, color:"#ffffff",
               whiteSpace:"nowrap", boxShadow:"4px 4px 16px rgba(0,0,0,0.3)",
               transform:"translateY(-50%)",
