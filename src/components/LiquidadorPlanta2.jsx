@@ -109,27 +109,31 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast}){
 
   // Cargar tablas de aforo desde Supabase
   useEffect(()=>{
+    async function fetchTanque(tk){
+      const PAGE=1000;
+      let rows=[], from=0;
+      while(true){
+        const {data,error}=await supabase.from("aforo")
+          .select("ullage_mm,galones_brutos")
+          .eq("tanque",tk).order("ullage_mm")
+          .range(from,from+PAGE-1);
+        if(error||!data||data.length===0)break;
+        rows=rows.concat(data);
+        if(data.length<PAGE)break;
+        from+=PAGE;
+      }
+      return {tk, rows};
+    }
     async function cargarTablas(){
       setLoadingTablas(true);
-      const PAGE=5000;
-      let all=[], from=0, done=false;
-      while(!done){
-        const {data,error}=await supabase.from("aforo")
-          .select("tanque,ullage_mm,galones_brutos")
-          .order("tanque").order("ullage_mm")
-          .range(from,from+PAGE-1);
-        if(error){console.error("Error cargando aforo:",error);setLoadingTablas(false);return;}
-        if(!data||data.length===0)break;
-        all=all.concat(data);
-        if(data.length<PAGE)done=true;
-        else from+=PAGE;
-      }
-      const tbl={};
-      for(const row of all){
-        if(!tbl[row.tanque])tbl[row.tanque]=[];
-        tbl[row.tanque].push([row.ullage_mm,row.galones_brutos]);
-      }
-      setTablas(tbl);
+      try{
+        const results=await Promise.all(TANQUES_P2.map(tk=>fetchTanque(tk)));
+        const tbl={};
+        for(const {tk,rows} of results){
+          tbl[tk]=rows.map(r=>[r.ullage_mm,r.galones_brutos]);
+        }
+        setTablas(tbl);
+      }catch(e){console.error("Error cargando aforo:",e);}
       setLoadingTablas(false);
     }
     cargarTablas();
