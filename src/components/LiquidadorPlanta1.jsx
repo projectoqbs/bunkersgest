@@ -27,30 +27,22 @@ function interpolarBarcaza(tabla,sonda,trimVal,trimDir){
   else if(sonda>=tabla[n-1][0]){ri0=n-2;ri1=n-1;}
   else{for(let i=0;i<n-1;i++){if(sonda>=tabla[i][0]&&sonda<=tabla[i+1][0]){ri0=i;ri1=i+1;break;}}}
   const s0=tabla[ri0][0],s1=ri0===ri1?tabla[ri0][0]+0.001:tabla[ri1][0];
-  // Detectar si el trim proa aumenta o disminuye volumen para este tanque
-  // comparando columna t03proa (idx4) con t00 (idx3) en la sonda actual
-  const t00v=interp(sonda,s0,s1,tabla[ri0][3],tabla[ri1][3]);
-  const t03v=interp(sonda,s0,s1,tabla[ri0][4],tabla[ri1][4]);
-  const proaAumentaVol=t03v>=t00v;
-  // Tanques donde proa aumenta vol: PROA->tf+, POPA->tf-
-  // Tanques donde proa disminuye vol (efecto invertido): PROA->tf-, POPA->tf+
-  let tf=0;
-  if(trimDir==="PROA") tf=proaAumentaVol?trimVal:-trimVal;
-  else if(trimDir==="POPA") tf=proaAumentaVol?-trimVal:trimVal;
-  tf=Math.max(-0.7,Math.min(1.0,tf));
+  const colAt=c=>interp(sonda,s0,s1,tabla[ri0][c],tabla[ri1][c]);
+  const t00v=colAt(3),t03v=colAt(4),t05p=colAt(2);
+  const proaAumenta=t03v>=t00v;
+  // Grupo B en zona media (corrección popa relativa <7%): trim PROA usa columnas POPA
+  // Grupo B en zona vacía (corrección popa relativa >=7%): usa columnas PROA (fórmula original)
+  const relDiff=t00v>0?(t05p-t00v)/t00v:0;
+  const groupBInv=!proaAumenta&&trimDir==="PROA"&&relDiff<0.07;
+  let tf=trimDir==="PROA"?(groupBInv?-trimVal:trimVal):trimDir==="POPA"?-trimVal:0;
   let ci0=0,ci1=1;
-  for(let i=0;i<TRIM_VALS.length-1;i++){
-    if(tf>=TRIM_VALS[i]&&tf<=TRIM_VALS[i+1]){ci0=i;ci1=i+1;break;}
-  }
-  if(tf<TRIM_VALS[0]){ci0=0;ci1=0;}
-  if(tf>TRIM_VALS[TRIM_VALS.length-1]){ci0=TRIM_VALS.length-2;ci1=TRIM_VALS.length-1;}
+  if(groupBInv&&tf<TRIM_VALS[0]){ci0=0;ci1=1;}  // extrapolación más allá de 0.7m popa
+  else if(tf<=TRIM_VALS[0]){ci0=0;ci1=0;}
+  else if(tf>=TRIM_VALS[TRIM_VALS.length-1]){ci0=TRIM_VALS.length-2;ci1=TRIM_VALS.length-1;}
+  else{for(let i=0;i<TRIM_VALS.length-1;i++){if(tf>=TRIM_VALS[i]&&tf<=TRIM_VALS[i+1]){ci0=i;ci1=i+1;break;}}}
   const t0=TRIM_VALS[ci0],t1=ci0===ci1?TRIM_VALS[ci0]+0.001:TRIM_VALS[ci1];
-  const vt0=interp(sonda,s0,s1,tabla[ri0][ci0+1],tabla[ri1][ci0+1]);
-  const vt1=interp(sonda,s0,s1,tabla[ri0][ci1+1],tabla[ri1][ci1+1]);
-  const raw=Math.max(0,interp(tf,t0,t1,vt0,vt1));
-  // Tanques Grupo-B con trim PROA: en zona near-full la columna popa puede dar
-  // menos que t00 (efecto invertido). Se clampea a t00 para no penalizar.
-  return (!proaAumentaVol&&trimDir==="PROA")?Math.max(raw,t00v):raw;
+  const vt0=colAt(ci0+1),vt1=colAt(ci1+1);
+  return Math.max(0,interp(tf,t0,t1,vt0,vt1));
 }
 
 function interpolarTKT(tabla,sondaMM){
