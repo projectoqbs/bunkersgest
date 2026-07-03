@@ -1176,13 +1176,15 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
 
   // ── LOGIN / REGISTRO ──
   if (!session) return (
-    <div style={{ minHeight:"100vh", background:T.navy, display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{ width:420, background:T.card, borderRadius:12, overflow:"hidden", boxShadow:"0 24px 64px rgba(0,0,0,0.4)" }}>
-        <div style={{ background:T.navy, borderBottom:`3px solid ${T.orange}`, padding:"28px 32px", textAlign:"center" }}>
-          <div style={{ fontSize:32, marginBottom:8 }}>🚢</div>
-          <div style={{ fontWeight:800, fontSize:22, color:"#ffffff", letterSpacing:2 }}>BunkersGest</div>
-          <div style={{ fontSize:10, color:"#ffffff88", marginTop:4, letterSpacing:3 }}>SISTEMA DE GESTIÓN OPERATIVA · COMBUSTIBLE MARINO</div>
+    <div style={{ minHeight:"100vh", background:"#121212", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <div style={{ width:420, background:"#1c1c1c", borderRadius:14, overflow:"hidden", boxShadow:"0 24px 64px rgba(0,0,0,0.6)", border:`1px solid #2a2a2a` }}>
+        {/* Cabecera con logo */}
+        <div style={{ background:"#121212", borderBottom:`3px solid ${T.orange}`, padding:"28px 32px", textAlign:"center" }}>
+          <img src="/logo.svg" alt="BunkersGest" style={{ width:110, height:"auto", display:"block", margin:"0 auto 12px" }}/>
+          <div style={{ fontWeight:900, fontSize:22, fontFamily:"Arial Black, system-ui, sans-serif", letterSpacing:1 }}>
+            <span style={{ color:"#ffffff" }}>Bunkers</span><span style={{ color:T.orange }}>Gest</span>
+          </div>
+          <div style={{ fontSize:10, color:"#ffffff55", marginTop:5, letterSpacing:3, textTransform:"uppercase" }}>Sistema de Gestión Operativa · Combustible Marino</div>
         </div>
         <div style={{ padding:32 }}>
           {authError && <div style={{ background:authError.includes("creada")?`${T.success}18`:`${T.danger}18`, border:`1px solid ${authError.includes("creada")?T.success:T.danger}`, borderRadius:6, padding:"10px 14px", fontSize:12, color:authError.includes("creada")?T.success:T.danger, marginBottom:16 }}>{authError}</div>}
@@ -1217,8 +1219,8 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
   );
 
   if (!perfil) return (
-    <div style={{ minHeight:"100vh", background:T.navy, display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ color:"#ffffff88", fontSize:13 }}>Cargando perfil...</div>
+    <div style={{ minHeight:"100vh", background:"#121212", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <div style={{ color:"#ffffff55", fontSize:13 }}>Cargando perfil...</div>
     </div>
   );
 
