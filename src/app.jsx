@@ -2857,7 +2857,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <Btn sm color={T.orange} outline onClick={()=>{
               const MODS = ["viajes","tiquetes","pbs","cmt","tanques","despachos","trazabilidad"];
               const base = MODS.reduce((acc,m)=>({...acc,[m]:{ver:false,crear:false,editar:false,eliminar:false,...((p.permisos||{})[m]||{})}}),{});
-              setEditUsuario({...p});
+              const plantasArr = (p.planta||"PLANTA 1").split(",").map(s=>s.trim()).filter(Boolean);
+              setEditUsuario({...p, plantas: plantasArr});
               setPermsEdit(base);
             }}>Gestionar Usuario</Btn>
           </div>
@@ -4767,8 +4768,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <Btn outline onClick={()=>setEditUsuario(null)}>Cancelar</Btn>
           <Btn color={T.orange} disabled={saving} onClick={async()=>{
             setSaving(true);
+            const plantasArr = Array.isArray(editUsuario.plantas) ? editUsuario.plantas : [editUsuario.planta||"PLANTA 1"];
+            const plantaGuardar = plantasArr.join(",") || "PLANTA 1";
             const {error} = await supabaseAdmin.from("perfiles").update({
-              rol:editUsuario.rol, planta:editUsuario.planta||"PLANTA 1", permisos:permsEdit
+              rol:editUsuario.rol, planta:plantaGuardar, permisos:permsEdit
             }).eq("id",editUsuario.id);
             setSaving(false);
             if (error) return showToast("Error: "+error.message, false);
