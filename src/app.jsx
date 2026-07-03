@@ -413,6 +413,7 @@ export default function App() {
   const [plantaFiltroProducto, setPlantaFiltroProducto] = useState("");
   const [plantaFiltroFechaD, setPlantaFiltroFechaD] = useState("");
   const [plantaFiltroFechaH, setPlantaFiltroFechaH] = useState("");
+  const [cmtPlantaSelector, setCmtPlantaSelector] = useState(false);
   const [cmtBusqueda, setCmtBusqueda] = useState("");
   const [cmtFiltroTipo, setCmtFiltroTipo] = useState("");
   const [cmtFiltroFechaD, setCmtFiltroFechaD] = useState("");
@@ -2059,10 +2060,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       !sedeFiltro || sedeFiltro==="TODAS" || (sedeFiltro==="MALAMBO" && !plantaFiltro)
                     )}
                     onClick={()=>{
-                    if (!sedeFiltro || sedeFiltro==="TODAS") return showToast("Seleccione una sede para crear un CMT",false);
-                    if (sedeFiltro==="MALAMBO" && !plantaFiltro) return showToast("Seleccione una planta para crear un CMT",false);
-                    const sede = sedeFiltro;
-                    const planta = sede==="MALAMBO" ? plantaFiltro : "";
+                    const esAdmin = ["administrador","gerencia"].includes(perfil.rol);
+                    const sede = esAdmin ? sedeFiltro : (perfil.sede||"MALAMBO");
+                    if (!sede || sede==="TODAS") return showToast("Seleccione una sede para crear un CMT",false);
+                    // Para admin/gerencia usan plantaFiltro; para operarios usar perfil.planta
+                    const plantasDisponibles = esAdmin
+                      ? (sede==="MALAMBO" ? PLANTAS : [])
+                      : (perfil.planta||"PLANTA 1").split(",").map(s=>s.trim()).filter(Boolean);
+                    const plantaElegida = esAdmin ? plantaFiltro : (plantasDisponibles.length===1 ? plantasDisponibles[0] : null);
+                    if (sede==="MALAMBO" && !plantaElegida) {
+                      // Mostrar selector de planta inline si hay varias
+                      setCmtPlantaSelector(true);
+                      return;
+                    }
+                    const planta = sede==="MALAMBO" ? plantaElegida : "";
                     const numCmt = genIdCMT(cmts, sede, planta);
                     setForm({sede, planta, numero_cmt:numCmt, fecha:today()});
                     setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
@@ -2072,6 +2083,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   }}>+ Nuevo CMT</Btn>}
                 </div>
               </div>
+
+              {/* Selector de planta para operarios con múltiples plantas */}
+              {cmtPlantaSelector && (
+                <div style={{background:`${T.orange}12`,border:`2px solid ${T.orange}`,borderRadius:10,padding:"16px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+                  <span style={{fontWeight:800,fontSize:13,color:T.navy}}>¿En qué planta vas a trabajar?</span>
+                  {(perfil.planta||"PLANTA 1").split(",").map(s=>s.trim()).filter(Boolean).map(pl=>(
+                    <button key={pl} onClick={()=>{
+                      const sede = perfil.sede||"MALAMBO";
+                      const numCmt = genIdCMT(cmts, sede, pl);
+                      setForm({sede, planta:pl, numero_cmt:numCmt, fecha:today()});
+                      setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
+                      setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
+                      setCmtDespues([{tanque:"",producto:"",sonda:"",galones:""}]);
+                      setCmtPlantaSelector(false);
+                      setModal("cmt");
+                    }} style={{background:T.orange,color:"#fff",border:"none",borderRadius:6,padding:"8px 20px",fontWeight:800,fontSize:13,cursor:"pointer"}}>
+                      {pl}
+                    </button>
+                  ))}
+                  <button onClick={()=>setCmtPlantaSelector(false)} style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 14px",color:T.muted,fontSize:12,cursor:"pointer"}}>Cancelar</button>
+                </div>
+              )}
 
               {/* Aviso prominente cuando no hay sede seleccionada (solo admin/gerencia) */}
               {["administrador","gerencia"].includes(perfil.rol) && ((!sedeFiltro||sedeFiltro==="TODAS") || (sedeFiltro==="MALAMBO"&&!plantaFiltro)) && (
