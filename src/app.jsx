@@ -4663,11 +4663,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const cedula = editUsuario.cedula || (editUsuario.email||"").replace("@quimibuques.com","");
   return (
     <Modal title={`Gestionar Usuario — ${editUsuario.nombre}`} onClose={()=>setEditUsuario(null)} wide inline>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:18}}>
-        <div>
-          <Lbl>Cédula</Lbl>
-          <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",fontSize:13,color:T.muted}}>{cedula||"—"}</div>
-        </div>
+      {/* Cédula destacada */}
+      <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:8,padding:"10px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
+        <span style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Cédula:</span>
+        <span style={{fontSize:15,fontWeight:900,color:T.navy,letterSpacing:1}}>{cedula||"—"}</span>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:18}}>
         <div>
           <Lbl>Rol</Lbl>
           <select value={editUsuario.rol} onChange={e=>setEditUsuario(u=>({...u,rol:e.target.value}))}
@@ -4685,11 +4686,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       </div>
       {(editUsuario.sede||"MALAMBO")==="MALAMBO" && (
         <div style={{marginBottom:18}}>
-          <Lbl>Planta</Lbl>
-          <select value={editUsuario.planta||"PLANTA 1"} onChange={e=>setEditUsuario(u=>({...u,planta:e.target.value}))}
-            style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none"}}>
-            {PLANTAS.map(pl=><option key={pl}>{pl}</option>)}
-          </select>
+          <Lbl>Planta(s)</Lbl>
+          <div style={{display:"flex",gap:12}}>
+            {PLANTAS.map(pl=>{
+              const plantas = Array.isArray(editUsuario.plantas) ? editUsuario.plantas : [editUsuario.planta||"PLANTA 1"];
+              const checked = plantas.includes(pl);
+              return (
+                <label key={pl} onClick={()=>{
+                  const prev = Array.isArray(editUsuario.plantas) ? editUsuario.plantas : [editUsuario.planta||"PLANTA 1"];
+                  const next = checked ? prev.filter(p=>p!==pl) : [...prev, pl];
+                  setEditUsuario(u=>({...u, plantas: next.length ? next : [pl], planta: next[0]||pl}));
+                }} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",padding:"8px 16px",borderRadius:6,border:`2px solid ${checked?T.orange:T.border}`,background:checked?`${T.orange}15`:T.card,userSelect:"none"}}>
+                  <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${checked?T.orange:T.border}`,background:checked?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {checked&&<span style={{color:"#fff",fontSize:12,fontWeight:900,lineHeight:1}}>✓</span>}
+                  </div>
+                  <span style={{fontSize:13,fontWeight:700,color:checked?T.orange:T.text}}>{pl}</span>
+                </label>
+              );
+            })}
+          </div>
         </div>
       )}
 
