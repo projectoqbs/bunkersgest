@@ -2067,20 +2067,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
               {/* Aviso prominente cuando no hay sede seleccionada (solo admin/gerencia) */}
               {["administrador","gerencia"].includes(perfil.rol) && ((!sedeFiltro||sedeFiltro==="TODAS") || (sedeFiltro==="MALAMBO"&&!plantaFiltro)) && (
-                <div style={{background:"#1a1200",border:"2px solid #f59e0b",borderRadius:12,padding:"20px 24px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:16}}>
+                <div style={{background:`${T.navy}18`,border:`2px solid ${T.orange}`,borderRadius:12,padding:"20px 24px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:16}}>
                   <div style={{fontSize:28,lineHeight:1}}>📍</div>
                   <div>
                     {(!sedeFiltro||sedeFiltro==="TODAS") ? (<>
-                      <div style={{fontWeight:800,fontSize:15,color:T.orange,marginBottom:6}}>Paso 1 — Seleccione la sede donde va a trabajar</div>
-                      <div style={{fontSize:13,color:"#c9a84c",lineHeight:1.6}}>
-                        Use el selector <b style={{color:"#f59e0b"}}>"Sede"</b> arriba a la derecha para elegir entre {SEDES.join(", ")}.<br/>
-                        <span style={{fontSize:11,color:"#8a7040",marginTop:4,display:"block"}}>Cada CMT queda registrado en la sede donde se realizó el movimiento. Esto no se puede cambiar después.</span>
+                      <div style={{fontWeight:800,fontSize:15,color:T.navy,marginBottom:6}}>Paso 1 — Seleccione la sede donde va a trabajar</div>
+                      <div style={{fontSize:13,color:T.text,lineHeight:1.6}}>
+                        Use el selector <b style={{color:T.orange}}>"Sede"</b> arriba a la derecha para elegir entre {SEDES.join(", ")}.<br/>
+                        <span style={{fontSize:11,color:T.muted,marginTop:4,display:"block"}}>Cada CMT queda registrado en la sede donde se realizó el movimiento. Esto no se puede cambiar después.</span>
                       </div>
                     </>) : (<>
-                      <div style={{fontWeight:800,fontSize:15,color:T.orange,marginBottom:6}}>Paso 2 — Seleccione la planta dentro de MALAMBO</div>
-                      <div style={{fontSize:13,color:"#c9a84c",lineHeight:1.6}}>
-                        MALAMBO tiene dos plantas de recibo. Use el selector <b style={{color:"#f59e0b"}}>"Planta"</b> para elegir entre {PLANTAS.join(" o ")}.<br/>
-                        <span style={{fontSize:11,color:"#8a7040",marginTop:4,display:"block"}}>El número del CMT cambia según la planta elegida (MAL1 o MAL2). Esto garantiza trazabilidad exacta del movimiento.</span>
+                      <div style={{fontWeight:800,fontSize:15,color:T.navy,marginBottom:6}}>Paso 2 — Seleccione la planta dentro de MALAMBO</div>
+                      <div style={{fontSize:13,color:T.text,lineHeight:1.6}}>
+                        MALAMBO tiene dos plantas de recibo. Use el selector <b style={{color:T.orange}}>"Planta"</b> para elegir entre {PLANTAS.join(" o ")}.<br/>
+                        <span style={{fontSize:11,color:T.muted,marginTop:4,display:"block"}}>El número del CMT cambia según la planta elegida (MAL1 o MAL2). Esto garantiza trazabilidad exacta del movimiento.</span>
                       </div>
                     </>)}
                   </div>
@@ -2212,7 +2212,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           XLSX.utils.book_append_sheet(wb, wsCar, "Carros Descargados");
                         }
                         XLSX.writeFile(wb, `CMT_${new Date().toISOString().slice(0,10)}.xlsx`);
-                      }} style={{background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:8,color:"#00e5a0",padding:"6px 14px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700,display:"flex",alignItems:"center",gap:6}}>
+                      }} style={{background:`${T.success}22`,border:`1px solid ${T.success}55`,borderRadius:8,color:T.success,padding:"6px 14px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700,display:"flex",alignItems:"center",gap:6}}>
                         ⬇ Exportar Excel
                       </button>
                     </div>
@@ -2246,19 +2246,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           return (
                           <React.Fragment key={c.id}>
                           <tr onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{cursor:"pointer",background:bgRow,transition:"background 0.15s",borderTop:`1px solid ${T.border}`}} onMouseEnter={e=>{if(!expandido)e.currentTarget.style.background="#dde6f0"}} onMouseLeave={e=>{if(!expandido)e.currentTarget.style.background=bgRow}}>
-                            <td style={tdStyle}><span style={{color:"#00e5a0",fontWeight:700,letterSpacing:0.5}}>{c.numero_cmt||c.id}</span></td>
-                            <td style={tdStyle}>{c.ot_numero ? <span style={{color:"#38bdf8",fontWeight:600,fontSize:11}}>{c.ot_numero}</span> : <span style={{color:T.muted,fontSize:10}}>Autónomo</span>}</td>
+                            <td style={tdStyle}><span style={{color:T.orange,fontWeight:700,letterSpacing:0.5}}>{c.numero_cmt||c.id}</span></td>
+                            <td style={tdStyle}>{c.ot_numero ? <span style={{color:T.orange,fontWeight:600,fontSize:11}}>{c.ot_numero}</span> : <span style={{color:T.muted,fontSize:10}}>Autónomo</span>}</td>
                             <td style={tdStyle}><span style={{color:T.muted}}>{c.fecha}</span></td>
-                            <td style={tdStyle}><Badge label={c.tipo_operacion||"—"} color="#00e5a0"/></td>
-                            <td style={tdStyle}><span style={{color:"#f59e0b"}}>{c.producto||"—"}</span></td>
+                            <td style={tdStyle}><Badge label={c.tipo_operacion||"—"} color={T.navy}/></td>
+                            <td style={tdStyle}><span style={{color:T.navy,fontWeight:600}}>{c.producto||"—"}</span></td>
                             <td style={tdStyle}><span style={{color:T.text,fontSize:11}}>{tanquesNombres||"—"}</span></td>
                             <td style={tdStyle}><span style={{color:T.text}}>{fmt(c.total_antes)}</span></td>
                             <td style={tdStyle}><span style={{color:T.text}}>{fmt(c.total_despues)}</span></td>
-                            <td style={tdStyle}><span style={{color:"#00e5a0",fontWeight:700}}>{fmt(Math.abs(movido))}</span></td>
+                            <td style={tdStyle}><span style={{color:T.success,fontWeight:700}}>{fmt(Math.abs(movido))}</span></td>
                             <td style={tdStyle}><span style={{color:T.muted,fontSize:11}}>{c.operador||"—"}</span></td>
                             <td style={{...tdStyle,whiteSpace:"nowrap"}} onClick={e=>e.stopPropagation()}>
                               <div style={{display:"flex",gap:6}}>
-                                <button onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{background:"#00b4ff22",border:"1px solid #00b4ff55",borderRadius:6,color:"#00b4ff",padding:"4px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700}}>
+                                <button onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"4px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700}}>
                                   {expandido?"▲ Cerrar":"▼ Ver"}
                                 </button>
                                 {puedeEditar("cmt",c.creado_por,c.created_at) && (
@@ -2269,7 +2269,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                     setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]);
                                     setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
                                     setModal("cmt");
-                                  }} style={{background:"#00e5a022",border:"1px solid #00e5a055",borderRadius:6,color:"#00e5a0",padding:"4px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700}}>
+                                  }} style={{background:`${T.success}22`,border:`1px solid ${T.success}55`,borderRadius:6,color:T.success,padding:"4px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700}}>
                                     ✏ Corregir
                                   </button>
                                 )}
@@ -2280,31 +2280,31 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <tr>
                               <td colSpan={10} style={{padding:"0 0 2px 0",background:"#f1f5f9",borderBottom:`2px solid ${T.border}`}}>
                                 <div style={{padding:"16px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                                  <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:"3px solid #3b82f6"}}>
-                                    <div style={{fontSize:10,color:"#3b82f6",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Inicial</div>
+                                  <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.navy}`}}>
+                                    <div style={{fontSize:10,color:T.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Inicial</div>
                                     {(c.tanques_antes||[]).map((t,i)=>(
                                       <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:`1px solid ${T.border}`}}>
                                         <span style={{color:T.navy,fontWeight:700}}>{t.tanque||"—"}</span>
                                         <span style={{color:T.muted}}>Sonda: {t.sonda||"—"}</span>
-                                        <span style={{color:"#f59e0b",fontWeight:700}}>{fmt(t.galones)} Gls</span>
+                                        <span style={{color:T.orange,fontWeight:700}}>{fmt(t.galones)} Gls</span>
                                       </div>
                                     ))}
                                     <div style={{fontSize:11,color:T.muted,marginTop:4}}>Total: <b style={{color:T.navy}}>{fmt(c.total_antes)} Gls</b></div>
                                   </div>
-                                  <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:"3px solid #8b5cf6"}}>
-                                    <div style={{fontSize:10,color:"#8b5cf6",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Final</div>
+                                  <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.orange}`}}>
+                                    <div style={{fontSize:10,color:T.orange,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Final</div>
                                     {(c.tanques_despues||[]).map((t,i)=>(
                                       <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,paddingBottom:4,borderBottom:`1px solid ${T.border}`}}>
                                         <span style={{color:T.navy,fontWeight:700}}>{t.tanque||"—"}</span>
                                         <span style={{color:T.muted}}>Sonda: {t.sonda||"—"}</span>
-                                        <span style={{color:"#f59e0b",fontWeight:700}}>{fmt(t.galones)} Gls</span>
+                                        <span style={{color:T.orange,fontWeight:700}}>{fmt(t.galones)} Gls</span>
                                       </div>
                                     ))}
                                     <div style={{fontSize:11,color:T.muted,marginTop:4}}>Total: <b style={{color:T.navy}}>{fmt(c.total_despues)} Gls</b></div>
                                   </div>
                                   {(c.carros||[]).length>0 && (c.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && (
-                                    <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:"3px solid #6b8fa8",gridColumn:"1/-1"}}>
-                                      <div style={{fontSize:10,color:"#6b8fa8",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Carros Descargados</div>
+                                    <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.muted}`,gridColumn:"1/-1"}}>
+                                      <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Carros Descargados</div>
                                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
                                         {(c.carros||[]).map((cr,i)=>(
                                           <div key={i} style={{background:"#f8fafc",borderRadius:8,padding:"8px 10px",fontSize:11,border:`1px solid ${T.border}`}}>
