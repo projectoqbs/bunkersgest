@@ -208,7 +208,7 @@ const genIdCMT = (cmts, sede, planta) => {
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const T = {
   navy:"#003B73",   // Azul Marino corporativo
-  sidebar:"#002855",
+  sidebar:"#121212",
   orange:"#0077CC", // Azul Operativo (acento corporativo)
   success:"#00B894",
   danger:"#D63031",
