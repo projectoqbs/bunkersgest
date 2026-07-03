@@ -1281,9 +1281,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       <div style={{ background:T.text, borderBottom:`3px solid ${T.orange}`, padding:"0 20px", height:68, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:0 }}>
           {/* Logo barcos */}
-          <div style={{ height:56, width:Math.round(56*850/754), overflow:"hidden", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"flex-end" }}>
-            <img src="/logo.svg" alt="BunkersGest" style={{ height:"100%", width:"auto", display:"block", objectFit:"contain", objectPosition:"center center" }}/>
-          </div>
+          <img src="/logo.svg" alt="BunkersGest" style={{ height:52, width:"auto", display:"block", flexShrink:0 }}/>
           {/* Separador vertical */}
           <div style={{ width:2, height:44, background:T.orange, borderRadius:2, margin:"0 18px", flexShrink:0 }}/>
           <div>
