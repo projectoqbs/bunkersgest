@@ -401,6 +401,9 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
             ))}
           </div>
 
+          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+            <AppBtn color={TH.muted} onClick={()=>{setFilas(initFilas());setInterpResults({});}}>Limpiar</AppBtn>
+          </div>
         </>
       )}
     </div>

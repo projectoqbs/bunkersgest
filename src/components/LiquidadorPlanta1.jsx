@@ -297,14 +297,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
           <div style={{fontWeight:800,fontSize:16,color:TH.navy}}>Liquidador — Planta 1</div>
           <div style={{fontSize:10,color:TH.muted}}>Barcaza QBS-002 · 10 Tanques (CM ullage) + TKT-1/TKT-2 (MM innage)</div>
         </div>
-        <div style={{display:"flex",gap:8}}>
-          {["nuevo","historial"].map(t=>(
-            <button key={t} onClick={()=>setTab(t)}
-              style={{padding:"5px 14px",borderRadius:6,border:"2px solid "+TH.navy,cursor:"pointer",fontWeight:700,fontSize:11,background:tab===t?TH.navy:"transparent",color:tab===t?"#fff":TH.navy}}>
-              {t==="nuevo"?"Nueva Liquidacion":"Historial"}
-            </button>
-          ))}
-        </div>
+        <div style={{display:"flex",gap:8}}></div>
       </div>
 
       {tab==="nuevo"&&<>
@@ -400,55 +393,8 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
 
         <div style={{display:"flex",gap:12,justifyContent:"flex-end",marginBottom:12}}>
           <AppBtn color={TH.muted} onClick={()=>{setFilasB(initB());setFilasT(initT());setMotonave("");setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""});setObs("");}}>Limpiar</AppBtn>
-          <AppBtn disabled={saving} onClick={guardar}>{saving?"Guardando...":"Guardar Liquidacion"}</AppBtn>
         </div>
       </>}
-
-      {tab==="historial"&&(
-        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:8,padding:20,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
-          <div style={{fontWeight:800,fontSize:14,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>Historial de Liquidaciones</div>
-          {!loadingHist&&historial.length>0&&(
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:11,color:TH.muted,marginBottom:8,fontWeight:600,textTransform:"uppercase",letterSpacing:0.8}}>Galones Entregados por Operación</div>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={[...historial].reverse().map(l=>({name:(l.motonave||"").substring(0,10)+(l.fecha?(" "+l.fecha.slice(5)):""),gls:l.gls_entregados||0,mt:l.mt_entregadas||0}))} margin={{top:4,right:8,left:0,bottom:36}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
-                  <XAxis dataKey="name" tick={{fontSize:9,fill:TH.muted}} tickLine={false} axisLine={false} interval={0} angle={-35} textAnchor="end"/>
-                  <YAxis tick={{fontSize:9,fill:TH.muted}} tickLine={false} axisLine={false} tickFormatter={v=>v>=1000?(v/1000).toFixed(0)+"k":v} width={38}/>
-                  <Tooltip formatter={(v,n)=>[Number(v).toLocaleString("es-CO"),n==="gls"?"Gls Netos":"MT"]} labelStyle={{fontSize:11,fontWeight:700}} contentStyle={{fontSize:11,borderRadius:6,border:"1px solid #d1d9e0"}}/>
-                  <Bar dataKey="gls" radius={[4,4,0,0]}>
-                    {[...historial].reverse().map((_,i)=><Cell key={i} fill={i===historial.length-1?TH.danger:TH.success}/>)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-          {loadingHist?<div style={{color:TH.muted,padding:20}}>Cargando...</div>:(
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-              <thead>
-                <tr style={{background:"#f0f4f8"}}>
-                  {["Fecha","Motonave","Operador","Gls Entregados","MT Entregadas","Carros (÷277)"].map(h=>(
-                    <th key={h} style={{...thStyle,textAlign:"left"}}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {historial.map(l=>(
-                  <tr key={l.id} style={{borderBottom:"1px solid "+TH.border}}>
-                    <td style={{padding:"8px 10px",color:TH.muted}}>{l.fecha}</td>
-                    <td style={{padding:"8px 10px",fontWeight:700,color:TH.navy}}>{l.motonave}</td>
-                    <td style={{padding:"8px 10px",color:TH.muted}}>{l.operador||"—"}</td>
-                    <td style={{padding:"8px 10px",textAlign:"right",color:TH.success,fontWeight:700}}>{fmtN(l.gls_entregados,0)}</td>
-                    <td style={{padding:"8px 10px",textAlign:"right",color:TH.orange,fontWeight:700}}>{fmtN(l.mt_entregadas,3)}</td>
-                    <td style={{padding:"8px 10px",textAlign:"right",color:"#7c3aed",fontWeight:700}}>{fmtN(l.gls_entregados/277,1)}</td>
-                  </tr>
-                ))}
-                {historial.length===0&&<tr><td colSpan={6} style={{padding:30,textAlign:"center",color:TH.muted}}>Sin registros aun</td></tr>}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
     </div>
   );
 }
