@@ -695,7 +695,19 @@ export default function App() {
     if (p.data) setPbsList(p.data);
     if (c.data) setCmts(c.data);
     if (d.data) setDespachos(d.data);
-    if (pr.data) setPerfiles(pr.data);
+    if (pr.data) {
+      // Enriquecer perfiles con email de auth para derivar cédula
+      try {
+        const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const emailMap = {};
+        (authUsers?.users||[]).forEach(u => { emailMap[u.id] = u.email; });
+        setPerfiles(pr.data.map(p => ({
+          ...p,
+          email: p.email || emailMap[p.id] || "",
+          cedula: p.cedula || (emailMap[p.id]||"").replace("@quimibuques.com",""),
+        })));
+      } catch(_) { setPerfiles(pr.data); }
+    }
     if (permR.data) setPermisosRoles(permR.data);
     if (prog?.data) setProgramaciones(prog.data);
     try { const form2 = await supabase.from("formulaciones").select("*").order("created_at",{ascending:false}); if (form2?.data) setFormulaciones(form2.data); } catch(_) {}
