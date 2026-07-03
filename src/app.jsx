@@ -1314,7 +1314,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
         {/* Sidebar */}
-        <div style={{ width:58, background:"#002855", borderRight:`1px solid rgba(0,119,204,0.2)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflow:"visible" }}>
+        <div style={{ width:58, background:"#121212", borderRight:`1px solid rgba(0,119,204,0.2)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflow:"visible" }}>
           {(()=>{
             const GRUPOS = {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
@@ -1340,7 +1340,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               paddingLeft:6, zIndex:9999, pointerEvents:"auto",
             };
             const flyoutInner = {
-              background:"#002855",
+              background:"#121212",
               border:`1px solid rgba(255,255,255,0.1)`,
               borderLeft:`3px solid ${T.orange}`,
               borderRadius:"0 8px 8px 0",
