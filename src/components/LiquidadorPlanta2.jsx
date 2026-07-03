@@ -333,17 +333,6 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
 
       {tab==="nuevo" && (
         <>
-          {/* Datos generales */}
-          <div style={{background:TH.card,borderRadius:10,padding:20,border:"1px solid "+TH.border,marginBottom:16}}>
-            <div style={{fontWeight:700,color:TH.navy,marginBottom:14,fontSize:14}}>Datos de la Operación</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
-              <AppInp label="Motonave" value={motonave} onChange={e=>setMotonave(e.target.value)} placeholder="Nombre motonave"/>
-              <AppInp label="Fecha" type="date" value={fecha} onChange={e=>setFecha(e.target.value)}/>
-              <AppInp label="Operador" value={operador} onChange={e=>setOperador(e.target.value)} placeholder="Nombre operador"/>
-              <AppInp label="Observaciones" value={obs} onChange={e=>setObs(e.target.value)} placeholder="Opcional"/>
-            </div>
-          </div>
-
           {/* Tabla de tanques */}
           <div style={{background:TH.card,borderRadius:10,border:"1px solid "+TH.border,marginBottom:16,overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",minWidth:1000}}>
