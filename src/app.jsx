@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
 import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
@@ -1344,9 +1345,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const btnStyle = (active, isHov, color) => ({
               width:42, height:42, border:"none", borderRadius:8, cursor:"pointer",
               display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
-              transition:"background 0.15s, transform 0.15s",
-              background: active ? T.orange : isHov ? "rgba(0,119,204,0.25)" : "transparent",
-              transform: isHov ? "scale(1.08)" : "scale(1)",
+              transition:"background 0.18s cubic-bezier(.23,1,.32,1), color 0.18s cubic-bezier(.23,1,.32,1), box-shadow 0.18s cubic-bezier(.23,1,.32,1)",
+              background: active ? T.orange : isHov ? "rgba(0,119,204,0.22)" : "transparent",
+              boxShadow: active ? `0 2px 12px ${T.orange}55` : isHov ? "0 2px 10px rgba(0,119,204,0.25)" : "none",
               color: active ? "#ffffff" : isHov ? "#60b4ff" : "rgba(255,255,255,0.45)",
               position:"relative", outline:"none",
             });
@@ -1362,7 +1363,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               borderRadius:"0 8px 8px 0",
               padding:"6px 0", minWidth:200,
               boxShadow:"8px 8px 32px rgba(0,0,0,0.4)",
-              animation:"fadeSlideIn 0.15s ease",
             };
 
             const tooltipBase = {
@@ -1374,7 +1374,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               padding:"5px 12px", fontSize:11, color:"#ffffff",
               whiteSpace:"nowrap", boxShadow:"4px 4px 16px rgba(0,0,0,0.3)",
               transform:"translateY(-50%)",
-              animation:"fadeSlideIn 0.12s ease",
             };
 
             const leaveTimer = {current:null};
@@ -1389,28 +1388,44 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 return (
                   <div key={id} style={{position:"relative", width:40}}
                     onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
-                    <button style={{...btnStyle(active, isHov, rol.color)}}>
+                    <motion.button
+                      style={{...btnStyle(active, isHov, rol.color)}}
+                      whileHover={{ scale: 1.12 }}
+                      whileTap={{ scale: 0.93 }}
+                      transition={{ type:"spring", stiffness:400, damping:22 }}>
                       <NavIcon id={id} size={17}/>
-                    </button>
-                    {isHov && (
-                      <div style={flyoutBase} onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
-                        <div style={{...flyoutInner, borderLeftColor: rol.color+"88"}}>
-                          <div style={{padding:"8px 16px 8px",fontSize:10,color:T.orange,fontWeight:800,letterSpacing:2,textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.08)",marginBottom:4}}>{grupo.label}</div>
-                          {grupo.subs.map(sub=>{
-                            const subActive = nav===sub.id;
-                            return (
-                              <button key={sub.id} onClick={()=>{setNav(sub.id);setNavHovered(null);setAnalisisNav("");}}
-                                style={{width:"100%",textAlign:"left",background:subActive?T.orange:"transparent",border:"none",borderLeft:`3px solid ${subActive?T.orange:"transparent"}`,padding:"9px 16px",color:subActive?"#ffffff":"rgba(255,255,255,0.65)",fontSize:12,fontFamily:"system-ui,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.12s, color 0.12s",boxSizing:"border-box",fontWeight:subActive?700:400}}
-                                onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background="rgba(0,119,204,0.15)"; e.currentTarget.style.color="#ffffff";} }}
-                                onMouseLeave={e=>{ if(!subActive){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(255,255,255,0.65)";} }}>
-                                <span>{sub.label}</span>
-                                {sub.badge>0&&<span style={{background:T.danger,color:"#fff",fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{sub.badge}</span>}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+                    </motion.button>
+                    <AnimatePresence>
+                      {isHov && (
+                        <motion.div
+                          key="flyout"
+                          initial={{ opacity:0, x:-10 }}
+                          animate={{ opacity:1, x:0 }}
+                          exit={{ opacity:0, x:-10 }}
+                          transition={{ duration:0.18, ease:[0.23,1,0.32,1] }}
+                          style={flyoutBase} onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
+                          <div style={{...flyoutInner, borderLeftColor: rol.color+"88"}}>
+                            <div style={{padding:"8px 16px 8px",fontSize:10,color:T.orange,fontWeight:800,letterSpacing:2,textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.08)",marginBottom:4}}>{grupo.label}</div>
+                            {grupo.subs.map((sub,si)=>{
+                              const subActive = nav===sub.id;
+                              return (
+                                <motion.button key={sub.id}
+                                  initial={{ opacity:0, x:-6 }}
+                                  animate={{ opacity:1, x:0 }}
+                                  transition={{ delay: si*0.04, duration:0.14, ease:"easeOut" }}
+                                  onClick={()=>{setNav(sub.id);setNavHovered(null);setAnalisisNav("");}}
+                                  style={{width:"100%",textAlign:"left",background:subActive?T.orange:"transparent",border:"none",borderLeft:`3px solid ${subActive?T.orange:"transparent"}`,padding:"9px 16px",color:subActive?"#ffffff":"rgba(255,255,255,0.65)",fontSize:12,fontFamily:"system-ui,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.15s, color 0.15s",boxSizing:"border-box",fontWeight:subActive?700:400}}
+                                  onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background="rgba(0,119,204,0.18)"; e.currentTarget.style.color="#ffffff";} }}
+                                  onMouseLeave={e=>{ if(!subActive){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(255,255,255,0.65)";} }}>
+                                  <span>{sub.label}</span>
+                                  {sub.badge>0&&<span style={{background:T.danger,color:"#fff",fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{sub.badge}</span>}
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 );
               }
@@ -1421,11 +1436,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               return (
                 <div key={id} style={{position:"relative", width:40}}
                   onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
-                  <button onClick={()=>setNav(id)} style={btnStyle(active, isHov, rol.color)}>
+                  <motion.button onClick={()=>setNav(id)} style={btnStyle(active, isHov, rol.color)}
+                    whileHover={{ scale: 1.12 }}
+                    whileTap={{ scale: 0.93 }}
+                    transition={{ type:"spring", stiffness:400, damping:22 }}>
                     {ICON_MAP[id] ? <NavIcon id={id} size={17}/> : m.icon}
                     {badge>0&&<span style={{position:"absolute",top:2,right:2,background:T.danger,color:"#fff",fontSize:8,fontWeight:700,borderRadius:8,padding:"1px 4px",lineHeight:1}}>{badge}</span>}
-                  </button>
-                  {isHov && <div style={tooltipBase}><div style={tooltipInner}>{m.label}</div></div>}
+                  </motion.button>
+                  <AnimatePresence>
+                    {isHov && (
+                      <motion.div key="tooltip"
+                        initial={{ opacity:0, x:-6 }}
+                        animate={{ opacity:1, x:0 }}
+                        exit={{ opacity:0, x:-6 }}
+                        transition={{ duration:0.13, ease:"easeOut" }}
+                        style={tooltipBase}>
+                        <div style={tooltipInner}>{m.label}</div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             });
@@ -1434,7 +1463,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </div>
 
         {/* Content */}
-        <div style={{ flex:1, padding: modal ? 0 : 24, overflowY: modal ? "hidden" : "auto", background:T.bg }}>
+        <AnimatePresence mode="wait">
+        <motion.div key={nav}
+          initial={{ opacity:0, y:8 }}
+          animate={{ opacity:1, y:0 }}
+          exit={{ opacity:0, y:-8 }}
+          transition={{ duration:0.2, ease:[0.23,1,0.32,1] }}
+          style={{ flex:1, padding: modal ? 0 : 24, overflowY: modal ? "hidden" : "auto", background:T.bg }}>
 
           {/* DASHBOARD */}
           {nav==="dashboard" && (
@@ -4891,7 +4926,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   );
 })()}
 
-        </div>
+        </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
