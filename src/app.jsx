@@ -144,7 +144,6 @@ const NAV_ROL = {
     "viajes",
     "tiquetes",
     "pbs",
-    "cmt",
     "despacho",
     "programacion",
     "tanques",
@@ -1417,13 +1416,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               );
             });
-            items.push(
-              <div key="reload" style={{position:"relative", width:40, marginTop:"auto"}}
-                onMouseEnter={()=>onEnter("reload")} onMouseLeave={onLeave}>
-                <button onClick={loadData} style={btnStyle(false, navHovered==="reload", T.muted)}><RefreshCw size={16} strokeWidth={1.8}/></button>
-                {navHovered==="reload" && <div style={tooltipBase}><div style={tooltipInner}>Actualizar</div></div>}
-              </div>
-            );
             return items;
           })()}
         </div>
