@@ -309,39 +309,42 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
 
       {tab==="nuevo"&&<>
 
-        {/* Calados compacto en una sola fila */}
-        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
-          <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-            <span style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,whiteSpace:"nowrap"}}>⚓ Calados</span>
-            {[
-              {label:"Proa Ini",key:"proaIni"},
-              {label:"Popa Ini",key:"popaIni"},
-            ].map(({label,key})=>(
-              <div key={key} style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:10,color:TH.muted,whiteSpace:"nowrap"}}>{label}</span>
-                <input type="number" step="0.01" value={calados[key]} onChange={e=>setCalados(c=>({...c,[key]:e.target.value}))}
-                  style={{width:72,background:TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"4px 6px",color:TH.text,fontSize:12,outline:"none",textAlign:"right"}}/>
+        {/* Calados dividido en Inicial y Final */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+          {/* INICIAL */}
+          <div style={{background:TH.card,border:"1px solid "+TH.border,borderLeft:`3px solid ${TH.orange}`,borderRadius:6,padding:"8px 12px"}}>
+            <div style={{fontSize:10,fontWeight:800,color:TH.orange,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>▶ Calados Iniciales</div>
+            <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+              {[{label:"Proa Ini (m)",key:"proaIni"},{label:"Popa Ini (m)",key:"popaIni"}].map(({label,key})=>(
+                <div key={key} style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:10,color:TH.muted,whiteSpace:"nowrap"}}>{label}</span>
+                  <input type="number" step="0.01" value={calados[key]} onChange={e=>setCalados(c=>({...c,[key]:e.target.value}))}
+                    style={{width:72,background:TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"4px 6px",color:TH.text,fontSize:12,outline:"none",textAlign:"right"}}/>
+                </div>
+              ))}
+              <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:"auto"}}>
+                <span style={{fontSize:10,color:TH.muted,fontWeight:700}}>Trim:</span>
+                <span style={{fontSize:14,fontWeight:900,color:tcDir(trimI.dir)}}>{trimI.val.toFixed(2)}m {trimI.dir}</span>
+                {trimI.dir==="POPA"&&trimI.val>0.7&&<span style={{fontSize:9,color:TH.orange,fontWeight:700}}>⚠ &gt;0.7m</span>}
               </div>
-            ))}
-            <div style={{display:"flex",alignItems:"center",gap:6,paddingRight:12,borderRight:"1px solid "+TH.border}}>
-              <span style={{fontSize:10,color:TH.navy,fontWeight:700}}>Trim Ini:</span>
-              <span style={{fontSize:13,fontWeight:900,color:tcDir(trimI.dir)}}>{trimI.val.toFixed(2)}m {trimI.dir}</span>
-              {trimI.dir==="POPA"&&trimI.val>0.7&&<span style={{fontSize:9,color:TH.orange,fontWeight:700}}>⚠ &gt;0.7m</span>}
             </div>
-            {[
-              {label:"Proa Fin",key:"proaFin"},
-              {label:"Popa Fin",key:"popaFin"},
-            ].map(({label,key})=>(
-              <div key={key} style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:10,color:TH.muted,whiteSpace:"nowrap"}}>{label}</span>
-                <input type="number" step="0.01" value={calados[key]} onChange={e=>setCalados(c=>({...c,[key]:e.target.value}))}
-                  style={{width:72,background:TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"4px 6px",color:TH.text,fontSize:12,outline:"none",textAlign:"right"}}/>
+          </div>
+          {/* FINAL */}
+          <div style={{background:TH.card,border:"1px solid "+TH.border,borderLeft:`3px solid ${TH.navy}`,borderRadius:6,padding:"8px 12px"}}>
+            <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>◼ Calados Finales</div>
+            <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+              {[{label:"Proa Fin (m)",key:"proaFin"},{label:"Popa Fin (m)",key:"popaFin"}].map(({label,key})=>(
+                <div key={key} style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:10,color:TH.muted,whiteSpace:"nowrap"}}>{label}</span>
+                  <input type="number" step="0.01" value={calados[key]} onChange={e=>setCalados(c=>({...c,[key]:e.target.value}))}
+                    style={{width:72,background:TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"4px 6px",color:TH.text,fontSize:12,outline:"none",textAlign:"right"}}/>
+                </div>
+              ))}
+              <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:"auto"}}>
+                <span style={{fontSize:10,color:TH.muted,fontWeight:700}}>Trim:</span>
+                <span style={{fontSize:14,fontWeight:900,color:tcDir(trimF.dir)}}>{trimF.val.toFixed(2)}m {trimF.dir}</span>
+                {trimF.dir==="POPA"&&trimF.val>0.7&&<span style={{fontSize:9,color:TH.orange,fontWeight:700}}>⚠ &gt;0.7m</span>}
               </div>
-            ))}
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontSize:10,color:TH.navy,fontWeight:700}}>Trim Fin:</span>
-              <span style={{fontSize:13,fontWeight:900,color:tcDir(trimF.dir)}}>{trimF.val.toFixed(2)}m {trimF.dir}</span>
-              {trimF.dir==="POPA"&&trimF.val>0.7&&<span style={{fontSize:9,color:TH.orange,fontWeight:700}}>⚠ &gt;0.7m</span>}
             </div>
           </div>
         </div>
