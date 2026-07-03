@@ -3973,8 +3973,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             {(()=>{
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
-              const cmtPlanta = form.planta || perfil?.planta || "PLANTA 1";
-              const tanquesBase = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
+              const cmtPlantaRaw = form.planta || (perfil?.planta||"PLANTA 1").split(",")[0].trim();
+              const tanquesBase = cmtSede==="MALAMBO" ? tanques.filter(t=>!t.planta || t.planta===cmtPlantaRaw) : [];
               const tanquesDisponibles = form.tanques_ot?.length ? tanquesBase.filter(t=>form.tanques_ot.includes(t.id)) : tanquesBase;
               const esTrasiego = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
               const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
@@ -4046,8 +4046,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             {(()=>{
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
-              const cmtPlanta = form.planta || perfil?.planta || "PLANTA 1";
-              const tanquesBase = (cmtSede==="MALAMBO" && cmtPlanta==="PLANTA 2") ? tanques : [];
+              const cmtPlantaRaw = form.planta || (perfil?.planta||"PLANTA 1").split(",")[0].trim();
+              const tanquesBase = cmtSede==="MALAMBO" ? tanques.filter(t=>!t.planta || t.planta===cmtPlantaRaw) : [];
               const tanquesDisponibles = form.tanques_ot?.length ? tanquesBase.filter(t=>form.tanques_ot.includes(t.id)) : tanquesBase;
               const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
               return cmtRecepcion.map((rec,i)=>(
