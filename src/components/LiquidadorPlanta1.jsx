@@ -290,17 +290,17 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
   );
 
   return(
-    <div style={{fontFamily:"system-ui,sans-serif",color:TH.text,padding:"20px 24px",maxWidth:1500,margin:"0 auto"}}>
+    <div style={{fontFamily:"system-ui,sans-serif",color:TH.text,padding:"10px 16px",maxWidth:1500,margin:"0 auto"}}>
       <style>{"input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}"}</style>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <div>
-          <div style={{fontWeight:800,fontSize:20,color:TH.navy}}>Liquidador — Planta 1</div>
-          <div style={{fontSize:12,color:TH.muted,marginTop:3}}>Barcaza QBS-002 · 10 Tanques (CM ullage) + TKT-1/TKT-2 (MM innage) · Doble interpolacion trim</div>
+          <div style={{fontWeight:800,fontSize:16,color:TH.navy}}>Liquidador — Planta 1</div>
+          <div style={{fontSize:10,color:TH.muted}}>Barcaza QBS-002 · 10 Tanques (CM ullage) + TKT-1/TKT-2 (MM innage)</div>
         </div>
         <div style={{display:"flex",gap:8}}>
           {["nuevo","historial"].map(t=>(
             <button key={t} onClick={()=>setTab(t)}
-              style={{padding:"8px 18px",borderRadius:6,border:"2px solid "+TH.navy,cursor:"pointer",fontWeight:700,fontSize:12,background:tab===t?TH.navy:"transparent",color:tab===t?"#fff":TH.navy}}>
+              style={{padding:"5px 14px",borderRadius:6,border:"2px solid "+TH.navy,cursor:"pointer",fontWeight:700,fontSize:11,background:tab===t?TH.navy:"transparent",color:tab===t?"#fff":TH.navy}}>
               {t==="nuevo"?"Nueva Liquidacion":"Historial"}
             </button>
           ))}
@@ -309,42 +309,45 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
 
       {tab==="nuevo"&&<>
 
-
-        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:8,padding:20,marginBottom:16,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
-          {secHeader("⚓","Calados y Trim","Ingresa los calados de proa y popa al inicio y al final de la operacion")}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-            {/* INICIAL */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12,alignItems:"center",background:"#f8fafc",borderRadius:8,padding:16,border:"1px solid "+TH.border}}>
-              <div>
-                <div style={{fontSize:9,color:TH.navy,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:10,borderBottom:"2px solid "+TH.orange,paddingBottom:5}}>▶ Calados Iniciales</div>
-                <AppInp label="Proa Inicial (m)" type="number" step="0.01" value={calados.proaIni} onChange={e=>setCalados(c=>({...c,proaIni:e.target.value}))}/>
-                <AppInp label="Popa Inicial (m)" type="number" step="0.01" value={calados.popaIni} onChange={e=>setCalados(c=>({...c,popaIni:e.target.value}))}/>
+        {/* Calados compacto en una sola fila */}
+        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+            <span style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,whiteSpace:"nowrap"}}>⚓ Calados</span>
+            {[
+              {label:"Proa Ini",key:"proaIni"},
+              {label:"Popa Ini",key:"popaIni"},
+            ].map(({label,key})=>(
+              <div key={key} style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:10,color:TH.muted,whiteSpace:"nowrap"}}>{label}</span>
+                <input type="number" step="0.01" value={calados[key]} onChange={e=>setCalados(c=>({...c,[key]:e.target.value}))}
+                  style={{width:72,background:TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"4px 6px",color:TH.text,fontSize:12,outline:"none",textAlign:"right"}}/>
               </div>
-              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+(trimI.dir==="POPA"&&trimI.val>0.7?TH.orange:tcDir(trimI.dir)),minWidth:90}}>
-                <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Trim Inicial</div>
-                <div style={{fontSize:26,fontWeight:900,color:tcDir(trimI.dir),lineHeight:1}}>{trimI.val.toFixed(2)}m</div>
-                <div style={{fontSize:12,fontWeight:700,color:tcDir(trimI.dir),marginTop:4}}>{trimI.dir}</div>
-                {trimI.dir==="POPA"&&trimI.val>0.7&&<div style={{fontSize:9,color:TH.orange,fontWeight:700,marginTop:4}}>⚠ Fuera de tabla (máx 0.7m)</div>}
-              </div>
+            ))}
+            <div style={{display:"flex",alignItems:"center",gap:6,paddingRight:12,borderRight:"1px solid "+TH.border}}>
+              <span style={{fontSize:10,color:TH.navy,fontWeight:700}}>Trim Ini:</span>
+              <span style={{fontSize:13,fontWeight:900,color:tcDir(trimI.dir)}}>{trimI.val.toFixed(2)}m {trimI.dir}</span>
+              {trimI.dir==="POPA"&&trimI.val>0.7&&<span style={{fontSize:9,color:TH.orange,fontWeight:700}}>⚠ &gt;0.7m</span>}
             </div>
-            {/* FINAL */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12,alignItems:"center",background:"#f8fafc",borderRadius:8,padding:16,border:"1px solid "+TH.border}}>
-              <div>
-                <div style={{fontSize:9,color:TH.navy,fontWeight:800,textTransform:"uppercase",letterSpacing:1,marginBottom:10,borderBottom:"2px solid "+TH.navy,paddingBottom:5}}>◼ Calados Finales</div>
-                <AppInp label="Proa Final (m)" type="number" step="0.01" value={calados.proaFin} onChange={e=>setCalados(c=>({...c,proaFin:e.target.value}))}/>
-                <AppInp label="Popa Final (m)" type="number" step="0.01" value={calados.popaFin} onChange={e=>setCalados(c=>({...c,popaFin:e.target.value}))}/>
+            {[
+              {label:"Proa Fin",key:"proaFin"},
+              {label:"Popa Fin",key:"popaFin"},
+            ].map(({label,key})=>(
+              <div key={key} style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:10,color:TH.muted,whiteSpace:"nowrap"}}>{label}</span>
+                <input type="number" step="0.01" value={calados[key]} onChange={e=>setCalados(c=>({...c,[key]:e.target.value}))}
+                  style={{width:72,background:TH.card,border:"1px solid "+TH.border,borderRadius:4,padding:"4px 6px",color:TH.text,fontSize:12,outline:"none",textAlign:"right"}}/>
               </div>
-              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+(trimF.dir==="POPA"&&trimF.val>0.7?TH.orange:tcDir(trimF.dir)),minWidth:90}}>
-                <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Trim Final</div>
-                <div style={{fontSize:26,fontWeight:900,color:tcDir(trimF.dir),lineHeight:1}}>{trimF.val.toFixed(2)}m</div>
-                <div style={{fontSize:12,fontWeight:700,color:tcDir(trimF.dir),marginTop:4}}>{trimF.dir}</div>
-                {trimF.dir==="POPA"&&trimF.val>0.7&&<div style={{fontSize:9,color:TH.orange,fontWeight:700,marginTop:4}}>⚠ Fuera de tabla (máx 0.7m)</div>}
-              </div>
+            ))}
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:10,color:TH.navy,fontWeight:700}}>Trim Fin:</span>
+              <span style={{fontSize:13,fontWeight:900,color:tcDir(trimF.dir)}}>{trimF.val.toFixed(2)}m {trimF.dir}</span>
+              {trimF.dir==="POPA"&&trimF.val>0.7&&<span style={{fontSize:9,color:TH.orange,fontWeight:700}}>⚠ &gt;0.7m</span>}
             </div>
           </div>
         </div>
-        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:8,padding:20,marginBottom:16,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
-          {secHeader("🛢️","Barcaza QBS-002","Sonda en CM (ullage) — doble interpolacion por trim")}
+
+        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+          <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🛢️ Barcaza QBS-002 — Sonda CM (ullage)</div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
@@ -359,14 +362,14 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
           </div>
         </div>
 
-        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:8,padding:20,marginBottom:16,boxShadow:"0 1px 3px rgba(0,0,0,0.08)"}}>
-          {secHeader("🏗️","Tanques Tierra — TKT-1 y TKT-2","Sonda en MM (innage) — interpolacion simple")}
+        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+          <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🏗️ Tanques Tierra — TKT-1 y TKT-2 — Sonda MM (innage)</div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
               <thead>
-                <tr style={{background:"#fefce8"}}>
+                <tr style={{background:"#f0f4f8"}}>
                   {["✓","Tanque","Producto","Sonda Ini (mm)","Temp Ini","API Ini","Gls.B Ini","Gls.N Ini","Sonda Fin (mm)","Temp Fin","API Fin","Gls.B Fin","Gls.N Fin","Gls.N Entregados"].map(h=>(
-                    <th key={h} style={{...thStyle,color:"#92400e"}}>{h}</th>
+                    <th key={h} style={{...thStyle,color:TH.navy}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -375,24 +378,24 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
           </div>
         </div>
 
-        <div style={{background:TH.navy,borderRadius:8,padding:20,marginBottom:16,display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:16}}>
+        <div style={{background:TH.navy,borderRadius:6,padding:"8px 16px",marginBottom:8,display:"flex",flexWrap:"wrap",gap:"8px 24px",alignItems:"center"}}>
           {[
-            {l:"Gls Netos Inicial",v:fmtN(tots.gNI,0),c:"#93c5fd"},
-            {l:"Gls Netos Final",v:fmtN(tots.gNF,0),c:"#93c5fd"},
-            {l:"Gls Netos Entregados",v:fmtN(tots.gEnt,0),c:"#6ee7b7",big:true},
-            {l:"MT Inicial",v:fmtN(tots.mI,3),c:"#cbd5e1"},
-            {l:"MT Final",v:fmtN(tots.mF,3),c:"#cbd5e1"},
+            {l:"Gls Ini",v:fmtN(tots.gNI,0),c:"#93c5fd"},
+            {l:"Gls Fin",v:fmtN(tots.gNF,0),c:"#93c5fd"},
+            {l:"Gls Entregados",v:fmtN(tots.gEnt,0),c:"#6ee7b7",big:true},
+            {l:"MT Ini",v:fmtN(tots.mI,3),c:"#cbd5e1"},
+            {l:"MT Fin",v:fmtN(tots.mF,3),c:"#cbd5e1"},
             {l:"MT Entregadas",v:fmtN(tots.mEnt,3),c:TH.orange,big:true},
             {l:"Carros (÷277)",v:fmtN(tots.gEnt/277,1),c:"#c4b5fd"},
           ].map(({l,v,c,big})=>(
             <div key={l} style={{textAlign:"center"}}>
-              <div style={{fontSize:9,color:"rgba(255,255,255,0.5)",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{l}</div>
-              <div style={{fontSize:big?26:20,fontWeight:900,color:c}}>{v}</div>
+              <div style={{fontSize:8,color:"rgba(255,255,255,0.5)",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{l}</div>
+              <div style={{fontSize:big?20:15,fontWeight:900,color:c}}>{v}</div>
             </div>
           ))}
         </div>
 
-        <div style={{display:"flex",gap:12,justifyContent:"flex-end",marginBottom:24}}>
+        <div style={{display:"flex",gap:12,justifyContent:"flex-end",marginBottom:12}}>
           <AppBtn color={TH.muted} onClick={()=>{setFilasB(initB());setFilasT(initT());setMotonave("");setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""});setObs("");}}>Limpiar</AppBtn>
           <AppBtn disabled={saving} onClick={guardar}>{saving?"Guardando...":"Guardar Liquidacion"}</AppBtn>
         </div>
