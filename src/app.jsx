@@ -1163,11 +1163,13 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
 
   // ── LOADING ──
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:T.navy, display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{ minHeight:"100vh", background:"#121212", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ textAlign:"center" }}>
-        <Spinner />
-        <div style={{ color:"#ffffff99", fontSize:12, marginTop:12 }}>Cargando...</div>
+        <img src="/logo.svg" alt="BunkersGest" style={{ width:220, height:"auto", display:"block", margin:"0 auto" }}/>
+        <div style={{ marginTop:18, fontWeight:900, fontSize:28, fontFamily:"Arial Black, system-ui, sans-serif", letterSpacing:1 }}>
+          <span style={{ color:"#ffffff" }}>Bunkers</span><span style={{ color:T.orange }}>Gest</span>
+        </div>
+        <div style={{ color:"#ffffff55", fontSize:11, letterSpacing:3, textTransform:"uppercase", marginTop:8 }}>Cargando...</div>
       </div>
     </div>
   );
@@ -1407,7 +1409,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
                   <button onClick={()=>setNav(id)} style={btnStyle(active, isHov, rol.color)}>
                     {ICON_MAP[id] ? <NavIcon id={id} size={17}/> : m.icon}
-                    {badge>0&&<span style={{position:"absolute",top:2,right:2,background:"#ff4d4d",color:"#fff",fontSize:8,fontWeight:700,borderRadius:8,padding:"1px 4px",lineHeight:1}}>{badge}</span>}
+                    {badge>0&&<span style={{position:"absolute",top:2,right:2,background:T.danger,color:"#fff",fontSize:8,fontWeight:700,borderRadius:8,padding:"1px 4px",lineHeight:1}}>{badge}</span>}
                   </button>
                   {isHov && <div style={tooltipBase}><div style={tooltipInner}>{m.label}</div></div>}
                 </div>
@@ -1416,7 +1418,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             items.push(
               <div key="reload" style={{position:"relative", width:40, marginTop:"auto"}}
                 onMouseEnter={()=>onEnter("reload")} onMouseLeave={onLeave}>
-                <button onClick={loadData} style={btnStyle(false, navHovered==="reload", "#6b8fa8")}><RefreshCw size={16} strokeWidth={1.8}/></button>
+                <button onClick={loadData} style={btnStyle(false, navHovered==="reload", T.muted)}><RefreshCw size={16} strokeWidth={1.8}/></button>
                 {navHovered==="reload" && <div style={tooltipBase}><div style={tooltipInner}>Actualizar</div></div>}
               </div>
             );
@@ -1451,7 +1453,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:12, marginBottom:22 }}>
                 <Stat label="🚚 Carros en Ruta" value={enRuta} color={T.orange} sub="hacia planta" />
                 <Stat label="⏳ Tiquetes Pend." value={pendTiquetes} color={T.navy} sub="esperan laboratorio" />
-                <Stat label="⚙️ PBS Pendientes" value={pendPBS} color="#f59e0b" sub="esperan operaciones" />
+                <Stat label="⚙️ PBS Pendientes" value={pendPBS} color={T.orange} sub="esperan operaciones" />
                 <Stat label="✅ CMT Pendientes" value={pendCMT} color={T.success} sub="esperan coordinador" />
                 <Stat label="⛽ Stock VLSFO" value={`${fmt(tanques.filter(t=>t.producto==="VLSFO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.success} />
                 <Stat label="⛽ Stock MGO" value={`${fmt(tanques.filter(t=>t.producto==="MGO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.navy} />
@@ -1460,7 +1462,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:10 }}>
                 {tanques.map(t=>{
                   const pct = Math.round((t.nivel/t.capacidad)*100);
-                  const barColor = pct > 80 ? T.danger : pct > 50 ? T.success : "#f59e0b";
+                  const barColor = pct > 80 ? T.danger : pct > 50 ? T.success : T.orange;
                   return (
                   <Card key={t.id} style={{ padding:"14px 16px" }}>
                     <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
@@ -1505,7 +1507,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                   <div>
                     <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Listado Tránsito</div>
-                    <div style={{ fontSize:11, color:T.muted }}>Carros en ruta · <b style={{color:"#f59e0b"}}>{viajesFinal.length}</b> resultado(s)</div>
+                    <div style={{ fontSize:11, color:T.muted }}>Carros en ruta · <b style={{color:T.orange}}>{viajesFinal.length}</b> resultado(s)</div>
                   </div>
                   {puedeCrear("viajes") && <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>}
                 </div>
@@ -1531,7 +1533,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <input type="date" value={viajesFiltroFechaD} onChange={e=>setViajesFiltroFechaD(e.target.value)} style={selStyle} title="Fecha cargue desde"/>
                   <input type="date" value={viajesFiltroFechaH} onChange={e=>setViajesFiltroFechaH(e.target.value)} style={selStyle} title="Fecha cargue hasta"/>
                   {(viajesBusqueda||viajesFiltroEstado||viajesFiltroProducto||viajesFiltroFechaD||viajesFiltroFechaH) && (
-                    <button onClick={()=>{setViajesBusqueda("");setViajesFiltroEstado("");setViajesFiltroProducto("");setViajesFiltroFechaD("");setViajesFiltroFechaH("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"monospace"}}>✕ Limpiar</button>
+                    <button onClick={()=>{setViajesBusqueda("");setViajesFiltroEstado("");setViajesFiltroProducto("");setViajesFiltroFechaD("");setViajesFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"monospace"}}>✕ Limpiar</button>
                   )}
                 </div>
               </div>
@@ -1552,28 +1554,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       ? `${Math.floor(horasStandby)}h`
                       : diasStandby === 1 ? `1d ${horasRestantes}h` : `${diasStandby}d ${horasRestantes}h`;
                   const sbColor = horasStandby === null ? null
-                    : horasStandby < 8   ? "#00e5a0"
-                    : horasStandby < 16  ? "#f59e0b"
-                    : "#ff4d4d";
+                    : horasStandby < 8   ? T.success
+                    : horasStandby < 16  ? T.orange
+                    : T.danger;
                   return [
-                    <span style={{color:"#f59e0b"}}>{v.id}</span>,
-                    <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?"#c084fc":v.sede==="CARTAGENA"?"#fb923c":"#00b4ff"}/>,
+                    <span style={{color:T.orange}}>{v.id}</span>,
+                    <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?T.muted:v.sede==="CARTAGENA"?T.danger:T.orange}/>,
                     v.fecha,
                     v.fecha_llegada||<span style={{color:T.muted,fontSize:10}}>—</span>,
                     v.producto, v.transportadora, v.placa, v.guia,
                     fmt(v.gls_netos_guia||v.volumen_guia||0),
-                    v.gls_recibidos>0?<span style={{color:"#00e5a0",fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:T.muted,fontSize:10}}>—</span>,
-                    faltantes>0?<span style={{color:"#ff4d4d",fontWeight:700}}>{fmt(faltantes)}</span>:<span style={{color:"#00e5a0"}}>OK</span>,
+                    v.gls_recibidos>0?<span style={{color:T.success,fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:T.muted,fontSize:10}}>—</span>,
+                    faltantes>0?<span style={{color:T.danger,fontWeight:700}}>{fmt(faltantes)}</span>:<span style={{color:T.success}}>OK</span>,
                     sbLabel !== null
                       ? <span style={{display:"inline-flex",alignItems:"center",gap:4}}>
                           <Badge label={sbLabel} color={sbColor}/>
-                          {!sbFinalizado && horasStandby>=24 && <span style={{fontSize:9,color:"#ff4d4d",fontWeight:700}}>COBRO</span>}
+                          {!sbFinalizado && horasStandby>=24 && <span style={{fontSize:9,color:T.danger,fontWeight:700}}>COBRO</span>}
                           {!sbFinalizado && horasStandby<24 && <span style={{fontSize:9,color:T.muted,fontStyle:"italic"}}>en curso</span>}
                         </span>
                       : <span style={{color:"#ffffff18"}}>—</span>,
-                    <Badge label={v.estado} color={v.estado==="Descargado"?"#00e5a0":v.estado==="En Ruta"?"#f59e0b":v.estado==="Rechazado"?"#ff4d4d":"#00b4ff"}/>,
+                    <Badge label={v.estado} color={v.estado==="Descargado"?T.success:v.estado==="En Ruta"?T.orange:v.estado==="Rechazado"?T.danger:T.orange}/>,
                     puedeEditar("viajes",v.creado_por,v.created_at)
-                      ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:"#f59e0b22",border:"1px solid #f59e0b55",borderRadius:6,color:"#f59e0b",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                      ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
                       : null,
                   ];
                 })}
@@ -1604,7 +1606,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 if (b.turno_planta) return 1;
                 return new Date(a.updated_at||0) - new Date(b.updated_at||0);
               });
-            const COLOR = "#00b4ff";
+            const COLOR = T.orange;
             return (
             <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 100px)"}}>
               {/* Header */}
@@ -1633,7 +1635,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <input type="date" value={plantaFiltroFechaD||""} onChange={e=>setPlantaFiltroFechaD(e.target.value)} style={selStyle} title="Llegada desde"/>
                   <input type="date" value={plantaFiltroFechaH||""} onChange={e=>setPlantaFiltroFechaH(e.target.value)} style={selStyle} title="Llegada hasta"/>
                   {(plantaBusqueda||plantaFiltroProducto||plantaFiltroFechaD||plantaFiltroFechaH) && (
-                    <button onClick={()=>{setPlantaBusqueda("");setPlantaFiltroProducto("");setPlantaFiltroFechaD("");setPlantaFiltroFechaH("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                    <button onClick={()=>{setPlantaBusqueda("");setPlantaFiltroProducto("");setPlantaFiltroFechaD("");setPlantaFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
                   )}
                 </div>
               </div>
@@ -1663,14 +1665,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{padding:"12px 14px"}}>
                             {turno
                               ? <div style={{width:28,height:28,borderRadius:"50%",background:turno===1?`${T.success}22`:`${T.orange}22`,border:`2px solid ${turno===1?T.success:T.orange}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,color:turno===1?T.success:T.orange}}>{turno}</div>
-                              : <div style={{width:28,height:28,borderRadius:"50%",background:"#f59e0b22",border:"2px solid #f59e0b66",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#f59e0b"}}>—</div>
+                              : <div style={{width:28,height:28,borderRadius:"50%",background:`${T.orange}22`,border:`2px solid ${T.orange}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:T.orange}}>—</div>
                             }
                           </td>
                           {/* Fecha llegada */}
                           <td style={{padding:"12px 14px"}}>
                             {llegó
                               ? <span style={{color:T.success,fontWeight:700}}>{v.fecha_llegada}</span>
-                              : <span style={{color:"#f59e0b",fontSize:11}}>Pendiente</span>
+                              : <span style={{color:T.orange,fontSize:11}}>Pendiente</span>
                             }
                           </td>
                           {/* Fecha cargue */}
@@ -1695,9 +1697,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               if (esV && Number(tq.viscosidad)>=380) fuera.push(`Visc. ${tq.viscosidad}`);
                               if (esV && Number(tq.azufre)>=0.5)    fuera.push(`Azufre ${tq.azufre}%`);
                               if (esV && Number(tq.tsa)>=0.1)       fuera.push(`TSA ${tq.tsa}`);
-                              if (fuera.length===0) return <span style={{color:"#00e5a0",fontWeight:700,fontSize:11}}>✔ Listo para descargue</span>;
+                              if (fuera.length===0) return <span style={{color:T.success,fontWeight:700,fontSize:11}}>✔ Listo para descargue</span>;
                               return <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                                {fuera.map(f=><span key={f} style={{background:"#ff4d4d18",border:"1px solid #ff4d4d55",borderRadius:5,padding:"2px 7px",color:"#ff4d4d",fontSize:10,fontWeight:700}}>{f}</span>)}
+                                {fuera.map(f=><span key={f} style={{background:`${T.danger}18`,border:`1px solid ${T.danger}55`,borderRadius:5,padding:"2px 7px",color:T.danger,fontSize:10,fontWeight:700}}>{f}</span>)}
                               </div>;
                             })()}
                           </td>
@@ -1734,9 +1736,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                   await loadData();
                                   showToast(`Carro ${v.placa} eliminado del listado`);
                                 }}
-                                style={{background:"#ff4d4d22",border:"1px solid #ff4d4d55",borderRadius:6,color:"#ff4d4d",padding:"5px 10px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}
-                                onMouseEnter={e=>e.currentTarget.style.background="#ff4d4d44"}
-                                onMouseLeave={e=>e.currentTarget.style.background="#ff4d4d22"}>
+                                style={{background:`${T.danger}22`,border:`1px solid ${T.danger}55`,borderRadius:6,color:T.danger,padding:"5px 10px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}
+                                onMouseEnter={e=>e.currentTarget.style.background=`${T.danger}44`}
+                                onMouseLeave={e=>e.currentTarget.style.background=`${T.danger}22`}>
                                   🗑
                                 </button>
                               )}
@@ -1775,25 +1777,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {[
                     { key:"tiquetes_mp", icon:(
                         <svg viewBox="0 0 64 64" width="64" height="64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="4" y="28" width="38" height="20" rx="3" fill="#00b4ff33" stroke="#00b4ff" strokeWidth="2"/>
-                          <rect x="42" y="34" width="16" height="14" rx="2" fill="#00b4ff22" stroke="#00b4ff" strokeWidth="2"/>
-                          <rect x="8" y="22" width="20" height="8" rx="2" fill="#00b4ff55" stroke="#00b4ff" strokeWidth="1.5"/>
-                          <circle cx="14" cy="50" r="5" fill="#071422" stroke="#00b4ff" strokeWidth="2"/>
-                          <circle cx="34" cy="50" r="5" fill="#071422" stroke="#00b4ff" strokeWidth="2"/>
-                          <circle cx="52" cy="50" r="4" fill="#071422" stroke="#00b4ff" strokeWidth="2"/>
-                          <rect x="24" y="31" width="6" height="9" rx="1" fill="#00b4ff"/>
+                          <rect x="4" y="28" width="38" height="20" rx="3" fill="#0077CC33" stroke="#0077CC" strokeWidth="2"/>
+                          <rect x="42" y="34" width="16" height="14" rx="2" fill="#0077CC22" stroke="#0077CC" strokeWidth="2"/>
+                          <rect x="8" y="22" width="20" height="8" rx="2" fill="#0077CC55" stroke="#0077CC" strokeWidth="1.5"/>
+                          <circle cx="14" cy="50" r="5" fill="#071422" stroke="#0077CC" strokeWidth="2"/>
+                          <circle cx="34" cy="50" r="5" fill="#071422" stroke="#0077CC" strokeWidth="2"/>
+                          <circle cx="52" cy="50" r="4" fill="#071422" stroke="#0077CC" strokeWidth="2"/>
+                          <rect x="24" y="31" width="6" height="9" rx="1" fill="#0077CC"/>
                         </svg>
-                      ), label:"Tiquetes MP", color:"#00b4ff", desc:"Materia prima recibida en carrotanque" },
+                      ), label:"Tiquetes MP", color:"#0077CC", desc:"Materia prima recibida en carrotanque" },
                     { key:"planta2", icon:(
                         <svg viewBox="0 0 64 64" width="64" height="64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <ellipse cx="32" cy="16" rx="22" ry="8" fill="#00e5a033" stroke="#00e5a0" strokeWidth="2"/>
-                          <rect x="10" y="16" width="44" height="30" rx="0" fill="#00e5a018" stroke="#00e5a0" strokeWidth="2"/>
-                          <ellipse cx="32" cy="46" rx="22" ry="6" fill="#00e5a033" stroke="#00e5a0" strokeWidth="2"/>
-                          <line x1="32" y1="8" x2="32" y2="2" stroke="#00e5a0" strokeWidth="2"/>
-                          <line x1="25" y1="8" x2="25" y2="2" stroke="#00e5a0" strokeWidth="1.5"/>
-                          <line x1="39" y1="8" x2="39" y2="2" stroke="#00e5a0" strokeWidth="1.5"/>
+                          <ellipse cx="32" cy="16" rx="22" ry="8" fill="#00B89433" stroke="#00B894" strokeWidth="2"/>
+                          <rect x="10" y="16" width="44" height="30" rx="0" fill="#00B89418" stroke="#00B894" strokeWidth="2"/>
+                          <ellipse cx="32" cy="46" rx="22" ry="6" fill="#00B89433" stroke="#00B894" strokeWidth="2"/>
+                          <line x1="32" y1="8" x2="32" y2="2" stroke="#00B894" strokeWidth="2"/>
+                          <line x1="25" y1="8" x2="25" y2="2" stroke="#00B894" strokeWidth="1.5"/>
+                          <line x1="39" y1="8" x2="39" y2="2" stroke="#00B894" strokeWidth="1.5"/>
                         </svg>
-                      ), label:"Planta 2", color:"#00e5a0", desc:"Tanques de almacenamiento Planta 2" },
+                      ), label:"Planta 2", color:"#00B894", desc:"Tanques de almacenamiento Planta 2" },
                     { key:"planta1", icon:(
                         <svg viewBox="0 0 64 64" width="64" height="64" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <rect x="4" y="36" width="56" height="12" rx="4" fill="#c084fc33" stroke="#c084fc" strokeWidth="2"/>
@@ -1836,9 +1838,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div>
                   <button onClick={()=>setAnalisisNav("")} style={{background:"none",border:"none",color:T.muted,cursor:"pointer",fontSize:11,padding:"0 0 4px 0",display:"flex",alignItems:"center",gap:4}}>← Análisis</button>
                   <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>{labelNav}</div>
-                  <div style={{ fontSize:11, color:T.muted }}>Emitido por laboratorio · <b style={{color:"#00b4ff"}}>{tiqFinal.length}</b> resultado(s)</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Emitido por laboratorio · <b style={{color:T.orange}}>{tiqFinal.length}</b> resultado(s)</div>
                 </div>
-                {puedeCrear("tiquetes") && <Btn color="#00b4ff" onClick={()=>{setForm({});setModal("tiquete");}}>+ Nuevo Tiquete</Btn>}
+                {puedeCrear("tiquetes") && <Btn color={T.orange} onClick={()=>{setForm({});setModal("tiquete");}}>+ Nuevo Tiquete</Btn>}
               </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:16}}>
                 <input value={tiqBusqueda||""} onChange={e=>setTiqBusqueda(e.target.value)} placeholder="🔍 Buscar tiquete, placa, viaje..." style={{...selSt,width:220,padding:"6px 12px"}}/>
@@ -1860,18 +1862,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <input type="date" value={tiqFiltroFechaD||""} onChange={e=>setTiqFiltroFechaD(e.target.value)} style={selSt} title="Desde"/>
                 <input type="date" value={tiqFiltroFechaH||""} onChange={e=>setTiqFiltroFechaH(e.target.value)} style={selSt} title="Hasta"/>
                 {(tiqBusqueda||tiqFiltroProducto||tiqFiltroResultado||tiqFiltroFechaD||tiqFiltroFechaH) && (
-                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
                 )}
               </div>
               {viajes.filter(v=>v.estado==="En Planta"&&!v.tiquete_id).length>0 && (
-                <Card style={{ marginBottom:18, borderColor:"#f59e0b33" }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:"#f59e0b", marginBottom:10 }}>⚠ Carros en planta sin tiquete</div>
+                <Card style={{ marginBottom:18, borderColor:`${T.orange}33` }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.orange, marginBottom:10 }}>⚠ Carros en planta sin tiquete</div>
                   <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
                     {viajes.filter(v=>v.estado==="En Planta"&&!v.tiquete_id).map(v=>(
-                      <div key={v.id} style={{ background:"#f59e0b18", border:"1px solid #f59e0b33", borderRadius:8, padding:"8px 14px", fontSize:12 }}>
+                      <div key={v.id} style={{ background:`${T.orange}18`, border:`1px solid ${T.orange}33`, borderRadius:8, padding:"8px 14px", fontSize:12 }}>
                         <b>{v.placa}</b> · {v.producto}
                         {puedeCrear("tiquetes") && (
-                          <button onClick={()=>{setForm({viaje_id:v.id,producto:v.producto,placa:v.placa,conductor:v.conductor,fecha_cargue:v.fecha,fecha_llegada:today()});setModal("tiquete");}} style={{ marginLeft:10, background:"#00b4ff", color:"#071422", border:"none", borderRadius:6, padding:"3px 10px", fontSize:11, fontWeight:700, cursor:"pointer" }}>Emitir</button>
+                          <button onClick={()=>{setForm({viaje_id:v.id,producto:v.producto,placa:v.placa,conductor:v.conductor,fecha_cargue:v.fecha,fecha_llegada:today()});setModal("tiquete");}} style={{ marginLeft:10, background:T.orange, color:"#071422", border:"none", borderRadius:6, padding:"3px 10px", fontSize:11, fontWeight:700, cursor:"pointer" }}>Emitir</button>
                         )}
                       </div>
                     ))}
@@ -1881,13 +1883,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Table
                 cols={["No. Tiquete","Viaje","Producto","Placa","API Corr.","Gls Recibidos","Flash","Agua %","Resultado","Analista",""]}
                 rows={tiqFinal.map(t=>[
-                  <span style={{color:"#00b4ff"}}>{t.id}</span>,
+                  <span style={{color:T.orange}}>{t.id}</span>,
                   t.viaje_id, t.producto, t.placa,
                   `${t.api_corregido}°`, fmt(t.galones_recibidos), `${t.flash_point}°C`, `${t.agua_destilacion}%`,
-                  <Badge label={t.resultado} color={t.resultado==="APROBADO"?"#00e5a0":"#ff4d4d"}/>,
+                  <Badge label={t.resultado} color={t.resultado==="APROBADO"?T.success:T.danger}/>,
                   t.autoriza_nombre,
                   puedeEditar("tiquetes",t.creado_por,t.created_at)
-                    ? <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:"#00b4ff22",border:"1px solid #00b4ff55",borderRadius:6,color:"#00b4ff",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                    ? <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
                     : null,
                 ])}
               />
@@ -1910,13 +1912,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             });
             const resFinalTyped = resFinal.filter(t=>!resFiltroTipo||(t.tipo_analisis||"Tiquetes MP")===resFiltroTipo);
             const TIPOS_ANALISIS = ["Tiquetes MP","Planta 2","Planta 1","No Rutinarios"];
-            const tipoColor = {"Tiquetes MP":"#00b4ff","Planta 2":"#00e5a0","Planta 1":"#c084fc","No Rutinarios":"#fb923c"};
+            const tipoColor = {"Tiquetes MP":"#0077CC","Planta 2":"#00B894","Planta 1":"#003B73","No Rutinarios":"#D63031"};
             return (
             <div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                 <div>
                   <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Resultados de Laboratorio</div>
-                  <div style={{ fontSize:11, color:T.muted }}>Consolidado de análisis · <b style={{color:"#00b4ff"}}>{resFinalTyped.length}</b> resultado(s)</div>
+                  <div style={{ fontSize:11, color:T.muted }}>Consolidado de análisis · <b style={{color:T.orange}}>{resFinalTyped.length}</b> resultado(s)</div>
                 </div>
               </div>
               {/* Filtro rápido por tipo */}
@@ -1942,7 +1944,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <input type="date" value={tiqFiltroFechaD||""} onChange={e=>setTiqFiltroFechaD(e.target.value)} style={selSt} title="Desde"/>
                 <input type="date" value={tiqFiltroFechaH||""} onChange={e=>setTiqFiltroFechaH(e.target.value)} style={selSt} title="Hasta"/>
                 {(tiqBusqueda||tiqFiltroProducto||tiqFiltroResultado||tiqFiltroFechaD||tiqFiltroFechaH||resFiltroTipo) && (
-                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");setResFiltroTipo("");}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");setResFiltroTipo("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
                 )}
               </div>
               <Table
@@ -1956,8 +1958,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const tsaOk   = !esV || Number(t.tsa)<0.1;
                   const tipo = t.tipo_analisis||"Tiquetes MP";
                   return [
-                    <span style={{color:"#00b4ff",fontFamily:"monospace"}}>{t.id}</span>,
-                    <Badge label={tipo} color={tipoColor[tipo]||"#00b4ff"}/>,
+                    <span style={{color:T.orange,fontFamily:"monospace"}}>{t.id}</span>,
+                    <Badge label={tipo} color={tipoColor[tipo]||T.orange}/>,
                     t.fecha_llegada||"—", t.producto, t.placa,
                     <span style={{color:T.text,fontWeight:600}}>{t.api_corregido}°</span>,
                     <span style={{color:flashOk?T.text:T.danger,fontWeight:flashOk?400:700}}>{t.flash_point}°C</span>,
@@ -1965,10 +1967,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <span style={{color:viscOk?T.text:T.danger,fontWeight:viscOk?400:700}}>{t.viscosidad||"—"}</span>,
                     <span style={{color:azuOk?T.text:T.danger,fontWeight:azuOk?400:700}}>{t.azufre||"—"}</span>,
                     <span style={{color:tsaOk?T.text:T.danger,fontWeight:tsaOk?400:700}}>{t.tsa||"—"}</span>,
-                    <Badge label={t.resultado} color={t.resultado==="APROBADO"?"#00e5a0":T.danger}/>,
+                    <Badge label={t.resultado} color={t.resultado==="APROBADO"?T.success:T.danger}/>,
                     <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
                       {puedeEditar("tiquetes",t.creado_por,t.created_at) && (
-                        <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:"#00b4ff22",border:"1px solid #00b4ff55",borderRadius:6,color:"#00b4ff",padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                        <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
                       )}
                       {perfil.rol==="administrador" && t.resultado==="RECHAZADO" && t.viaje_id && (()=>{
                         const viaje = viajes.find(v=>v.id===t.viaje_id);
@@ -1979,7 +1981,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             await supabaseAdmin.from("viajes").update({autorizado_descargue:!autorizado, autorizado_por: !autorizado?perfil.nombre:null}).eq("id",t.viaje_id);
                             await loadData();
                             showToast(!autorizado?"Descargue autorizado ✔":"Autorización retirada", !autorizado);
-                          }} style={{background:autorizado?"#ff4d4d22":"#f59e0b22",border:`1px solid ${autorizado?"#ff4d4d55":"#f59e0b55"}`,borderRadius:6,color:autorizado?"#ff4d4d":"#f59e0b",padding:"3px 8px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>
+                          }} style={{background:autorizado?`${T.danger}22`:`${T.orange}22`,border:`1px solid ${autorizado?`${T.danger}55`:`${T.orange}55`}`,borderRadius:6,color:autorizado?T.danger:T.orange,padding:"3px 8px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>
                             {autorizado?"✕ Revocar":"✔ Autorizar"}
                           </button>
                         );
@@ -2309,7 +2311,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                         {(c.carros||[]).map((cr,i)=>(
                                           <div key={i} style={{background:"#f8fafc",borderRadius:8,padding:"8px 10px",fontSize:11,border:`1px solid ${T.border}`}}>
                                             <div style={{color:T.navy,fontWeight:700,marginBottom:3}}>{cr.placa||"Sin placa"}</div>
-                                            {cr.tiquete&&<div style={{color:"#3b82f6"}}>Tiquete: <span style={{cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{ const t=tiquetes.find(x=>x.id===cr.tiquete); if(t){setForm({...t});setModal("tiquete");} }}>{cr.tiquete}</span></div>}
+                                            {cr.tiquete&&<div style={{color:T.navy}}>Tiquete: <span style={{cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{ const t=tiquetes.find(x=>x.id===cr.tiquete); if(t){setForm({...t});setModal("tiquete");} }}>{cr.tiquete}</span></div>}
                                             {cr.guia&&<div style={{color:T.muted}}>Guía: {cr.guia}</div>}
                                             {cr.pbs_id&&<div style={{color:T.orange}}>PBS: <span style={{cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{ const p=(pbsList||[]).find(x=>x.id===cr.pbs_id); if(p){setForm({...p});setPbsChecklist(p.checklist||Array(27).fill(""));setModal("pbs");} }}>{cr.pbs_id}</span></div>}
                                             {cr.hora_inicio&&<div style={{color:T.muted}}>Inicio: {cr.hora_inicio} — Fin: {cr.hora_final||"—"}</div>}
@@ -2326,14 +2328,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                           <div key={i} style={{background:"#f8fafc",borderRadius:8,padding:"8px 12px",fontSize:11,border:`1px solid ${T.border}`}}>
                                             <div style={{color:"#10b981",fontWeight:700,marginBottom:6,fontSize:12}}>{r.tanque||"—"}</div>
                                             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
-                                              <div style={{color:"#3b82f6",fontSize:10,fontWeight:700,marginBottom:2}}>INICIAL</div>
-                                              <div style={{color:"#8b5cf6",fontSize:10,fontWeight:700,marginBottom:2}}>FINAL</div>
+                                              <div style={{color:T.navy,fontSize:10,fontWeight:700,marginBottom:2}}>INICIAL</div>
+                                              <div style={{color:T.navy,fontSize:10,fontWeight:700,marginBottom:2}}>FINAL</div>
                                               <div style={{color:T.muted}}>Sonda: <b style={{color:T.navy}}>{r.sondaInicial||"—"}</b></div>
                                               <div style={{color:T.muted}}>Sonda: <b style={{color:T.navy}}>{r.sondaFinal||"—"}</b></div>
                                               <div style={{color:T.muted}}>Temp: <b style={{color:T.navy}}>{r.tempInicial||"—"}</b></div>
                                               <div style={{color:T.muted}}>Temp: <b style={{color:T.navy}}>{r.tempFinal||"—"}</b></div>
-                                              <div style={{color:"#f59e0b",fontWeight:700}}>{fmt(r.galonesInicial||0)} Gls</div>
-                                              <div style={{color:"#f59e0b",fontWeight:700}}>{fmt(r.galonesFinal||0)} Gls</div>
+                                              <div style={{color:T.orange,fontWeight:700}}>{fmt(r.galonesInicial||0)} Gls</div>
+                                              <div style={{color:T.orange,fontWeight:700}}>{fmt(r.galonesFinal||0)} Gls</div>
                                             </div>
                                           </div>
                                         ))}
@@ -2345,7 +2347,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                     {c.operador&&<span>Operador: <b style={{color:T.navy}}>{c.operador}</b></span>}
                                     {c.placa&&<span>Placa: <b style={{color:T.navy}}>{c.placa}</b></span>}
                                     {c.guia&&<span>Guía: <b style={{color:T.navy}}>{c.guia}</b></span>}
-                                    {c.tiquete_entrada&&<span>Tiquete: <b style={{color:"#3b82f6"}}>{c.tiquete_entrada}</b></span>}
+                                    {c.tiquete_entrada&&<span>Tiquete: <b style={{color:T.navy}}>{c.tiquete_entrada}</b></span>}
                                     {(c.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"&&c.pbs_id&&<span>PBS: <b style={{color:T.orange}}>{c.pbs_id}</b></span>}
                                     <span style={{marginLeft:"auto",color: movido>=0?"#059669":"#dc2626",fontWeight:700,fontSize:13}}>
                                       {movido>=0?"▲ Recibido:":"▼ Despachado:"} {fmt(Math.abs(movido))} Gls
@@ -2634,9 +2636,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const carrosDesc = Math.floor(espLibre / CARROS);
               const stats = [
                 {label:"Nivel",    val:fmt(nivel),           color:"#dff0f8", icon:"▊"},
-                {label:"Cargue",   val:`${carrosCargue} c`,  color:"#f59e0b", icon:"▲"},
-                {label:"Libre",    val:fmt(espLibre),         color:"#00e5a0", icon:"◻"},
-                {label:"Descargue",val:`${carrosDesc} c`,     color:"#38bdf8", icon:"▼"},
+                {label:"Cargue",   val:`${carrosCargue} c`,  color:T.orange, icon:"▲"},
+                {label:"Libre",    val:fmt(espLibre),         color:T.success, icon:"◻"},
+                {label:"Descargue",val:`${carrosDesc} c`,     color:T.orange, icon:"▼"},
               ];
 
               // Calcular marginLeft del panel stats para que el gap con el tanque sea consistente
@@ -2667,10 +2669,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             onChange={e=>setTankProdEdit({id, val:e.target.value})}
                             onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
                             onBlur={()=>guardarProductoTanque(id, tankProdEdit.val)}
-                            style={{ background:"#0f1e2e", border:"2px solid #3b82f6", borderRadius:6,
+                            style={{ background:"#0f1e2e", border:`2px solid ${T.navy}`, borderRadius:6,
                               color:"#fff", fontSize:11, fontWeight:700, padding:"3px 8px",
                               width:72, textTransform:"uppercase", outline:"none", textAlign:"center" }}/>
-                          {tankProdSaving && <div style={{fontSize:8,color:"#6b8fa8",textAlign:"center"}}>guardando...</div>}
+                          {tankProdSaving && <div style={{fontSize:8,color:T.muted,textAlign:"center"}}>guardando...</div>}
                         </div>
                       )}
                     </div>
@@ -2763,13 +2765,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Table
                 cols={["ID","Fecha","Buque","Producto","Volumen (Gls)","Barcaza","Tanque","Destino","Operador",""]}
                 rows={despachosFiltrados.map(d=>[
-                  <span style={{color:"#c084fc"}}>{d.id}</span>,
+                  <span style={{color:T.muted}}>{d.id}</span>,
                   d.fecha, d.buque,
-                  <Badge label={d.producto} color={d.producto==="MGO"?"#c084fc":"#00e5a0"}/>,
+                  <Badge label={d.producto} color={d.producto==="MGO"?T.navy:T.success}/>,
                   <span style={{fontWeight:700}}>{fmt(d.volumen)}</span>,
                   d.barcaza, d.tanque, d.destino, d.operador,
                   puedeEditar("despachos",d.creado_por,d.created_at)
-                    ? <button onClick={()=>{setForm({...d});setModal("despacho");}} style={{background:"#c084fc22",border:"1px solid #c084fc55",borderRadius:6,color:"#c084fc",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                    ? <button onClick={()=>{setForm({...d});setModal("despacho");}} style={{background:`${T.muted}22`,border:`1px solid ${T.muted}55`,borderRadius:6,color:T.muted,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
                     : null,
                 ])}
               />
@@ -2790,30 +2792,30 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <Card key={v.id}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
                         <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-                          <span style={{ color:"#f59e0b", fontWeight:700 }}>{v.id}</span>
+                          <span style={{ color:T.orange, fontWeight:700 }}>{v.id}</span>
                           <span style={{ fontWeight:700 }}>{v.producto}</span>
                           <span style={{ color:T.muted, fontSize:11 }}>{v.placa} · {v.fecha}</span>
                         </div>
-                        <Badge label={v.estado} color={v.estado==="Descargado"?"#00e5a0":v.estado==="Rechazado"?"#ff4d4d":"#f59e0b"}/>
+                        <Badge label={v.estado} color={v.estado==="Descargado"?T.success:v.estado==="Rechazado"?T.danger:T.orange}/>
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:10 }}>
-                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:"3px solid #f59e0b" }}>
-                          <div style={{ fontSize:10, color:"#f59e0b", marginBottom:6 }}>🚛 LOGÍSTICA</div>
+                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${T.orange}` }}>
+                          <div style={{ fontSize:10, color:T.orange, marginBottom:6 }}>🚛 LOGÍSTICA</div>
                           <div style={{ fontSize:11 }}>{v.transportadora}</div>
                           <div style={{ fontSize:11, color:T.muted }}>Guía: {v.guia}</div>
                           <div style={{ fontSize:11, color:T.muted }}>{fmt(v.volumen_guia)} Gls</div>
                         </div>
-                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${tq?(tq.resultado==="APROBADO"?"#00e5a0":"#ff4d4d"):"#6b8fa8"}` }}>
-                          <div style={{ fontSize:10, color:"#00b4ff", marginBottom:6 }}>🧪 TIQUETE</div>
-                          {tq?<><Badge label={tq.resultado} color={tq.resultado==="APROBADO"?"#00e5a0":"#ff4d4d"}/><div style={{ fontSize:11, color:T.muted, marginTop:4 }}>API: {tq.api_corregido}° · {fmt(tq.galones_recibidos)} Gls</div></>:<div style={{ fontSize:11, color:"#f59e0b" }}>Pendiente</div>}
+                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${tq?(tq.resultado==="APROBADO"?T.success:T.danger):T.muted}` }}>
+                          <div style={{ fontSize:10, color:T.orange, marginBottom:6 }}>🧪 TIQUETE</div>
+                          {tq?<><Badge label={tq.resultado} color={tq.resultado==="APROBADO"?T.success:T.danger}/><div style={{ fontSize:11, color:T.muted, marginTop:4 }}>API: {tq.api_corregido}° · {fmt(tq.galones_recibidos)} Gls</div></>:<div style={{ fontSize:11, color:T.orange }}>Pendiente</div>}
                         </div>
-                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${pb?"#fb923c":"#6b8fa8"}` }}>
-                          <div style={{ fontSize:10, color:"#fb923c", marginBottom:6 }}>🔒 PBS</div>
-                          {pb?<><div style={{ fontSize:11 }}>{pb.id}</div><div style={{ fontSize:11, color:T.muted }}>{pb.bodega_recibe}</div></>:<div style={{ fontSize:11, color:"#f59e0b" }}>Pendiente</div>}
+                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${pb?T.danger:T.muted}` }}>
+                          <div style={{ fontSize:10, color:T.danger, marginBottom:6 }}>🔒 PBS</div>
+                          {pb?<><div style={{ fontSize:11 }}>{pb.id}</div><div style={{ fontSize:11, color:T.muted }}>{pb.bodega_recibe}</div></>:<div style={{ fontSize:11, color:T.orange }}>Pendiente</div>}
                         </div>
-                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${cm?"#00e5a0":"#6b8fa8"}` }}>
-                          <div style={{ fontSize:10, color:"#00e5a0", marginBottom:6 }}>📋 CMT</div>
-                          {cm?<><div style={{ fontSize:11 }}>No. {cm.numero_cmt}</div><div style={{ fontSize:11, fontWeight:700, color:"#00e5a0" }}>+{fmt(cm.total_movido)} Gls</div></>:<div style={{ fontSize:11, color:"#f59e0b" }}>Pendiente</div>}
+                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${cm?T.success:T.muted}` }}>
+                          <div style={{ fontSize:10, color:T.success, marginBottom:6 }}>📋 CMT</div>
+                          {cm?<><div style={{ fontSize:11 }}>No. {cm.numero_cmt}</div><div style={{ fontSize:11, fontWeight:700, color:T.success }}>+{fmt(cm.total_movido)} Gls</div></>:<div style={{ fontSize:11, color:T.orange }}>Pendiente</div>}
                         </div>
                       </div>
                     </Card>
@@ -2845,7 +2847,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             {p.activo===false && <Badge label="Deshabilitado" color="#aaa"/>}
-            <Badge label={ROLES[p.rol]?.label||p.rol} color={ROLES[p.rol]?.color||"#6b8fa8"}/>
+            <Badge label={ROLES[p.rol]?.label||p.rol} color={ROLES[p.rol]?.color||T.muted}/>
             <Btn sm color={T.orange} outline onClick={()=>{
               const MODS = ["viajes","tiquetes","pbs","cmt","tanques","despachos","trazabilidad"];
               const base = MODS.reduce((acc,m)=>({...acc,[m]:{ver:false,crear:false,editar:false,eliminar:false,...((p.permisos||{})[m]||{})}}),{});
@@ -2860,7 +2862,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 )}
 
           {nav==="programacion" && (()=>{
-            const estadoColor = e => e==="COMPLETADA"?"#00e5a0":e==="RECIRCULANDO"?"#38bdf8":e==="DESCARGANDO"?"#f59e0b":e==="TRASIEGOS"?"#a78bfa":e==="RECHAZADA"?"#ef4444":"#94a3b8";
+            const estadoColor = e => e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
             const activas = (ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado));
             const cerradas = (ordenesTrabaio||[]).filter(o=>["COMPLETADA","RECHAZADA"].includes(o.estado));
             return (
@@ -2912,7 +2914,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             </div>
                           )}
                           {ot.estado==="RECIRCULANDO" && (
-                            <div style={{ fontSize:11,color:"#38bdf8" }}>⏱️ Recirculando — {ot.recirculacion_tiempo_total} min programados</div>
+                            <div style={{ fontSize:11,color:T.orange }}>⏱️ Recirculando — {ot.recirculacion_tiempo_total} min programados</div>
                           )}
                           {/* Pasos */}
                           <div style={{ display:"flex",gap:8,marginTop:6 }}>
@@ -2922,7 +2924,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               const idxEste = i;
                               const done = idxActual>idxEste+1; // +1 porque TRASIEGOS es idx 0
                               const activo = idxActual===idxEste;
-                              return <span key={st} style={{ fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10,background:done?"#00e5a022":activo?`${T.orange}22`:`${T.border}`,color:done?"#00e5a0":activo?T.orange:T.muted,border:`1px solid ${done?"#00e5a055":activo?T.orange:T.border}` }}>{done?"✅ ":activo?"⏳ ":"⏸️ "}{lbl}</span>;
+                              return <span key={st} style={{ fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10,background:done?`${T.success}22`:activo?`${T.orange}22`:`${T.border}`,color:done?T.success:activo?T.orange:T.muted,border:`1px solid ${done?`${T.success}55`:activo?T.orange:T.border}` }}>{done?"✅ ":activo?"⏳ ":"⏸️ "}{lbl}</span>;
                             })}
                           </div>
                         </Card>
@@ -2994,13 +2996,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{ padding:"12px 14px", color:T.text, fontWeight:600 }}>{fo.tanque}</td>
                           <td style={{ padding:"12px 14px", color:T.text }}>{fo.producto}</td>
                           <td style={{ padding:"12px 14px", color:T.muted, textAlign:"center" }}>{(fo.mps||[]).length}</td>
-                          <td style={{ padding:"12px 14px" }}><span style={{ color:Number(fo.azufre_planeado)>0.48?"#ef4444":"#00e5a0", fontWeight:700 }}>{Number(fo.azufre_planeado||0).toFixed(4)}%</span></td>
+                          <td style={{ padding:"12px 14px" }}><span style={{ color:Number(fo.azufre_planeado)>0.48?T.danger:T.success, fontWeight:700 }}>{Number(fo.azufre_planeado||0).toFixed(4)}%</span></td>
                           <td style={{ padding:"12px 14px", color:T.success, fontWeight:700 }}>{fmt(Number(fo.total_galones||0))}</td>
                           <td style={{ padding:"12px 14px", color:T.muted }}>{Number(fo.total_carros||0).toFixed(1)}</td>
-                          <td style={{ padding:"12px 14px" }}><Badge label={fo.estado||"PLANEADA"} color={fo.estado==="APROBADA"?"#00e5a0":fo.estado==="EJECUTADA"?"#38bdf8":"#f59e0b"}/></td>
+                          <td style={{ padding:"12px 14px" }}><Badge label={fo.estado||"PLANEADA"} color={fo.estado==="APROBADA"?T.success:fo.estado==="EJECUTADA"?T.orange:T.orange}/></td>
                           <td style={{ padding:"12px 14px", display:"flex", gap:8 }}>
                             <button onClick={()=>openFormulacionTab(fo)} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Editar</button>
-                            {(()=>{ const otAsoc = (ordenesTrabaio||[]).find(o=>o.formulacion_id===fo.id); return otAsoc ? <button onClick={()=>{ const id=`ot-${otAsoc.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:otAsoc.numero_ot,icon:"🏗️",closeable:true,otId:otAsoc.id}]); setActiveTabId(id); }} style={{ background:"none",border:"none",color:"#00e5a0",cursor:"pointer",fontSize:12,fontWeight:700 }}>{otAsoc.numero_ot}</button> : <button onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",formulacionId:fo.id,recircHoras:4})} style={{ background:"none",border:"none",color:"#38bdf8",cursor:"pointer",fontSize:12,fontWeight:700 }}>+ OT</button>; })()}
+                            {(()=>{ const otAsoc = (ordenesTrabaio||[]).find(o=>o.formulacion_id===fo.id); return otAsoc ? <button onClick={()=>{ const id=`ot-${otAsoc.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:otAsoc.numero_ot,icon:"🏗️",closeable:true,otId:otAsoc.id}]); setActiveTabId(id); }} style={{ background:"none",border:"none",color:T.success,cursor:"pointer",fontSize:12,fontWeight:700 }}>{otAsoc.numero_ot}</button> : <button onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",formulacionId:fo.id,recircHoras:4})} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>+ OT</button>; })()}
                             <button onClick={async()=>{ if(!confirm(`¿Eliminar formulación del ${fo.fecha}?`)) return; await supabaseAdmin.from("formulaciones").delete().eq("id",fo.id); await loadData(); }} style={{ background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:12,fontWeight:700 }}>Eliminar</button>
                           </td>
                         </tr>
@@ -3112,7 +3114,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
               {/* Aviso AUTO */}
               {fModo==="AUTO" && (
-                <div style={{ background:"#3b82f618",border:"1px solid #3b82f655",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#3b82f6" }}>
+                <div style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}55`,borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:T.navy }}>
                   ⚡ <b>Modo Auto:</b> los parámetros se calculan como promedio histórico de tiquetes APROBADOS por producto. Solo ingresa los galones. Puedes ajustar los valores manualmente si lo necesitas.
                 </div>
               )}
@@ -3175,7 +3177,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <div style={{ fontWeight:800, fontSize:11, color:"#fff", textTransform:"uppercase", letterSpacing:1 }}>{prod}</div>
                               <div style={{ display:"flex", gap:5, alignItems:"center" }}>
                                 {cnt>0 && <span style={{ background:T.orange, color:"#fff", borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:700 }}>{cnt} en planta</span>}
-                                {selEnProd>0 && <span style={{ background:"#00e5a0", color:"#071422", borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:700 }}>✓{selEnProd}</span>}
+                                {selEnProd>0 && <span style={{ background:T.success, color:"#071422", borderRadius:10, padding:"2px 7px", fontSize:10, fontWeight:700 }}>✓{selEnProd}</span>}
                               </div>
                             </div>
                             {/* Filas de carros */}
@@ -3186,16 +3188,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               return (
                                 <div key={t.id} onClick={()=>toggleCarro(t.id)}
                                   style={{ padding:"8px 12px", borderBottom:`1px solid ${T.border}`, cursor:"pointer",
-                                    background: sel?`${T.orange}18`:aprobado?`#00e5a008`:"#ef444408", transition:"background 0.12s" }}
+                                    background: sel?`${T.orange}18`:aprobado?`${T.success}08`:`${T.danger}08`, transition:"background 0.12s" }}
                                   onMouseEnter={e=>{ if(!sel) e.currentTarget.style.background=`${T.border}66`; }}
-                                  onMouseLeave={e=>{ e.currentTarget.style.background=sel?`${T.orange}18`:aprobado?`#00e5a008`:"#ef444408"; }}>
+                                  onMouseLeave={e=>{ e.currentTarget.style.background=sel?`${T.orange}18`:aprobado?`${T.success}08`:`${T.danger}08`; }}>
                                   {/* Fila superior: checkbox + placa + badge */}
                                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                                     <div style={{ width:15,height:15,borderRadius:3,border:`2px solid ${sel?T.orange:T.border}`,background:sel?T.orange:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#fff",fontWeight:800,flexShrink:0 }}>
                                       {sel?"✓":""}
                                     </div>
                                     <span style={{ fontWeight:800, fontSize:13, color:T.text, flex:1 }}>{t.placa}</span>
-                                    <span style={{ background:aprobado?"#00e5a022":"#ef444422",border:`1px solid ${aprobado?"#00e5a055":"#ef444455"}`,borderRadius:4,padding:"1px 6px",color:aprobado?"#00e5a0":"#ef4444",fontWeight:700,fontSize:9,whiteSpace:"nowrap" }}>
+                                    <span style={{ background:aprobado?`${T.success}22`:`${T.danger}22`,border:`1px solid ${aprobado?`${T.success}55`:`${T.danger}55`}`,borderRadius:4,padding:"1px 6px",color:aprobado?T.success:T.danger,fontWeight:700,fontSize:9,whiteSpace:"nowrap" }}>
                                       {aprobado?"APROBADO":"RECHAZADO"}
                                     </span>
                                   </div>
@@ -3266,9 +3268,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         const pv=isG?totalG:key==="api"?pond.api:key==="visc"?pond.visc:key==="azufre"?pond.azufre:key==="agua"?pond.agua:pond.flash;
                         const dec=["azufre","agua"].includes(key)?4:2;
                         let pc=T.text,pi="";
-                        if(key==="azufre"&&esVLSFO){pc=azufreOk?"#00e5a0":"#ef4444";pi=azufreOk?" ✅":" 🔴";}
-                        if(key==="agua"){pc=aguaOk?"#00e5a0":"#f59e0b";pi=aguaOk?" ✅":" ⚠️";}
-                        if(key==="flash"){pc=flashOk?"#00e5a0":"#f59e0b";pi=flashOk?" ✅":" ⚠️";}
+                        if(key==="azufre"&&esVLSFO){pc=azufreOk?T.success:T.danger;pi=azufreOk?" ✅":" 🔴";}
+                        if(key==="agua"){pc=aguaOk?T.success:T.orange;pi=aguaOk?" ✅":" ⚠️";}
+                        if(key==="flash"){pc=flashOk?T.success:T.orange;pi=flashOk?" ✅":" ⚠️";}
                         const readOnly = fModo==="AUTO" && !isG;
                         return (
                           <tr key={key} style={{ borderBottom:`1px solid ${T.border}`,background:rowBg }}>
@@ -3301,7 +3303,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   style={{ background:`${T.orange}18`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>
                   + Agregar MP
                 </button>
-                {fModo==="AUTO" && <button onClick={aplicarAuto} style={{ background:"#3b82f618",border:"1px solid #3b82f655",borderRadius:6,color:"#3b82f6",padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>🔄 Recalcular histórico</button>}
+                {fModo==="AUTO" && <button onClick={aplicarAuto} style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}55`,borderRadius:6,color:T.navy,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>🔄 Recalcular histórico</button>}
               </div>
 
               {/* Cards resumen */}
@@ -3315,9 +3317,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {[
                       {label:"🔥 AZUFRE",    val:`${pond.azufre.toFixed(4)}%`,  sub:esVLSFO?(azufreOk?"✅ OK VLSFO":"🔴 SOBRE LÍMITE"):"",  color:esVLSFO&&!azufreOk?"#ef4444":T.success},
                       {label:"📊 API",        val:`${pond.api.toFixed(2)}°`,     sub:"(Info)", color:T.text},
-                      {label:"💧 AGUA",       val:`${pond.agua.toFixed(4)}%`,    sub:aguaOk?"✅ OK":"⚠️ >0.5%",    color:aguaOk?"#00e5a0":"#f59e0b"},
+                      {label:"💧 AGUA",       val:`${pond.agua.toFixed(4)}%`,    sub:aguaOk?"✅ OK":"⚠️ >0.5%",    color:aguaOk?T.success:T.orange},
                       {label:"📈 VISCOSIDAD", val:`${pond.visc.toFixed(2)} cSt`, sub:"@ 50°C · ASTM D341",       color:T.text},
-                      {label:"🔥 FLASH PT",   val:`${pond.flash.toFixed(1)}°C`,  sub:flashOk?"✅ ≥60°C":"⚠️ <60°C", color:flashOk?"#00e5a0":"#f59e0b"},
+                      {label:"🔥 FLASH PT",   val:`${pond.flash.toFixed(1)}°C`,  sub:flashOk?"✅ ≥60°C":"⚠️ <60°C", color:flashOk?T.success:T.orange},
                     ].map(c=>(
                       <div key={c.label} style={{ background:T.bg,borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}` }}>
                         <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>{c.label}</div>
@@ -3365,7 +3367,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const prodCarro = (carro)=>normalizarProducto((tiquetes.find(t=>t.id===carro.tiquete))?.producto||"");
         const totalDesc = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>s+glsDescargadosCarro(carro),0),0);
         const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
-        const estadoColor = e=>e==="COMPLETADA"?"#00e5a0":e==="RECIRCULANDO"?"#38bdf8":e==="DESCARGANDO"?"#f59e0b":e==="TRASIEGOS"?"#a78bfa":e==="RECHAZADA"?"#ef4444":"#94a3b8";
+        const estadoColor = e=>e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
 
         const actualizarOT = async(patch) => {
           await supabaseAdmin.from("ordenes_trabajo").update({...patch,updated_at:new Date().toISOString()}).eq("id",ot.id);
@@ -3401,14 +3403,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{t.origen}</td>
                         <td style={{ padding:"8px 10px",color:T.success,fontWeight:700 }}>{fmt(Number(t.galones||0))}</td>
                         <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{t.destino}</td>
-                        <td style={{ padding:"8px 10px" }}><span style={{ fontSize:10,fontWeight:700,color:t.completado?"#00e5a0":"#f59e0b" }}>{t.completado?"✅ Completado":"⏳ Pendiente"}</span></td>
+                        <td style={{ padding:"8px 10px" }}><span style={{ fontSize:10,fontWeight:700,color:t.completado?T.success:T.orange }}>{t.completado?"✅ Completado":"⏳ Pendiente"}</span></td>
                         <td style={{ padding:"8px 10px" }}>
                           {!t.completado && ot.estado==="TRASIEGOS" && (
                             <button onClick={async()=>{
                               const nuevo = tras.map((tr,j)=>j===i?{...tr,completado:true,fecha:new Date().toISOString()}:tr);
                               const todosOk = nuevo.every(tr=>tr.completado);
                               await actualizarOT({trasiegos:nuevo,...(todosOk?{estado:"DESCARGANDO",fecha_inicio_descargue:new Date().toISOString()}:{})});
-                            }} style={{ background:"#00e5a022",border:"1px solid #00e5a055",color:"#00e5a0",borderRadius:5,padding:"3px 10px",cursor:"pointer",fontSize:11,fontWeight:700 }}>Marcar ✅</button>
+                            }} style={{ background:`${T.success}22`,border:`1px solid ${T.success}55`,color:T.success,borderRadius:5,padding:"3px 10px",cursor:"pointer",fontSize:11,fontWeight:700 }}>Marcar ✅</button>
                           )}
                         </td>
                       </tr>
@@ -3424,7 +3426,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {tras.length>0 && (
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                   {cmtsDeEstaOT.filter(c=>c.tipo_operacion==="TRASIEGO DE PRODUCTO").map(c=>(
-                    <span key={c.id} style={{ background:"#38bdf822",border:"1px solid #38bdf855",color:"#38bdf8",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
+                    <span key={c.id} style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
                       onClick={()=>{ setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setModal("cmt"); }}>
                       📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
                     </span>
@@ -3438,7 +3440,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     setCmtDespues([{tanque:tras[0]?.destino||"",producto:fo?.producto||"",sonda:"",galones:""}]);
                     setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
                     setNav("cmt"); setModal("cmt");
-                  }} style={{ background:"#38bdf8",border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
+                  }} style={{ background:T.orange,border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
                 </div>
               )}
             </Card>
@@ -3479,7 +3481,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       return (
                         <div key={grupo.productoBase} style={{ marginBottom:6 }}>
                           {/* Fila principal */}
-                          <div onClick={() => toggleOtExpandir(grupo.productoBase)} style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,padding:"9px 10px",background:T.card,borderRadius:6,cursor:"pointer",borderLeft:`3px solid ${gPct>=100?"#00e5a0":T.orange}`,transition:"background 0.15s" }}
+                          <div onClick={() => toggleOtExpandir(grupo.productoBase)} style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,padding:"9px 10px",background:T.card,borderRadius:6,cursor:"pointer",borderLeft:`3px solid ${gPct>=100?T.success:T.orange}`,transition:"background 0.15s" }}
                             onMouseEnter={e=>e.currentTarget.style.background=T.bg}
                             onMouseLeave={e=>e.currentTarget.style.background=T.card}
                           >
@@ -3509,14 +3511,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                   <span style={{ fontSize:9,color:T.muted }}>↵</span>
                                 </div>
                               )}
-                              {gPct>=100 && <span style={{ fontSize:10,fontWeight:700,color:"#00e5a0" }}>✅ Completo</span>}
+                              {gPct>=100 && <span style={{ fontSize:10,fontWeight:700,color:T.success }}>✅ Completo</span>}
                             </div>
                             <div style={{ textAlign:"center",color:T.muted,fontSize:12 }}>{otExpandidos[grupo.productoBase]?"▲":"▼"}</div>
                           </div>
                           {/* Detalle expandido */}
                           {otExpandidos[grupo.productoBase] && (
-                            <div style={{ background:T.bg,padding:"8px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid #38bdf8` }}>
-                              <div style={{ marginBottom:6,fontWeight:600,color:"#38bdf8" }}>Carros descargados:</div>
+                            <div style={{ background:T.bg,padding:"8px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid ${T.orange}` }}>
+                              <div style={{ marginBottom:6,fontWeight:600,color:T.orange }}>Carros descargados:</div>
                               {cmtsDeEstaOT.flatMap(c=>(c.carros||[]).filter(cr=>prodCarro(cr)===grupo.productoBase).map(cr=>({cr,cmt:c}))).map(({cr,cmt},pi) => (
                                 <div key={pi} style={{ display:"flex",justifyContent:"space-between",marginBottom:3,paddingLeft:8 }}>
                                   <span>├─ {cr.placa||"—"} <span style={{ color:T.muted }}>({cmt.numero_cmt})</span></span>
@@ -3548,13 +3550,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {desc.length>0 && (
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                   {cmtsDeEstaOT.filter(c=>c.tipo_operacion!=="TRASIEGO DE PRODUCTO").map(c=>(
-                    <span key={c.id} style={{ background:"#f59e0b22",border:"1px solid #f59e0b55",color:"#f59e0b",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
+                    <span key={c.id} style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
                       onClick={()=>{ setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setModal("cmt"); }}>
                       📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
                     </span>
                   ))}
                   <button onClick={()=>abrirCmtDesdeOt(ot, "")}
-                    style={{ background:"#f59e0b",border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
+                    style={{ background:T.orange,border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
                 </div>
               )}
             </Card>
@@ -3567,22 +3569,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{ fontSize:12,color:T.muted,marginBottom:8 }}>Tiempo programado: <b style={{ color:T.text }}>{ot.recirculacion_tiempo_total} min ({(ot.recirculacion_tiempo_total/60).toFixed(1)}h)</b></div>
               {ot.estado==="RECIRCULANDO" && (
                 <div style={{ marginBottom:10 }}>
-                  <div style={{ fontSize:11,color:"#38bdf8",marginBottom:4 }}>Iniciado: {ot.fecha_inicio_recirculacion?new Date(ot.fecha_inicio_recirculacion).toLocaleString("es-CO"):""}</div>
-                  <button onClick={()=>actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada"})} style={{ background:"#00e5a0",border:"none",color:"#071422",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✅ Recirculación Completada → Enviar a Lab</button>
+                  <div style={{ fontSize:11,color:T.orange,marginBottom:4 }}>Iniciado: {ot.fecha_inicio_recirculacion?new Date(ot.fecha_inicio_recirculacion).toLocaleString("es-CO"):""}</div>
+                  <button onClick={()=>actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada"})} style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✅ Recirculación Completada → Enviar a Lab</button>
                 </div>
               )}
               {ot.estado==="COMPLETADA" && (
                 <div>
-                  <div style={{ fontSize:12,color:"#00e5a0",fontWeight:700,marginBottom:10 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
+                  <div style={{ fontSize:12,color:T.success,fontWeight:700,marginBottom:10 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
                   <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                     {cmtsDeEstaOT.map(c=>(
-                      <span key={c.id} style={{ background:"#00e5a022",border:"1px solid #00e5a055",color:"#00e5a0",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
+                      <span key={c.id} style={{ background:`${T.success}22`,border:`1px solid ${T.success}55`,color:T.success,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
                         onClick={()=>{ setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setModal("cmt"); }}>
                         📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
                       </span>
                     ))}
                     <button onClick={()=>abrirCmtDesdeOt(ot,"")}
-                      style={{ background:"#00e5a0",border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
+                      style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
                   </div>
                 </div>
               )}
@@ -3617,7 +3619,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       {modal==="viaje" && (
         <Modal title={form.id ? `Editar Viaje ${form.id}` : "Registrar Nuevo Viaje"} onClose={()=>setModal(null)} wide inline>
-          <Section title="Identificación del Viaje" color="#f59e0b">
+          <Section title="Identificación del Viaje" color={T.orange}>
             <Grid cols={3}>
               <Sel label="Sede de Destino" value={form.sede||"MALAMBO"} onChange={f("sede")}>
                 {SEDES.map(s=><option key={s}>{s}</option>)}
@@ -3646,13 +3648,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Barriles NSV (campo)" type="number" value={form.barriles_nsv||""} onChange={f("barriles_nsv")}/>
             </Grid>
           </Section>
-          <Section title="Volúmenes y Financiero" color="#00b4ff">
+          <Section title="Volúmenes y Financiero" color={T.orange}>
             <Grid cols={3}>
               <Inp label="Gls Netos Guía" type="number" value={form.gls_netos_guia||""} onChange={f("gls_netos_guia")}/>
               <Inp label="Gls Recibidos" type="number" value={form.gls_recibidos||""} onChange={f("gls_recibidos")}/>
               <div>
                 <Lbl>Gls Faltantes</Lbl>
-                <div style={{background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:Number(form.gls_netos_guia||0)-Number(form.gls_recibidos||0)>0?"#ff4d4d":"#00e5a0",fontWeight:700}}>
+                <div style={{background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:Number(form.gls_netos_guia||0)-Number(form.gls_recibidos||0)>0?T.danger:T.success,fontWeight:700}}>
                   {fmt(Math.max(0, Number(form.gls_netos_guia||0)-Number(form.gls_recibidos||0)))} Gls
                 </div>
               </div>
@@ -3660,7 +3662,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Bono ($)" type="number" value={form.bono||""} onChange={f("bono")}/>
               <div>
                 <Lbl>Total Flete ($)</Lbl>
-                <div style={{background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:"#00e5a0",fontWeight:700}}>
+                <div style={{background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:T.success,fontWeight:700}}>
                   {fmt(Number(form.gls_netos_guia||0)*Number(form.flete||0)+Number(form.bono||0))}
                 </div>
               </div>
@@ -3680,7 +3682,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </Section>
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:12 }}>
             <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
-            <Btn color="#f59e0b" onClick={guardarViaje} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Viaje":"Registrar Viaje"}</Btn>
+            <Btn color={T.orange} onClick={guardarViaje} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Viaje":"Registrar Viaje"}</Btn>
           </div>
         </Modal>
       )}
@@ -3698,7 +3700,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           : `Análisis ${tipoA}`;
         return (
         <Modal title={tituloModal} onClose={()=>setModal(null)} wide inline>
-          <Section title="Identificación" color="#00b4ff">
+          <Section title="Identificación" color={T.orange}>
             <Grid cols={esMP?2:3}>
               <Inp label="Proveedor / Campo Origen" type="text" value={form.proveedor||""} onChange={f("proveedor")} readOnly={soloVista}/>
               <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloVista||soloLab}/>
@@ -3709,7 +3711,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Fecha de Análisis" type="date" value={form.fecha_llegada||today()} onChange={f("fecha_llegada")} readOnly={soloVista||(esMP&&soloLab)}/>
             </Grid>
           </Section>
-          <Section title="Análisis API" color="#00b4ff">
+          <Section title="Análisis API" color={T.orange}>
             <Grid cols={7}>
               <Inp label="API Reportado" type="number" step="0.1" value={form.api_reportado||""} onChange={e=>{const v=e.target.value;const d=v.split(".");if(d[1]&&d[1].length>1)return;setForm(p=>({...p,api_reportado:v}));}} readOnly={soloVista}/>
               <Inp label="API Observado" type="number" step="0.1" value={form.api_observado||""} onChange={e=>{const v=e.target.value;const d=v.split(".");if(d[1]&&d[1].length>1)return;setForm(p=>({...p,api_observado:v}));}} readOnly={soloVista}/>
@@ -3751,7 +3753,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Factor Tabla 13" type="number" step="0.0001" value={form.factor_tabla13||""} onChange={f("factor_tabla13")} readOnly/>
             </Grid>
           </Section>
-          <Section title="Calidad" color="#00b4ff">
+          <Section title="Calidad" color={T.orange}>
             <Grid cols={5}>
               <Inp label="Agua Destilación (%)" type="number" step="0.01" value={form.agua_destilacion||""} onChange={f("agua_destilacion")} readOnly={soloVista}/>
               <Inp label="Flash Point (°C)" type="number" value={form.flash_point||""} onChange={f("flash_point")} readOnly={soloVista}/>
@@ -3765,7 +3767,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </Section>
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
             <Btn outline onClick={()=>setModal(null)}>{soloVista?"Cerrar":"Cancelar"}</Btn>
-            {!soloVista && <Btn color="#00b4ff" onClick={guardarTiquete} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Tiquete":"Emitir Tiquete"}</Btn>}
+            {!soloVista && <Btn color={T.orange} onClick={guardarTiquete} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Tiquete":"Emitir Tiquete"}</Btn>}
           </div>
         </Modal>
         );
@@ -3820,7 +3822,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   return (
                     <div key={i} style={{ background:T.bg, borderRadius:6, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, border:`1px solid ${T.border}` }}>
                       <span style={{ fontSize:11, flex:1, color:T.text }}><b style={{color:T.orange}}>{i+1}.</b> {p}</span>
-                      <div style={{background:T.card,borderRadius:6,padding:"6px 14px",fontSize:13,fontWeight:700,color:"#f59e0b",border:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>
+                      <div style={{background:T.card,borderRadius:6,padding:"6px 14px",fontSize:13,fontWeight:700,color:T.orange,border:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>
                         {fmt(totalInicial)} Gls
                       </div>
                     </div>
@@ -3886,9 +3888,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{marginLeft:"auto",fontSize:11,color:T.muted}}>Generado automáticamente</div>
           </div>
           {form.ot_numero && (
-            <div style={{gridColumn:"1/-1",background:"#00e5a018",border:"1px solid #00e5a033",borderRadius:8,padding:"10px 14px",marginBottom:12}}>
+            <div style={{gridColumn:"1/-1",background:`${T.success}18`,border:`1px solid ${T.success}33`,borderRadius:8,padding:"10px 14px",marginBottom:12}}>
               <div style={{fontSize:10,color:T.muted,fontWeight:600,marginBottom:2}}>VINCULADO A ORDEN DE TRABAJO</div>
-              <div style={{fontSize:13,fontWeight:700,color:"#00e5a0",fontFamily:"monospace"}}>{form.ot_numero} <span style={{fontSize:10,color:T.muted,fontWeight:400}}>(no editable)</span></div>
+              <div style={{fontSize:13,fontWeight:700,color:T.success,fontFamily:"monospace"}}>{form.ot_numero} <span style={{fontSize:10,color:T.muted,fontWeight:400}}>(no editable)</span></div>
             </div>
           )}
           <div style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:18,flexWrap:"nowrap"}}>
@@ -3926,8 +3928,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
           </div>
           <div style={{marginBottom:18}}>
-            <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #f59e0b33"}}>
-              <span style={{fontSize:11,fontWeight:700,color:"#f59e0b",letterSpacing:1,textTransform:"uppercase"}}>{(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"?"Tanque de Despacho":"Medida Inicial"}</span>
+            <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.orange}33`}}>
+              <span style={{fontSize:11,fontWeight:700,color:T.orange,letterSpacing:1,textTransform:"uppercase"}}>{(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"?"Tanque de Despacho":"Medida Inicial"}</span>
             </div>
             {(()=>{
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
@@ -3952,17 +3954,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}
                       </select>
                     </div>
-                    <button onClick={()=>{setCmtAntes(cmtAntes.filter((_,j)=>j!==i));setCmtDespues(cmtDespues.filter((_,j)=>j!==i));}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"4px 10px",cursor:"pointer",fontSize:11}}>✕</button>
+                    <button onClick={()=>{setCmtAntes(cmtAntes.filter((_,j)=>j!==i));setCmtDespues(cmtDespues.filter((_,j)=>j!==i));}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✕</button>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end",marginBottom:6}}>
-                    <div style={{fontSize:10,color:"#00b4ff",fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Inicial</div>
+                    <div style={{fontSize:10,color:T.orange,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Inicial</div>
                     <div><Lbl>Sonda</Lbl><input type="number" value={row.sonda||""} onChange={e=>{const n=[...cmtAntes];n[i].sonda=e.target.value;setCmtAntes(n);}} onBlur={e=>calcularGalones(row.tanque,e.target.value,row.temp,row.api,false,i)} style={inputStyle}/></div>
                     <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={row.temp||""} onChange={e=>{const n=[...cmtAntes];n[i].temp=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,false,i);}} style={inputStyle}/></div>
                     <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={row.api||""} onChange={e=>{const n=[...cmtAntes];n[i].api=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,n[i].temp,e.target.value,false,i);}} style={inputStyle}/></div>
                     <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones||""} onChange={e=>{const n=[...cmtAntes];n[i].galones=e.target.value;setCmtAntes(n);}} style={inputStyle}/></div>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
-                    <div style={{fontSize:10,color:"#c084fc",fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Final</div>
+                    <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Final</div>
                     <div><Lbl>Sonda</Lbl><input type="number" value={rowD.sonda||""} onChange={e=>{const n=[...cmtDespues];n[i]={...n[i],sonda:e.target.value};setCmtDespues(n);}} onBlur={e=>calcularGalones(row.tanque,e.target.value,rowD.temp,rowD.api,true,i)} style={inputStyle}/></div>
                     <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={rowD.temp||""} onChange={e=>{const n=[...cmtDespues];n[i]={...n[i],temp:e.target.value};setCmtDespues(n);calcularGalones(row.tanque,rowD.sonda,e.target.value,rowD.api,true,i);}} style={inputStyle}/></div>
                     <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={rowD.api||""} onChange={e=>{const n=[...cmtDespues];n[i]={...n[i],api:e.target.value};setCmtDespues(n);calcularGalones(row.tanque,rowD.sonda,rowD.temp,e.target.value,true,i);}} style={inputStyle}/></div>
@@ -3984,23 +3986,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={row.temp||""} onChange={e=>{const n=[...cmtAntes];n[i].temp=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,e.target.value,n[i].api,false,i);}} style={{...inputStyle,background:"#ffffff"}}/></div>
                     <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={row.api||""} onChange={e=>{const n=[...cmtAntes];n[i].api=e.target.value;setCmtAntes(n);calcularGalones(n[i].tanque,n[i].sonda,n[i].temp,e.target.value,false,i);}} style={{...inputStyle,background:"#ffffff"}}/></div>
                     <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones} onChange={e=>{const n=[...cmtAntes];n[i].galones=e.target.value;setCmtAntes(n);}} style={{...inputStyle,background:"#ffffff"}}/></div>
-                    <button onClick={()=>{setCmtAntes(cmtAntes.filter((_,j)=>j!==i));setCmtDespues(cmtDespues.filter((_,j)=>j!==i));}} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"8px 10px",cursor:"pointer",fontSize:12}}>✕</button>
+                    <button onClick={()=>{setCmtAntes(cmtAntes.filter((_,j)=>j!==i));setCmtDespues(cmtDespues.filter((_,j)=>j!==i));}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"8px 10px",cursor:"pointer",fontSize:12}}>✕</button>
                   </div>
                 </div>
                 );
               });
             })()}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <Btn sm outline color="#f59e0b" onClick={()=>{
+              <Btn sm outline color={T.orange} onClick={()=>{
                 setCmtAntes([...cmtAntes,{tanque:"",sonda:"",galones:""}]);
                 setCmtDespues([...cmtDespues,{tanque:"",producto:cmtProducto,sonda:"",galones:""}]);
               }}>+ TK</Btn>
-              <span style={{ fontSize:12, color:"#f59e0b" }}>Total: {fmt(cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
+              <span style={{ fontSize:12, color:T.orange }}>Total: {fmt(cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
             </div>
           </div>
           {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && <div style={{marginBottom:18}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #00e5a033"}}>
-              <span style={{fontSize:11,fontWeight:700,color:"#00e5a0",letterSpacing:1,textTransform:"uppercase"}}>Tanque de Recepción</span>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.success}33`}}>
+              <span style={{fontSize:11,fontWeight:700,color:T.success,letterSpacing:1,textTransform:"uppercase"}}>Tanque de Recepción</span>
             </div>
             {(()=>{
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
@@ -4017,17 +4019,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}
                       </select>
                     </div>
-                    <button onClick={()=>setCmtRecepcion(cmtRecepcion.filter((_,j)=>j!==i))} style={{background:"#ff4d4d22",border:"1px solid #ff4d4d44",borderRadius:8,color:"#ff4d4d",padding:"4px 10px",cursor:"pointer",fontSize:11}}>✕</button>
+                    <button onClick={()=>setCmtRecepcion(cmtRecepcion.filter((_,j)=>j!==i))} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✕</button>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end",marginBottom:6}}>
-                    <div style={{fontSize:10,color:"#00b4ff",fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Inicial</div>
+                    <div style={{fontSize:10,color:T.orange,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Inicial</div>
                     <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],sondaInicial:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setCmtRecepcion,"galonesInicial")} style={inputStyle}/></div>
                     <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={rec.tempInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tempInicial:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setCmtRecepcion,"galonesInicial")} style={inputStyle}/></div>
                     <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={rec.apiInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],apiInicial:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setCmtRecepcion,"galonesInicial")} style={inputStyle}/></div>
                     <div><Lbl>{rec.tempInicial&&rec.apiInicial?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],galonesInicial:e.target.value};setCmtRecepcion(n);}} style={inputStyle}/></div>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
-                    <div style={{fontSize:10,color:"#c084fc",fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Final</div>
+                    <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Final</div>
                     <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],sondaFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
                     <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={rec.tempFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tempFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
                     <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={rec.apiFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],apiFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
@@ -4037,12 +4039,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               ));
             })()}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
-              <Btn sm outline color="#00e5a0" onClick={()=>setCmtRecepcion([...cmtRecepcion,{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}])}>+ TK</Btn>
+              <Btn sm outline color={T.success} onClick={()=>setCmtRecepcion([...cmtRecepcion,{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}])}>+ TK</Btn>
             </div>
           </div>}
           {(form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && <div style={{marginBottom:18}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:"1px solid #00e5a033"}}>
-              <span style={{fontSize:11,fontWeight:700,color:"#00e5a0",letterSpacing:1,textTransform:"uppercase"}}>Medida Final</span>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.success}33`}}>
+              <span style={{fontSize:11,fontWeight:700,color:T.success,letterSpacing:1,textTransform:"uppercase"}}>Medida Final</span>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:11,color:T.muted,fontFamily:"monospace"}}>Producto:</span>
                 <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 14px",fontSize:13,fontFamily:"system-ui,sans-serif",color:T.navy,fontWeight:700,minWidth:180}}>{cmtProducto||"—"}</div>
@@ -4073,9 +4075,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const enAlerta = galonesIniciales >= capMaxOp;
                   return (
                     <div style={{marginTop:8,padding:"6px 10px",background:"#e2e8f0",border:`1px solid ${T.border}`,borderRadius:6,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-                      <span style={{fontSize:11,color:T.muted}}>Espacio disponible: <b style={{color: enAlerta?"#ff4d4d":"#059669"}}>{fmt(Math.max(0,espacioDisponible))} Gls</b></span>
+                      <span style={{fontSize:11,color:T.muted}}>Espacio disponible: <b style={{color: enAlerta?T.danger:T.success}}>{fmt(Math.max(0,espacioDisponible))} Gls</b></span>
                       {enAlerta && (
-                        <span style={{fontSize:11,fontWeight:800,color:"#ff4d4d",background:"#fee2e2",border:"1px solid #fca5a5",borderRadius:6,padding:"2px 10px",letterSpacing:0.5}}>
+                        <span style={{fontSize:11,fontWeight:800,color:T.danger,background:`${T.danger}18`,border:`1px solid ${T.danger}55`,borderRadius:6,padding:"2px 10px",letterSpacing:0.5}}>
                           ⚠ ALERTA CAPACIDAD EN {pctActual}%
                         </span>
                       )}
@@ -4086,10 +4088,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               );
             })}
             <div style={{ display:"flex", justifyContent:"flex-end" }}>
-              <span style={{ fontSize:12, color:"#00e5a0" }}>Total: {fmt(cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
+              <span style={{ fontSize:12, color:T.success }}>Total: {fmt(cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
             </div>
           </div>}
-          {(form.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && <><div ref={cmtCarrosRef}/><Section title="Carros Descargados" color="#6b8fa8">
+          {(form.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && <><div ref={cmtCarrosRef}/><Section title="Carros Descargados" color={T.muted}>
             <div style={{fontSize:11,color:T.muted,marginBottom:10}}>Un registro por cada carro descargado en este CMT</div>
             {cmtCarros.map((carro,i)=>(
               <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:12,border:`1px solid ${T.border}`}}>
@@ -4172,7 +4174,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
             ))}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
-              <Btn sm outline color="#6b8fa8" onClick={()=>setCmtCarros([...cmtCarros,{placa:"",guia:"",tiquete:"",pbs_id:"",hora_inicio:"",hora_final:"",peso_ingreso:"",peso_salida:"",peso_neto:""}])}>+ Agregar Carro</Btn>
+              <Btn sm outline color={T.muted} onClick={()=>setCmtCarros([...cmtCarros,{placa:"",guia:"",tiquete:"",pbs_id:"",hora_inicio:"",hora_final:"",peso_ingreso:"",peso_salida:"",peso_neto:""}])}>+ Agregar Carro</Btn>
               <span style={{fontSize:11,color:T.muted}}>{cmtCarros.length} carro(s)</span>
             </div>
             {form.tipo_operacion==="Entrega a motonave" && (
@@ -4213,8 +4215,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const galonesDespachoFinal = cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0);
             const galonajeTraseado = Math.max(0, galonesDespachoInicial - galonesDespachoFinal);
             return galonajeTraseado > 0 ? (
-              <Card style={{ background:"#00b4ff18", borderColor:"#00b4ff33", marginBottom:14 }}>
-                <div style={{ fontSize:13, color:"#00b4ff", fontWeight:700 }}>
+              <Card style={{ background:`${T.orange}18`, borderColor:`${T.orange}33`, marginBottom:14 }}>
+                <div style={{ fontSize:13, color:T.orange, fontWeight:700 }}>
                   Galonaje Trasegado: {fmt(galonajeTraseado)} Galones
                 </div>
                 <div style={{ fontSize:11, color:T.muted, marginTop:4 }}>
@@ -4224,15 +4226,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             ) : null;
           })() : (
             cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0) > cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0) && (
-            <Card style={{ background:"#00e5a018", borderColor:"#00e5a033", marginBottom:14 }}>
-              <div style={{ fontSize:13, color:"#00e5a0", fontWeight:700 }}>
+            <Card style={{ background:`${T.success}18`, borderColor:`${T.success}33`, marginBottom:14 }}>
+              <div style={{ fontSize:13, color:T.success, fontWeight:700 }}>
                 Total Recibido / Entregado: {fmt(cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0) - cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0))} Galones
               </div>
             </Card>
           ))}
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
             <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
-            <Btn color="#00e5a0" onClick={guardarCMT} disabled={saving}>{saving?"Guardando...":form.id?"Guardar Corrección":"Guardar CMT"}</Btn>
+            <Btn color={T.success} onClick={guardarCMT} disabled={saving}>{saving?"Guardando...":form.id?"Guardar Corrección":"Guardar CMT"}</Btn>
           </div>
         </Modal>
       )}
@@ -4273,7 +4275,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}}>
       <div style={{background:T.card,borderRadius:12,padding:28,width:440,maxWidth:"95vw",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
         <div style={{fontWeight:800,fontSize:16,color:T.navy,marginBottom:16}}>¿Vincular a una Orden de Trabajo?</div>
-        <div style={{background:"#00e5a018",border:"1px solid #00e5a033",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#00e5a0",marginBottom:16}}>✅ CMT {modalVinculacionOT.cmtNumero} creado exitosamente</div>
+        <div style={{background:`${T.success}18`,border:`1px solid ${T.success}33`,borderRadius:8,padding:"10px 14px",fontSize:12,color:T.success,marginBottom:16}}>✅ CMT {modalVinculacionOT.cmtNumero} creado exitosamente</div>
         <div style={{fontSize:11,color:T.muted,fontWeight:600,marginBottom:6}}>ÓRDENES DISPONIBLES</div>
         {otsDisponibles.length===0 ? (
           <div style={{background:T.bg,borderRadius:8,padding:"12px 14px",color:T.muted,fontSize:12,textAlign:"center",marginBottom:16}}>No hay OTs completadas disponibles<br/><span style={{fontSize:11}}>El CMT se guardará como autónomo</span></div>
@@ -4285,7 +4287,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         )}
         <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
           <button onClick={()=>handleConfirmarVinculacionOT(null,null)} style={{background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"8px 16px",cursor:"pointer",fontWeight:700,fontSize:12}}>Guardar autónomo</button>
-          <button onClick={()=>{ if(!otVincSeleccionada) return; const o=(ordenesTrabaio||[]).find(x=>x.id===otVincSeleccionada); handleConfirmarVinculacionOT(otVincSeleccionada,o?.numero_ot); }} disabled={!otVincSeleccionada} style={{background:otVincSeleccionada?"#00e5a0":"#00e5a044",border:"none",color:otVincSeleccionada?"#071422":"#00e5a088",borderRadius:6,padding:"8px 20px",cursor:otVincSeleccionada?"pointer":"default",fontWeight:700,fontSize:12}}>Vincular a OT</button>
+          <button onClick={()=>{ if(!otVincSeleccionada) return; const o=(ordenesTrabaio||[]).find(x=>x.id===otVincSeleccionada); handleConfirmarVinculacionOT(otVincSeleccionada,o?.numero_ot); }} disabled={!otVincSeleccionada} style={{background:otVincSeleccionada?T.success:`${T.success}44`,border:"none",color:otVincSeleccionada?"#071422":`${T.success}88`,borderRadius:6,padding:"8px 20px",cursor:otVincSeleccionada?"pointer":"default",fontWeight:700,fontSize:12}}>Vincular a OT</button>
         </div>
       </div>
     </div>
@@ -4408,9 +4410,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         <div style={{ display:"flex",gap:6,marginBottom:22 }}>
           {[["1","Trasiegos"],["2","Descargues"],["3","Recirculación"]].map(([n,lbl])=>(
             <div key={n} style={{ flex:1,padding:"7px 10px",borderRadius:8,textAlign:"center",fontSize:11,fontWeight:700,
-              background:m.step===Number(n)?T.orange:Number(n)<m.step?"#00e5a022":T.bg,
-              color:m.step===Number(n)?"#fff":Number(n)<m.step?"#00e5a0":T.muted,
-              border:`1px solid ${m.step===Number(n)?T.orange:Number(n)<m.step?"#00e5a055":T.border}` }}>
+              background:m.step===Number(n)?T.orange:Number(n)<m.step?`${T.success}22`:T.bg,
+              color:m.step===Number(n)?"#fff":Number(n)<m.step?T.success:T.muted,
+              border:`1px solid ${m.step===Number(n)?T.orange:Number(n)<m.step?`${T.success}55`:T.border}` }}>
               {Number(n)<m.step?"✅ ":""}{lbl}
             </div>
           ))}
@@ -4491,7 +4493,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <div style={{ textAlign:"center",color:T.muted }}>{otExpandidos["prev_"+g.productoBase]?"▲":"▼"}</div>
                           </div>
                           {otExpandidos["prev_"+g.productoBase] && (
-                            <div style={{ background:T.bg,padding:"6px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid #38bdf8` }}>
+                            <div style={{ background:T.bg,padding:"6px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid ${T.orange}` }}>
                               {g.plancas.map((p,pi)=>(
                                 <div key={pi} style={{ display:"flex",justifyContent:"space-between",marginBottom:2,paddingLeft:8 }}>
                                   <span>├─ {p.placa||"—"} <span style={{ color:T.muted }}>({p.producto_original})</span></span>
@@ -4514,7 +4516,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {fo.producto==="VLSFO" && (
                   <div style={{ marginTop:10,display:"flex",gap:8,flexWrap:"wrap" }}>
                     {[["Azufre",Number(fo.azufre_planeado||0).toFixed(4)+"%",Number(fo.azufre_planeado||0)<=0.5],["Agua",Number(fo.agua_planeada||0).toFixed(4)+"%",true],["Flash",Number(fo.flash_point_planeado||0).toFixed(1)+"°C",Number(fo.flash_point_planeado||0)>=60]].map(([lbl,val,ok])=>(
-                      <span key={lbl} style={{ fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:6,background:ok?"#00e5a018":"#ef444418",border:`1px solid ${ok?"#00e5a055":"#ef444455"}`,color:ok?"#00e5a0":"#ef4444" }}>{lbl}: {val} {ok?"✅":"🔴"}</span>
+                      <span key={lbl} style={{ fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:6,background:ok?`${T.success}18`:`${T.danger}18`,border:`1px solid ${ok?`${T.success}55`:`${T.danger}55`}`,color:ok?T.success:T.danger }}>{lbl}: {val} {ok?"✅":"🔴"}</span>
                     ))}
                   </div>
                 )}
@@ -4551,7 +4553,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             )}
             <div style={{ display:"flex",justifyContent:"space-between" }}>
               <button onClick={()=>setM({step:2})} style={{ background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13 }}>← Atrás</button>
-              <button onClick={crearOT} disabled={otSaving} style={{ background:"#00e5a0",border:"none",color:"#071422",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:800,fontSize:13 }}>{otSaving?"Creando...":"✅ Crear Orden de Trabajo"}</button>
+              <button onClick={crearOT} disabled={otSaving} style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:800,fontSize:13 }}>{otSaving?"Creando...":"✅ Crear Orden de Trabajo"}</button>
             </div>
           </div>
         )}
@@ -4592,7 +4594,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   style={{padding:"10px 14px",cursor:"pointer",display:"grid",gridTemplateColumns:"auto 1fr auto",gap:"0 12px",alignItems:"center",borderBottom:"1px solid #ffffff08",transition:"background 0.1s"}}
                   onMouseEnter={e=>e.currentTarget.style.background="#ffffff0d"}
                   onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                  <span style={{background:"#f59e0b18",border:"1px solid #f59e0b44",borderRadius:6,padding:"3px 9px",color:"#f59e0b",fontWeight:700,fontSize:12,letterSpacing:1}}>{v.placa}</span>
+                  <span style={{background:`${T.orange}18`,border:`1px solid ${T.orange}44`,borderRadius:6,padding:"3px 9px",color:T.orange,fontWeight:700,fontSize:12,letterSpacing:1}}>{v.placa}</span>
                   <span style={{color:"#c8dce8",fontSize:12}}>{v.producto}</span>
                   <span style={{color:T.muted,fontSize:11}}>{v.fecha}</span>
                 </div>
@@ -4603,7 +4605,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       </div>
       {selViaje && (
         <div style={{background:"#0d1f30",borderRadius:10,padding:"12px 16px",marginBottom:14,fontSize:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          <div><span style={{color:T.muted}}>Placa: </span><b style={{color:"#f59e0b"}}>{selViaje.placa}</b></div>
+          <div><span style={{color:T.muted}}>Placa: </span><b style={{color:T.orange}}>{selViaje.placa}</b></div>
           <div><span style={{color:T.muted}}>Producto: </span>{selViaje.producto}</div>
           <div><span style={{color:T.muted}}>Transportadora: </span>{selViaje.transportadora}</div>
           <div><span style={{color:T.muted}}>F. Cargue: </span>{selViaje.fecha}</div>
@@ -4655,7 +4657,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 {editUsuario && (()=>{
   const MODS = ["viajes","tiquetes","pbs","cmt","tanques","despachos","trazabilidad"];
   const ACCIONES = ["ver","crear","editar","eliminar"];
-  const COLOR_ACCION = {ver:"#00b4ff",crear:"#00e5a0",editar:"#f59e0b",eliminar:"#ff4d4d"};
+  const COLOR_ACCION = {ver:T.orange,crear:T.success,editar:T.orange,eliminar:T.danger};
   const cedula = editUsuario.cedula || (editUsuario.email||"").replace("@quimibuques.com","");
   return (
     <Modal title={`Gestionar Usuario — ${editUsuario.nombre}`} onClose={()=>setEditUsuario(null)} wide inline>
@@ -4718,7 +4720,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginTop:4}}>
         <div style={{display:"flex",gap:8}}>
-          <Btn color={editUsuario.activo===false?"#00b894":"#f59e0b"} sm onClick={async()=>{
+          <Btn color={editUsuario.activo===false?T.success:T.orange} sm onClick={async()=>{
             const desactivar = editUsuario.activo !== false;
             const label = desactivar ? "deshabilitar" : "habilitar";
             if (!confirm(`¿${label.charAt(0).toUpperCase()+label.slice(1)} a ${editUsuario.nombre}?`)) return;

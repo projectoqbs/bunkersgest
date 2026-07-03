@@ -13,9 +13,9 @@ const TANQUES_BARCAZA=["1B","1E","2B","2E","3B","3E","4B","4E","5B","5E"];
 const TANQUES_TKT=["TKT-1","TKT-2"];
 
 const TH = {
-  navy:"#003D5C", orange:"#FF6B35", success:"#00B894",
-  danger:"#D63031", bg:"#e8eaf0", text:"#1E1E24", card:"#ffffff",
-  border:"#e0e0e0", muted:"#6b7a99",
+  navy:"#003B73", orange:"#0077CC", success:"#00B894",
+  danger:"#D63031", bg:"#f0f4f8", text:"#121212", card:"#ffffff",
+  border:"#d1d9e0", muted:"#6E7781",
 };
 
 function interp(x,x0,x1,y0,y1){if(x1===x0)return y0;return y0+(y1-y0)*(x-x0)/(x1-x0);}
@@ -211,7 +211,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
     setTab("historial");
   }
 
-  const tcDir=d=>d==="POPA"?TH.danger:d==="PROA"?"#3b82f6":TH.success;
+  const tcDir=d=>d==="POPA"?TH.danger:d==="PROA"?TH.navy:TH.success;
   const setFB=(idx,k,v)=>{const n=[...filasB];n[idx]={...n[idx],[k]:v};setFilasB(n);};
   const setFT=(idx,k,v)=>{const n=[...filasT];n[idx]={...n[idx],[k]:v};setFilasT(n);};
 
@@ -320,11 +320,11 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
                 <AppInp label="Proa Inicial (m)" type="number" step="0.01" value={calados.proaIni} onChange={e=>setCalados(c=>({...c,proaIni:e.target.value}))}/>
                 <AppInp label="Popa Inicial (m)" type="number" step="0.01" value={calados.popaIni} onChange={e=>setCalados(c=>({...c,popaIni:e.target.value}))}/>
               </div>
-              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+(trimI.dir==="POPA"&&trimI.val>0.7?"#f59e0b":tcDir(trimI.dir)),minWidth:90}}>
+              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+(trimI.dir==="POPA"&&trimI.val>0.7?TH.orange:tcDir(trimI.dir)),minWidth:90}}>
                 <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Trim Inicial</div>
                 <div style={{fontSize:26,fontWeight:900,color:tcDir(trimI.dir),lineHeight:1}}>{trimI.val.toFixed(2)}m</div>
                 <div style={{fontSize:12,fontWeight:700,color:tcDir(trimI.dir),marginTop:4}}>{trimI.dir}</div>
-                {trimI.dir==="POPA"&&trimI.val>0.7&&<div style={{fontSize:9,color:"#f59e0b",fontWeight:700,marginTop:4}}>⚠ Fuera de tabla (máx 0.7m)</div>}
+                {trimI.dir==="POPA"&&trimI.val>0.7&&<div style={{fontSize:9,color:TH.orange,fontWeight:700,marginTop:4}}>⚠ Fuera de tabla (máx 0.7m)</div>}
               </div>
             </div>
             {/* FINAL */}
@@ -334,11 +334,11 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
                 <AppInp label="Proa Final (m)" type="number" step="0.01" value={calados.proaFin} onChange={e=>setCalados(c=>({...c,proaFin:e.target.value}))}/>
                 <AppInp label="Popa Final (m)" type="number" step="0.01" value={calados.popaFin} onChange={e=>setCalados(c=>({...c,popaFin:e.target.value}))}/>
               </div>
-              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+(trimF.dir==="POPA"&&trimF.val>0.7?"#f59e0b":tcDir(trimF.dir)),minWidth:90}}>
+              <div style={{textAlign:"center",padding:"14px 18px",background:"#ffffff",borderRadius:6,border:"2px solid "+(trimF.dir==="POPA"&&trimF.val>0.7?TH.orange:tcDir(trimF.dir)),minWidth:90}}>
                 <div style={{fontSize:9,color:TH.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Trim Final</div>
                 <div style={{fontSize:26,fontWeight:900,color:tcDir(trimF.dir),lineHeight:1}}>{trimF.val.toFixed(2)}m</div>
                 <div style={{fontSize:12,fontWeight:700,color:tcDir(trimF.dir),marginTop:4}}>{trimF.dir}</div>
-                {trimF.dir==="POPA"&&trimF.val>0.7&&<div style={{fontSize:9,color:"#f59e0b",fontWeight:700,marginTop:4}}>⚠ Fuera de tabla (máx 0.7m)</div>}
+                {trimF.dir==="POPA"&&trimF.val>0.7&&<div style={{fontSize:9,color:TH.orange,fontWeight:700,marginTop:4}}>⚠ Fuera de tabla (máx 0.7m)</div>}
               </div>
             </div>
           </div>
@@ -411,7 +411,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
                   <YAxis tick={{fontSize:9,fill:TH.muted}} tickLine={false} axisLine={false} tickFormatter={v=>v>=1000?(v/1000).toFixed(0)+"k":v} width={38}/>
                   <Tooltip formatter={(v,n)=>[Number(v).toLocaleString("es-CO"),n==="gls"?"Gls Netos":"MT"]} labelStyle={{fontSize:11,fontWeight:700}} contentStyle={{fontSize:11,borderRadius:6,border:"1px solid #d1d9e0"}}/>
                   <Bar dataKey="gls" radius={[4,4,0,0]}>
-                    {[...historial].reverse().map((_,i)=><Cell key={i} fill={i===historial.length-1?"#e85d04":"#16a34a"}/>)}
+                    {[...historial].reverse().map((_,i)=><Cell key={i} fill={i===historial.length-1?TH.danger:TH.success}/>)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

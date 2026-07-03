@@ -11,7 +11,7 @@ const TABLA13 = {1:4.0346,2:4.0043,3:3.9745,4:3.9451,5:3.9162,6:3.8877,7:3.8596,
 const TH = {
   bg:"#f0f4f8", card:"#ffffff", border:"#d1d9e0",
   text:"#121212", navy:"#003B73", orange:"#0077CC",
-  success:"#16a34a", danger:"#dc2626", muted:"#6E7781",
+  success:"#00B894", danger:"#D63031", muted:"#6E7781",
 };
 
 function interp(x,x0,x1,y0,y1){if(x1===x0)return y0;return y0+(y1-y0)*(x-x0)/(x1-x0);}
@@ -285,7 +285,7 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
                   <YAxis tick={{fontSize:9,fill:TH.muted}} tickLine={false} axisLine={false} tickFormatter={v=>v>=1000?(v/1000).toFixed(0)+"k":v} width={38}/>
                   <Tooltip formatter={(v)=>[Number(v).toLocaleString("es-CO"),"Gls Netos"]} labelStyle={{fontSize:11,fontWeight:700}} contentStyle={{fontSize:11,borderRadius:6,border:"1px solid #d1d9e0"}}/>
                   <Bar dataKey="gls" radius={[4,4,0,0]}>
-                    {[...historial].reverse().map((_,i)=><Cell key={i} fill={i===historial.length-1?"#e85d04":"#16a34a"}/>)}
+                    {[...historial].reverse().map((_,i)=><Cell key={i} fill={i===historial.length-1?TH.danger:TH.success}/>)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -333,8 +333,8 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
               <thead>
                 <tr style={{background:"#f0f4f8"}}>
                   <th style={thStyle} colSpan={3}></th>
-                  <th style={{...thStyle,background:"#e8f0fe",color:"#1a56db"}} colSpan={7}>INICIO</th>
-                  <th style={{...thStyle,background:"#fef3e2",color:"#c05621"}} colSpan={7}>FINAL</th>
+                  <th style={{...thStyle,background:`${TH.navy}18`,color:TH.navy}} colSpan={7}>INICIO</th>
+                  <th style={{...thStyle,background:`${TH.orange}18`,color:TH.orange}} colSpan={7}>FINAL</th>
                   <th style={{...thStyle,background:"#f0fdf4",color:TH.success}}>ENTREGADO</th>
                 </tr>
                 <tr style={{background:"#f8fafc"}}>
@@ -367,10 +367,10 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
                 <tr style={{background:"#f0f4f8",fontWeight:800}}>
                   <td colSpan={3} style={{...tdC,fontSize:11,color:TH.navy,textAlign:"right",paddingRight:12}}>TOTALES</td>
                   <td colSpan={3}></td>
-                  <td style={{...tdR,color:"#1a56db"}}>{fmtN(t.gBI,0)}</td>
+                  <td style={{...tdR,color:TH.navy}}>{fmtN(t.gBI,0)}</td>
                   <td></td>
-                  <td style={{...tdR,color:"#1a56db"}}>{t.gNI!=null?fmtN(t.gNI,0):"—"}</td>
-                  <td style={{...tdR,color:"#1a56db"}}>{t.hasMI?fmtN(t.mI,3):"—"}</td>
+                  <td style={{...tdR,color:TH.navy}}>{t.gNI!=null?fmtN(t.gNI,0):"—"}</td>
+                  <td style={{...tdR,color:TH.navy}}>{t.hasMI?fmtN(t.mI,3):"—"}</td>
                   <td colSpan={3}></td>
                   <td style={{...tdR,color:TH.orange}}>{fmtN(t.gBF,0)}</td>
                   <td></td>
@@ -385,9 +385,9 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
           {/* Resumen */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:16}}>
             {[
-              {label:"Gls Brutos Ini",val:fmtN(t.gBI,0),color:"#1a56db"},
-              {label:"Gls Netos Ini",val:t.gNI!=null?fmtN(t.gNI,0):"—",color:"#1a56db"},
-              {label:"MT Ini",val:t.hasMI?fmtN(t.mI,3):"—",color:"#1a56db"},
+              {label:"Gls Brutos Ini",val:fmtN(t.gBI,0),color:TH.navy},
+              {label:"Gls Netos Ini",val:t.gNI!=null?fmtN(t.gNI,0):"—",color:TH.navy},
+              {label:"MT Ini",val:t.hasMI?fmtN(t.mI,3):"—",color:TH.navy},
               {label:"Gls Brutos Fin",val:fmtN(t.gBF,0),color:TH.orange},
               {label:"Gls Netos Fin",val:t.gNF!=null?fmtN(t.gNF,0):"—",color:TH.orange},
               {label:"MT Fin",val:t.hasMF?fmtN(t.mF,3):"—",color:TH.orange},
