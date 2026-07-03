@@ -269,10 +269,7 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
           <div style={{fontSize:20,fontWeight:800,color:TH.navy}}>Liquidador Planta 2</div>
           <div style={{fontSize:12,color:TH.muted}}>Tanques TK-111 a TK-117 — Ullage en MM</div>
         </div>
-        <div style={{display:"flex",gap:8}}>
-          <AppBtn sm color={tab==="nuevo"?TH.navy:"#94a3b8"} onClick={()=>setTab("nuevo")}>Nueva Liquidación</AppBtn>
-          <AppBtn sm color={tab==="historial"?TH.navy:"#94a3b8"} onClick={()=>{setTab("historial");cargarHistorial();}}>Historial</AppBtn>
-        </div>
+        <div style={{display:"flex",gap:8}}></div>
       </div>
 
       {tab==="historial" && (
@@ -325,9 +322,6 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
               </table>
             </div>
           )}
-          <div style={{marginTop:16}}>
-            <AppBtn sm onClick={nuevaLiquidacion}>+ Nueva Liquidación</AppBtn>
-          </div>
         </div>
       )}
 
@@ -407,12 +401,6 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
             ))}
           </div>
 
-          {/* Guardar */}
-          <div style={{display:"flex",gap:12,justifyContent:"flex-end"}}>
-            <AppBtn onClick={guardar} disabled={saving} color={TH.success}>
-              {saving?"Guardando...":"Guardar Liquidación"}
-            </AppBtn>
-          </div>
         </>
       )}
     </div>
