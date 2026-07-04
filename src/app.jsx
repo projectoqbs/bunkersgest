@@ -179,7 +179,7 @@ const PBS_PREGUNTAS = [
   "¿Cada miembro del equipo se encuentra en el lugar que le corresponde?",
 ];
 
-const TIPO_COLOR = { materia_prima:"#f59e0b", mezcla:"#00b4ff", terminado:"#00e5a0" };
+const TIPO_COLOR = { materia_prima:"#4a7c59", mezcla:"#00b4ff", terminado:"#4a7c59" };
 const TIPO_LABEL = { materia_prima:"Mat. Prima", mezcla:"Mezcla/Prod.", terminado:"Terminado" };
 const fmt = n => Number(n||0).toLocaleString("es-CO");
 const today = () => new Date().toISOString().slice(0,10);
