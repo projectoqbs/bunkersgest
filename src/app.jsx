@@ -3651,26 +3651,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div>
                       <div style={{ fontSize:11,fontWeight:700,color:T.muted,marginBottom:4,textTransform:"uppercase",letterSpacing:0.5 }}>Inicio del Trasiego</div>
                       <input type="datetime-local"
-                        value={recircDates[ot.id]?.inicio || ""}
+                        value={recircDates[ot.id]?.inicio ?? (ot.recirculacion_inicio ? ot.recirculacion_inicio.slice(0,16) : "")}
                         onChange={e=>{
                           const val = e.target.value;
                           setRecircDates(prev=>({...prev,[ot.id]:{...prev[ot.id],inicio:val}}));
+                          actualizarOT({recirculacion_inicio: val ? new Date(val).toISOString() : null});
                         }}
                         style={{ width:"100%", padding:"8px 10px", borderRadius:6, border:`1px solid ${T.border}`, background:T.card, color:T.text, fontSize:12, outline:"none", boxSizing:"border-box" }}/>
                     </div>
                     <div>
                       <div style={{ fontSize:11,fontWeight:700,color:T.muted,marginBottom:4,textTransform:"uppercase",letterSpacing:0.5 }}>Final del Trasiego</div>
                       <input type="datetime-local"
-                        value={recircDates[ot.id]?.fin || ""}
+                        value={recircDates[ot.id]?.fin ?? (ot.recirculacion_fin ? ot.recirculacion_fin.slice(0,16) : "")}
                         onChange={e=>{
                           const val = e.target.value;
                           setRecircDates(prev=>({...prev,[ot.id]:{...prev[ot.id],fin:val}}));
+                          actualizarOT({recirculacion_fin: val ? new Date(val).toISOString() : null});
                         }}
                         style={{ width:"100%", padding:"8px 10px", borderRadius:6, border:`1px solid ${T.border}`, background:T.card, color:T.text, fontSize:12, outline:"none", boxSizing:"border-box" }}/>
                     </div>
                   </div>
                   {(()=>{
-                    const listo = recircDates[ot.id]?.inicio && recircDates[ot.id]?.fin;
+                    const listo = (recircDates[ot.id]?.inicio ?? ot.recirculacion_inicio) && (recircDates[ot.id]?.fin ?? ot.recirculacion_fin);
                     return (
                       <div>
                         <button disabled={!listo}
