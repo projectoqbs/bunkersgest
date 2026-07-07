@@ -4282,30 +4282,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div><Lbl>Gls Descargados</Lbl><input type="text" readOnly value={(()=>{const tq=tiquetes.find(t=>t.id===carro.tiquete);const factor=Number(tq?.factor_tabla13||0);const pesoNeto=Number(carro.peso_neto||0);return (factor>0&&pesoNeto>0)?fmt(Math.round(pesoNeto/factor)):(carro.galones_descargados||"");})()}  style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
                   <div><Lbl>RPM</Lbl><input type="text" value={carro.rpm||""} onChange={e=>{const n=[...cmtCarros];n[i].rpm=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>Presión (Bar)</Lbl><input type="text" value={carro.presion||""} onChange={e=>{const n=[...cmtCarros];n[i].presion=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
-                  <div><Lbl>PBS</Lbl><div style={{background:T.card,border:`1px solid ${carro.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
-                    {carro.pbs_id
-                      ? <button onClick={()=>{
-                          const pbsExistente = pbsList.find(p=>p.id===carro.pbs_id);
-                          const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
-                          const snap = {form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]};
-                          setCmtSnapshot(snap);
-                          setPbsParaCarro(i);
-                          const pbsForm = pbsExistente ? {...pbsExistente} : { id: carro.pbs_id, tipo_operacion: form.tipo_operacion||"", bodega_recibe: tanquesRecibe, bodega_despacha: carro.placa||"", conductor_nombre: carro.conductor||"" };
-                          const pbsCl = pbsExistente?.checklist || Array(26).fill("");
-                          const pbsInitialState = { form: pbsForm, pbsChecklist: pbsCl, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion], pbsParaCarro: i, pbsEsTrasiego: false, cmtSnapshot: snap };
-                          openFormTab("pbs", pbsInitialState);
-                        }} style={{background:"none",border:"none",color:T.orange,fontWeight:700,fontSize:11,cursor:"pointer",padding:0,fontFamily:"monospace",textDecoration:"underline"}}>{carro.pbs_id}</button>
-                      : <><span style={{fontSize:11,color:T.muted}}>Sin PBS</span><button onClick={()=>{
-                          const tanquesRecibe = cmtDespues.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
-                          const snap = {form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]};
-                          const cl = Array(26).fill("");
-                          if (carro.galones_guia) cl[18] = String(carro.galones_guia);
-                          const pbsForm = { tipo_operacion: form.tipo_operacion||"", bodega_recibe: tanquesRecibe, bodega_despacha: carro.placa||"", conductor_nombre: carro.conductor||"" };
-                          const pbsInitialState = { form: pbsForm, pbsChecklist: cl, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion], pbsParaCarro: i, pbsEsTrasiego: false, cmtSnapshot: snap };
-                          openFormTab("pbs", pbsInitialState);
-                        }} style={{background:T.orange,border:"none",borderRadius:6,color:"#ffffff",padding:"4px 8px",cursor:"pointer",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}}>+ PBS</button></>
-                    }
-                  </div></div>
+                  <div><Lbl>PBS</Lbl><input
+                    type="text"
+                    value={(carro.pbs_id||"").replace(/^PBS-/,"")}
+                    onChange={e=>{const n=[...cmtCarros];const v=e.target.value.replace(/\D/g,"");n[i].pbs_id=v?"PBS-"+v:"";setCmtCarros(n);}}
+                    placeholder="Ej: 19442"
+                    style={{width:"100%",background:T.card,border:`1.5px solid ${carro.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 12px",color:carro.pbs_id?T.orange:T.text,fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box",fontWeight:carro.pbs_id?700:400}}
+                  /></div>
                 </div>
                 <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
                   <button onClick={()=>setCmtCarros(cmtCarros.filter((_,j)=>j!==i))} style={{background:`${T.danger}15`,border:`1px solid ${T.danger}55`,borderRadius:6,color:T.danger,padding:"5px 14px",cursor:"pointer",fontSize:11,fontFamily:"system-ui,sans-serif"}}>✕ Eliminar carro</button>
@@ -4324,29 +4307,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </Section></> }
           {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && (
             <Section title="Permiso de Bombeo Seguro" color="#fb923c">
-              <div style={{display:"flex",alignItems:"center",gap:12}}>
-                <div style={{flex:1,background:T.card,border:`1px solid ${form.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  {form.pbs_id
-                    ? <span style={{fontSize:12,color:T.orange,fontWeight:700}}>{form.pbs_id}</span>
-                    : <span style={{fontSize:12,color:T.muted}}>Sin PBS vinculado</span>}
-                  <button onClick={()=>{
-                    const tanquesDespacho = cmtAntes.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
-                    const tanquesRecibe = cmtRecepcion.filter(t=>t.tanque).map(t=>t.tanque).join(", ");
-                    setCmtSnapshot({form:{...form}, cmtAntes:[...cmtAntes], cmtDespues:[...cmtDespues], cmtCarros:[...cmtCarros], cmtProducto, cmtRecepcion:[...cmtRecepcion]});
-                    setPbsEsTrasiego(true);
-                    setPbsParaCarro(null);
-                    setForm({
-                      tipo_operacion: form.tipo_operacion||"",
-                      bodega_despacha: tanquesDespacho,
-                      bodega_recibe: tanquesRecibe,
-                    });
-                    setPbsChecklist(Array(27).fill(""));
-                    setModal("pbs");
-                  }} style={{background:T.orange,border:"none",borderRadius:6,color:"#ffffff",padding:"5px 12px",cursor:"pointer",fontSize:11,fontWeight:700}}>
-                    {form.pbs_id ? "↺ Cambiar PBS" : "+ Generar PBS"}
-                  </button>
-                </div>
-              </div>
+              <Inp label="Número PBS" value={(form.pbs_id||"").replace(/^PBS-/,"")} onChange={e=>{const v=e.target.value.replace(/\D/g,"");setForm(prev=>({...prev,pbs_id:v?"PBS-"+v:""}));}} placeholder="Ej: 19442" style={{fontFamily:"monospace",color:form.pbs_id?T.orange:T.text,fontWeight:form.pbs_id?700:400}}/>
+              {form.pbs_id && <div style={{fontSize:11,color:T.orange,marginTop:4}}>Se guardará como: <b>{form.pbs_id}</b></div>}
             </Section>
           )}
           {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" ? (()=>{
