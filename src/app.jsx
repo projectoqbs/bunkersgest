@@ -1812,90 +1812,72 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             /* ── LANDING: 4 tarjetas ── */
             if (!analisisNav) {
               const otsPendientesLab = (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA");
+              const carrosSinTiquete = viajes.filter(v=>v.estado==="En Planta"&&!v.tiquete_id);
+              const navBtns = [
+                {key:"tiquetes_mp",label:"Tiquetes MP",color:"#0077CC"},
+                {key:"planta2",label:"Planta 2",color:"#00B894"},
+                {key:"planta1",label:"Planta 1",color:"#c084fc"},
+                {key:"no_rutinarios",label:"No Rutinarios",color:"#fb923c"},
+              ];
               return (
               <div>
-                <div style={{fontWeight:800,fontSize:22,color:T.navy,marginBottom:6}}>Análisis de Laboratorio</div>
-                <div style={{fontSize:12,color:T.muted,marginBottom:otsPendientesLab.length?16:36}}>Selecciona el tipo de análisis que deseas gestionar</div>
-
-                {/* Alertas de recirculaciones pendientes de análisis */}
-                {otsPendientesLab.length>0 && (
-                  <div style={{background:`${T.orange}10`,border:`1px solid ${T.orange}33`,borderRadius:10,padding:"12px 16px",marginBottom:28}}>
-                    <div style={{fontSize:12,fontWeight:700,color:T.orange,marginBottom:10}}>⚠ Recirculaciones pendientes de análisis</div>
-                    <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                      {otsPendientesLab.map(o=>{
-                        const tanquesOT = [...new Set([...(o.descargues||[]).map(d=>d.tanque),(o.trasiegos||[]).map(t=>t.destino)].flat())].filter(Boolean);
-                        const tanquesLabel = tanquesOT.map(id=>{ const tq=tanques.find(t=>t.id===id); return tq ? `${id} (${tq.nombre})` : id; }).join(", ");
-                        const horasRecirc = o.recirculacion_inicio && o.recirculacion_fin
-                          ? ((new Date(o.recirculacion_fin)-new Date(o.recirculacion_inicio))/3600000).toFixed(1)+"h"
-                          : null;
-                        return (
-                          <div key={o.id} style={{background:`${T.orange}18`,border:`1px solid ${T.orange}44`,borderRadius:8,padding:"8px 14px",fontSize:12}}>
-                            <b>{o.numero_ot}</b> · {tanquesLabel||"—"}
-                            {horasRecirc && <span style={{color:T.muted,fontSize:11}}> · {horasRecirc}</span>}
-                            <button onClick={()=>{setForm({tipo_analisis:"Planta 2",ot_id:o.id,ot_numero:o.numero_ot});setModal("tiquete");}}
-                              style={{marginLeft:10,background:T.orange,color:"#071422",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-                              🧪 Analizar
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
+                {/* Header con título y botones */}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+                  <div style={{fontWeight:800,fontSize:22,color:T.navy}}>Análisis de Laboratorio</div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {navBtns.map(b=>(
+                      <button key={b.key}
+                        onClick={()=>{ b.key==="tiquetes_mp" ? setAnalisisNav("tiquetes_mp") : (setForm({tipo_analisis:b.label}),setModal("tiquete")); }}
+                        style={{background:T.card,border:`1.5px solid ${b.color}55`,borderRadius:8,padding:"7px 16px",color:b.color,fontWeight:700,fontSize:12,cursor:"pointer",transition:"all 0.15s"}}
+                        onMouseEnter={e=>{e.currentTarget.style.background=b.color;e.currentTarget.style.color="#fff";}}
+                        onMouseLeave={e=>{e.currentTarget.style.background=T.card;e.currentTarget.style.color=b.color;}}>
+                        {b.label}
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
 
-                <div style={{display:"flex",gap:24,flexWrap:"wrap",justifyContent:"center",marginTop:otsPendientesLab.length?0:40}}>
-                  {[
-                    { key:"tiquetes_mp", icon:(
-                        <svg viewBox="0 0 64 64" width="64" height="64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="4" y="28" width="38" height="20" rx="3" fill="#0077CC33" stroke="#0077CC" strokeWidth="2"/>
-                          <rect x="42" y="34" width="16" height="14" rx="2" fill="#0077CC22" stroke="#0077CC" strokeWidth="2"/>
-                          <rect x="8" y="22" width="20" height="8" rx="2" fill="#0077CC55" stroke="#0077CC" strokeWidth="1.5"/>
-                          <circle cx="14" cy="50" r="5" fill="#071422" stroke="#0077CC" strokeWidth="2"/>
-                          <circle cx="34" cy="50" r="5" fill="#071422" stroke="#0077CC" strokeWidth="2"/>
-                          <circle cx="52" cy="50" r="4" fill="#071422" stroke="#0077CC" strokeWidth="2"/>
-                          <rect x="24" y="31" width="6" height="9" rx="1" fill="#0077CC"/>
-                        </svg>
-                      ), label:"Tiquetes MP", color:"#0077CC", desc:"Materia prima recibida en carrotanque" },
-                    { key:"planta2", icon:(
-                        <svg viewBox="0 0 64 64" width="64" height="64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <ellipse cx="32" cy="16" rx="22" ry="8" fill="#00B89433" stroke="#00B894" strokeWidth="2"/>
-                          <rect x="10" y="16" width="44" height="30" rx="0" fill="#00B89418" stroke="#00B894" strokeWidth="2"/>
-                          <ellipse cx="32" cy="46" rx="22" ry="6" fill="#00B89433" stroke="#00B894" strokeWidth="2"/>
-                          <line x1="32" y1="8" x2="32" y2="2" stroke="#00B894" strokeWidth="2"/>
-                          <line x1="25" y1="8" x2="25" y2="2" stroke="#00B894" strokeWidth="1.5"/>
-                          <line x1="39" y1="8" x2="39" y2="2" stroke="#00B894" strokeWidth="1.5"/>
-                        </svg>
-                      ), label:"Planta 2", color:"#00B894", desc:"Tanques de almacenamiento Planta 2" },
-                    { key:"planta1", icon:(
-                        <svg viewBox="0 0 64 64" width="64" height="64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="4" y="36" width="56" height="12" rx="4" fill="#c084fc33" stroke="#c084fc" strokeWidth="2"/>
-                          <rect x="10" y="28" width="44" height="10" rx="2" fill="#c084fc22" stroke="#c084fc" strokeWidth="1.5"/>
-                          <rect x="18" y="20" width="28" height="10" rx="2" fill="#c084fc18" stroke="#c084fc" strokeWidth="1.5"/>
-                          <rect x="26" y="14" width="12" height="8" rx="1" fill="#c084fc33" stroke="#c084fc" strokeWidth="1.5"/>
-                          <line x1="4" y1="48" x2="4" y2="56" stroke="#c084fc" strokeWidth="3"/>
-                          <line x1="60" y1="48" x2="60" y2="56" stroke="#c084fc" strokeWidth="3"/>
-                          <line x1="2" y1="56" x2="62" y2="56" stroke="#c084fc" strokeWidth="2"/>
-                        </svg>
-                      ), label:"Planta 1", color:"#c084fc", desc:"Barcaza y despacho Planta 1" },
-                    { key:"no_rutinarios", icon:(
-                        <svg viewBox="0 0 64 64" width="64" height="64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="22" y="4" width="12" height="16" rx="3" fill="#fb923c33" stroke="#fb923c" strokeWidth="2"/>
-                          <path d="M18 20 L10 52 Q10 58 18 58 L46 58 Q54 58 54 52 L46 20 Z" fill="#fb923c18" stroke="#fb923c" strokeWidth="2"/>
-                          <circle cx="30" cy="38" r="6" fill="#fb923c55" stroke="#fb923c" strokeWidth="2"/>
-                          <line x1="30" y1="32" x2="30" y2="44" stroke="#fb923c" strokeWidth="2"/>
-                          <line x1="24" y1="38" x2="36" y2="38" stroke="#fb923c" strokeWidth="2"/>
-                        </svg>
-                      ), label:"No Rutinarios", color:"#fb923c", desc:"Análisis especiales y muestras puntuales" },
-                  ].map(card=>(
-                    <div key={card.key} onClick={()=>{ card.key==="tiquetes_mp" ? setAnalisisNav("tiquetes_mp") : (setForm({tipo_analisis:card.label}),setModal("tiquete")); }}
-                      style={{background:T.card,border:`2px solid ${card.color}33`,borderRadius:16,padding:"32px 28px",display:"flex",flexDirection:"column",alignItems:"center",gap:16,cursor:"pointer",width:180,transition:"all 0.2s",boxShadow:`0 4px 20px ${card.color}18`}}
-                      onMouseEnter={e=>{e.currentTarget.style.border=`2px solid ${card.color}`;e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 8px 28px ${card.color}44`;}}
-                      onMouseLeave={e=>{e.currentTarget.style.border=`2px solid ${card.color}33`;e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=`0 4px 20px ${card.color}18`;}}>
-                      {card.icon}
-                      <div style={{fontWeight:800,fontSize:14,color:card.color,textAlign:"center",letterSpacing:1}}>{card.label}</div>
-                      <div style={{fontSize:11,color:T.muted,textAlign:"center",lineHeight:1.4}}>{card.desc}</div>
-                    </div>
-                  ))}
+                {/* Carros en planta sin tiquete */}
+                <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:T.navy,marginBottom:10}}>🚛 Carros en planta pendientes de análisis</div>
+                  {carrosSinTiquete.length===0
+                    ? <div style={{fontSize:12,color:T.muted}}>Sin carros pendientes</div>
+                    : <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                        {carrosSinTiquete.map(v=>(
+                          <div key={v.id} style={{background:`${T.navy}10`,border:`1px solid ${T.navy}33`,borderRadius:8,padding:"8px 14px",fontSize:12}}>
+                            <b>{v.placa}</b> · {v.producto}
+                            {puedeCrear("tiquetes") && (
+                              <button onClick={()=>{setForm({viaje_id:v.id,producto:v.producto,placa:v.placa,conductor:v.conductor,fecha_cargue:v.fecha,fecha_llegada:today()});setModal("tiquete");}}
+                                style={{marginLeft:10,background:T.navy,color:"#fff",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Emitir</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                  }
+                </div>
+
+                {/* Recirculaciones pendientes de análisis */}
+                <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 18px"}}>
+                  <div style={{fontSize:12,fontWeight:700,color:T.orange,marginBottom:10}}>⚗️ Recirculaciones pendientes de análisis</div>
+                  {otsPendientesLab.length===0
+                    ? <div style={{fontSize:12,color:T.muted}}>Sin recirculaciones pendientes</div>
+                    : <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                        {otsPendientesLab.map(o=>{
+                          const tanquesOT = [...new Set([...(o.descargues||[]).map(d=>d.tanque),(o.trasiegos||[]).map(t=>t.destino)].flat())].filter(Boolean);
+                          const tanquesLabel = tanquesOT.map(id=>{ const tq=tanques.find(t=>t.id===id); return tq?`${id} (${tq.nombre})`:id; }).join(", ");
+                          const horasRecirc = o.recirculacion_inicio&&o.recirculacion_fin
+                            ? ((new Date(o.recirculacion_fin)-new Date(o.recirculacion_inicio))/3600000).toFixed(1)+"h" : null;
+                          return (
+                            <div key={o.id} style={{background:`${T.orange}10`,border:`1px solid ${T.orange}44`,borderRadius:8,padding:"8px 14px",fontSize:12}}>
+                              <b>{o.numero_ot}</b> · {tanquesLabel||"—"}
+                              {horasRecirc&&<span style={{color:T.muted,fontSize:11}}> · {horasRecirc}</span>}
+                              <button onClick={()=>{setForm({tipo_analisis:"Planta 2",ot_id:o.id,ot_numero:o.numero_ot});setModal("tiquete");}}
+                                style={{marginLeft:10,background:T.orange,color:"#071422",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>🧪 Analizar</button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                  }
                 </div>
               </div>
               );
