@@ -4088,7 +4088,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               })()}
             </div>
           </div>
-          <div style={{marginBottom:18}}>
+          {(form.tipo_operacion||"")!=="PORTEO" && (<div style={{marginBottom:18}}>
             <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.orange}33`}}>
               <span style={{fontSize:11,fontWeight:700,color:T.orange,letterSpacing:1,textTransform:"uppercase"}}>{(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"?"Tanque de Despacho":"Medida Inicial"}</span>
             </div>
@@ -4160,7 +4160,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               }}>+ TK</Btn>
               <span style={{ fontSize:12, color:T.orange }}>Total: {fmt(cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
             </div>
-          </div>
+          </div>)}
           {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && <div style={{marginBottom:18}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.success}33`}}>
               <span style={{fontSize:11,fontWeight:700,color:T.success,letterSpacing:1,textTransform:"uppercase"}}>Tanque de Recepción</span>
@@ -4203,7 +4203,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Btn sm outline color={T.success} onClick={()=>setCmtRecepcion([...cmtRecepcion,{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}])}>+ TK</Btn>
             </div>
           </div>}
-          {(form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && <div style={{marginBottom:18}}>
+          {(form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && (form.tipo_operacion||"")!=="PORTEO" && (<div style={{marginBottom:18}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.success}33`}}>
               <span style={{fontSize:11,fontWeight:700,color:T.success,letterSpacing:1,textTransform:"uppercase"}}>Medida Final</span>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -4251,7 +4251,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{ display:"flex", justifyContent:"flex-end" }}>
               <span style={{ fontSize:12, color:T.success }}>Total: {fmt(cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
             </div>
-          </div>}
+          </div>)}
           {(form.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && <><div ref={cmtCarrosRef}/><Section title="Carros Descargados" color={T.muted}>
             <div style={{fontSize:11,color:T.muted,marginBottom:10}}>Un registro por cada carro descargado en este CMT</div>
             {cmtCarros.map((carro,i)=>(
