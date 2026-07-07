@@ -1824,12 +1824,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                       {otsPendientesLab.map(o=>{
                         const tanquesOT = [...new Set([...(o.descargues||[]).map(d=>d.tanque),(o.trasiegos||[]).map(t=>t.destino)].flat())].filter(Boolean);
+                        const tanquesLabel = tanquesOT.map(id=>{ const tq=tanques.find(t=>t.id===id); return tq ? `${id} (${tq.nombre})` : id; }).join(", ");
                         const horasRecirc = o.recirculacion_inicio && o.recirculacion_fin
                           ? ((new Date(o.recirculacion_fin)-new Date(o.recirculacion_inicio))/3600000).toFixed(1)+"h"
                           : null;
                         return (
                           <div key={o.id} style={{background:`${T.orange}18`,border:`1px solid ${T.orange}44`,borderRadius:8,padding:"8px 14px",fontSize:12}}>
-                            <b>{o.numero_ot}</b> · {tanquesOT.join(", ")||"—"}
+                            <b>{o.numero_ot}</b> · {tanquesLabel||"—"}
                             {horasRecirc && <span style={{color:T.muted,fontSize:11}}> · {horasRecirc}</span>}
                             <button onClick={()=>{setForm({tipo_analisis:"Planta 2",ot_id:o.id,ot_numero:o.numero_ot});setModal("tiquete");}}
                               style={{marginLeft:10,background:T.orange,color:"#071422",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>
