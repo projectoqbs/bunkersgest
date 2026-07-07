@@ -3642,7 +3642,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{ fontSize:12,color:T.muted,marginBottom:8 }}>Tiempo programado: <b style={{ color:T.text }}>{ot.recirculacion_tiempo_total} min ({(ot.recirculacion_tiempo_total/60).toFixed(1)}h)</b></div>
               {ot.estado==="RECIRCULANDO" && (
                 <div style={{ marginBottom:10 }}>
-                  <div style={{ fontSize:11,color:T.orange,marginBottom:4 }}>Iniciado: {ot.fecha_inicio_recirculacion?new Date(ot.fecha_inicio_recirculacion).toLocaleString("es-CO"):""}</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
+                    <div>
+                      <div style={{ fontSize:11,fontWeight:700,color:T.muted,marginBottom:4,textTransform:"uppercase",letterSpacing:0.5 }}>Inicio del Trasiego</div>
+                      <input type="datetime-local"
+                        defaultValue={ot.trasiego_inicio ? ot.trasiego_inicio.slice(0,16) : ""}
+                        onChange={e=>actualizarOT({trasiego_inicio: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                        style={{ width:"100%", padding:"8px 10px", borderRadius:6, border:`1px solid ${T.border}`, background:T.card, color:T.text, fontSize:12, outline:"none", boxSizing:"border-box" }}/>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:11,fontWeight:700,color:T.muted,marginBottom:4,textTransform:"uppercase",letterSpacing:0.5 }}>Final del Trasiego</div>
+                      <input type="datetime-local"
+                        defaultValue={ot.trasiego_fin ? ot.trasiego_fin.slice(0,16) : ""}
+                        onChange={e=>actualizarOT({trasiego_fin: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                        style={{ width:"100%", padding:"8px 10px", borderRadius:6, border:`1px solid ${T.border}`, background:T.card, color:T.text, fontSize:12, outline:"none", boxSizing:"border-box" }}/>
+                    </div>
+                  </div>
                   <button onClick={()=>actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada"})} style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✅ Recirculación Completada → Enviar a Lab</button>
                 </div>
               )}
