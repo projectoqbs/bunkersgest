@@ -366,10 +366,12 @@ export default function App() {
   const [cmtDespues, setCmtDespues] = useState([{tanque:"",producto:"",sonda:"",galones:""}]);
   const [cmtRecepcion, setCmtRecepcion] = useState([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
   const PORTEO_ROW = {tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""};
+  const PORTEO_CARRO = {placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""};
   const [cmtPorteoCargaPlanta, setCmtPorteoCargaPlanta] = useState("");
   const [cmtPorteoDescargaPlanta, setCmtPorteoDescargaPlanta] = useState("");
   const [cmtPorteoCarga, setCmtPorteoCarga] = useState([{...PORTEO_ROW}]);
   const [cmtPorteoDescarga, setCmtPorteoDescarga] = useState([{...PORTEO_ROW}]);
+  const [cmtPorteoCarros, setCmtPorteoCarros] = useState([{...PORTEO_CARRO}]);
   const [viajesBusqueda, setViajesBusqueda] = useState("");
   const [programaciones, setProgramaciones] = useState([]);
   const [formulaciones, setFormulaciones] = useState([]);
@@ -468,6 +470,7 @@ export default function App() {
       cmtPorteoDescargaPlanta,
       cmtPorteoCarga: JSON.parse(JSON.stringify(cmtPorteoCarga)),
       cmtPorteoDescarga: JSON.parse(JSON.stringify(cmtPorteoDescarga)),
+      cmtPorteoCarros: JSON.parse(JSON.stringify(cmtPorteoCarros)),
       pbsChecklist: [...pbsChecklist],
       pbsParaCarro,
       pbsEsTrasiego,
@@ -487,6 +490,7 @@ export default function App() {
     setCmtPorteoDescargaPlanta(cached.cmtPorteoDescargaPlanta || '');
     setCmtPorteoCarga(cached.cmtPorteoCarga || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
     setCmtPorteoDescarga(cached.cmtPorteoDescarga || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
+    setCmtPorteoCarros(cached.cmtPorteoCarros || [{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:''}]);
     setPbsChecklist(cached.pbsChecklist || Array(26).fill(''));
     setPbsParaCarro(cached.pbsParaCarro ?? null);
     setPbsEsTrasiego(cached.pbsEsTrasiego || false);
@@ -503,6 +507,7 @@ export default function App() {
     setCmtPorteoCargaPlanta(''); setCmtPorteoDescargaPlanta('');
     setCmtPorteoCarga([{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
     setCmtPorteoDescarga([{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
+    setCmtPorteoCarros([{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:''}]);
     setPbsChecklist(Array(26).fill(''));
     setPbsParaCarro(null);
     setPbsEsTrasiego(false);
@@ -1068,6 +1073,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         porteo_descarga_planta:cmtPorteoDescargaPlanta||null,
         porteo_carga_tanques:cmtPorteoCarga,
         porteo_descarga_tanques:cmtPorteoDescarga,
+        porteo_carros:cmtPorteoCarros,
       }).eq("id", form.id);
       if (!error && original) {
         // Calcular impacto neto por tanque: (nuevo - anterior) - (original_despues - original_antes)
@@ -1105,6 +1111,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       setCmtPorteoCargaPlanta(""); setCmtPorteoDescargaPlanta("");
       setCmtPorteoCarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
       setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
+      setCmtPorteoCarros([{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]);
       showToast(`CMT ${form.numero_cmt} corregido — ${fmt(totalMovido)} Gls`);
     } else {
       const sedeActual = form.sede || perfil.sede || "MALAMBO";
@@ -1127,6 +1134,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         porteo_descarga_planta:cmtPorteoDescargaPlanta||null,
         porteo_carga_tanques:cmtPorteoCarga,
         porteo_descarga_tanques:cmtPorteoDescarga,
+        porteo_carros:cmtPorteoCarros,
         operador:perfil.nombre, creado_por:session.user.id
       }]);
       if (!error) {
@@ -1158,6 +1166,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         setCmtPorteoCargaPlanta(""); setCmtPorteoDescargaPlanta("");
         setCmtPorteoCarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
         setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
+        setCmtPorteoCarros([{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]);
         showToast(`✅ CMT ${numeroCmt} vinculado a ${form.ot_numero}`);
       } else {
         // CMT autónomo → preguntar si vincular a OT
@@ -4343,65 +4352,131 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           )}
           {/* ── PORTEO ─────────────────────────────────────────────────────────── */}
           {(form.tipo_operacion||"")==="PORTEO" && (()=>{
-            const plantasDisponibles = (perfil?.planta||"PLANTA 1").split(",").map(p=>p.trim()).filter(Boolean);
-            const allPlantas = [...new Set([...plantasDisponibles,"PLANTA 1","PLANTA 2"])];
-            const inputSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
-            const renderPorteoSection = (titulo, color, planta, setPlanta, rows, setRows) => {
-              const tanquesPlanta = tanques.filter(t=>t.planta===planta);
-              return (
-                <Section title={titulo} color={color}>
-                  <div style={{marginBottom:12}}>
-                    <Lbl>Planta</Lbl>
-                    <select value={planta} onChange={e=>{setPlanta(e.target.value);setRows([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);}} style={{...inputSt,width:200}}>
-                      <option value="">Seleccionar...</option>
-                      {allPlantas.map(p=><option key={p}>{p}</option>)}
-                    </select>
-                  </div>
-                  {planta && rows.map((rec,i)=>(
-                    <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
-                          <select value={rec.tanque} onChange={e=>{const n=[...rows];n[i]={...n[i],tanque:e.target.value};setRows(n);}} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,outline:"none"}}>
-                            <option value="">—</option>
-                            {tanquesPlanta.map(t=><option key={t.id}>{t.id}</option>)}
-                          </select>
-                        </div>
-                        {rows.length>1 && <button onClick={()=>setRows(rows.filter((_,j)=>j!==i))} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✕</button>}
-                      </div>
-                      <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end",marginBottom:6}}>
-                        <div style={{fontSize:10,color:T.orange,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Inicial</div>
-                        <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setRows,"galonesInicial")} style={inputSt}/></div>
-                        <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" value={rec.tempInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setRows,"galonesInicial")} style={inputSt}/></div>
-                        <div><Lbl>API</Lbl><input type="number" step="0.1" value={rec.apiInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setRows,"galonesInicial")} style={inputSt}/></div>
-                        <div><Lbl>{rec.tempInicial&&rec.apiInicial?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesInicial:e.target.value};setRows(n);}} style={inputSt}/></div>
-                      </div>
-                      <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
-                        <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Final</div>
-                        <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setRows,"galonesFinal")} style={inputSt}/></div>
-                        <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" value={rec.tempFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setRows,"galonesFinal")} style={inputSt}/></div>
-                        <div><Lbl>API</Lbl><input type="number" step="0.1" value={rec.apiFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setRows,"galonesFinal")} style={inputSt}/></div>
-                        <div><Lbl>{rec.tempFinal&&rec.apiFinal?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesFinal:e.target.value};setRows(n);}} style={inputSt}/></div>
-                      </div>
-                    </div>
-                  ))}
-                  {planta && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
-                    <Btn sm outline color={color} onClick={()=>setRows([...rows,{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}])}>+ TK</Btn>
-                    <span style={{fontSize:11,color:color}}>Total cargado: {fmt(rows.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0))} Gls</span>
-                  </div>}
-                </Section>
-              );
+            const allPlantas = [...new Set(["PLANTA 1","PLANTA 2",...(perfil?.planta||"").split(",").map(p=>p.trim()).filter(Boolean)])];
+            const inSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
+            const roSt = {...inSt,background:"#f1f5f9",color:T.navy,fontWeight:700,cursor:"default"};
+
+            // helper: API y factor tabla13 del último tiquete del producto en ese tanque
+            const getLabInfo = (tanqueId) => {
+              const tq = tanques.find(t=>t.id===tanqueId);
+              if (!tq) return {api:"",factor:""};
+              const tiq = [...(tiquetes||[])].filter(t=>t.producto && normalizarProducto(t.producto)===normalizarProducto(tq.producto||"") && t.factor_tabla13).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+              return {api: tiq?.api||"", factor: tiq?.factor_tabla13||""};
             };
-            return (<>
-              {renderPorteoSection("🚛 Planta de Carga (origen)", T.orange, cmtPorteoCargaPlanta, setCmtPorteoCargaPlanta, cmtPorteoCarga, setCmtPorteoCarga)}
-              {renderPorteoSection("📥 Planta de Descarga (destino)", T.success, cmtPorteoDescargaPlanta, setCmtPorteoDescargaPlanta, cmtPorteoDescarga, setCmtPorteoDescarga)}
-              {cmtPorteoCarga.some(r=>r.galonesInicial||r.galonesFinal) && (
-                <Card style={{background:`${T.navy}12`,borderColor:`${T.navy}33`,marginBottom:14}}>
-                  <div style={{fontSize:13,color:T.navy,fontWeight:700}}>
-                    Total Porteado: {fmt(cmtPorteoCarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0))} Galones
+
+            const renderTanqueSection = (color, planta, setPlanta, rows, setRows) => {
+              const tanquesPlanta = tanques.filter(t=>t.planta===planta);
+              return (<>
+                <div style={{marginBottom:14}}>
+                  <Lbl>Planta</Lbl>
+                  <select value={planta} onChange={e=>{setPlanta(e.target.value);setRows([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);}} style={{...inSt,width:220}}>
+                    <option value="">Seleccionar...</option>
+                    {allPlantas.map(p=><option key={p}>{p}</option>)}
+                  </select>
+                </div>
+                {planta && rows.map((rec,i)=>{
+                  const lab = getLabInfo(rec.tanque);
+                  return (
+                  <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                        <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
+                        <select value={rec.tanque} onChange={e=>{const n=[...rows];n[i]={...n[i],tanque:e.target.value};setRows(n);}} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,outline:"none"}}>
+                          <option value="">—</option>
+                          {tanquesPlanta.map(t=><option key={t.id}>{t.id}</option>)}
+                        </select>
+                        {rec.tanque && lab.api && (<>
+                          <span style={{fontSize:11,color:T.muted}}>API Lab: <b style={{color:T.navy}}>{lab.api}°</b></span>
+                          <span style={{fontSize:11,color:T.muted}}>Factor T13: <b style={{color:T.navy}}>{lab.factor}</b></span>
+                        </>)}
+                      </div>
+                      {rows.length>1 && <button onClick={()=>setRows(rows.filter((_,j)=>j!==i))} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✕</button>}
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end",marginBottom:6}}>
+                      <div style={{fontSize:10,color,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Inicial</div>
+                      <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setRows,"galonesInicial")} style={inSt}/></div>
+                      <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" value={rec.tempInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setRows,"galonesInicial")} style={inSt}/></div>
+                      <div><Lbl>API</Lbl><input type="number" step="0.1" value={rec.apiInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setRows,"galonesInicial")} style={inSt}/></div>
+                      <div><Lbl>{rec.tempInicial&&rec.apiInicial?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesInicial:e.target.value};setRows(n);}} style={inSt}/></div>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
+                      <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Final</div>
+                      <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setRows,"galonesFinal")} style={inSt}/></div>
+                      <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" value={rec.tempFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setRows,"galonesFinal")} style={inSt}/></div>
+                      <div><Lbl>API</Lbl><input type="number" step="0.1" value={rec.apiFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setRows,"galonesFinal")} style={inSt}/></div>
+                      <div><Lbl>{rec.tempFinal&&rec.apiFinal?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesFinal:e.target.value};setRows(n);}} style={inSt}/></div>
+                    </div>
                   </div>
-                  <div style={{fontSize:11,color:T.muted,marginTop:4}}>
-                    {cmtPorteoCargaPlanta} → {cmtPorteoDescargaPlanta||"destino pendiente"}
+                );})}
+                {planta && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4,marginBottom:4}}>
+                  <Btn sm outline color={color} onClick={()=>setRows([...rows,{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}])}>+ TK</Btn>
+                  <span style={{fontSize:11,color}}>{fmt(rows.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0))} Gls despachados</span>
+                </div>}
+              </>);
+            };
+
+            // factor tabla13 del primer tanque de carga con info de lab
+            const factorCarga = (() => {
+              for (const r of cmtPorteoCarga) {
+                const lab = getLabInfo(r.tanque);
+                if (lab.factor) return Number(lab.factor);
+              }
+              return 0;
+            })();
+
+            return (<>
+              {/* ── PLANTA DE CARGA ── */}
+              <Section title="🚛 Planta de Carga (origen)" color={T.orange}>
+                {renderTanqueSection(T.orange, cmtPorteoCargaPlanta, setCmtPorteoCargaPlanta, cmtPorteoCarga, setCmtPorteoCarga)}
+                {/* Carros */}
+                <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid ${T.orange}33`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Carros Cargados</div>
+                  {cmtPorteoCarros.map((c,i)=>{
+                    const pesoNeto = Number(c.peso_ingreso||0) - Number(c.peso_salida||0);
+                    const glsBascula = factorCarga>0 && pesoNeto>0 ? Math.round(pesoNeto/factorCarga) : "";
+                    return (
+                    <div key={i} style={{background:"#fff7ed",border:`1px solid ${T.orange}44`,borderRadius:8,padding:"12px 14px",marginBottom:10}}>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                        <div><Lbl>Placa</Lbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="ABC123" style={{...inSt,fontFamily:"monospace",textTransform:"uppercase"}}/></div>
+                        <div><Lbl>Transportadora</Lbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} placeholder="Nombre empresa" style={inSt}/></div>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
+                        <div><Lbl>Gls por Contador</Lbl><input type="number" value={c.galones_contador||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_contador:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
+                        <div><Lbl>Peso Ingreso (kg)</Lbl><input type="number" value={c.peso_ingreso||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_ingreso:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
+                        <div><Lbl>Peso Salida (kg)</Lbl><input type="number" value={c.peso_salida||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_salida:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
+                        <div><Lbl>Gls Báscula</Lbl><input type="number" value={glsBascula||c.galones_bascula||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_bascula:e.target.value};setCmtPorteoCarros(n);}} style={glsBascula?roSt:inSt} readOnly={!!glsBascula}/></div>
+                      </div>
+                      {pesoNeto>0 && factorCarga>0 && (
+                        <div style={{marginTop:6,fontSize:11,color:T.muted}}>
+                          Peso neto: <b>{fmt(pesoNeto)} kg</b> ÷ Factor T13 {factorCarga} = <b style={{color:T.orange}}>{fmt(glsBascula)} Gls báscula</b>
+                        </div>
+                      )}
+                      {cmtPorteoCarros.length>1 && <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
+                        <button onClick={()=>setCmtPorteoCarros(cmtPorteoCarros.filter((_,j)=>j!==i))} style={{background:`${T.danger}15`,border:`1px solid ${T.danger}44`,borderRadius:6,color:T.danger,padding:"4px 12px",cursor:"pointer",fontSize:11}}>✕ Eliminar</button>
+                      </div>}
+                    </div>
+                  );})}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
+                    <Btn sm outline color={T.orange} onClick={()=>setCmtPorteoCarros([...cmtPorteoCarros,{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}])}>+ Agregar Carro</Btn>
+                    <span style={{fontSize:11,color:T.orange}}>{cmtPorteoCarros.length} carro(s) · {fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_ingreso||0)-Number(c.peso_salida||0);return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls báscula total</span>
+                  </div>
+                </div>
+              </Section>
+
+              {/* ── PLANTA DE DESCARGA ── */}
+              <Section title="📥 Planta de Descarga (destino)" color={T.success}>
+                {renderTanqueSection(T.success, cmtPorteoDescargaPlanta, setCmtPorteoDescargaPlanta, cmtPorteoDescarga, setCmtPorteoDescarga)}
+              </Section>
+
+              {/* Resumen */}
+              {(cmtPorteoCarros.some(c=>c.placa)||cmtPorteoCarga.some(r=>r.tanque)) && (
+                <Card style={{background:`${T.navy}10`,borderColor:`${T.navy}33`,marginBottom:14}}>
+                  <div style={{fontSize:13,color:T.navy,fontWeight:700}}>
+                    {cmtPorteoCargaPlanta||"Origen"} → {cmtPorteoDescargaPlanta||"Destino"} · {cmtPorteoCarros.filter(c=>c.placa).length} carro(s)
+                  </div>
+                  <div style={{fontSize:11,color:T.muted,marginTop:4,display:"flex",gap:18,flexWrap:"wrap"}}>
+                    <span>Contador: <b>{fmt(cmtPorteoCarros.reduce((a,c)=>a+Number(c.galones_contador||0),0))} Gls</b></span>
+                    <span>Báscula: <b>{fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_ingreso||0)-Number(c.peso_salida||0);return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls</b></span>
                   </div>
                 </Card>
               )}
