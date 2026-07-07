@@ -464,6 +464,10 @@ export default function App() {
       cmtCarros: JSON.parse(JSON.stringify(cmtCarros)),
       cmtProducto,
       cmtRecepcion: JSON.parse(JSON.stringify(cmtRecepcion)),
+      cmtPorteoCargaPlanta,
+      cmtPorteoDescargaPlanta,
+      cmtPorteoCarga: JSON.parse(JSON.stringify(cmtPorteoCarga)),
+      cmtPorteoDescarga: JSON.parse(JSON.stringify(cmtPorteoDescarga)),
       pbsChecklist: [...pbsChecklist],
       pbsParaCarro,
       pbsEsTrasiego,
@@ -479,6 +483,10 @@ export default function App() {
     setCmtCarros(cached.cmtCarros || [{placa:'',guia:'',tiquete:'',pbs_id:''}]);
     setCmtProducto(cached.cmtProducto || '');
     setCmtRecepcion(cached.cmtRecepcion || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
+    setCmtPorteoCargaPlanta(cached.cmtPorteoCargaPlanta || '');
+    setCmtPorteoDescargaPlanta(cached.cmtPorteoDescargaPlanta || '');
+    setCmtPorteoCarga(cached.cmtPorteoCarga || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
+    setCmtPorteoDescarga(cached.cmtPorteoDescarga || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
     setPbsChecklist(cached.pbsChecklist || Array(26).fill(''));
     setPbsParaCarro(cached.pbsParaCarro ?? null);
     setPbsEsTrasiego(cached.pbsEsTrasiego || false);
