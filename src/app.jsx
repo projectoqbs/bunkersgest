@@ -2016,7 +2016,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   return [
                     <span style={{color:T.orange,fontFamily:"monospace"}}>{t.id}</span>,
                     <Badge label={tipo} color={tipoColor[tipo]||T.orange}/>,
-                    t.fecha_llegada||"—", t.producto, t.placa,
+                    t.fecha_llegada||t.fecha||"—", t.producto, t.placa,
                     <span style={{color:T.text,fontWeight:600}}>{t.api_corregido}°</span>,
                     <span style={{color:flashOk?T.text:T.danger,fontWeight:flashOk?400:700}}>{t.flash_point}°C</span>,
                     <span style={{color:aguaOk?T.text:T.danger,fontWeight:aguaOk?400:700}}>{t.agua_destilacion}%</span>,
@@ -3657,7 +3657,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             {/* PASO 3: RECIRCULACIÓN */}
             <Card style={{ marginBottom:16,padding:16 }}>
               <div style={{ fontWeight:700,fontSize:13,color:T.navy,marginBottom:10 }}>
-                {ot.estado==="COMPLETADA"?"✅":ot.estado==="RECIRCULANDO"?"⏳":"⏸️"} PASO 3 — RECIRCULACIÓN
+                {["COMPLETADA","ANALIZADA"].includes(ot.estado)?"✅":ot.estado==="RECIRCULANDO"?"⏳":"⏸️"} PASO 3 — RECIRCULACIÓN
               </div>
               <div style={{ fontSize:12,color:T.muted,marginBottom:8 }}>Tiempo programado: <b style={{ color:T.text }}>{ot.recirculacion_tiempo_total} min ({(ot.recirculacion_tiempo_total/60).toFixed(1)}h)</b></div>
               {ot.estado==="RECIRCULANDO" && (
@@ -3702,7 +3702,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               )}
               {ot.estado==="COMPLETADA" && (
-                <div style={{ fontSize:12,color:T.success,fontWeight:700 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
+                <div style={{ fontSize:12,color:T.orange,fontWeight:700 }}>⏳ Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
+              )}
+              {ot.estado==="ANALIZADA" && (
+                <div style={{ fontSize:12,color:T.success,fontWeight:700 }}>✅ Analizada — Resultado disponible en Laboratorio</div>
               )}
             </Card>
 
