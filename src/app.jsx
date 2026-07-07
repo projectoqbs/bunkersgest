@@ -838,10 +838,14 @@ const aprueba = esVLSFO
       const {error} = await supabaseAdmin.from("tiquetes").insert([{
         id,
         ...campos,
+        ot_id: form.ot_id||null,
         creado_por:session.user.id,
       }]);
       if (!error && form.viaje_id) {
         await supabaseAdmin.from("viajes").update({estado:aprueba?"En Planta":"Rechazado", tiquete_id:id}).eq("id",form.viaje_id);
+      }
+      if (!error && form.ot_id) {
+        await supabaseAdmin.from("ordenes_trabajo").update({estado:"ANALIZADA", updated_at:new Date().toISOString()}).eq("id",form.ot_id);
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
@@ -1268,7 +1272,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const despachosFiltrados= filtraSede(despachos, "sede");
 
   const enRuta = viajesFiltrados.filter(v=>v.estado==="En Ruta").length;
-  const pendTiquetes = viajesFiltrados.filter(v=>v.estado==="En Planta"&&!v.tiquete_id).length + (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA").length;
+  const pendTiquetes = viajesFiltrados.filter(v=>v.estado==="En Planta"&&!v.tiquete_id).length + (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA"&&!tiquetes.some(t=>t.ot_id===o.id)).length;
   const pendPBS = tiquetesFiltrados.filter(t=>t.resultado==="APROBADO"&&!pbsList.find(p=>p.viaje_id===t.viaje_id)).length;
   const pendCMT = pbsList.filter(p=>!cmtsFiltrados.find(c=>c.pbs_id===p.id)).length;
 
@@ -1811,7 +1815,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             /* ── LANDING: 4 tarjetas ── */
             if (!analisisNav) {
-              const otsPendientesLab = (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA");
+              const otsPendientesLab = (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA"&&!tiquetes.some(t=>t.ot_id===o.id));
               const carrosSinTiquete = viajes.filter(v=>v.estado==="En Planta"&&!v.tiquete_id);
               const navBtns = [
                 {key:"tiquetes_mp",label:"Tiquetes MP",color:"#0077CC"},
@@ -2948,7 +2952,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 )}
 
           {nav==="programacion" && (()=>{
-            const estadoColor = e => e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
+            const estadoColor = e => e==="ANALIZADA"?T.success:e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
             const activas = (ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado));
             const cerradas = (ordenesTrabaio||[]).filter(o=>["COMPLETADA","RECHAZADA"].includes(o.estado));
             return (
@@ -3453,7 +3457,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const prodCarro = (carro)=>normalizarProducto((tiquetes.find(t=>t.id===carro.tiquete))?.producto||"");
         const totalDesc = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>s+glsDescargadosCarro(carro),0),0);
         const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
-        const estadoColor = e=>e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
+        const estadoColor = e=>e==="ANALIZADA"?T.success:e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
 
         const actualizarOT = async(patch) => {
           await supabaseAdmin.from("ordenes_trabajo").update({...patch,updated_at:new Date().toISOString()}).eq("id",ot.id);
