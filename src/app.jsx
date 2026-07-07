@@ -373,6 +373,7 @@ export default function App() {
   const [afoP2, setAfoP2] = useState({});
   const [afoP2Loading, setAfoP2Loading] = useState(false);
   const [otModal, setOtModal] = useState(null); // null | {step:1|2|3, trasiegos, formulacionId, recircHoras}
+  const [recircDates, setRecircDates] = useState({}); // {[otId]: {inicio, fin}}
   const [otSaving, setOtSaving] = useState(false);
   const [progTab, setProgTab] = useState("programaciones"); // "programaciones" | "formulaciones"
   const [modalVinculacionOT, setModalVinculacionOT] = useState({mostrar:false, cmtId:null, cmtNumero:null});
@@ -3650,24 +3651,30 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div>
                       <div style={{ fontSize:11,fontWeight:700,color:T.muted,marginBottom:4,textTransform:"uppercase",letterSpacing:0.5 }}>Inicio del Trasiego</div>
                       <input type="datetime-local"
-                        defaultValue={ot.trasiego_inicio ? ot.trasiego_inicio.slice(0,16) : ""}
-                        onChange={e=>actualizarOT({trasiego_inicio: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                        value={recircDates[ot.id]?.inicio || ""}
+                        onChange={e=>{
+                          const val = e.target.value;
+                          setRecircDates(prev=>({...prev,[ot.id]:{...prev[ot.id],inicio:val}}));
+                        }}
                         style={{ width:"100%", padding:"8px 10px", borderRadius:6, border:`1px solid ${T.border}`, background:T.card, color:T.text, fontSize:12, outline:"none", boxSizing:"border-box" }}/>
                     </div>
                     <div>
                       <div style={{ fontSize:11,fontWeight:700,color:T.muted,marginBottom:4,textTransform:"uppercase",letterSpacing:0.5 }}>Final del Trasiego</div>
                       <input type="datetime-local"
-                        defaultValue={ot.trasiego_fin ? ot.trasiego_fin.slice(0,16) : ""}
-                        onChange={e=>actualizarOT({trasiego_fin: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                        value={recircDates[ot.id]?.fin || ""}
+                        onChange={e=>{
+                          const val = e.target.value;
+                          setRecircDates(prev=>({...prev,[ot.id]:{...prev[ot.id],fin:val}}));
+                        }}
                         style={{ width:"100%", padding:"8px 10px", borderRadius:6, border:`1px solid ${T.border}`, background:T.card, color:T.text, fontSize:12, outline:"none", boxSizing:"border-box" }}/>
                     </div>
                   </div>
                   {(()=>{
-                    const listo = ot.trasiego_inicio && ot.trasiego_fin;
+                    const listo = recircDates[ot.id]?.inicio && recircDates[ot.id]?.fin;
                     return (
                       <div>
                         <button disabled={!listo}
-                          onClick={()=>actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada"})}
+                          onClick={()=>actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada",recirculacion_inicio:recircDates[ot.id]?.inicio,recirculacion_fin:recircDates[ot.id]?.fin})}
                           style={{ background:listo?T.success:"#ccc",border:"none",color:listo?"#071422":"#888",borderRadius:6,padding:"7px 18px",cursor:listo?"pointer":"not-allowed",fontWeight:700,fontSize:12,transition:"background 0.2s" }}>
                           ✅ Recirculación Completada → Enviar a Lab
                         </button>
