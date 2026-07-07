@@ -3662,7 +3662,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         style={{ width:"100%", padding:"8px 10px", borderRadius:6, border:`1px solid ${T.border}`, background:T.card, color:T.text, fontSize:12, outline:"none", boxSizing:"border-box" }}/>
                     </div>
                   </div>
-                  <button onClick={()=>actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada"})} style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✅ Recirculación Completada → Enviar a Lab</button>
+                  {(()=>{
+                    const listo = ot.trasiego_inicio && ot.trasiego_fin;
+                    return (
+                      <div>
+                        <button disabled={!listo}
+                          onClick={()=>actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada"})}
+                          style={{ background:listo?T.success:"#ccc",border:"none",color:listo?"#071422":"#888",borderRadius:6,padding:"7px 18px",cursor:listo?"pointer":"not-allowed",fontWeight:700,fontSize:12,transition:"background 0.2s" }}>
+                          ✅ Recirculación Completada → Enviar a Lab
+                        </button>
+                        {!listo && <div style={{ fontSize:11,color:T.muted,marginTop:6 }}>⚠️ Completa el inicio y final del trasiego para habilitar este botón</div>}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
               {ot.estado==="COMPLETADA" && (
