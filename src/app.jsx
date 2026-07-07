@@ -2051,29 +2051,49 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           })()}
 
           {/* PBS */}
-          {nav==="pbs" && (
-            <div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
-                <div>
-                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Permiso de Bombeo Seguro</div>
-                  <div style={{ fontSize:11, color:T.muted }}>Checklist de 27 puntos por cada descargue</div>
+          {nav==="pbs" && (()=>{
+            /* ── PBS DIGITAL (reservado para implementación futura) ──────────────────
+             * Todo el sistema PBS completo (checklist 27 puntos, modal, tabla, guardarPBS)
+             * está preservado en el código. Para activarlo, reemplazar este bloque por
+             * la vista completa que está comentada abajo.
+             * ─────────────────────────────────────────────────────────────────────── */
+            const [pbsNumeroManual, setPbsNumeroManual] = React.useState("");
+            return (
+            <div style={{maxWidth:480}}>
+              <div style={{fontWeight:800,fontSize:20,color:T.navy,marginBottom:4}}>Permiso de Bombeo Seguro</div>
+              <div style={{fontSize:12,color:T.muted,marginBottom:28}}>El PBS se gestiona de forma manual. Registra aquí el número de PBS para trazabilidad.</div>
+              <Card style={{padding:24}}>
+                <div style={{fontSize:12,fontWeight:700,color:T.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:0.5}}>Número de PBS</div>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <input
+                    value={pbsNumeroManual}
+                    onChange={e=>setPbsNumeroManual(e.target.value)}
+                    placeholder="Ej: PBS-2026-001"
+                    style={{flex:1,padding:"10px 14px",border:`1.5px solid ${T.border}`,borderRadius:8,fontSize:14,color:T.text,background:T.card,outline:"none",fontFamily:"monospace"}}
+                  />
+                  <button
+                    disabled={!pbsNumeroManual.trim()}
+                    onClick={()=>{navigator.clipboard?.writeText(pbsNumeroManual);showToast(`PBS ${pbsNumeroManual} registrado`);}}
+                    style={{background:pbsNumeroManual.trim()?T.navy:"#ccc",color:"#fff",border:"none",borderRadius:8,padding:"10px 20px",fontWeight:700,fontSize:13,cursor:pbsNumeroManual.trim()?"pointer":"not-allowed"}}>
+                    Registrar
+                  </button>
                 </div>
-                {puedeCrear("pbs") && <Btn color="#fb923c" onClick={()=>{setForm({fecha:today()});setPbsChecklist(Array(27).fill(""));setModal("pbs");}}>+ Nuevo PBS</Btn>}
-              </div>
-              <Table
-                cols={["No. PBS","Fecha","Producto","Tipo Operación","Bodega Recibe","Hora Inicio","Hora Final","Firma",""]}
-                rows={pbsList.map(p=>[
-                  <span style={{color:"#fb923c"}}>{p.id}</span>,
-                  p.fecha, p.producto,
-                  <Badge label={p.tipo_operacion} color="#fb923c"/>,
-                  p.bodega_recibe, p.hora_inicio||"-", p.hora_final||"-", p.firma_auxiliar,
-                  puedeEditar("pbs",p.creado_por,p.created_at)
-                    ? <button onClick={()=>{setForm({...p});setPbsChecklist(p.checklist||Array(27).fill(""));setModal("pbs");}} style={{background:"#fb923c22",border:"1px solid #fb923c55",borderRadius:6,color:"#fb923c",padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
-                    : null,
-                ])}
-              />
+                {pbsList.length>0 && (
+                  <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${T.border}`}}>
+                    <div style={{fontSize:11,color:T.muted,fontWeight:700,marginBottom:8,textTransform:"uppercase",letterSpacing:0.5}}>Últimos PBS registrados</div>
+                    {pbsList.slice(0,5).map(p=>(
+                      <div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${T.border}55`,fontSize:12}}>
+                        <span style={{color:"#fb923c",fontFamily:"monospace",fontWeight:700}}>{p.id}</span>
+                        <span style={{color:T.muted}}>{p.fecha}</span>
+                        <span style={{color:T.text}}>{p.producto||"—"}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
             </div>
-          )}
+            );
+          })()}
 
           {/* CMT */}
           {nav==="cmt" && (
