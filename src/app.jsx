@@ -3687,19 +3687,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               )}
               {ot.estado==="COMPLETADA" && (
-                <div>
-                  <div style={{ fontSize:12,color:T.success,fontWeight:700,marginBottom:10 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
-                  <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
-                    {cmtsDeEstaOT.map(c=>(
-                      <span key={c.id} style={{ background:`${T.success}22`,border:`1px solid ${T.success}55`,color:T.success,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
-                        onClick={()=>{ setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setModal("cmt"); }}>
-                        📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
-                      </span>
-                    ))}
-                    <button onClick={()=>abrirCmtDesdeOt(ot,"")}
-                      style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
-                  </div>
-                </div>
+                <div style={{ fontSize:12,color:T.success,fontWeight:700 }}>✅ Completada — Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
               )}
             </Card>
 
