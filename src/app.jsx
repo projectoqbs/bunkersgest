@@ -1810,11 +1810,46 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             });
 
             /* ── LANDING: 4 tarjetas ── */
-            if (!analisisNav) return (
+            if (!analisisNav) {
+              const otsPendientesLab = (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA");
+              return (
               <div>
                 <div style={{fontWeight:800,fontSize:22,color:T.navy,marginBottom:6}}>Análisis de Laboratorio</div>
-                <div style={{fontSize:12,color:T.muted,marginBottom:36}}>Selecciona el tipo de análisis que deseas gestionar</div>
-                <div style={{display:"flex",gap:24,flexWrap:"wrap",justifyContent:"center",marginTop:40}}>
+                <div style={{fontSize:12,color:T.muted,marginBottom:otsPendientesLab.length?16:36}}>Selecciona el tipo de análisis que deseas gestionar</div>
+
+                {/* Alertas de recirculaciones pendientes de análisis */}
+                {otsPendientesLab.length>0 && (
+                  <div style={{marginBottom:32}}>
+                    <div style={{fontWeight:700,fontSize:13,color:T.orange,marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{background:T.danger,color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:800}}>{otsPendientesLab.length}</span>
+                      Recirculaciones pendientes de análisis
+                    </div>
+                    {otsPendientesLab.map(o=>{
+                      const tanquesOT = [...new Set([...(o.descargues||[]).map(d=>d.tanque),(o.trasiegos||[]).map(t=>t.destino)].flat())].filter(Boolean);
+                      const horasRecirc = o.recirculacion_inicio && o.recirculacion_fin
+                        ? ((new Date(o.recirculacion_fin)-new Date(o.recirculacion_inicio))/3600000).toFixed(1)
+                        : null;
+                      return (
+                        <div key={o.id} style={{background:`${T.orange}10`,border:`2px solid ${T.orange}55`,borderRadius:10,padding:"14px 18px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+                          <div>
+                            <div style={{fontWeight:800,fontSize:14,color:T.text,marginBottom:4}}>📋 {o.numero_ot}</div>
+                            <div style={{fontSize:12,color:T.muted,marginBottom:4}}>
+                              Tanques: <b style={{color:T.navy}}>{tanquesOT.join(", ")||"—"}</b>
+                            </div>
+                            {horasRecirc && <div style={{fontSize:11,color:T.orange}}>⏱️ Recirculación: {horasRecirc} horas</div>}
+                            {o.recirculacion_fin && <div style={{fontSize:11,color:T.muted}}>Finalizada: {new Date(o.recirculacion_fin).toLocaleString("es-CO")}</div>}
+                          </div>
+                          <button onClick={()=>{setForm({tipo_analisis:"Planta 2",ot_id:o.id,ot_numero:o.numero_ot});setModal("tiquete");}}
+                            style={{background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"8px 18px",cursor:"pointer",fontWeight:700,fontSize:12,whiteSpace:"nowrap"}}>
+                            🧪 Crear Análisis
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div style={{display:"flex",gap:24,flexWrap:"wrap",justifyContent:"center",marginTop:otsPendientesLab.length?0:40}}>
                   {[
                     { key:"tiquetes_mp", icon:(
                         <svg viewBox="0 0 64 64" width="64" height="64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1869,7 +1904,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   ))}
                 </div>
               </div>
-            );
+              );
+            }
 
             /* ── DETALLE: tabla de tiquetes ── */
             const labelNav = {tiquetes_mp:"Tiquetes MP",planta2:"Planta 2",planta1:"Planta 1",no_rutinarios:"No Rutinarios"}[analisisNav]||"";
