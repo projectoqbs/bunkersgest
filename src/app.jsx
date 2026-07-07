@@ -3612,9 +3612,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{ textAlign:"center",color:T.orange }}>{pct}%</div>
                       <div></div>
                     </div>
-                    {ot.estado==="DESCARGANDO" && pct>=100 && (
-                      <div style={{ marginTop:10 }}>
-                        <button onClick={()=>actualizarOT({estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Iniciar Recirculación →</button>
+                    {ot.estado==="DESCARGANDO" && pct>=90 && (
+                      <div style={{ marginTop:10, display:"flex", alignItems:"center", gap:12 }}>
+                        <button onClick={()=>actualizarOT({estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"})}
+                          style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"8px 20px",cursor:"pointer",fontWeight:700,fontSize:12 }}>
+                          ✅ Descargue Finalizado → Iniciar Recirculación
+                        </button>
+                        {pct<100 && <span style={{ fontSize:11,color:T.muted }}>({pct}% completado — variación permisible)</span>}
                       </div>
                     )}
                   </>
