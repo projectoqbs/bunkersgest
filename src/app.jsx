@@ -1268,7 +1268,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const despachosFiltrados= filtraSede(despachos, "sede");
 
   const enRuta = viajesFiltrados.filter(v=>v.estado==="En Ruta").length;
-  const pendTiquetes = viajesFiltrados.filter(v=>v.estado==="En Planta"&&!v.tiquete_id).length;
+  const pendTiquetes = viajesFiltrados.filter(v=>v.estado==="En Planta"&&!v.tiquete_id).length + (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA").length;
   const pendPBS = tiquetesFiltrados.filter(t=>t.resultado==="APROBADO"&&!pbsList.find(p=>p.viaje_id===t.viaje_id)).length;
   const pendCMT = pbsList.filter(p=>!cmtsFiltrados.find(c=>c.pbs_id===p.id)).length;
 
