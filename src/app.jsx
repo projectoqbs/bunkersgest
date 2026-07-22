@@ -2068,7 +2068,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <span style={{color:tsaOk?T.text:T.danger,fontWeight:tsaOk?400:700}}>{t.tsa||"—"}</span>,
                     <Badge label={t.resultado} color={t.resultado==="APROBADO"?T.success:T.danger}/>,
                     <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                      {false && (
                       {perfil.rol==="administrador" && t.resultado==="RECHAZADO" && t.viaje_id && (()=>{
                         const viaje = viajes.find(v=>v.id===t.viaje_id);
                         if (!viaje || viaje.estado==="Descargado") return null;
