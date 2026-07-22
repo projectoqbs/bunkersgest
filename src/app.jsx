@@ -4441,7 +4441,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               cmtsDescargue.forEach(c=>{
                 (c.carros||[]).forEach(cr=>{
                   if (!cr.tiquete) return;
-                  const tiq = (tiquetes||[]).find(t=>t.id===cr.tiquete && (!t.tipo_analisis || t.tipo_analisis==="Tiquetes MP"));
+                  const tiq = (tiquetes||[]).find(t=>(t.id===cr.tiquete || t.numero_tiquete===cr.tiquete) && (!t.tipo_analisis || t.tipo_analisis==="Tiquetes MP"));
                   if (!tiq?.api_corregido) return;
                   const api = Number(tiq.api_corregido);
                   // galones: del tiquete, del viaje o del carro en ese orden
