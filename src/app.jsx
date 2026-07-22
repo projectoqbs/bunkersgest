@@ -445,6 +445,7 @@ export default function App() {
 
   const af = k => e => setAuthForm(p=>({...p,[k]:e.target.value}));
   const f  = k => e => setForm(p=>({...p,[k]: e.target.type==="text"||!e.target.type ? String(e.target.value).toUpperCase() : e.target.value}));
+  const fPlaca = k => e => setForm(p=>({...p,[k]: e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)}));
 
   function showToast(msg, ok=true) {
     setToast({msg,ok});
@@ -3848,7 +3849,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <option value="">Seleccionar...</option>
                 {TRANSPORTADORAS.map(t=><option key={t}>{t}</option>)}
               </Sel>
-              <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")}/>
+              <Inp label="Placa" type="text" value={form.placa||""} onChange={fPlaca("placa")} maxLength={6} placeholder="ABC123"/>
               <Inp label="Número de Guía" type="text" value={form.guia||""} onChange={f("guia")}/>
               <Inp label="Conductor" type="text" value={form.conductor||""} onChange={f("conductor")}/>
               <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")}/>
@@ -3913,7 +3914,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <Grid cols={esMP?2:3}>
               <Inp label="Proveedor / Campo Origen" type="text" value={form.proveedor||""} onChange={f("proveedor")} readOnly={soloVista}/>
               <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloVista||soloLab}/>
-              {esMP && <Inp label="Placa" type="text" value={form.placa||""} onChange={f("placa")} readOnly={soloVista||soloLab}/>}
+              {esMP && <Inp label="Placa" type="text" value={form.placa||""} onChange={fPlaca("placa")} maxLength={6} placeholder="ABC123" readOnly={soloVista||soloLab}/>}
               {esMP && <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")} readOnly={soloVista}/>}
               {esMP && <Inp label="Nombre Conductor" type="text" value={form.nombre_conductor||""} onChange={f("nombre_conductor")} readOnly={soloVista}/>}
               {esMP && <Inp label="Fecha Cargue" type="date" value={form.fecha_cargue||""} onChange={f("fecha_cargue")} readOnly={soloVista||soloLab}/>}
@@ -4369,7 +4370,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {enPlanta.map(v=><option key={v.id} value={v.id}>{v.placa} — {v.producto}{v.autorizado_descargue?" [AUTORIZADO]":""}</option>)}
                       </select>
                     ) : (
-                      <input type="text" placeholder="ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.toUpperCase().replace(/\s/g,"");setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/>
+                      <input type="text" placeholder="ABC123" maxLength={6} value={carro.placa} onChange={e=>{const n=[...cmtCarros];n[i].placa=e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6);setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",textTransform:"uppercase"}}/>
                     );
                   })()}
                   </div>
@@ -4502,7 +4503,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     return (
                     <div key={i} style={{background:"#fff7ed",border:`1px solid ${T.orange}44`,borderRadius:8,padding:"12px 14px",marginBottom:10}}>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                        <div><Lbl>Placa</Lbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="ABC123" style={{...inSt,fontFamily:"monospace",textTransform:"uppercase"}}/></div>
+                        <div><Lbl>Placa</Lbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...inSt,fontFamily:"monospace",textTransform:"uppercase"}}/></div>
                         <div><Lbl>Transportadora</Lbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} placeholder="Nombre empresa" style={inSt}/></div>
                       </div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
