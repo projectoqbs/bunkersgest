@@ -833,6 +833,7 @@ const aprueba = esVLSFO
       tsa:Number(form.tsa||0),
       observaciones:form.observaciones||null,
       tipo_analisis:form.tipo_analisis||"Tiquetes MP",
+      ot_id:form.ot_id||null,
       autoriza:aprueba,
       autoriza_nombre:perfil.nombre,
       resultado:aprueba?"APROBADO":"RECHAZADO",
@@ -2053,7 +2054,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const tsaOk   = !esV || Number(t.tsa)<0.1;
                   const tipo = t.tipo_analisis||"Tiquetes MP";
                   const ot = t.ot_id ? (ordenesTrabaio||[]).find(o=>o.id===t.ot_id) : null;
-                  const tanqueCell = ot?.tanques?.length ? <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{ot.tanques.join(", ")}</span> : <span style={{color:T.muted}}>—</span>;
+                  const tanquesOT = ot ? [...new Set([...(ot.descargues||[]).map(d=>d.tanque),...(ot.trasiegos||[]).map(tr=>tr.destino)].filter(Boolean))] : [];
+                  const tanqueCell = tanquesOT.length ? <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{tanquesOT.join(", ")}</span> : <span style={{color:T.muted}}>—</span>;
                   return [
                     <span style={{color:T.orange,fontFamily:"monospace"}}>{t.id}</span>,
                     <Badge label={tipo} color={tipoColor[tipo]||T.orange}/>,
