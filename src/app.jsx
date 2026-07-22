@@ -866,7 +866,7 @@ const aprueba = esVLSFO
         await supabaseAdmin.from("viajes").update({estado:aprueba?"En Planta":"Rechazado", tiquete_id:id}).eq("id",form.viaje_id);
       }
       if (!error && form.ot_id) {
-        await supabaseAdmin.from("ordenes_trabajo").update({estado:"ANALIZADA", updated_at:new Date().toISOString()}).eq("id",form.ot_id);
+        await supabaseAdmin.from("ordenes_trabajo").update({estado:"ANALIZADA", tiquete_id:id, updated_at:new Date().toISOString()}).eq("id",form.ot_id);
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
