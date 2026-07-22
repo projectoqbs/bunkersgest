@@ -4516,14 +4516,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           Peso neto: <b>{fmt(pesoNeto)} kg</b> ÷ Factor T13 {factorCarga} = <b style={{color:T.orange}}>{fmt(glsBascula)} Gls báscula</b>
                         </div>
                       )}
-                      {cmtPorteoCarros.length>1 && <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-                        <button onClick={()=>setCmtPorteoCarros(cmtPorteoCarros.filter((_,j)=>j!==i))} style={{background:`${T.danger}15`,border:`1px solid ${T.danger}44`,borderRadius:6,color:T.danger,padding:"4px 12px",cursor:"pointer",fontSize:11}}>✕ Eliminar</button>
-                      </div>}
                     </div>
                   );})}
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
-                    <Btn sm outline color={T.orange} onClick={()=>setCmtPorteoCarros([...cmtPorteoCarros,{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}])}>+ Agregar Carro</Btn>
-                    <span style={{fontSize:11,color:T.orange}}>{cmtPorteoCarros.length} carro(s) · {fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_ingreso||0)-Number(c.peso_salida||0);return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls báscula total</span>
+                  <div style={{display:"flex",justifyContent:"flex-end",marginTop:4}}>
+                    <span style={{fontSize:11,color:T.orange,fontWeight:600}}>{fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_ingreso||0)-Number(c.peso_salida||0);return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls báscula</span>
                   </div>
                 </div>
               </Section>
