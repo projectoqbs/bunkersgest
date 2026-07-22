@@ -4605,7 +4605,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid ${T.orange}33`}}>
                   <div style={{fontSize:11,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Carros Cargados</div>
                   {cmtPorteoCarros.map((c,i)=>{
-                    const pesoNeto = Number(c.peso_ingreso||0) - Number(c.peso_salida||0);
+                    const pesoNeto = c.peso_ingreso && c.peso_salida ? Number(c.peso_ingreso) - Number(c.peso_salida) : 0;
                     const glsBascula = factorCarga>0 && pesoNeto>0 ? Math.round(pesoNeto/factorCarga) : "";
                     return (
                     <div key={i} style={{background:"#fff7ed",border:`1px solid ${T.orange}44`,borderRadius:8,padding:"12px 14px",marginBottom:10}}>
