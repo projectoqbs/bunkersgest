@@ -4683,7 +4683,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           ))}
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
             <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
-            <Btn color={T.success} onClick={guardarCMT} disabled={saving}>{saving?"Guardando...":form.id?"Guardar Corrección":"Guardar CMT"}</Btn>
+            <Btn color={T.success} onClick={guardarCMT} disabled={saving}>{saving?"Guardando...":form.id?"Guardar Cambios":"Guardar CMT"}</Btn>
           </div>
         </Modal>
       )}
