@@ -4455,7 +4455,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const api = Number(tiq.api_corregido);
                   // galones: del tiquete, del viaje o del carro en ese orden
                   const viaje = tiq.viaje_id ? (viajes||[]).find(v=>v.id===tiq.viaje_id) : null;
-                  const gls = Number(tiq.galones_recibidos||0) || Number(viaje?.gls_recibidos||0) || Number(cr.galones_descargados||0);
+                  const gls = Number(tiq.galones_recibidos||0) || Number(viaje?.gls_recibidos||0) || Number(cr.galones_descargados||0) || Number(cr.galones_guia||0);
                   if (api>0 && gls>0) puntos.push({api,gls});
                 });
               });
