@@ -4617,7 +4617,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <div><Lbl>Gls por Contador</Lbl><input type="number" value={c.galones_contador||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_contador:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
                         <div><Lbl>Peso Ingreso (kg)</Lbl><input type="number" value={c.peso_ingreso||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_ingreso:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
                         <div><Lbl>Peso Salida (kg)</Lbl><input type="number" value={c.peso_salida||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_salida:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
-                        <div><Lbl>Gls Báscula</Lbl><input type="number" value={glsBascula||c.galones_bascula||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_bascula:e.target.value};setCmtPorteoCarros(n);}} style={glsBascula?roSt:inSt} readOnly={!!glsBascula}/></div>
+                        <div><Lbl>Gls Báscula</Lbl><input type="number" value={glsBascula||(c.peso_salida?c.galones_bascula:"")||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_bascula:e.target.value};setCmtPorteoCarros(n);}} style={glsBascula?roSt:inSt} readOnly={!!glsBascula}/></div>
                       </div>
                       {pesoNeto>0 && factorCarga>0 && (
                         <div style={{marginTop:6,fontSize:11,color:T.muted}}>
