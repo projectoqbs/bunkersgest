@@ -2599,25 +2599,35 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                       )) : (
                                         <div style={{fontSize:11,color:T.muted,fontStyle:"italic",marginTop:8}}>Pendiente de diligenciar en planta de descargue</div>
                                       )}
-                                      {(c.porteo_carros||[]).filter(cr=>cr.placa).length>0 && (
-                                        <div style={{marginTop:6,paddingTop:6,borderTop:`1px solid ${T.border}`}}>
-                                          {(c.porteo_carros||[]).filter(cr=>cr.placa).map((cr,i)=>(
-                                            <div key={i} style={{fontSize:11,color:T.muted,marginTop:4,paddingBottom:4,borderBottom:i<(c.porteo_carros||[]).filter(x=>x.placa).length-1?`1px solid ${T.border}33`:"none"}}>
-                                              <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}>
-                                                <b style={{color:T.navy}}>{cr.placa}</b>
-                                                {cr.hora_inicio_descargue&&<span>Inicio: <b>{cr.hora_inicio_descargue}</b></span>}
-                                                {cr.hora_final_descargue&&<span>Fin: <b>{cr.hora_final_descargue}</b></span>}
-                                                {cr.numero_pbs&&<span style={{background:`${T.navy}15`,borderRadius:4,padding:"1px 6px",color:T.navy,fontWeight:700}}>PBS: {cr.numero_pbs}</span>}
-                                              </div>
-                                              <div style={{marginTop:2,display:"flex",gap:12,flexWrap:"wrap"}}>
-                                                {Number(cr.peso_ingreso)>0&&<span>Ing: <b>{fmt(cr.peso_ingreso)} kg</b></span>}
-                                                {Number(cr.peso_salida)>0&&<span>Sal: <b>{fmt(cr.peso_salida)} kg</b></span>}
-                                                <span>Báscula: <b style={{color:cr.galones_bascula?T.success:T.muted}}>{cr.galones_bascula?`${fmt(cr.galones_bascula)} Gls`:"—"}</b></span>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
+                                      {(()=>{
+                                        const carrosConPlaca = (c.porteo_carros||[]).filter(cr=>cr.placa);
+                                        if (!carrosConPlaca.length) return null;
+                                        const factorApiV = (c.porteo_carga_tanques||[]).map(r=>Number(r.apiInicial||r.apiFinal||0)).find(a=>a>0)||0;
+                                        const factorV = factorApiV>0 ? Number(tabla13Factor(factorApiV)||0) : 0;
+                                        return (
+                                          <div style={{marginTop:6,paddingTop:6,borderTop:`1px solid ${T.border}`}}>
+                                            {carrosConPlaca.map((cr,i)=>{
+                                              const pn = Math.max(0, Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
+                                              const glsBas = Number(cr.galones_bascula||0) || (factorV>0&&pn>0?Math.round(pn/factorV):0);
+                                              return (
+                                                <div key={i} style={{fontSize:11,color:T.muted,marginTop:4,paddingBottom:4,borderBottom:i<carrosConPlaca.length-1?`1px solid ${T.border}33`:"none"}}>
+                                                  <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}>
+                                                    <b style={{color:T.navy}}>{cr.placa}</b>
+                                                    {cr.hora_inicio_descargue&&<span>Inicio: <b>{cr.hora_inicio_descargue}</b></span>}
+                                                    {cr.hora_final_descargue&&<span>Fin: <b>{cr.hora_final_descargue}</b></span>}
+                                                    {cr.numero_pbs&&<span style={{background:`${T.navy}15`,borderRadius:4,padding:"1px 6px",color:T.navy,fontWeight:700}}>PBS: {cr.numero_pbs}</span>}
+                                                  </div>
+                                                  <div style={{marginTop:2,display:"flex",gap:12,flexWrap:"wrap"}}>
+                                                    {Number(cr.peso_ingreso)>0&&<span>Ing: <b>{fmt(cr.peso_ingreso)} kg</b></span>}
+                                                    {Number(cr.peso_salida)>0&&<span>Sal: <b>{fmt(cr.peso_salida)} kg</b></span>}
+                                                    {Number(cr.peso_salida)>0&&<span>Báscula: <b style={{color:glsBas?T.success:T.muted}}>{glsBas?`${fmt(glsBas)} Gls`:"—"}</b></span>}
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        );
+                                      })()}
                                     </div>
                                   </>) : (<>
                                   <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.navy}`}}>
