@@ -2057,7 +2057,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const tanquesOT = ot ? [...new Set([...(ot.descargues||[]).map(d=>d.tanque),...(ot.trasiegos||[]).map(tr=>tr.destino)].filter(Boolean))] : [];
                   const tanqueCell = tanquesOT.length ? <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{tanquesOT.join(", ")}</span> : <span style={{color:T.muted}}>—</span>;
                   return [
-                    <span style={{color:T.orange,fontFamily:"monospace"}}>{t.id}</span>,
+                    <span style={{color:T.orange,fontFamily:"monospace",cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{setForm({...t});setModal("tiquete");}}>{t.id}</span>,
                     <Badge label={tipo} color={tipoColor[tipo]||T.orange}/>,
                     t.fecha_llegada||t.fecha||"—", t.producto, t.placa||"—", tanqueCell,
                     <span style={{color:T.text,fontWeight:600}}>{t.api_corregido}°</span>,
@@ -2068,9 +2068,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <span style={{color:tsaOk?T.text:T.danger,fontWeight:tsaOk?400:700}}>{t.tsa||"—"}</span>,
                     <Badge label={t.resultado} color={t.resultado==="APROBADO"?T.success:T.danger}/>,
                     <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                      {puedeEditar("tiquetes",t.creado_por,t.created_at) && (
-                        <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"3px 8px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
-                      )}
+                      {false && (
                       {perfil.rol==="administrador" && t.resultado==="RECHAZADO" && t.viaje_id && (()=>{
                         const viaje = viajes.find(v=>v.id===t.viaje_id);
                         if (!viaje || viaje.estado==="Descargado") return null;
@@ -3050,6 +3048,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <div style={{ fontWeight:800,fontSize:16,color:T.navy }}>{ot.numero_ot}</div>
                               <Badge label={ot.estado} color={estadoColor(ot.estado)}/>
                               <span style={{ fontSize:12,color:T.muted }}>{fo?.producto||""} · {ot.tanque_destino}</span>
+                              {ot.tiquete_id && (
+                                <span style={{fontSize:11,background:`${T.success}18`,border:`1px solid ${T.success}44`,borderRadius:6,padding:"2px 8px",cursor:"pointer",color:T.success,fontFamily:"monospace",fontWeight:700}} onClick={()=>{const tq=tiquetes.find(x=>x.id===ot.tiquete_id);if(tq){setForm({...tq});setModal("tiquete");}}}>🧪 {ot.tiquete_id}</span>
+                              )}
                             </div>
                             <button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id}]); setActiveTabId(id); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Ver / Gestionar →</button>
                           </div>
@@ -3094,7 +3095,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <table style={{ width:"100%",borderCollapse:"collapse",fontSize:13 }}>
                       <thead>
                         <tr style={{ borderBottom:`2px solid ${T.border}` }}>
-                          {["OT","Tanque","Formulación","Estado","Fecha",""].map(h=><th key={h} style={{ padding:"10px 14px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:11,textTransform:"uppercase" }}>{h}</th>)}
+                          {["OT","Tanque","Formulación","Estado","Fecha","Análisis",""].map(h=><th key={h} style={{ padding:"10px 14px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:11,textTransform:"uppercase" }}>{h}</th>)}
                         </tr>
                       </thead>
                       <tbody>
@@ -3107,6 +3108,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <td style={{ padding:"10px 14px",color:T.muted }}>{fo?.producto||"—"} {fo?.fecha?`(${fo.fecha})`:""}</td>
                               <td style={{ padding:"10px 14px" }}><Badge label={ot.estado} color={estadoColor(ot.estado)}/></td>
                               <td style={{ padding:"10px 14px",color:T.muted,fontSize:11 }}>{(ot.created_at||"").slice(0,10)}</td>
+                              <td style={{ padding:"10px 14px" }}>{ot.tiquete_id ? <span style={{color:T.success,fontFamily:"monospace",fontWeight:700,cursor:"pointer",textDecoration:"underline"}} onClick={()=>{const tq=tiquetes.find(x=>x.id===ot.tiquete_id);if(tq){setForm({...tq});setModal("tiquete");}}}>{ot.tiquete_id}</span> : <span style={{color:T.muted,fontSize:11}}>Sin análisis</span>}</td>
                               <td style={{ padding:"10px 14px" }}><button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id}]); setActiveTabId(id); }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Ver →</button></td>
                             </tr>
                           );
