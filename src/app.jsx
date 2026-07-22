@@ -4423,20 +4423,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const inSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
             const roSt = {...inSt,background:"#f1f5f9",color:T.navy,fontWeight:700,cursor:"default"};
 
-            // helper: API corregido y factor tabla13 del último tiquete de laboratorio del tanque
+            // helper: API corregido y factor tabla13 — solo si hay tiquete de lab vinculado a una OT de ese tanque específico
             const getLabInfo = (tanqueId) => {
               if (!tanqueId) return {api:"",factor:""};
-              // buscar tiquete vinculado directamente a OT que tiene este tanque
-              const otDelTanque = (ordenesTrabaio||[]).find(o=>o.tanque_destino===tanqueId && o.tiquete_id);
-              if (otDelTanque) {
-                const tiq = (tiquetes||[]).find(t=>t.id===otDelTanque.tiquete_id);
-                if (tiq?.api_corregido) return {api:tiq.api_corregido, factor:tiq.factor_tabla13||""};
-              }
-              // fallback: último tiquete con mismo producto que el tanque
-              const tq = tanques.find(t=>t.id===tanqueId);
-              if (!tq) return {api:"",factor:""};
-              const tiq = [...(tiquetes||[])].filter(t=>t.api_corregido && t.producto && normalizarProducto(t.producto)===normalizarProducto(tq.producto||"") && t.factor_tabla13).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
-              return {api: tiq?.api_corregido||"", factor: tiq?.factor_tabla13||""};
+              const ot = [...(ordenesTrabaio||[])].filter(o=>o.tanque_destino===tanqueId && o.tiquete_id).sort((a,b)=>new Date(b.updated_at||b.created_at||0)-new Date(a.updated_at||a.created_at||0))[0];
+              if (!ot) return {api:"",factor:""};
+              const tiq = (tiquetes||[]).find(t=>t.id===ot.tiquete_id);
+              if (!tiq?.api_corregido) return {api:"",factor:""};
+              return {api: tiq.api_corregido, factor: tiq.factor_tabla13||""};
             };
 
             const renderTanqueSection = (color, planta, setPlanta, rows, setRows) => {
