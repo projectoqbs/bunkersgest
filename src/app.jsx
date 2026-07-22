@@ -2043,7 +2043,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 )}
               </div>
               <Table
-                cols={["No. Tiquete","Tipo","Fecha","Producto","Placa","API Corr.","Flash °C","Agua %","Viscosidad","Azufre %","TSA","Resultado",""]}
+                cols={["No. Tiquete","Tipo","Fecha","Producto","Placa","Tanque","API Corr.","Flash °C","Agua %","Viscosidad","Azufre %","TSA","Resultado",""]}
                 rows={resFinalTyped.map(t=>{
                   const esV = (t.producto||"").toUpperCase()==="VLSFO";
                   const flashOk = Number(t.flash_point)>=60;
@@ -2052,10 +2052,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const azuOk   = !esV || Number(t.azufre)<0.5;
                   const tsaOk   = !esV || Number(t.tsa)<0.1;
                   const tipo = t.tipo_analisis||"Tiquetes MP";
+                  const ot = t.ot_id ? (ordenesTrabaio||[]).find(o=>o.id===t.ot_id) : null;
+                  const tanqueCell = ot?.tanques?.length ? <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{ot.tanques.join(", ")}</span> : <span style={{color:T.muted}}>—</span>;
                   return [
                     <span style={{color:T.orange,fontFamily:"monospace"}}>{t.id}</span>,
                     <Badge label={tipo} color={tipoColor[tipo]||T.orange}/>,
-                    t.fecha_llegada||t.fecha||"—", t.producto, t.placa,
+                    t.fecha_llegada||t.fecha||"—", t.producto, t.placa||"—", tanqueCell,
                     <span style={{color:T.text,fontWeight:600}}>{t.api_corregido}°</span>,
                     <span style={{color:flashOk?T.text:T.danger,fontWeight:flashOk?400:700}}>{t.flash_point}°C</span>,
                     <span style={{color:aguaOk?T.text:T.danger,fontWeight:aguaOk?400:700}}>{t.agua_destilacion}%</span>,
