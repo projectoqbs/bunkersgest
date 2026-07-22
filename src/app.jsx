@@ -2053,7 +2053,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const azuOk   = !esV || Number(t.azufre)<0.5;
                   const tsaOk   = !esV || Number(t.tsa)<0.1;
                   const tipo = t.tipo_analisis||"Tiquetes MP";
-                  const ot = t.ot_id ? (ordenesTrabaio||[]).find(o=>o.id===t.ot_id) : null;
+                  const ot = (ordenesTrabaio||[]).find(o=>o.id===t.ot_id || o.tiquete_id===t.id) || null;
                   const tanquesOT = ot ? [...new Set([...(ot.descargues||[]).map(d=>d.tanque),...(ot.trasiegos||[]).map(tr=>tr.destino)].filter(Boolean))] : [];
                   const tanqueCell = tanquesOT.length ? <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{tanquesOT.join(", ")}</span> : <span style={{color:T.muted}}>—</span>;
                   return [
@@ -3878,6 +3878,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const soloLab = !esLab && tieneViaje;
         const tipoA = form.tipo_analisis||"Tiquetes MP";
         const esMP = tipoA === "Tiquetes MP";
+        const otVinculada = form.id ? (ordenesTrabaio||[]).find(o=>o.id===form.ot_id||o.tiquete_id===form.id) : null;
+        const otsSinTiquete = (ordenesTrabaio||[]).filter(o=>!o.tiquete_id&&!o.ot_id);
         const tituloModal = form.id
           ? `${soloVista?"Ver":"Editar"} ${esMP?"Tiquete":("Análisis "+tipoA.replace("Tiquetes MP",""))} ${form.id}`
           : esMP ? "Tiquete de Ingreso de Materia Prima"
@@ -3949,6 +3951,40 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <Section title="Observaciones">
             <Inp label="Observaciones" type="text" value={form.observaciones||""} onChange={f("observaciones")} readOnly={soloVista}/>
           </Section>
+          {!esMP && form.id && esLab && (
+            <Section title="Orden de Trabajo vinculada" color={T.navy}>
+              {otVinculada ? (
+                <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:`${T.success}12`,border:`1px solid ${T.success}44`,borderRadius:8}}>
+                  <span style={{fontSize:18}}>🏗️</span>
+                  <div>
+                    <div style={{fontWeight:700,color:T.navy,fontSize:14}}>{otVinculada.numero_ot}</div>
+                    <div style={{fontSize:11,color:T.muted}}>Vinculada · Estado: {otVinculada.estado}</div>
+                  </div>
+                  <span style={{marginLeft:"auto",cursor:"pointer",color:T.orange,fontWeight:700,fontSize:12,textDecoration:"underline"}} onClick={()=>{const id=`ot-${otVinculada.id}`;const ex=tabs.find(tb=>tb.id===id);if(ex){setActiveTabId(id);setModal(null);return;}setTabs(p=>[...p,{id,type:"orden_trabajo",title:otVinculada.numero_ot,icon:"🏗️",closeable:true,otId:otVinculada.id}]);setActiveTabId(id);setModal(null);}}>Ver OT →</span>
+                </div>
+              ) : (
+                <div>
+                  <div style={{fontSize:12,color:T.muted,marginBottom:8}}>Este análisis no está vinculado a ninguna OT. Selecciona la OT correspondiente:</div>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <select value={form._vincularOT||""} onChange={e=>setForm(p=>({...p,_vincularOT:e.target.value}))}
+                      style={{flex:1,background:T.card,border:`1.5px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13}}>
+                      <option value="">— Seleccionar OT —</option>
+                      {(ordenesTrabaio||[]).filter(o=>!o.tiquete_id).map(o=><option key={o.id} value={o.id}>{o.numero_ot} · {o.estado}</option>)}
+                    </select>
+                    <Btn color={T.navy} disabled={!form._vincularOT||saving} onClick={async()=>{
+                      setSaving(true);
+                      await supabaseAdmin.from("tiquetes").update({ot_id:form._vincularOT}).eq("id",form.id);
+                      await supabaseAdmin.from("ordenes_trabajo").update({tiquete_id:form.id}).eq("id",form._vincularOT);
+                      await loadData();
+                      setSaving(false);
+                      setForm(p=>({...p,ot_id:form._vincularOT,_vincularOT:""}));
+                      showToast("✅ Análisis vinculado a la OT");
+                    }}>Vincular</Btn>
+                  </div>
+                </div>
+              )}
+            </Section>
+          )}
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
             <Btn outline onClick={()=>setModal(null)}>{soloVista?"Cerrar":"Cancelar"}</Btn>
             {!soloVista && <Btn color={T.orange} onClick={guardarTiquete} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Tiquete":"Emitir Tiquete"}</Btn>}
