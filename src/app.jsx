@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
 import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
-import { calcularGalonesP1 } from "./utils/aforoP1";
+import { calcularGalonesP1, parseTankId } from "./utils/aforoP1";
 import LiquidadorPlanta2 from "./components/LiquidadorPlanta2";
 import { LayoutDashboard, Truck, FlaskConical, Settings2, ClipboardList, Cylinder, Ship, Search, Users, CalendarDays, Calculator, RefreshCw, Crown, BarChart2, Package, Lock } from "lucide-react";
 

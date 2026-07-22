@@ -41,7 +41,7 @@ function calcVCF(api,tempC){
   // ASTM Tabla 6B: convertir API a densidad, usar K0/K1
   const rho15=(141.5/(131.5+api))*999.016;
   const alpha=(186.9696+0.486926*rho15)/(rho15*rho15);
-  const d=tempC-15.5556; // referencia 60Â°F
+  const d=tempC-15.5556; // referencia 60Ã‚Â°F
   return Math.exp(-alpha*d*(1+0.8*alpha*d));
 }
 
@@ -53,17 +53,29 @@ function calcF13(api){
   return TABLA13[lo]+(api-lo)*(TABLA13[hi]-TABLA13[lo]);
 }
 
-export function tankIdToP1Key(tankId){
+// Registro de tablas por barcaza. Agregar QBS003 aqui cuando llegue.
+const BARCAZA_TABLES = {
+  "QBS002": { TB, TK },
+  // "QBS003": { TB: TB_QBS003, TK: TK_QBS003 },
+};
+
+// "QBS002-2E" -> { barcaza:"QBS002", tank:"2E" }
+// "QBS002-TKT-1" -> { barcaza:"QBS002", tank:"TKT-1" }
+export function parseTankId(tankId){
   if(!tankId)return null;
-  const m=String(tankId).match(/([1-5][BE]|TKT-[12])$/i);
-  return m?m[1].toUpperCase():null;
+  const s=String(tankId);
+  const m=s.match(/^(QBS\d+)-(.+)$/i);
+  if(!m)return null;
+  return { barcaza:m[1].toUpperCase(), tank:m[2].toUpperCase() };
 }
 
 export function calcularGalonesP1(tankId,sondaCm,api,tempC){
-  const key=tankIdToP1Key(tankId);
-  if(!key)return null;
-  const isTKT=key.startsWith("TKT");
-  const tabla=isTKT?TK[key]:TB[key];
+  const parsed=parseTankId(tankId);
+  if(!parsed)return null;
+  const tables=BARCAZA_TABLES[parsed.barcaza];
+  if(!tables)return null;
+  const isTKT=parsed.tank.startsWith("TKT");
+  const tabla=isTKT?tables.TK[parsed.tank]:tables.TB[parsed.tank];
   if(!tabla)return null;
   const m3=isTKT?interpolarTKT(tabla,sondaCm):interpolarBarcaza(tabla,sondaCm,0,"CERO");
   if(m3===null||m3===undefined)return null;
