@@ -971,7 +971,12 @@ const aprueba = esVLSFO
 async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter, campoGalones="galones") {
   if (!tanque || !ullage) return;
   const ullageNum = Number(ullage);
-  const {data} = await supabase.from("aforo").select("galones_brutos").eq("tanque",tanque).eq("ullage_mm",ullageNum).maybeSingle();
+  let {data} = await supabase.from("aforo").select("galones_brutos").eq("tanque",tanque).eq("ullage_mm",ullageNum).maybeSingle();
+  if (!data) {
+    // Intentar con valor redondeado (aforo puede tener enteros)
+    const {data:d2} = await supabase.from("aforo").select("galones_brutos").eq("tanque",tanque).eq("ullage_mm",Math.round(ullageNum)).maybeSingle();
+    data = d2;
+  }
   if (!data) return;
   const galonesB = Number(data.galones_brutos);
   let galonesResult = Math.round(galonesB);
