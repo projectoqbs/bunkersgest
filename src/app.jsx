@@ -1096,6 +1096,9 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
 
     if (form.id) {
       // EDICIÓN: revertir impacto original y aplicar nuevo
+      if ((form.tipo_operacion||"")==="PORTEO") {
+        console.log("[PORTEO SAVE] descargaPlanta:", cmtPorteoDescargaPlanta, "| descargaTanques:", JSON.stringify(cmtPorteoDescarga));
+      }
       const original = cmts.find(c=>c.id===form.id);
       const {error} = await supabaseAdmin.from("cmts").update({
         numero_cmt:form.numero_cmt, pbs_id:form.pbs_id||null,
