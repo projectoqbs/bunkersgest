@@ -4624,9 +4624,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       )}
                     </div>
                   );})}
-                  <div style={{display:"flex",justifyContent:"flex-end",marginTop:4}}>
-                    <span style={{fontSize:11,color:T.orange,fontWeight:600}}>{fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_ingreso||0)-Number(c.peso_salida||0);return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls báscula</span>
-                  </div>
+                  {cmtPorteoCarros.some(c=>Number(c.peso_salida)>0) && (
+                    <div style={{display:"flex",justifyContent:"flex-end",marginTop:4}}>
+                      <span style={{fontSize:11,color:T.orange,fontWeight:600}}>{fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_salida)>0?Number(c.peso_ingreso||0)-Number(c.peso_salida):0;return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls báscula</span>
+                    </div>
+                  )}
                 </div>
               </Section>
 
