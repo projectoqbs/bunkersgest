@@ -4433,13 +4433,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 if (tiq?.api_corregido) return {api: tiq.api_corregido, factor: tiq.factor_tabla13||"", fuente:"lab"};
               }
               // 2. Fallback para tanques MP: promedio ponderado de api de tiquetes MP descargados en este tanque
-              const cmtsDescargue = (cmts||[]).filter(c=>c.tipo_operacion==="DESCARGUE DE CARROTANQUE" && (c.tanques_despues||[]).some(td=>td.tanque===tanqueId));
+              const cmtsDescargue = (cmts||[]).filter(c=>
+                c.tipo_operacion==="DESCARGUE DE CARROTANQUE" &&
+                (c.tanques_despues||[]).some(td=>String(td.tanque)===String(tanqueId))
+              );
               const puntos = [];
               cmtsDescargue.forEach(c=>{
                 (c.carros||[]).forEach(cr=>{
-                  const tiq = (tiquetes||[]).find(t=>t.id===cr.tiquete && t.tipo_analisis==="Tiquetes MP");
-                  const api = Number(tiq?.api_corregido||0);
-                  const gls = Number(tiq?.galones_recibidos||0);
+                  if (!cr.tiquete) return;
+                  const tiq = (tiquetes||[]).find(t=>t.id===cr.tiquete && (!t.tipo_analisis || t.tipo_analisis==="Tiquetes MP"));
+                  if (!tiq?.api_corregido) return;
+                  const api = Number(tiq.api_corregido);
+                  // galones: del tiquete, del viaje o del carro en ese orden
+                  const viaje = tiq.viaje_id ? (viajes||[]).find(v=>v.id===tiq.viaje_id) : null;
+                  const gls = Number(tiq.galones_recibidos||0) || Number(viaje?.gls_recibidos||0) || Number(cr.galones_descargados||0);
                   if (api>0 && gls>0) puntos.push({api,gls});
                 });
               });
