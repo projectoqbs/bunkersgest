@@ -4462,7 +4462,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         </select>
                         {rec.tanque && lab.api && (<>
                           <span style={{fontSize:11,background:`${T.navy}15`,border:`1px solid ${T.navy}33`,borderRadius:5,padding:"2px 8px",color:T.navy,fontWeight:700}}>API: {lab.api}°</span>
-                          <span style={{fontSize:11,background:`${T.orange}15`,border:`1px solid ${T.orange}33`,borderRadius:5,padding:"2px 8px",color:T.orange,fontWeight:700}}>T13: {lab.factor}</span>
+                          {lab.factor && <span style={{fontSize:11,background:`${T.navy}15`,border:`1px solid ${T.navy}33`,borderRadius:5,padding:"2px 8px",color:T.navy,fontWeight:700}}>FACTOR: {lab.factor}</span>}
                         </>)}
                       </div>
                       {rows.length>1 && <button onClick={()=>setRows(rows.filter((_,j)=>j!==i))} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✕</button>}
