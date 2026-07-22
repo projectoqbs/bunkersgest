@@ -1144,7 +1144,11 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
-      await loadData(); setModal(null); setForm({});
+      // Refrescar cmts de forma independiente para evitar que fallas en otras tablas dejen datos viejos
+      const {data: freshCmts} = await supabase.from("cmts").select("*").order("created_at",{ascending:false});
+      if (freshCmts) setCmts(freshCmts);
+      loadData().catch(()=>{});
+      setModal(null); setForm({});
       setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
       setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
       setCmtDespues([{tanque:"",producto:"",sonda:"",galones:""}]);
