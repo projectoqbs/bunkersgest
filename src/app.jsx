@@ -3786,6 +3786,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {lbl:"Azufre",plan:fo.azufre_planeado,      real:tiqLab?.azufre,             u:"%",   danger:(p,r)=>Math.abs(p-r)>0.05},
                 {lbl:"Agua",  plan:fo.agua_planeada,        real:tiqLab?.agua_destilacion,   u:"%",   danger:(p,r)=>Math.abs(p-r)>0.1},
                 {lbl:"Flash", plan:fo.flash_point_planeado, real:tiqLab?.flash_point,        u:"°C",  danger:(p,r)=>Math.abs(p-r)>5},
+                {lbl:"TSA",   plan:null,                   real:tiqLab?.tsa,                u:"%",   danger:(_,r)=>Number(r)>=0.1},
               ];
               return (
                 <Card style={{ padding:16 }}>
