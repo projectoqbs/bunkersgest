@@ -2404,8 +2404,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <tr><td colSpan={10} style={{...tdStyle,textAlign:"center",color:T.muted,padding:28}}>Sin registros</td></tr>
                         )}
                         {cmtsFinal.map((c,idx)=>{
-                          const tanquesNombres = [...new Set([...(c.tanques_antes||[]).map(t=>t.tanque), ...(c.tanques_despues||[]).map(t=>t.tanque)].filter(Boolean))].join(", ");
-                          const movido = Number(c.total_movido||0);
+                          const esPorteo = (c.tipo_operacion||"")==="PORTEO";
+                          const cargaTanques = c.porteo_carga_tanques||[];
+                          const tanquesNombres = esPorteo
+                            ? (cargaTanques[0]?.tanque||"—")
+                            : [...new Set([...(c.tanques_antes||[]).map(t=>t.tanque), ...(c.tanques_despues||[]).map(t=>t.tanque)].filter(Boolean))].join(", ");
+                          const glsIni = esPorteo ? Number(cargaTanques[0]?.galonesInicial||0) : Number(c.total_antes||0);
+                          const glsFin = esPorteo ? Number(cargaTanques[0]?.galonesFinal||0) : Number(c.total_despues||0);
+                          const movido = esPorteo ? Math.abs(glsIni - glsFin) : Number(c.total_movido||0);
                           const expandido = cmtExpandido===c.id;
                           const bgRow = expandido ? "#dde6f0" : idx%2===0 ? T.card : "#eef2f7";
                           return (
@@ -2417,8 +2423,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={tdStyle}><Badge label={c.tipo_operacion||"—"} color={T.navy}/></td>
                             <td style={tdStyle}><span style={{color:T.navy,fontWeight:600}}>{c.producto||"—"}</span></td>
                             <td style={tdStyle}><span style={{color:T.text,fontSize:11}}>{tanquesNombres||"—"}</span></td>
-                            <td style={tdStyle}><span style={{color:T.text}}>{fmt(c.total_antes)}</span></td>
-                            <td style={tdStyle}><span style={{color:T.text}}>{fmt(c.total_despues)}</span></td>
+                            <td style={tdStyle}><span style={{color:T.text}}>{fmt(glsIni)}</span></td>
+                            <td style={tdStyle}><span style={{color:T.text}}>{fmt(glsFin)}</span></td>
                             <td style={tdStyle}><span style={{color:T.success,fontWeight:700}}>{fmt(Math.abs(movido))}</span></td>
                             <td style={tdStyle}><span style={{color:T.muted,fontSize:11}}>{c.operador||"—"}</span></td>
                           </tr>
@@ -2426,6 +2432,54 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <tr>
                               <td colSpan={9} style={{padding:"0 0 2px 0",background:"#f1f5f9",borderBottom:`2px solid ${T.border}`}}>
                                 <div style={{padding:"16px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                                  {esPorteo ? (<>
+                                    {/* PORTEO — Planta de Cargue */}
+                                    <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.navy}`}}>
+                                      <div style={{fontSize:10,color:T.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Planta de Cargue</div>
+                                      <div style={{fontSize:11,color:T.muted,marginBottom:8}}>{c.porteo_carga_planta||"—"}</div>
+                                      {cargaTanques.map((t,i)=>(
+                                        <div key={i} style={{marginBottom:8,paddingBottom:8,borderBottom:`1px solid ${T.border}`}}>
+                                          <div style={{color:T.navy,fontWeight:700,marginBottom:4}}>{t.tanque||"—"}</div>
+                                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,fontSize:11}}>
+                                            <div><span style={{color:T.muted}}>Sonda ini: </span><b>{t.sondaInicial||"—"}</b></div>
+                                            <div><span style={{color:T.muted}}>Sonda fin: </span><b>{t.sondaFinal||"—"}</b></div>
+                                            <div><span style={{color:T.muted}}>Temp ini: </span><b>{t.tempInicial||"—"}</b></div>
+                                            <div><span style={{color:T.muted}}>Temp fin: </span><b>{t.tempFinal||"—"}</b></div>
+                                            <div style={{color:T.orange,fontWeight:700}}>{fmt(t.galonesInicial||0)} Gls ini</div>
+                                            <div style={{color:T.orange,fontWeight:700}}>{fmt(t.galonesFinal||0)} Gls fin</div>
+                                          </div>
+                                          <div style={{marginTop:4,fontSize:11,color:T.success,fontWeight:700}}>Salida: {fmt(Math.abs(Number(t.galonesInicial||0)-Number(t.galonesFinal||0)))} Gls</div>
+                                        </div>
+                                      ))}
+                                      {(c.porteo_carros||[]).map((cr,i)=>(
+                                        <div key={i} style={{fontSize:11,color:T.muted,marginTop:4}}>
+                                          <b style={{color:T.navy}}>{cr.placa||"—"}</b>
+                                          {cr.galones_contador&&<span> · Contador: <b style={{color:T.text}}>{fmt(cr.galones_contador)} Gls</b></span>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                    {/* PORTEO — Planta de Descargue */}
+                                    <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.orange}`}}>
+                                      <div style={{fontSize:10,color:T.orange,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Planta de Descargue</div>
+                                      <div style={{fontSize:11,color:T.muted,marginBottom:8}}>{c.porteo_descarga_planta||"—"}</div>
+                                      {(c.porteo_descarga_tanques||[]).length>0 ? (c.porteo_descarga_tanques||[]).map((t,i)=>(
+                                        <div key={i} style={{marginBottom:8,paddingBottom:8,borderBottom:`1px solid ${T.border}`}}>
+                                          <div style={{color:T.navy,fontWeight:700,marginBottom:4}}>{t.tanque||"—"}</div>
+                                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,fontSize:11}}>
+                                            <div><span style={{color:T.muted}}>Sonda ini: </span><b>{t.sondaInicial||"—"}</b></div>
+                                            <div><span style={{color:T.muted}}>Sonda fin: </span><b>{t.sondaFinal||"—"}</b></div>
+                                            <div><span style={{color:T.muted}}>Temp ini: </span><b>{t.tempInicial||"—"}</b></div>
+                                            <div><span style={{color:T.muted}}>Temp fin: </span><b>{t.tempFinal||"—"}</b></div>
+                                            <div style={{color:T.orange,fontWeight:700}}>{fmt(t.galonesInicial||0)} Gls ini</div>
+                                            <div style={{color:T.orange,fontWeight:700}}>{fmt(t.galonesFinal||0)} Gls fin</div>
+                                          </div>
+                                          <div style={{marginTop:4,fontSize:11,color:T.success,fontWeight:700}}>Recibido: {fmt(Math.abs(Number(t.galonesFinal||0)-Number(t.galonesInicial||0)))} Gls</div>
+                                        </div>
+                                      )) : (
+                                        <div style={{fontSize:11,color:T.muted,fontStyle:"italic",marginTop:8}}>Pendiente de diligenciar en planta de descargue</div>
+                                      )}
+                                    </div>
+                                  </>) : (<>
                                   <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.navy}`}}>
                                     <div style={{fontSize:10,color:T.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Inicial</div>
                                     {(c.tanques_antes||[]).map((t,i)=>(
@@ -2448,6 +2502,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                     ))}
                                     <div style={{fontSize:11,color:T.muted,marginTop:4}}>Total: <b style={{color:T.navy}}>{fmt(c.total_despues)} Gls</b></div>
                                   </div>
+                                  </>)}
                                   {(c.carros||[]).length>0 && (c.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE" && (
                                     <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.muted}`,gridColumn:"1/-1"}}>
                                       <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Carros Descargados</div>
