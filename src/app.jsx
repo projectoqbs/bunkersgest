@@ -992,8 +992,6 @@ async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter
     }
   }
   if (galonesB === null) return;
-  const data = { galones_brutos: galonesB };
-  const galonesB = Number(data.galones_brutos);
   let galonesResult = Math.round(galonesB);
   let vcfResult = null;
   if (temp && api) {
