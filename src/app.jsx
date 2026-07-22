@@ -2400,7 +2400,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           return (
                           <React.Fragment key={c.id}>
                           <tr onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{cursor:"pointer",background:bgRow,transition:"background 0.15s",borderTop:`1px solid ${T.border}`}} onMouseEnter={e=>{if(!expandido)e.currentTarget.style.background="#dde6f0"}} onMouseLeave={e=>{if(!expandido)e.currentTarget.style.background=bgRow}}>
-                            <td style={tdStyle}><span style={{color:T.orange,fontWeight:700,letterSpacing:0.5}}>{c.numero_cmt||c.id}</span></td>
+                            <td style={tdStyle}><span style={{color:T.orange,fontWeight:700,letterSpacing:0.5,cursor:"pointer",textDecoration:"underline"}} onClick={e=>{e.stopPropagation();setForm({...c});setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]);setCmtProducto(c.producto||"");setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]);setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]);setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);setModal("cmt");}}>{c.numero_cmt||c.id}</span></td>
                             <td style={tdStyle}>{c.ot_numero ? <span style={{color:T.orange,fontWeight:600,fontSize:11}}>{c.ot_numero}</span> : <span style={{color:T.muted,fontSize:10}}>Autónomo</span>}</td>
                             <td style={tdStyle}><span style={{color:T.muted}}>{c.fecha}</span></td>
                             <td style={tdStyle}><Badge label={c.tipo_operacion||"—"} color={T.navy}/></td>
@@ -2410,29 +2410,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={tdStyle}><span style={{color:T.text}}>{fmt(c.total_despues)}</span></td>
                             <td style={tdStyle}><span style={{color:T.success,fontWeight:700}}>{fmt(Math.abs(movido))}</span></td>
                             <td style={tdStyle}><span style={{color:T.muted,fontSize:11}}>{c.operador||"—"}</span></td>
-                            <td style={{...tdStyle,whiteSpace:"nowrap"}} onClick={e=>e.stopPropagation()}>
-                              <div style={{display:"flex",gap:6}}>
-                                <button onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"4px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700}}>
-                                  {expandido?"▲ Cerrar":"▼ Ver"}
-                                </button>
-                                {puedeEditar("cmt",c.creado_por,c.created_at) && (
-                                  <button onClick={()=>{
-                                    setForm({...c});
-                                    setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||"");
-                                    setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]);
-                                    setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]);
-                                    setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
-                                    setModal("cmt");
-                                  }} style={{background:`${T.success}22`,border:`1px solid ${T.success}55`,borderRadius:6,color:T.success,padding:"4px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace",fontWeight:700}}>
-                                    ✏ Corregir
-                                  </button>
-                                )}
-                              </div>
-                            </td>
                           </tr>
                           {expandido && (
                             <tr>
-                              <td colSpan={10} style={{padding:"0 0 2px 0",background:"#f1f5f9",borderBottom:`2px solid ${T.border}`}}>
+                              <td colSpan={9} style={{padding:"0 0 2px 0",background:"#f1f5f9",borderBottom:`2px solid ${T.border}`}}>
                                 <div style={{padding:"16px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                                   <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.navy}`}}>
                                     <div style={{fontSize:10,color:T.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Medida Inicial</div>
