@@ -2443,7 +2443,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8}}>
                                         {(c.carros||[]).map((cr,i)=>(
                                           <div key={i} style={{background:"#f8fafc",borderRadius:8,padding:"8px 10px",fontSize:11,border:`1px solid ${T.border}`}}>
-                                            <div style={{color:T.navy,fontWeight:700,marginBottom:3}}>{cr.placa||"Sin placa"}</div>
+                                            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap"}}>
+                                              <span style={{color:T.navy,fontWeight:700}}>{cr.placa||"Sin placa"}</span>
+                                              {(()=>{const tq=tiquetes.find(x=>x.id===cr.tiquete);return tq?.producto?<span style={{fontSize:10,background:`${T.orange}18`,color:T.orange,borderRadius:4,padding:"1px 6px",fontWeight:600}}>{tq.producto}</span>:null;})()}
+                                            </div>
                                             {cr.tiquete&&<div style={{color:T.navy}}>Tiquete: <span style={{cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{ const t=tiquetes.find(x=>x.id===cr.tiquete); if(t){setForm({...t});setModal("tiquete");} }}>{cr.tiquete}</span></div>}
                                             {cr.guia&&<div style={{color:T.muted}}>Guía: {cr.guia}</div>}
                                             {cr.pbs_id&&<div style={{color:T.orange}}>PBS: <span style={{cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{ const p=(pbsList||[]).find(x=>x.id===cr.pbs_id); if(p){setForm({...p});setPbsChecklist(p.checklist||Array(27).fill(""));setModal("pbs");} }}>{cr.pbs_id}</span></div>}
