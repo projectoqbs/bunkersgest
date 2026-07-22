@@ -446,6 +446,7 @@ export default function App() {
   const af = k => e => setAuthForm(p=>({...p,[k]:e.target.value}));
   const f  = k => e => setForm(p=>({...p,[k]: e.target.type==="text"||!e.target.type ? String(e.target.value).toUpperCase() : e.target.value}));
   const fPlaca = k => e => setForm(p=>({...p,[k]: e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)}));
+  const abrirCmt = c => { setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoCargaPlanta(c.porteo_carga_planta||""); setCmtPorteoDescargaPlanta(c.porteo_descarga_planta||""); setCmtPorteoCarga(c.porteo_carga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoDescarga(c.porteo_descarga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoCarros(c.porteo_carros||[{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]); setModal("cmt"); };
 
   function showToast(msg, ok=true) {
     setToast({msg,ok});
@@ -2401,7 +2402,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           return (
                           <React.Fragment key={c.id}>
                           <tr onClick={()=>setCmtExpandido(expandido?null:c.id)} style={{cursor:"pointer",background:bgRow,transition:"background 0.15s",borderTop:`1px solid ${T.border}`}} onMouseEnter={e=>{if(!expandido)e.currentTarget.style.background="#dde6f0"}} onMouseLeave={e=>{if(!expandido)e.currentTarget.style.background=bgRow}}>
-                            <td style={tdStyle}><span style={{color:T.orange,fontWeight:700,letterSpacing:0.5,cursor:"pointer",textDecoration:"underline"}} onClick={e=>{e.stopPropagation();setForm({...c});setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]);setCmtProducto(c.producto||"");setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]);setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]);setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);setModal("cmt");}}>{c.numero_cmt||c.id}</span></td>
+                            <td style={tdStyle}><span style={{color:T.orange,fontWeight:700,letterSpacing:0.5,cursor:"pointer",textDecoration:"underline"}} onClick={e=>{e.stopPropagation();abrirCmt(c);}}>{c.numero_cmt||c.id}</span></td>
                             <td style={tdStyle}>{c.ot_numero ? <span style={{color:T.orange,fontWeight:600,fontSize:11}}>{c.ot_numero}</span> : <span style={{color:T.muted,fontSize:10}}>Autónomo</span>}</td>
                             <td style={tdStyle}><span style={{color:T.muted}}>{c.fecha}</span></td>
                             <td style={tdStyle}><Badge label={c.tipo_operacion||"—"} color={T.navy}/></td>
@@ -3569,7 +3570,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                   {cmtsDeEstaOT.filter(c=>c.tipo_operacion==="TRASIEGO DE PRODUCTO").map(c=>(
                     <span key={c.id} style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
-                      onClick={()=>{ setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setModal("cmt"); }}>
+                      onClick={()=>abrirCmt(c)}>
                       📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
                     </span>
                   ))}
@@ -3697,7 +3698,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                   {cmtsDeEstaOT.filter(c=>c.tipo_operacion!=="TRASIEGO DE PRODUCTO").map(c=>(
                     <span key={c.id} style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
-                      onClick={()=>{ setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setModal("cmt"); }}>
+                      onClick={()=>abrirCmt(c)}>
                       📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
                     </span>
                   ))}
