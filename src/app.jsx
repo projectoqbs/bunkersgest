@@ -1094,13 +1094,23 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     const totalMovido = totalDespues - totalAntes;
     if (!form.id && tipoOp !== "TRASIEGO DE PRODUCTO" && tipoOp !== "PORTEO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
 
+    // Para PORTEO: calcular y persistir galones_bascula en cada carro antes de guardar
+    const porteoCarrosConGls = tipoOp==="PORTEO" ? (() => {
+      const factorApi = cmtPorteoCarga.map(r=>Number(r.apiInicial||r.apiFinal||0)).find(a=>a>0) || 0;
+      const factor = factorApi>0 ? Number(tabla13Factor(factorApi)||0) : 0;
+      return cmtPorteoCarros.map(cr => {
+        if (Number(cr.peso_salida)>0 && factor>0) {
+          const pn = Number(cr.peso_ingreso||0)-Number(cr.peso_salida);
+          return {...cr, galones_bascula: pn>0 ? Math.round(pn/factor) : (cr.galones_bascula||"")};
+        }
+        return cr;
+      });
+    })() : cmtPorteoCarros;
+
     if (form.id) {
       // EDICIÓN: revertir impacto original y aplicar nuevo
-      if ((form.tipo_operacion||"")==="PORTEO") {
-        console.log("[PORTEO SAVE] form.id:", form.id, "| descargaPlanta:", cmtPorteoDescargaPlanta, "| descargaTanques:", JSON.stringify(cmtPorteoDescarga));
-      }
       const original = cmts.find(c=>c.id===form.id);
-      const {error, data: updateResult} = await supabaseAdmin.from("cmts").update({
+      const {error} = await supabaseAdmin.from("cmts").update({
         numero_cmt:form.numero_cmt, pbs_id:form.pbs_id||null,
         tiquete_entrada:form.tiquete_entrada||null, producto:cmtProducto,
         tipo_operacion:form.tipo_operacion, tanques_antes:cmtAntes,
@@ -1114,9 +1124,8 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         porteo_descarga_planta:cmtPorteoDescargaPlanta||null,
         porteo_carga_tanques:cmtPorteoCarga,
         porteo_descarga_tanques:cmtPorteoDescarga,
-        porteo_carros:cmtPorteoCarros,
-      }).eq("id", form.id).select();
-      console.log("[PORTEO UPDATE RESULT] error:", error, "| data:", JSON.stringify(updateResult));
+        porteo_carros:porteoCarrosConGls,
+      }).eq("id", form.id);
       if (!error && original) {
         // Calcular impacto neto por tanque: (nuevo - anterior) - (original_despues - original_antes)
         const tanquesAfectados = new Set([
@@ -1180,7 +1189,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         porteo_descarga_planta:cmtPorteoDescargaPlanta||null,
         porteo_carga_tanques:cmtPorteoCarga,
         porteo_descarga_tanques:cmtPorteoDescarga,
-        porteo_carros:cmtPorteoCarros,
+        porteo_carros:porteoCarrosConGls,
         operador:perfil.nombre, creado_por:session.user.id
       }]);
       if (!error) {
