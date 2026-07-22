@@ -4423,12 +4423,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const inSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
             const roSt = {...inSt,background:"#f1f5f9",color:T.navy,fontWeight:700,cursor:"default"};
 
-            // helper: API y factor tabla13 del último tiquete del producto en ese tanque
+            // helper: API corregido y factor tabla13 del último tiquete de laboratorio del tanque
             const getLabInfo = (tanqueId) => {
+              if (!tanqueId) return {api:"",factor:""};
+              // buscar tiquete vinculado directamente a OT que tiene este tanque
+              const otDelTanque = (ordenesTrabaio||[]).find(o=>o.tanque_destino===tanqueId && o.tiquete_id);
+              if (otDelTanque) {
+                const tiq = (tiquetes||[]).find(t=>t.id===otDelTanque.tiquete_id);
+                if (tiq?.api_corregido) return {api:tiq.api_corregido, factor:tiq.factor_tabla13||""};
+              }
+              // fallback: último tiquete con mismo producto que el tanque
               const tq = tanques.find(t=>t.id===tanqueId);
               if (!tq) return {api:"",factor:""};
-              const tiq = [...(tiquetes||[])].filter(t=>t.producto && normalizarProducto(t.producto)===normalizarProducto(tq.producto||"") && t.factor_tabla13).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
-              return {api: tiq?.api||"", factor: tiq?.factor_tabla13||""};
+              const tiq = [...(tiquetes||[])].filter(t=>t.api_corregido && t.producto && normalizarProducto(t.producto)===normalizarProducto(tq.producto||"") && t.factor_tabla13).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+              return {api: tiq?.api_corregido||"", factor: tiq?.factor_tabla13||""};
             };
 
             const renderTanqueSection = (color, planta, setPlanta, rows, setRows) => {
@@ -4448,13 +4456,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                         <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
-                        <select value={rec.tanque} onChange={e=>{const n=[...rows];n[i]={...n[i],tanque:e.target.value};setRows(n);}} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,outline:"none"}}>
+                        <select value={rec.tanque} onChange={e=>{const tId=e.target.value;const labI=getLabInfo(tId);const n=[...rows];n[i]={...n[i],tanque:tId,apiInicial:labI.api||n[i].apiInicial,apiFinal:labI.api||n[i].apiFinal};setRows(n);}} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,outline:"none"}}>
                           <option value="">—</option>
                           {tanquesPlanta.map(t=><option key={t.id}>{t.id}</option>)}
                         </select>
                         {rec.tanque && lab.api && (<>
-                          <span style={{fontSize:11,color:T.muted}}>API Lab: <b style={{color:T.navy}}>{lab.api}°</b></span>
-                          <span style={{fontSize:11,color:T.muted}}>Factor T13: <b style={{color:T.navy}}>{lab.factor}</b></span>
+                          <span style={{fontSize:11,background:`${T.navy}15`,border:`1px solid ${T.navy}33`,borderRadius:5,padding:"2px 8px",color:T.navy,fontWeight:700}}>API: {lab.api}°</span>
+                          <span style={{fontSize:11,background:`${T.orange}15`,border:`1px solid ${T.orange}33`,borderRadius:5,padding:"2px 8px",color:T.orange,fontWeight:700}}>T13: {lab.factor}</span>
                         </>)}
                       </div>
                       {rows.length>1 && <button onClick={()=>setRows(rows.filter((_,j)=>j!==i))} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✕</button>}
@@ -4463,14 +4471,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{fontSize:10,color,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Inicial</div>
                       <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setRows,"galonesInicial")} style={inSt}/></div>
                       <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" value={rec.tempInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setRows,"galonesInicial")} style={inSt}/></div>
-                      <div><Lbl>API</Lbl><input type="number" step="0.1" value={rec.apiInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setRows,"galonesInicial")} style={inSt}/></div>
+                      <div><Lbl>API {lab.api?"(Lab)":""}</Lbl><input type="number" step="0.1" value={rec.apiInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setRows,"galonesInicial")} style={lab.api?{...roSt,color:T.navy}:inSt}/></div>
                       <div><Lbl>{rec.tempInicial&&rec.apiInicial?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesInicial:e.target.value};setRows(n);}} style={inSt}/></div>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
                       <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Final</div>
                       <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setRows,"galonesFinal")} style={inSt}/></div>
                       <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" value={rec.tempFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setRows,"galonesFinal")} style={inSt}/></div>
-                      <div><Lbl>API</Lbl><input type="number" step="0.1" value={rec.apiFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setRows,"galonesFinal")} style={inSt}/></div>
+                      <div><Lbl>API {lab.api?"(Lab)":""}</Lbl><input type="number" step="0.1" value={rec.apiFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setRows,"galonesFinal")} style={lab.api?{...roSt,color:T.navy}:inSt}/></div>
                       <div><Lbl>{rec.tempFinal&&rec.apiFinal?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesFinal:e.target.value};setRows(n);}} style={inSt}/></div>
                     </div>
                   </div>
