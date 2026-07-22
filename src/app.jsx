@@ -2443,8 +2443,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,fontSize:11}}>
                                             <div><span style={{color:T.muted}}>Sonda ini: </span><b>{t.sondaInicial||"—"}</b></div>
                                             <div><span style={{color:T.muted}}>Sonda fin: </span><b>{t.sondaFinal||"—"}</b></div>
-                                            <div><span style={{color:T.muted}}>Temp ini: </span><b>{t.tempInicial||"—"}</b></div>
-                                            <div><span style={{color:T.muted}}>Temp fin: </span><b>{t.tempFinal||"—"}</b></div>
                                             <div style={{color:T.orange,fontWeight:700}}>{fmt(t.galonesInicial||0)} Gls ini</div>
                                             <div style={{color:T.orange,fontWeight:700}}>{fmt(t.galonesFinal||0)} Gls fin</div>
                                           </div>
@@ -2468,12 +2466,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,fontSize:11}}>
                                             <div><span style={{color:T.muted}}>Sonda ini: </span><b>{t.sondaInicial||"—"}</b></div>
                                             <div><span style={{color:T.muted}}>Sonda fin: </span><b>{t.sondaFinal||"—"}</b></div>
-                                            <div><span style={{color:T.muted}}>Temp ini: </span><b>{t.tempInicial||"—"}</b></div>
-                                            <div><span style={{color:T.muted}}>Temp fin: </span><b>{t.tempFinal||"—"}</b></div>
                                             <div style={{color:T.orange,fontWeight:700}}>{fmt(t.galonesInicial||0)} Gls ini</div>
                                             <div style={{color:T.orange,fontWeight:700}}>{fmt(t.galonesFinal||0)} Gls fin</div>
                                           </div>
-                                          <div style={{marginTop:4,fontSize:11,color:T.success,fontWeight:700}}>Recibido: {fmt(Math.abs(Number(t.galonesFinal||0)-Number(t.galonesInicial||0)))} Gls</div>
+                                          {(Number(t.galonesFinal||0)>0) && <div style={{marginTop:4,fontSize:11,color:T.success,fontWeight:700}}>Recibido: {fmt(Math.abs(Number(t.galonesFinal||0)-Number(t.galonesInicial||0)))} Gls</div>}
                                         </div>
                                       )) : (
                                         <div style={{fontSize:11,color:T.muted,fontStyle:"italic",marginTop:8}}>Pendiente de diligenciar en planta de descargue</div>
