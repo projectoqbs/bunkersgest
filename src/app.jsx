@@ -367,7 +367,7 @@ export default function App() {
   const [cmtDespues, setCmtDespues] = useState([{tanque:"",producto:"",sonda:"",galones:""}]);
   const [cmtRecepcion, setCmtRecepcion] = useState([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
   const PORTEO_ROW = {tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""};
-  const PORTEO_CARRO = {placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""};
+  const PORTEO_CARRO = {placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""};
   const [cmtPorteoCargaPlanta, setCmtPorteoCargaPlanta] = useState("");
   const [cmtPorteoDescargaPlanta, setCmtPorteoDescargaPlanta] = useState("");
   const [cmtPorteoCarga, setCmtPorteoCarga] = useState([{...PORTEO_ROW}]);
@@ -448,7 +448,7 @@ export default function App() {
   const af = k => e => setAuthForm(p=>({...p,[k]:e.target.value}));
   const f  = k => e => setForm(p=>({...p,[k]: e.target.type==="text"||!e.target.type ? String(e.target.value).toUpperCase() : e.target.value}));
   const fPlaca = k => e => setForm(p=>({...p,[k]: e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)}));
-  const abrirCmt = c => { setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoCargaPlanta(c.porteo_carga_planta||""); setCmtPorteoDescargaPlanta(c.porteo_descarga_planta||""); setCmtPorteoCarga(c.porteo_carga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoDescarga(c.porteo_descarga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoCarros((c.porteo_carros||[{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]).map(cr=>({...cr,galones_bascula:Number(cr.peso_salida)>0?cr.galones_bascula:""}))); setModal("cmt"); };
+  const abrirCmt = c => { setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoCargaPlanta(c.porteo_carga_planta||""); setCmtPorteoDescargaPlanta(c.porteo_descarga_planta||""); setCmtPorteoCarga(c.porteo_carga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoDescarga(c.porteo_descarga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoCarros((c.porteo_carros||[{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}]).map(cr=>({...cr,galones_bascula:Number(cr.peso_salida)>0?cr.galones_bascula:""}))); setModal("cmt"); };
 
   function showToast(msg, ok=true) {
     setToast({msg,ok});
@@ -494,7 +494,7 @@ export default function App() {
     setCmtPorteoDescargaPlanta(cached.cmtPorteoDescargaPlanta || '');
     setCmtPorteoCarga(cached.cmtPorteoCarga || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
     setCmtPorteoDescarga(cached.cmtPorteoDescarga || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
-    setCmtPorteoCarros(cached.cmtPorteoCarros || [{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:''}]);
+    setCmtPorteoCarros(cached.cmtPorteoCarros || [{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:'',hora_inicio_descargue:'',hora_final_descargue:'',numero_pbs:''}]);
     setPbsChecklist(cached.pbsChecklist || Array(26).fill(''));
     setPbsParaCarro(cached.pbsParaCarro ?? null);
     setPbsEsTrasiego(cached.pbsEsTrasiego || false);
@@ -511,7 +511,7 @@ export default function App() {
     setCmtPorteoCargaPlanta(''); setCmtPorteoDescargaPlanta('');
     setCmtPorteoCarga([{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
     setCmtPorteoDescarga([{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
-    setCmtPorteoCarros([{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:''}]);
+    setCmtPorteoCarros([{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:'',hora_inicio_descargue:'',hora_final_descargue:'',numero_pbs:''}]);
     setPbsChecklist(Array(26).fill(''));
     setPbsParaCarro(null);
     setPbsEsTrasiego(false);
@@ -1174,7 +1174,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       setCmtPorteoCargaPlanta(""); setCmtPorteoDescargaPlanta("");
       setCmtPorteoCarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
       setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
-      setCmtPorteoCarros([{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]);
+      setCmtPorteoCarros([{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}]);
       showToast(`CMT ${form.numero_cmt} corregido — ${fmt(totalMovido)} Gls`);
     } else {
       const sedeActual = form.sede || perfil.sede || "MALAMBO";
@@ -1229,7 +1229,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         setCmtPorteoCargaPlanta(""); setCmtPorteoDescargaPlanta("");
         setCmtPorteoCarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
         setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
-        setCmtPorteoCarros([{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]);
+        setCmtPorteoCarros([{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}]);
         showToast(`✅ CMT ${numeroCmt} vinculado a ${form.ot_numero}`);
       } else {
         // CMT autónomo → preguntar si vincular a OT
@@ -2451,8 +2451,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       const porteo = (cmt.porteo_carros||[]).filter(cr=>cr.placa).map(cr=>({
                         cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
                         sede: cmt.sede, planta: cmt.planta, producto: cmt.producto,
-                        placa: cr.placa, guia: "", tiquete: "",
-                        hora_inicio: "", hora_final: "",
+                        placa: cr.placa, guia: cr.numero_pbs||"", tiquete: "",
+                        hora_inicio: cr.hora_inicio_descargue||"", hora_final: cr.hora_final_descargue||"",
                         peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
                         peso_neto: Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0)),
                         gls_guia: Number(cr.galones_contador||0), gls_bascula: Number(cr.galones_bascula||0),
@@ -2599,12 +2599,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                       )) : (
                                         <div style={{fontSize:11,color:T.muted,fontStyle:"italic",marginTop:8}}>Pendiente de diligenciar en planta de descargue</div>
                                       )}
-                                      {(c.porteo_carros||[]).some(cr=>Number(cr.peso_salida)>0) && (
+                                      {(c.porteo_carros||[]).filter(cr=>cr.placa).length>0 && (
                                         <div style={{marginTop:6,paddingTop:6,borderTop:`1px solid ${T.border}`}}>
-                                          {(c.porteo_carros||[]).filter(cr=>Number(cr.peso_salida)>0).map((cr,i)=>(
-                                            <div key={i} style={{fontSize:11,color:T.muted,marginTop:2}}>
-                                              <b style={{color:T.navy}}>{cr.placa||"—"}</b>
-                                              {cr.galones_bascula&&<span> · Báscula: <b style={{color:T.text}}>{fmt(cr.galones_bascula)} Gls</b></span>}
+                                          {(c.porteo_carros||[]).filter(cr=>cr.placa).map((cr,i)=>(
+                                            <div key={i} style={{fontSize:11,color:T.muted,marginTop:4,paddingBottom:4,borderBottom:i<(c.porteo_carros||[]).filter(x=>x.placa).length-1?`1px solid ${T.border}33`:"none"}}>
+                                              <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}>
+                                                <b style={{color:T.navy}}>{cr.placa}</b>
+                                                {cr.hora_inicio_descargue&&<span>Inicio: <b>{cr.hora_inicio_descargue}</b></span>}
+                                                {cr.hora_final_descargue&&<span>Fin: <b>{cr.hora_final_descargue}</b></span>}
+                                                {cr.numero_pbs&&<span style={{background:`${T.navy}15`,borderRadius:4,padding:"1px 6px",color:T.navy,fontWeight:700}}>PBS: {cr.numero_pbs}</span>}
+                                              </div>
+                                              <div style={{marginTop:2,display:"flex",gap:12,flexWrap:"wrap"}}>
+                                                {Number(cr.peso_ingreso)>0&&<span>Ing: <b>{fmt(cr.peso_ingreso)} kg</b></span>}
+                                                {Number(cr.peso_salida)>0&&<span>Sal: <b>{fmt(cr.peso_salida)} kg</b></span>}
+                                                <span>Báscula: <b style={{color:cr.galones_bascula?T.success:T.muted}}>{cr.galones_bascula?`${fmt(cr.galones_bascula)} Gls`:"—"}</b></span>
+                                              </div>
                                             </div>
                                           ))}
                                         </div>
@@ -4732,6 +4741,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                         <div><Lbl>Placa</Lbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...inSt,fontFamily:"monospace",textTransform:"uppercase"}}/></div>
                         <div><Lbl>Transportadora</Lbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} placeholder="Nombre empresa" style={inSt}/></div>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
+                        <div><Lbl>H. Inicio Descargue</Lbl><input type="time" value={c.hora_inicio_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_descargue:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
+                        <div><Lbl>H. Final Descargue</Lbl><input type="time" value={c.hora_final_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_descargue:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
+                        <div><Lbl>N° PBS</Lbl><input type="text" value={c.numero_pbs||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="PBS-001" style={inSt}/></div>
                       </div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
                         <div><Lbl>Gls por Contador</Lbl><input type="number" value={c.galones_contador||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_contador:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
