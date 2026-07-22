@@ -4423,14 +4423,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const inSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
             const roSt = {...inSt,background:"#f1f5f9",color:T.navy,fontWeight:700,cursor:"default"};
 
-            // helper: API corregido y factor tabla13 — solo si hay tiquete de lab vinculado a una OT de ese tanque específico
+            // helper: API corregido y factor tabla13 — solo tiquetes de análisis de planta (no MP) vinculados a OT de ese tanque
             const getLabInfo = (tanqueId) => {
               if (!tanqueId) return {api:"",factor:""};
-              const ot = [...(ordenesTrabaio||[])].filter(o=>o.tanque_destino===tanqueId && o.tiquete_id).sort((a,b)=>new Date(b.updated_at||b.created_at||0)-new Date(a.updated_at||a.created_at||0))[0];
-              if (!ot) return {api:"",factor:""};
-              const tiq = (tiquetes||[]).find(t=>t.id===ot.tiquete_id);
-              if (!tiq?.api_corregido) return {api:"",factor:""};
-              return {api: tiq.api_corregido, factor: tiq.factor_tabla13||""};
+              const ots = [...(ordenesTrabaio||[])].filter(o=>o.tanque_destino===tanqueId && o.tiquete_id).sort((a,b)=>new Date(b.updated_at||b.created_at||0)-new Date(a.updated_at||a.created_at||0));
+              for (const ot of ots) {
+                const tiq = (tiquetes||[]).find(t=>t.id===ot.tiquete_id && t.tipo_analisis && t.tipo_analisis!=="Tiquetes MP");
+                if (tiq?.api_corregido) return {api: tiq.api_corregido, factor: tiq.factor_tabla13||""};
+              }
+              return {api:"",factor:""};
             };
 
             const renderTanqueSection = (color, planta, setPlanta, rows, setRows) => {
