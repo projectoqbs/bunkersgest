@@ -36,7 +36,7 @@ const SUPABASE_URL = "https://pahulcaneuzfiknrzlbc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_6A3JvUT-O5UpP5FAYUIKaA_6-Xihr7N";
 const SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhaHVsY2FuZXV6ZmlrbnJ6bGJjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTg3Mjg2OCwiZXhwIjoyMDk1NDQ4ODY4fQ.jwQZ3-FZe7zv3CGMgQvNiphxHtlFbfZX2HTq5orX46E";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 const MATERIAS_PRIMAS = ["FRONTERA","PENDARE","ALBERTA","CARRIZALES NORTE P","CARRIZALES NORTE B","OMI","VIGIA","KIMBO","CUERVA","SOGAMOSO","TK205","RUMBA","MATEGUAFA","DESTILADO REFISAMAG"];
