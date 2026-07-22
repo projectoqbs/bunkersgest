@@ -556,6 +556,7 @@ export default function App() {
     if (existing) {
       setActiveTabId(existing.id);
       clearFormState();
+      if (section === "usuarios") loadPerfilesConEmail();
       return;
     }
     const meta = NAV_META[section] || { label: section, icon: '📄' };
@@ -563,6 +564,7 @@ export default function App() {
     setTabs(prev => [...prev, { id, type:'nav', section, title: meta.label, icon: meta.icon, closeable: true }]);
     setActiveTabId(id);
     clearFormState();
+    if (section === "usuarios") loadPerfilesConEmail();
   }
 
   function openFormTab(formType, initialState) {
@@ -649,7 +651,8 @@ export default function App() {
 
   useEffect(()=>{
     if (!perfil) return;
-    const reload = () => loadData();
+    let timer = null;
+    const reload = () => { clearTimeout(timer); timer = setTimeout(()=>loadData(), 800); };
     const channel = supabase.channel("bunkergest-realtime")
       .on("postgres_changes",{event:"*",schema:"public",table:"tanques"},   reload)
       .on("postgres_changes",{event:"*",schema:"public",table:"viajes"},    reload)
@@ -704,7 +707,7 @@ export default function App() {
   }
 
   async function loadData() {
-    const [t,v,tq,p,c,d,pr,permR,prog] = await Promise.all([
+    const [t,v,tq,p,c,d,pr,permR,prog,form2,ot] = await Promise.all([
       supabase.from("tanques").select("*").order("id"),
       supabase.from("viajes").select("*").order("created_at",{ascending:false}),
       supabase.from("tiquetes").select("*").order("created_at",{ascending:false}),
@@ -714,6 +717,8 @@ export default function App() {
       supabase.from("perfiles").select("*").order("nombre"),
       supabase.from("permisos_roles").select("*").order("rol").order("modulo"),
       supabase.from("programaciones").select("*").order("fecha",{ascending:false}),
+      supabase.from("formulaciones").select("*").order("created_at",{ascending:false}),
+      supabase.from("ordenes_trabajo").select("*").order("created_at",{ascending:false}),
     ]);
     if (t.data) setTanques(t.data);
     if (v.data) setViajes(v.data);
@@ -721,23 +726,27 @@ export default function App() {
     if (p.data) setPbsList(p.data);
     if (c.data) setCmts(c.data);
     if (d.data) setDespachos(d.data);
-    if (pr.data) {
-      // Enriquecer perfiles con email de auth para derivar cédula
-      try {
-        const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
-        const emailMap = {};
-        (authUsers?.users||[]).forEach(u => { emailMap[u.id] = u.email; });
-        setPerfiles(pr.data.map(p => ({
-          ...p,
-          email: p.email || emailMap[p.id] || "",
-          cedula: p.cedula || (emailMap[p.id]||"").replace("@quimibuques.com",""),
-        })));
-      } catch(_) { setPerfiles(pr.data); }
-    }
+    if (pr.data) setPerfiles(pr.data);
     if (permR.data) setPermisosRoles(permR.data);
     if (prog?.data) setProgramaciones(prog.data);
-    try { const form2 = await supabase.from("formulaciones").select("*").order("created_at",{ascending:false}); if (form2?.data) setFormulaciones(form2.data); } catch(_) {}
-    try { const ot = await supabase.from("ordenes_trabajo").select("*").order("created_at",{ascending:false}); if (ot?.data) setOrdenesTrabajo(ot.data); } catch(_) {}
+    if (form2?.data) setFormulaciones(form2.data);
+    if (ot?.data) setOrdenesTrabajo(ot.data);
+  }
+
+  // Carga enriquecida de perfiles con email de auth (solo para pantalla de usuarios)
+  async function loadPerfilesConEmail() {
+    const { data: pr } = await supabase.from("perfiles").select("*").order("nombre");
+    if (!pr) return;
+    try {
+      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      const emailMap = {};
+      (authUsers?.users||[]).forEach(u => { emailMap[u.id] = u.email; });
+      setPerfiles(pr.map(p => ({
+        ...p,
+        email: p.email || emailMap[p.id] || "",
+        cedula: p.cedula || (emailMap[p.id]||"").replace("@quimibuques.com",""),
+      })));
+    } catch(_) { setPerfiles(pr); }
   }
 
   const cedulaToEmail = (cedula) => cedula.includes("@") ? cedula : `${cedula}@quimibuques.com`;
