@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
 import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
+import { calcularGalonesP1 } from "./utils/aforoP1";
 import LiquidadorPlanta2 from "./components/LiquidadorPlanta2";
 import { LayoutDashboard, Truck, FlaskConical, Settings2, ClipboardList, Cylinder, Ship, Search, Users, CalendarDays, Calculator, RefreshCw, Crown, BarChart2, Package, Lock } from "lucide-react";
 
@@ -991,7 +992,14 @@ async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter
       galonesB = Number(above.galones_brutos);
     }
   }
-  if (galonesB === null) return;
+  // Fallback: tablas embebidas de Planta 1 (barcaza QBS-002)
+  if (galonesB === null) {
+    const glsP1 = calcularGalonesP1(tanque, ullageNum, api, temp);
+    if (glsP1 !== null) {
+      setter(prev => prev.map((r,j) => j===index ? {...r, [campoGalones]: glsP1} : r));
+    }
+    return;
+  }
   let galonesResult = Math.round(galonesB);
   let vcfResult = null;
   if (temp && api) {
