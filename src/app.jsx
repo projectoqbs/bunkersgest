@@ -971,13 +971,28 @@ const aprueba = esVLSFO
 async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter, campoGalones="galones") {
   if (!tanque || !ullage) return;
   const ullageNum = Number(ullage);
-  let {data} = await supabase.from("aforo").select("galones_brutos").eq("tanque",tanque).eq("ullage_mm",ullageNum).maybeSingle();
-  if (!data) {
-    // Intentar con valor redondeado (aforo puede tener enteros)
-    const {data:d2} = await supabase.from("aforo").select("galones_brutos").eq("tanque",tanque).eq("ullage_mm",Math.round(ullageNum)).maybeSingle();
-    data = d2;
+  // Buscar coincidencia exacta primero
+  let galonesB = null;
+  const {data:exact} = await supabase.from("aforo").select("galones_brutos").eq("tanque",tanque).eq("ullage_mm",ullageNum).maybeSingle();
+  if (exact) {
+    galonesB = Number(exact.galones_brutos);
+  } else {
+    // Interpolación: buscar el punto inferior y superior
+    const [{data:below},{data:above}] = await Promise.all([
+      supabase.from("aforo").select("ullage_mm,galones_brutos").eq("tanque",tanque).lt("ullage_mm",ullageNum).order("ullage_mm",{ascending:false}).limit(1).maybeSingle(),
+      supabase.from("aforo").select("ullage_mm,galones_brutos").eq("tanque",tanque).gt("ullage_mm",ullageNum).order("ullage_mm",{ascending:true}).limit(1).maybeSingle(),
+    ]);
+    if (below && above) {
+      const ratio = (ullageNum - below.ullage_mm) / (above.ullage_mm - below.ullage_mm);
+      galonesB = Number(below.galones_brutos) + ratio * (Number(above.galones_brutos) - Number(below.galones_brutos));
+    } else if (below) {
+      galonesB = Number(below.galones_brutos);
+    } else if (above) {
+      galonesB = Number(above.galones_brutos);
+    }
   }
-  if (!data) return;
+  if (galonesB === null) return;
+  const data = { galones_brutos: galonesB };
   const galonesB = Number(data.galones_brutos);
   let galonesResult = Math.round(galonesB);
   let vcfResult = null;
