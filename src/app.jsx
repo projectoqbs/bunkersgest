@@ -2018,13 +2018,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               </div>
               {/* Filtro rápido por tipo */}
-              <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-                {["", ...TIPOS_ANALISIS].map(tipo=>(
-                  <button key={tipo||"todos"} onClick={()=>setResFiltroTipo(tipo)}
-                    style={{padding:"5px 14px",borderRadius:20,border:`1px solid ${tipo?(tipoColor[tipo]+"55"):(T.border)}`,background:resFiltroTipo===tipo?(tipo?tipoColor[tipo]+"33":"#ffffff22"):"transparent",color:tipo?tipoColor[tipo]:T.muted,fontSize:11,cursor:"pointer",fontWeight:resFiltroTipo===tipo?700:400,transition:"all 0.15s"}}>
-                    {tipo||"Todos"}
-                  </button>
-                ))}
+              <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+                {["", ...TIPOS_ANALISIS].map(tipo=>{
+                  const activo = resFiltroTipo===tipo;
+                  return (
+                    <button key={tipo||"todos"} onClick={()=>setResFiltroTipo(tipo)}
+                      style={{padding:"6px 16px",borderRadius:6,border:`1.5px solid ${activo?T.navy:T.border}`,background:activo?T.navy:"transparent",color:activo?"#fff":T.muted,fontSize:12,cursor:"pointer",fontWeight:activo?700:400,transition:"all 0.15s"}}>
+                      {tipo||"Todos"}
+                    </button>
+                  );
+                })}
               </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:16}}>
                 <input value={tiqBusqueda||""} onChange={e=>setTiqBusqueda(e.target.value)} placeholder="🔍 Buscar tiquete, placa, viaje..." style={{...selSt,width:220,padding:"6px 12px"}}/>
