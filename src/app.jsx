@@ -2044,7 +2044,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 )}
               </div>
               <Table
-                cols={["No. Tiquete","Tipo","Fecha","Producto","Placa","Tanque","API Corr.","Flash °C","Agua %","Viscosidad","Azufre %","TSA","Resultado",""]}
+                cols={["No. Tiquete","Tipo","Fecha","Producto","Placa","Tanque","OT","API Corr.","Flash °C","Agua %","Viscosidad","Azufre %","TSA","Resultado",""]}
                 rows={resFinalTyped.map(t=>{
                   const esV = (t.producto||"").toUpperCase()==="VLSFO";
                   const flashOk = Number(t.flash_point)>=60;
@@ -2060,6 +2060,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <span style={{color:T.orange,fontFamily:"monospace",cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{setForm({...t});setModal("tiquete");}}>{t.id}</span>,
                     <Badge label={tipo} color={tipoColor[tipo]||T.orange}/>,
                     t.fecha_llegada||t.fecha||"—", t.producto, t.placa||"—", tanqueCell,
+                    ot ? <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy,cursor:"pointer",textDecoration:"underline"}} onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(tb=>tb.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id}]); setActiveTabId(id); }}>{ot.numero_ot}</span> : <span style={{color:T.muted}}>—</span>,
                     <span style={{color:T.text,fontWeight:600}}>{t.api_corregido}°</span>,
                     <span style={{color:flashOk?T.text:T.danger,fontWeight:flashOk?400:700}}>{t.flash_point}°C</span>,
                     <span style={{color:aguaOk?T.text:T.danger,fontWeight:aguaOk?400:700}}>{t.agua_destilacion}%</span>,
