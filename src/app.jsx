@@ -428,6 +428,7 @@ export default function App() {
   const [cmtFiltroTipo, setCmtFiltroTipo] = useState("");
   const [cmtFiltroFechaD, setCmtFiltroFechaD] = useState("");
   const [cmtFiltroFechaH, setCmtFiltroFechaH] = useState("");
+  const [cmtVistaCarros, setCmtVistaCarros] = useState(false);
   const [cmtExpandido, setCmtExpandido] = useState(null);
   const [cmtSnapshot, setCmtSnapshot] = useState(null);
 
@@ -1094,7 +1095,14 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     const totalMovido = totalDespues - totalAntes;
     if (!form.id && tipoOp !== "TRASIEGO DE PRODUCTO" && tipoOp !== "PORTEO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
 
-    // Para PORTEO: calcular y persistir galones_bascula en cada carro antes de guardar
+    // Calcular y persistir galones_bascula en carros de TODOS los tipos antes de guardar
+    const carrosConGls = cmtCarros.map(carro => {
+      const tq = tiquetes.find(t => t.id === carro.tiquete);
+      const factor = Number(tq?.factor_tabla13 || 0);
+      const pesoNeto = Number(carro.peso_neto||0) || Math.max(0, Number(carro.peso_ingreso||0)-Number(carro.peso_salida||0));
+      const glsCalc = factor>0 && pesoNeto>0 ? Math.round(pesoNeto/factor) : "";
+      return glsCalc ? {...carro, galones_bascula: glsCalc} : carro;
+    });
     const porteoCarrosConGls = tipoOp==="PORTEO" ? (() => {
       const factorApi = cmtPorteoCarga.map(r=>Number(r.apiInicial||r.apiFinal||0)).find(a=>a>0) || 0;
       const factor = factorApi>0 ? Number(tabla13Factor(factorApi)||0) : 0;
@@ -1117,7 +1125,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         tanques_despues:cmtDespues, tanques_recepcion:cmtRecepcion, total_antes:totalAntes,
         total_despues:totalDespues, total_movido:totalMovido,
         sede:form.sede||"", planta:form.planta||"", operador:form.operador||"",
-        placa:form.placa||"", carros:cmtCarros, guia:form.guia||"",
+        placa:form.placa||"", carros:carrosConGls, guia:form.guia||"",
         nombre_motonave:form.nombre_motonave||"",
         peso_neto_salida:form.peso_neto_salida||"",
         porteo_carga_planta:cmtPorteoCargaPlanta||null,
@@ -1182,7 +1190,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         tanques_despues:cmtDespues, tanques_recepcion:cmtRecepcion, total_antes:totalAntes,
         total_despues:totalDespues, total_movido:totalMovido,
         sede:sedeActual, planta:plantaActual,
-        placa:form.placa||"", carros:cmtCarros, guia:form.guia||"",
+        placa:form.placa||"", carros:carrosConGls, guia:form.guia||"",
         nombre_motonave:form.nombre_motonave||"",
         peso_neto_salida:form.peso_neto_salida||"",
         porteo_carga_planta:cmtPorteoCargaPlanta||null,
@@ -2329,6 +2337,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <input type="date" value={cmtFiltroFechaH} onChange={e=>setCmtFiltroFechaH(e.target.value)} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"7px 10px",color:T.text,fontSize:12,outline:"none"}}/>
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:10,paddingBottom:6}}>
+                      <button onClick={()=>setCmtVistaCarros(v=>!v)} style={{background:cmtVistaCarros?`${T.navy}22`:`${T.muted}15`,border:`1px solid ${cmtVistaCarros?T.navy:T.border}`,borderRadius:8,color:cmtVistaCarros?T.navy:T.muted,padding:"6px 14px",fontSize:11,cursor:"pointer",fontWeight:700}}>
+                        {cmtVistaCarros?"▦ Ver CMTs":"🚛 Ver Carros"}
+                      </button>
                       <span style={{fontSize:11,color:T.muted}}>{cmtsFinal.length} registro(s)</span>
                       <button onClick={()=>{
                         const wb = XLSX.utils.book_new();
@@ -2425,7 +2436,78 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </button>
                     </div>
                   </div>
-                  <div style={{overflowX:"auto"}}>
+                  {cmtVistaCarros ? (()=>{
+                    // Vista por carros: flatten todos los carros de todos los CMTs filtrados
+                    const todosCarros = cmtsFinal.flatMap(cmt=>{
+                      const reg = (cmt.carros||[]).filter(cr=>cr.placa).map(cr=>({
+                        cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
+                        sede: cmt.sede, planta: cmt.planta, producto: cmt.producto,
+                        placa: cr.placa, guia: cr.guia||"", tiquete: cr.tiquete||"",
+                        hora_inicio: cr.hora_inicio||"", hora_final: cr.hora_final||"",
+                        peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
+                        peso_neto: Number(cr.peso_neto||0)||Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0)),
+                        gls_guia: Number(cr.galones_guia||0), gls_bascula: Number(cr.galones_bascula||0),
+                      }));
+                      const porteo = (cmt.porteo_carros||[]).filter(cr=>cr.placa).map(cr=>({
+                        cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
+                        sede: cmt.sede, planta: cmt.planta, producto: cmt.producto,
+                        placa: cr.placa, guia: "", tiquete: "",
+                        hora_inicio: "", hora_final: "",
+                        peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
+                        peso_neto: Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0)),
+                        gls_guia: Number(cr.galones_contador||0), gls_bascula: Number(cr.galones_bascula||0),
+                      }));
+                      return [...reg,...porteo];
+                    });
+                    const totalPesoNeto = todosCarros.reduce((a,r)=>a+r.peso_neto,0);
+                    const totalGlsBascula = todosCarros.reduce((a,r)=>a+r.gls_bascula,0);
+                    const totalGlsGuia = todosCarros.reduce((a,r)=>a+r.gls_guia,0);
+                    return (
+                      <div style={{overflowX:"auto"}}>
+                        <div style={{fontSize:11,color:T.muted,marginBottom:8}}>{todosCarros.length} carro(s) encontrados</div>
+                        <table style={{width:"100%",borderCollapse:"collapse",background:T.card,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
+                          <thead>
+                            <tr style={{background:T.bg}}>
+                              {["N° CMT","Fecha","Tipo","Sede","Planta","Producto","Placa","Guía","Tiquete","H. Inicio","H. Final","Peso Ing.","Peso Sal.","Peso Neto","Gls Guía","Gls Báscula"].map(h=>(
+                                <th key={h} style={{padding:"9px 10px",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg}}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {todosCarros.map((r,i)=>(
+                              <tr key={i} style={{background:i%2===0?T.card:"transparent"}}>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,color:T.navy,fontWeight:700}}>{r.cmt}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`}}>{r.fecha}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,borderBottom:`1px solid ${T.border}`,color:T.muted,whiteSpace:"nowrap"}}>{r.tipo}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,borderBottom:`1px solid ${T.border}`,color:T.muted}}>{r.sede}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,borderBottom:`1px solid ${T.border}`,color:T.muted}}>{r.planta}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,borderBottom:`1px solid ${T.border}`}}>{r.producto}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,fontWeight:700}}>{r.placa}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,color:T.muted}}>{r.guia||"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,color:T.muted}}>{r.tiquete||"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,color:T.muted}}>{r.hora_inicio||"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,color:T.muted}}>{r.hora_final||"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right"}}>{r.peso_ingreso>0?fmt(r.peso_ingreso):"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right"}}>{r.peso_salida>0?fmt(r.peso_salida):"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",color:T.navy,fontWeight:700}}>{r.peso_neto>0?fmt(r.peso_neto):"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right"}}>{r.gls_guia>0?fmt(r.gls_guia):"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",color:T.success,fontWeight:700}}>{r.gls_bascula>0?fmt(r.gls_bascula):"—"}</td>
+                              </tr>
+                            ))}
+                            {todosCarros.length>0 && (
+                              <tr style={{background:`${T.navy}10`,fontWeight:700}}>
+                                <td colSpan={11} style={{padding:"8px 10px",fontSize:11,borderTop:`2px solid ${T.border}`,color:T.navy}}>TOTAL ({todosCarros.length} carros)</td>
+                                <td colSpan={2} style={{padding:"8px 10px",fontSize:11,borderTop:`2px solid ${T.border}`}}></td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right",color:T.navy}}>{fmt(totalPesoNeto)} kg</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right"}}>{totalGlsGuia>0?fmt(totalGlsGuia)+" gls":""}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right",color:T.success}}>{totalGlsBascula>0?fmt(totalGlsBascula)+" gls":""}</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })() : <div style={{overflowX:"auto"}}>
                     <table style={{width:"100%",borderCollapse:"collapse",background:T.card,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
                       <thead>
                         <tr style={{background:T.bg}}>
@@ -2613,7 +2695,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         })}
                       </tbody>
                     </table>
-                  </div>
+                  </div>}
                 </>);
               })()}
             </div>
