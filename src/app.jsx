@@ -4605,7 +4605,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid ${T.orange}33`}}>
                   <div style={{fontSize:11,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Carros Cargados</div>
                   {cmtPorteoCarros.map((c,i)=>{
-                    const pesoNeto = c.peso_ingreso && c.peso_salida ? Number(c.peso_ingreso) - Number(c.peso_salida) : 0;
+                    const pesoNeto = Number(c.peso_salida)>0 ? Number(c.peso_ingreso||0) - Number(c.peso_salida) : 0;
                     const glsBascula = factorCarga>0 && pesoNeto>0 ? Math.round(pesoNeto/factorCarga) : "";
                     return (
                     <div key={i} style={{background:"#fff7ed",border:`1px solid ${T.orange}44`,borderRadius:8,padding:"12px 14px",marginBottom:10}}>
@@ -4617,7 +4617,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <div><Lbl>Gls por Contador</Lbl><input type="number" value={c.galones_contador||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_contador:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
                         <div><Lbl>Peso Ingreso (kg)</Lbl><input type="number" value={c.peso_ingreso||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_ingreso:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
                         <div><Lbl>Peso Salida (kg)</Lbl><input type="number" value={c.peso_salida||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_salida:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
-                        <div><Lbl>Gls Báscula</Lbl><input type="number" value={glsBascula||(c.peso_salida?c.galones_bascula:"")||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_bascula:e.target.value};setCmtPorteoCarros(n);}} style={glsBascula?roSt:inSt} readOnly={!!glsBascula}/></div>
+                        <div><Lbl>Gls Báscula</Lbl><input type="number" value={glsBascula||(Number(c.peso_salida)>0?c.galones_bascula:"")||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_bascula:e.target.value};setCmtPorteoCarros(n);}} style={glsBascula?roSt:inSt} readOnly={!!glsBascula}/></div>
                       </div>
                       {pesoNeto>0 && factorCarga>0 && (
                         <div style={{marginTop:6,fontSize:11,color:T.muted}}>
