@@ -4423,15 +4423,31 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const inSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
             const roSt = {...inSt,background:"#f1f5f9",color:T.navy,fontWeight:700,cursor:"default"};
 
-            // helper: API corregido y factor tabla13 — solo tiquetes de análisis de planta (no MP) vinculados a OT de ese tanque
+            // helper: API corregido y factor tabla13 por tanque
             const getLabInfo = (tanqueId) => {
-              if (!tanqueId) return {api:"",factor:""};
+              if (!tanqueId) return {api:"",factor:"",fuente:""};
+              // 1. Tiquete de análisis de planta vinculado a OT del tanque (más confiable)
               const ots = [...(ordenesTrabaio||[])].filter(o=>o.tanque_destino===tanqueId && o.tiquete_id).sort((a,b)=>new Date(b.updated_at||b.created_at||0)-new Date(a.updated_at||a.created_at||0));
               for (const ot of ots) {
                 const tiq = (tiquetes||[]).find(t=>t.id===ot.tiquete_id && t.tipo_analisis && t.tipo_analisis!=="Tiquetes MP");
-                if (tiq?.api_corregido) return {api: tiq.api_corregido, factor: tiq.factor_tabla13||""};
+                if (tiq?.api_corregido) return {api: tiq.api_corregido, factor: tiq.factor_tabla13||"", fuente:"lab"};
               }
-              return {api:"",factor:""};
+              // 2. Fallback para tanques MP: promedio ponderado de api de tiquetes MP descargados en este tanque
+              const cmtsDescargue = (cmts||[]).filter(c=>c.tipo_operacion==="DESCARGUE DE CARROTANQUE" && (c.tanques_despues||[]).some(td=>td.tanque===tanqueId));
+              const puntos = [];
+              cmtsDescargue.forEach(c=>{
+                (c.carros||[]).forEach(cr=>{
+                  const tiq = (tiquetes||[]).find(t=>t.id===cr.tiquete && t.tipo_analisis==="Tiquetes MP");
+                  const api = Number(tiq?.api_corregido||0);
+                  const gls = Number(tiq?.galones_recibidos||0);
+                  if (api>0 && gls>0) puntos.push({api,gls});
+                });
+              });
+              if (puntos.length===0) return {api:"",factor:"",fuente:""};
+              const totalGls = puntos.reduce((s,p)=>s+p.gls,0);
+              const apiProm = puntos.reduce((s,p)=>s+(p.api*p.gls),0)/totalGls;
+              const apiRound = Math.round(apiProm*10)/10;
+              return {api: apiRound, factor: tabla13Factor(apiRound)||"", fuente:"mp"};
             };
 
             const renderTanqueSection = (color, planta, setPlanta, rows, setRows) => {
@@ -4456,7 +4472,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           {tanquesPlanta.map(t=><option key={t.id}>{t.id}</option>)}
                         </select>
                         {rec.tanque && lab.api && (<>
-                          <span style={{fontSize:11,background:`${T.navy}15`,border:`1px solid ${T.navy}33`,borderRadius:5,padding:"2px 8px",color:T.navy,fontWeight:700}}>API: {lab.api}°</span>
+                          <span style={{fontSize:11,background:`${T.navy}15`,border:`1px solid ${T.navy}33`,borderRadius:5,padding:"2px 8px",color:T.navy,fontWeight:700}}>API: {lab.api}°{lab.fuente==="mp"?" (prom.)":""}</span>
                           {lab.factor && <span style={{fontSize:11,background:`${T.navy}15`,border:`1px solid ${T.navy}33`,borderRadius:5,padding:"2px 8px",color:T.navy,fontWeight:700}}>FACTOR: {lab.factor}</span>}
                         </>)}
                       </div>
