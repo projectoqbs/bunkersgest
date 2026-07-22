@@ -3774,20 +3774,55 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               )}
             </Card>
 
-            {/* Análisis planeado */}
-            {fo && (
-              <Card style={{ padding:16 }}>
-                <div style={{ fontWeight:700,fontSize:12,color:T.muted,marginBottom:10,textTransform:"uppercase" }}>Análisis Planeado (Formulación)</div>
-                <div style={{ display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10 }}>
-                  {[["API",fo.api_planeado,"°"],["Visc",fo.visc_planeado," cSt"],["Azufre",fo.azufre_planeado,"%"],["Agua",fo.agua_planeada,"%"],["Flash",fo.flash_point_planeado,"°C"]].map(([lbl,val,u])=>(
-                    <div key={lbl} style={{ background:T.bg,borderRadius:8,padding:"10px 12px",border:`1px solid ${T.border}`,textAlign:"center" }}>
-                      <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:3 }}>{lbl}</div>
-                      <div style={{ fontSize:16,fontWeight:800,color:T.text }}>{Number(val||0).toFixed(2)}{u}</div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
+            {/* Análisis planeado vs real */}
+            {fo && (()=>{
+              const tiqLab = ot.tiquete_id ? tiquetes.find(t=>t.id===ot.tiquete_id) : tiquetes.find(t=>t.ot_id===ot.id);
+              const params = [
+                {lbl:"API",   plan:fo.api_planeado,         real:tiqLab?.api_corregido,      u:"°",   danger:(p,r)=>Math.abs(p-r)>1},
+                {lbl:"Visc",  plan:fo.visc_planeado,        real:tiqLab?.viscosidad,         u:" cSt",danger:(p,r)=>Math.abs(p-r)>30},
+                {lbl:"Azufre",plan:fo.azufre_planeado,      real:tiqLab?.azufre,             u:"%",   danger:(p,r)=>Math.abs(p-r)>0.05},
+                {lbl:"Agua",  plan:fo.agua_planeada,        real:tiqLab?.agua_destilacion,   u:"%",   danger:(p,r)=>Math.abs(p-r)>0.1},
+                {lbl:"Flash", plan:fo.flash_point_planeado, real:tiqLab?.flash_point,        u:"°C",  danger:(p,r)=>Math.abs(p-r)>5},
+              ];
+              return (
+                <Card style={{ padding:16 }}>
+                  <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
+                    <div style={{ fontWeight:700,fontSize:12,color:T.muted,textTransform:"uppercase" }}>Análisis Planeado vs Real</div>
+                    {tiqLab ? (
+                      <span style={{ fontSize:11,color:T.success,fontFamily:"monospace",fontWeight:700,cursor:"pointer",textDecoration:"underline" }}
+                        onClick={()=>{setForm({...tiqLab});setModal("tiquete");}}>🧪 {tiqLab.id} · {tiqLab.resultado}</span>
+                    ) : (
+                      <span style={{ fontSize:11,color:T.muted,fontStyle:"italic" }}>Sin análisis de laboratorio vinculado</span>
+                    )}
+                  </div>
+                  <div style={{ display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10 }}>
+                    {params.map(({lbl,plan,real,u,danger})=>{
+                      const hayReal = real!=null && real!==undefined && real!=="";
+                      const desviacion = hayReal && plan ? danger(Number(plan),Number(real)) : false;
+                      return (
+                        <div key={lbl} style={{ borderRadius:8,border:`1px solid ${desviacion?T.danger:T.border}`,overflow:"hidden" }}>
+                          <div style={{ background:desviacion?`${T.danger}18`:T.bg,padding:"6px 10px",borderBottom:`1px solid ${desviacion?T.danger:T.border}` }}>
+                            <div style={{ fontSize:10,color:desviacion?T.danger:T.muted,fontWeight:700,textAlign:"center" }}>{lbl}</div>
+                          </div>
+                          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr" }}>
+                            <div style={{ padding:"8px 6px",textAlign:"center",borderRight:`1px solid ${T.border}` }}>
+                              <div style={{ fontSize:9,color:T.muted,marginBottom:2 }}>Planeado</div>
+                              <div style={{ fontSize:13,fontWeight:700,color:T.text }}>{Number(plan||0).toFixed(2)}{u}</div>
+                            </div>
+                            <div style={{ padding:"8px 6px",textAlign:"center" }}>
+                              <div style={{ fontSize:9,color:T.muted,marginBottom:2 }}>Real</div>
+                              <div style={{ fontSize:13,fontWeight:700,color:hayReal?(desviacion?T.danger:T.success):T.muted }}>
+                                {hayReal ? `${Number(real).toFixed(2)}${u}` : "—"}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              );
+            })()}
 
             {/* Botones peligrosos — solo coordinador y administrador */}
             {!["COMPLETADA","RECHAZADA"].includes(ot.estado) && ["coordinador","administrador"].includes(perfil?.rol) && (
