@@ -4645,7 +4645,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </div>
                   <div style={{fontSize:11,color:T.muted,marginTop:4,display:"flex",gap:18,flexWrap:"wrap"}}>
                     <span>Contador: <b>{fmt(cmtPorteoCarros.reduce((a,c)=>a+Number(c.galones_contador||0),0))} Gls</b></span>
-                    <span>Báscula: <b>{fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_ingreso||0)-Number(c.peso_salida||0);return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls</b></span>
+                    {cmtPorteoCarros.some(c=>Number(c.peso_salida)>0) && <span>Báscula: <b>{fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_salida)>0?Number(c.peso_ingreso||0)-Number(c.peso_salida):0;return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls</b></span>}
                   </div>
                 </Card>
               )}
