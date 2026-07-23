@@ -4707,12 +4707,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               return {api: apiRound, factor: tabla13Factor(apiRound)||"", fuente:"mp"};
             };
 
+            // Estilo compacto para inputs del formulario PORTEO
+            const cInSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:5,padding:"6px 8px",color:T.text,fontSize:12,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"};
+            const cRoSt = {...cInSt,background:"#e8edf2",color:"#4a5568",cursor:"default"};
+            const CLbl = ({children}) => <div style={{fontSize:10,color:T.muted,fontWeight:600,marginBottom:2,letterSpacing:0.2}}>{children}</div>;
+
             const renderTanqueSection = (color, planta, setPlanta, rows, setRows, isDescarga=false) => {
               const tanquesPlanta = tanques.filter(t=>t.planta===planta);
               return (<>
-                <div style={{marginBottom:14}}>
-                  <Lbl>Planta</Lbl>
-                  <select value={planta} onChange={e=>{setPlanta(e.target.value);setRows([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);}} style={{...inSt,width:220}}>
+                <div style={{marginBottom:10}}>
+                  <CLbl>Planta</CLbl>
+                  <select value={planta} onChange={e=>{setPlanta(e.target.value);setRows([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);}} style={{...cInSt,fontWeight:700}}>
                     <option value="">Seleccionar...</option>
                     {allPlantas.map(p=><option key={p}>{p}</option>)}
                   </select>
@@ -4720,46 +4725,64 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {planta && rows.map((rec,i)=>{
                   const lab = getLabInfo(rec.tanque);
                   return (
-                  <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                        <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
-                        <select value={rec.tanque} onChange={e=>{const tId=e.target.value;const labI=getLabInfo(tId);const n=[...rows];n[i]={...n[i],tanque:tId,apiInicial:labI.api||n[i].apiInicial,apiFinal:labI.api||n[i].apiFinal};setRows(n);}} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,outline:"none"}}>
-                          <option value="">—</option>
+                  <div key={i} style={{background:T.bg,borderRadius:8,padding:"10px 12px",marginBottom:8,border:`1px solid ${color}33`}}>
+                    {/* Selector tanque */}
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,gap:6,flexWrap:"wrap"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                        <select value={rec.tanque} onChange={e=>{const tId=e.target.value;const labI=getLabInfo(tId);const n=[...rows];n[i]={...n[i],tanque:tId,apiInicial:labI.api||n[i].apiInicial,apiFinal:labI.api||n[i].apiFinal};setRows(n);}} style={{...cInSt,width:"auto",fontWeight:700,color:color}}>
+                          <option value="">— Tanque —</option>
                           {tanquesPlanta.map(t=><option key={t.id}>{t.id}</option>)}
                         </select>
-                        {rec.tanque && lab.api && (<>
-                          <span style={{fontSize:11,background:`${T.navy}15`,border:`1px solid ${T.navy}33`,borderRadius:5,padding:"2px 8px",color:T.navy,fontWeight:700}}>API: {lab.api}°{lab.fuente==="mp"?" (prom.)":""}</span>
-                          {lab.factor && <span style={{fontSize:11,background:`${T.navy}15`,border:`1px solid ${T.navy}33`,borderRadius:5,padding:"2px 8px",color:T.navy,fontWeight:700}}>FACTOR: {lab.factor}</span>}
-                        </>)}
+                        {rec.tanque && lab.api && <span style={{fontSize:10,background:`${T.navy}15`,borderRadius:4,padding:"2px 6px",color:T.navy,fontWeight:700}}>API {lab.api}°</span>}
+                        {rec.tanque && lab.factor && <span style={{fontSize:10,background:`${T.navy}15`,borderRadius:4,padding:"2px 6px",color:T.navy,fontWeight:700}}>F {lab.factor}</span>}
                       </div>
-                      {rows.length>1 && <button onClick={()=>setRows(rows.filter((_,j)=>j!==i))} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"4px 10px",cursor:"pointer",fontSize:11}}>✕</button>}
+                      {rows.length>1 && <button onClick={()=>setRows(rows.filter((_,j)=>j!==i))} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:6,color:T.danger,padding:"2px 8px",cursor:"pointer",fontSize:10}}>✕</button>}
                     </div>
-                    <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end",marginBottom:6}}>
-                      <div style={{fontSize:10,color,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Inicial</div>
-                      <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setRows,"galonesInicial")} style={inSt}/></div>
-                      <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" value={rec.tempInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setRows,"galonesInicial")} style={inSt}/></div>
-                      <div><Lbl>API {lab.api?"(Lab)":""}</Lbl><input type="number" step="0.1" value={rec.apiInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setRows,"galonesInicial")} style={lab.api?{...roSt,color:T.navy}:inSt}/></div>
-                      <div><Lbl>{rec.tempInicial&&rec.apiInicial?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesInicial:e.target.value};setRows(n);}} style={inSt}/></div>
+                    {/* Medidas: Inicial | Final */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                      {/* Medida Inicial */}
+                      <div>
+                        <div style={{fontSize:10,color,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6,paddingBottom:3,borderBottom:`1px solid ${color}44`}}>Medida Inicial</div>
+                        <div style={{display:"grid",gap:5}}>
+                          <div><CLbl>Sonda</CLbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setRows,"galonesInicial")} style={cInSt}/></div>
+                          <div><CLbl>Temp °C</CLbl><input type="number" step="0.1" value={rec.tempInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setRows,"galonesInicial")} style={cInSt}/></div>
+                          <div><CLbl>API{lab.api?" (Lab)":""}</CLbl><input type="number" step="0.1" value={rec.apiInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setRows,"galonesInicial")} style={lab.api?{...cRoSt,color:T.navy}:cInSt}/></div>
+                          <div><CLbl>{rec.tempInicial&&rec.apiInicial?"Gls Netos":"Gls Brutos"}</CLbl><input type="number" value={rec.galonesInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesInicial:e.target.value};setRows(n);}} style={{...cInSt,fontWeight:700,color:T.orange}}/></div>
+                        </div>
+                      </div>
+                      {/* Medida Final */}
+                      <div>
+                        <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6,paddingBottom:3,borderBottom:`1px solid ${T.border}`}}>Medida Final</div>
+                        <div style={{display:"grid",gap:5}}>
+                          <div><CLbl>Sonda</CLbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setRows,"galonesFinal")} style={cInSt}/></div>
+                          <div><CLbl>Temp °C</CLbl><input type="number" step="0.1" value={rec.tempFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setRows,"galonesFinal")} style={cInSt}/></div>
+                          <div><CLbl>API{lab.api?" (Lab)":""}</CLbl><input type="number" step="0.1" value={rec.apiFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setRows,"galonesFinal")} style={lab.api?{...cRoSt,color:T.navy}:cInSt}/></div>
+                          <div><CLbl>{rec.tempFinal&&rec.apiFinal?"Gls Netos":"Gls Brutos"}</CLbl><input type="number" value={rec.galonesFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesFinal:e.target.value};setRows(n);}} style={{...cInSt,fontWeight:700,color:isDescarga?T.success:T.muted}}/></div>
+                        </div>
+                      </div>
                     </div>
-                    <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
-                      <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Final</div>
-                      <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setRows,"galonesFinal")} style={inSt}/></div>
-                      <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" value={rec.tempFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setRows,"galonesFinal")} style={inSt}/></div>
-                      <div><Lbl>API {lab.api?"(Lab)":""}</Lbl><input type="number" step="0.1" value={rec.apiFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setRows,"galonesFinal")} style={lab.api?{...roSt,color:T.navy}:inSt}/></div>
-                      <div><Lbl>{rec.tempFinal&&rec.apiFinal?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],galonesFinal:e.target.value};setRows(n);}} style={inSt}/></div>
-                    </div>
+                    {/* Subtotal */}
+                    {(Number(rec.galonesInicial||0)>0||Number(rec.galonesFinal||0)>0) && (
+                      <div style={{marginTop:8,paddingTop:6,borderTop:`1px solid ${T.border}`,fontSize:11,textAlign:"right"}}>
+                        {isDescarga
+                          ? <span style={{color:T.success,fontWeight:700}}>↑ {fmt(Math.max(0,Number(rec.galonesFinal||0)-Number(rec.galonesInicial||0)))} Gls recibidos</span>
+                          : <span style={{color:T.orange,fontWeight:700}}>↓ {fmt(Math.max(0,Number(rec.galonesInicial||0)-Number(rec.galonesFinal||0)))} Gls despachados</span>
+                        }
+                      </div>
+                    )}
                   </div>
                 );})}
-                {planta && <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4,marginBottom:4}}>
-                  <Btn sm outline color={color} onClick={()=>setRows([...rows,{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}])}>+ TK</Btn>
-                  <span style={{fontSize:11,color}}>
-                    {isDescarga
-                      ? <>{fmt(rows.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0))} Gls recibidos en tanques</>
-                      : <>{fmt(rows.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0))} Gls despachados</>
-                    }
-                  </span>
-                </div>}
+                {planta && (
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:2}}>
+                    <Btn sm outline color={color} onClick={()=>setRows([...rows,{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}])}>+ TK</Btn>
+                    <span style={{fontSize:11,fontWeight:700,color}}>
+                      {isDescarga
+                        ? <>{fmt(rows.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0))} Gls recibidos</>
+                        : <>{fmt(rows.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0))} Gls despachados</>
+                      }
+                    </span>
+                  </div>
+                )}
               </>);
             };
 
@@ -4773,51 +4796,72 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             })();
 
             return (<>
-              {/* ── PLANTA DE CARGA ── */}
-              <Section title="🚛 Planta de Carga (origen)" color={T.orange}>
-                {renderTanqueSection(T.orange, cmtPorteoCargaPlanta, setCmtPorteoCargaPlanta, cmtPorteoCarga, setCmtPorteoCarga)}
-                {/* Carros */}
-                <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid ${T.orange}33`}}>
-                  <div style={{fontSize:11,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Carros Cargados</div>
-                  {cmtPorteoCarros.map((c,i)=>{
-                    const pesoNeto = Number(c.peso_salida)>0 ? Number(c.peso_ingreso||0) - Number(c.peso_salida) : 0;
-                    const glsBascula = factorCarga>0 && pesoNeto>0 ? Math.round(pesoNeto/factorCarga) : "";
-                    return (
-                    <div key={i} style={{background:"#fff7ed",border:`1px solid ${T.orange}44`,borderRadius:8,padding:"12px 14px",marginBottom:10}}>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                        <div><Lbl>Placa</Lbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...inSt,fontFamily:"monospace",textTransform:"uppercase"}}/></div>
-                        <div><Lbl>Transportadora</Lbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} placeholder="Nombre empresa" style={inSt}/></div>
-                      </div>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-                        <div><Lbl>H. Inicio Descargue</Lbl><input type="time" value={c.hora_inicio_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_descargue:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
-                        <div><Lbl>H. Final Descargue</Lbl><input type="time" value={c.hora_final_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_descargue:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
-                        <div><Lbl>N° PBS</Lbl><input type="text" value={c.numero_pbs||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="PBS-001" style={inSt}/></div>
-                      </div>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
-                        <div><Lbl>Gls por Contador</Lbl><input type="number" value={c.galones_contador||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_contador:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
-                        <div><Lbl>Peso Ingreso (kg)</Lbl><input type="number" value={c.peso_ingreso||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_ingreso:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
-                        <div><Lbl>Peso Salida (kg)</Lbl><input type="number" value={c.peso_salida||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_salida:e.target.value};setCmtPorteoCarros(n);}} style={inSt}/></div>
-                        <div><Lbl>Gls Báscula</Lbl><input type="number" value={glsBascula||(Number(c.peso_salida)>0?c.galones_bascula:"")||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_bascula:e.target.value};setCmtPorteoCarros(n);}} style={glsBascula?roSt:inSt} readOnly={!!glsBascula}/></div>
-                      </div>
-                      {pesoNeto>0 && factorCarga>0 && (
-                        <div style={{marginTop:6,fontSize:11,color:T.muted}}>
-                          Peso neto: <b>{fmt(pesoNeto)} kg</b> ÷ Factor T13 {factorCarga} = <b style={{color:T.orange}}>{fmt(glsBascula)} Gls báscula</b>
-                        </div>
-                      )}
-                    </div>
-                  );})}
-                  {cmtPorteoCarros.some(c=>Number(c.peso_salida)>0) && (
-                    <div style={{display:"flex",justifyContent:"flex-end",marginTop:4}}>
-                      <span style={{fontSize:11,color:T.orange,fontWeight:600}}>{fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_salida)>0?Number(c.peso_ingreso||0)-Number(c.peso_salida):0;return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls báscula</span>
-                    </div>
-                  )}
-                </div>
-              </Section>
+              {/* ── LAYOUT DOS COLUMNAS: CARGUE | DESCARGUE ── */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,alignItems:"start",marginBottom:14}}>
 
-              {/* ── PLANTA DE DESCARGA ── */}
-              <Section title="📥 Planta de Descarga (destino)" color={T.success}>
-                {renderTanqueSection(T.success, cmtPorteoDescargaPlanta, setCmtPorteoDescargaPlanta, cmtPorteoDescarga, setCmtPorteoDescarga, true)}
-              </Section>
+                {/* ── COLUMNA IZQUIERDA: Planta de Carga + Carros ── */}
+                <div style={{background:T.card,borderRadius:10,border:`2px solid ${T.orange}55`,overflow:"hidden"}}>
+                  <div style={{background:`${T.orange}18`,padding:"8px 14px",borderBottom:`1px solid ${T.orange}44`,display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:12,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:0.5}}>🚛 Planta de Carga</span>
+                    <span style={{fontSize:11,color:T.muted,fontWeight:600}}>{fmt(cmtPorteoCarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0))} Gls despachados</span>
+                  </div>
+                  <div style={{padding:"12px 14px"}}>
+                    {renderTanqueSection(T.orange, cmtPorteoCargaPlanta, setCmtPorteoCargaPlanta, cmtPorteoCarga, setCmtPorteoCarga)}
+
+                    {/* Carros */}
+                    <div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${T.orange}33`}}>
+                      <div style={{fontSize:10,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Carros</div>
+                      {cmtPorteoCarros.map((c,i)=>{
+                        const pesoNeto = Number(c.peso_salida)>0 ? Number(c.peso_ingreso||0) - Number(c.peso_salida) : 0;
+                        const glsBascula = factorCarga>0 && pesoNeto>0 ? Math.round(pesoNeto/factorCarga) : "";
+                        return (
+                        <div key={i} style={{background:`${T.orange}08`,border:`1px solid ${T.orange}33`,borderRadius:8,padding:"10px 12px",marginBottom:8}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
+                            <div><CLbl>Placa</CLbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...cInSt,fontFamily:"monospace",fontWeight:700}}/></div>
+                            <div><CLbl>Transportadora</CLbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                          </div>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:6}}>
+                            <div><CLbl>H. Inicio Desc.</CLbl><input type="time" value={c.hora_inicio_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>H. Final Desc.</CLbl><input type="time" value={c.hora_final_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>N° PBS</CLbl><input type="text" value={c.numero_pbs||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="PBS-001" style={cInSt}/></div>
+                          </div>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}}>
+                            <div><CLbl>Gls Contador</CLbl><input type="number" value={c.galones_contador||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_contador:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>Peso Ing. (kg)</CLbl><input type="number" value={c.peso_ingreso||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_ingreso:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>Peso Sal. (kg)</CLbl><input type="number" value={c.peso_salida||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_salida:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>Gls Báscula</CLbl><input type="number" value={glsBascula||(Number(c.peso_salida)>0?c.galones_bascula:"")||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_bascula:e.target.value};setCmtPorteoCarros(n);}} style={glsBascula?{...cRoSt,fontWeight:700,color:T.orange}:cInSt} readOnly={!!glsBascula}/></div>
+                          </div>
+                          {pesoNeto>0 && factorCarga>0 && (
+                            <div style={{marginTop:5,fontSize:10,color:T.muted}}>
+                              {fmt(pesoNeto)} kg ÷ {factorCarga} = <b style={{color:T.orange}}>{fmt(glsBascula)} Gls</b>
+                            </div>
+                          )}
+                          {cmtPorteoCarros.length>1 && <button onClick={()=>setCmtPorteoCarros(cmtPorteoCarros.filter((_,j)=>j!==i))} style={{marginTop:6,background:`${T.danger}15`,border:`1px solid ${T.danger}33`,borderRadius:5,color:T.danger,padding:"2px 8px",cursor:"pointer",fontSize:10,display:"block"}}>✕ Eliminar carro</button>}
+                        </div>
+                      );})}
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
+                        <Btn sm outline color={T.orange} onClick={()=>setCmtPorteoCarros([...cmtPorteoCarros,{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}])}>+ Carro</Btn>
+                        {cmtPorteoCarros.some(c=>Number(c.peso_salida)>0) && (
+                          <span style={{fontSize:11,color:T.orange,fontWeight:700}}>
+                            {fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_salida)>0?Number(c.peso_ingreso||0)-Number(c.peso_salida):0;return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls báscula
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── COLUMNA DERECHA: Planta de Descarga ── */}
+                <div style={{background:T.card,borderRadius:10,border:`2px solid ${T.success}55`,overflow:"hidden"}}>
+                  <div style={{background:`${T.success}18`,padding:"8px 14px",borderBottom:`1px solid ${T.success}44`,display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:12,fontWeight:700,color:T.success,textTransform:"uppercase",letterSpacing:0.5}}>📥 Planta de Descarga</span>
+                    <span style={{fontSize:11,color:T.muted,fontWeight:600}}>{fmt(cmtPorteoDescarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0))} Gls recibidos</span>
+                  </div>
+                  <div style={{padding:"12px 14px"}}>
+                    {renderTanqueSection(T.success, cmtPorteoDescargaPlanta, setCmtPorteoDescargaPlanta, cmtPorteoDescarga, setCmtPorteoDescarga, true)}
+                  </div>
+                </div>
+              </div>
 
               {/* Resumen */}
               {(cmtPorteoCarros.some(c=>c.placa)||cmtPorteoCarga.some(r=>r.tanque)) && (
