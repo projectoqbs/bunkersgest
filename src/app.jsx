@@ -3168,15 +3168,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
           {/* TANQUES PLANTA 1 — Barcaza QBS002 */}
           {nav==="tanques_p1" && (()=>{
-            const BABOR    = ["1B","2B","3B","4B","5B"];
-            const ESTRIBOR = ["1E","2E","3E","4E","5E"];
+            const BABOR    = ["QBS002-1B","QBS002-2B","QBS002-3B","QBS002-4B","QBS002-5B"];
+            const ESTRIBOR = ["QBS002-1E","QBS002-2E","QBS002-3E","QBS002-4E","QBS002-5E"];
             const REMANENTE = 4500;
             const CARROS    = 9200;
-            // Capacidades reales de tablas de aforo QBS002 (en galones)
+            // Capacidades reales de tablas de aforo QBS002 (galones)
             const CAP_QBS002 = {
-              "1B":26903,"1E":26903,"2B":47238,"2E":47415,
-              "3B":26874,"3E":26874,"4B":47110,"4E":47144,
-              "5B":27194,"5E":26935,
+              "QBS002-1B":26903,"QBS002-1E":26903,
+              "QBS002-2B":47238,"QBS002-2E":47415,
+              "QBS002-3B":26874,"QBS002-3E":26874,
+              "QBS002-4B":47110,"QBS002-4E":47144,
+              "QBS002-5B":27194,"QBS002-5E":26935,
             };
             const byId = id => tanques.find(t => t.id === id) || { id, nivel:0, capacidad: CAP_QBS002[id]||27000, producto:"—" };
             const capOp = t => Math.round((t.capacidad||100000) * 0.9);
@@ -3208,7 +3210,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     {/* Etiqueta */}
                     <div style={{ width:28, flexShrink:0, textAlign:"center", fontWeight:900, fontSize:12,
-                      color:T.navy, fontFamily:"monospace", letterSpacing:0.5 }}>{id}</div>
+                      color:T.navy, fontFamily:"monospace", letterSpacing:0.5 }}>{id.replace("QBS002-","")}</div>
                     {/* Barra */}
                     <div style={{ flex:1, background:"#c8d6e5", borderRadius:8, height:48, position:"relative",
                       overflow:"hidden", border:`1px solid #a8bed4`, cursor:"pointer" }}
