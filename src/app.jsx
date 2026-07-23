@@ -4869,10 +4869,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <CLbl>Gls por Contador</CLbl>
                             <input type="number" value={c.galones_contador||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_contador:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/>
                           </div>
-                          {cmtPorteoCarros.length>1 && <button onClick={()=>setCmtPorteoCarros(cmtPorteoCarros.filter((_,j)=>j!==i))} style={{marginTop:6,background:`${T.danger}15`,border:`1px solid ${T.danger}33`,borderRadius:5,color:T.danger,padding:"2px 8px",cursor:"pointer",fontSize:10,display:"block"}}>✕ Eliminar carro</button>}
                         </div>
                       ))}
-                      <Btn sm outline color={T.orange} onClick={()=>setCmtPorteoCarros([...cmtPorteoCarros,{placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}])}>+ Carro</Btn>
                     </div>
                   </div>
                 </div>
