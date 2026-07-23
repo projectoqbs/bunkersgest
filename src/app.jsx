@@ -558,6 +558,17 @@ export default function App() {
     // formulacion tabs carry their own state in tabStateCache — no extra restore needed
   }
 
+  // Auto-sync: keep tabStateCache fresh whenever form state changes while a form tab is active.
+  // This ensures state is never lost regardless of how navigation happens.
+  useEffect(() => {
+    if (activeTab?.type === 'form') {
+      tabStateCache.current[activeTabId] = captureFormState();
+    }
+  }, [form, cmtAntes, cmtDespues, cmtCarros, cmtProducto, cmtRecepcion,
+      cmtPorteoCargaPlanta, cmtPorteoDescargaPlanta,
+      cmtPorteoCarga, cmtPorteoDescarga, cmtPorteoCarros,
+      pbsChecklist, pbsParaCarro, pbsEsTrasiego, cmtSnapshot, activeTabId]);
+
   function closeTab(tabId) {
     const tab = tabs.find(t => t.id === tabId);
     if (!tab?.closeable) return;
