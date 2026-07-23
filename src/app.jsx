@@ -367,7 +367,7 @@ export default function App() {
   const [cmtDespues, setCmtDespues] = useState([{tanque:"",producto:"",sonda:"",galones:""}]);
   const [cmtRecepcion, setCmtRecepcion] = useState([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
   const PORTEO_ROW = {tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""};
-  const PORTEO_CARRO = {placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""};
+  const PORTEO_CARRO = {placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""};
   const [cmtPorteoCargaPlanta, setCmtPorteoCargaPlanta] = useState("");
   const [cmtPorteoDescargaPlanta, setCmtPorteoDescargaPlanta] = useState("");
   const [cmtPorteoCarga, setCmtPorteoCarga] = useState([{...PORTEO_ROW}]);
@@ -465,7 +465,7 @@ export default function App() {
       cmtPorteoDescargaPlanta: c.porteo_descarga_planta||"",
       cmtPorteoCarga: c.porteo_carga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}],
       cmtPorteoDescarga: c.porteo_descarga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}],
-      cmtPorteoCarros: (c.porteo_carros||[{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}]).map(cr=>({...cr,galones_bascula:Number(cr.peso_salida)>0?cr.galones_bascula:""})),
+      cmtPorteoCarros: (c.porteo_carros||[{placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]).map(cr=>({...cr,galones_bascula:Number(cr.peso_salida)>0?cr.galones_bascula:""})),
       pbsChecklist: Array(26).fill(''), pbsParaCarro: null, pbsEsTrasiego: false, cmtSnapshot: null,
     };
     const newTabId = `form-cmt-${c.id}`;
@@ -519,7 +519,7 @@ export default function App() {
     setCmtPorteoDescargaPlanta(cached.cmtPorteoDescargaPlanta || '');
     setCmtPorteoCarga(cached.cmtPorteoCarga || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
     setCmtPorteoDescarga(cached.cmtPorteoDescarga || [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
-    setCmtPorteoCarros(cached.cmtPorteoCarros || [{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:'',hora_inicio_descargue:'',hora_final_descargue:'',numero_pbs:''}]);
+    setCmtPorteoCarros(cached.cmtPorteoCarros || [{placa:'',transportadora:'',hora_inicio_cargue:'',hora_final_cargue:'',numero_pbs:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:''}]);
     setPbsChecklist(cached.pbsChecklist || Array(26).fill(''));
     setPbsParaCarro(cached.pbsParaCarro ?? null);
     setPbsEsTrasiego(cached.pbsEsTrasiego || false);
@@ -536,7 +536,7 @@ export default function App() {
     setCmtPorteoCargaPlanta(''); setCmtPorteoDescargaPlanta('');
     setCmtPorteoCarga([{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
     setCmtPorteoDescarga([{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}]);
-    setCmtPorteoCarros([{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:'',hora_inicio_descargue:'',hora_final_descargue:'',numero_pbs:''}]);
+    setCmtPorteoCarros([{placa:'',transportadora:'',hora_inicio_cargue:'',hora_final_cargue:'',numero_pbs:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:''}]);
     setPbsChecklist(Array(26).fill(''));
     setPbsParaCarro(null);
     setPbsEsTrasiego(false);
@@ -1198,7 +1198,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       setCmtPorteoCargaPlanta(""); setCmtPorteoDescargaPlanta("");
       setCmtPorteoCarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
       setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
-      setCmtPorteoCarros([{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}]);
+      setCmtPorteoCarros([{placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]);
       showToast(`CMT ${form.numero_cmt} corregido — ${fmt(totalMovido)} Gls`);
     } else {
       const sedeActual = form.sede || perfil.sede || "MALAMBO";
@@ -1254,7 +1254,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         setCmtPorteoCargaPlanta(""); setCmtPorteoDescargaPlanta("");
         setCmtPorteoCarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
         setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
-        setCmtPorteoCarros([{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}]);
+        setCmtPorteoCarros([{placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]);
         showToast(`✅ CMT ${numeroCmt} vinculado a ${form.ot_numero}`);
       } else {
         // CMT autónomo → preguntar si vincular a OT
@@ -2290,7 +2290,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       cmtPorteoCargaPlanta: '', cmtPorteoDescargaPlanta: '',
                       cmtPorteoCarga: [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
                       cmtPorteoDescarga: [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
-                      cmtPorteoCarros: [{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:'',hora_inicio_descargue:'',hora_final_descargue:'',numero_pbs:''}],
+                      cmtPorteoCarros: [{placa:'',transportadora:'',hora_inicio_cargue:'',hora_final_cargue:'',numero_pbs:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:''}],
                       pbsChecklist: Array(26).fill(''), pbsParaCarro: null, pbsEsTrasiego: false, cmtSnapshot: null,
                     };
                     tabStateCache.current[newTabId] = newCmtState;
@@ -2494,7 +2494,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
                         sede: cmt.sede, planta: cmt.planta, producto: cmt.producto,
                         placa: cr.placa, guia: cr.numero_pbs||"", tiquete: "",
-                        hora_inicio: cr.hora_inicio_descargue||"", hora_final: cr.hora_final_descargue||"",
+                        hora_inicio: cr.hora_inicio_cargue||"", hora_final: cr.hora_final_cargue||"",
                         peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
                         peso_neto: Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0)),
                         gls_guia: Number(cr.galones_contador||0), gls_bascula: Number(cr.galones_bascula||0),
@@ -4820,42 +4820,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {/* Carros */}
                     <div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${T.orange}33`}}>
                       <div style={{fontSize:10,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Carros</div>
-                      {cmtPorteoCarros.map((c,i)=>{
-                        const pesoNeto = Number(c.peso_salida)>0 ? Number(c.peso_ingreso||0) - Number(c.peso_salida) : 0;
-                        const glsBascula = factorCarga>0 && pesoNeto>0 ? Math.round(pesoNeto/factorCarga) : "";
-                        return (
+                      {cmtPorteoCarros.map((c,i)=>(
                         <div key={i} style={{background:`${T.orange}08`,border:`1px solid ${T.orange}33`,borderRadius:8,padding:"10px 12px",marginBottom:8}}>
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
                             <div><CLbl>Placa</CLbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...cInSt,fontFamily:"monospace",fontWeight:700}}/></div>
                             <div><CLbl>Transportadora</CLbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                           </div>
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:6}}>
-                            <div><CLbl>H. Inicio Desc.</CLbl><input type="time" value={c.hora_inicio_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
-                            <div><CLbl>H. Final Desc.</CLbl><input type="time" value={c.hora_final_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
-                            <div><CLbl>N° PBS</CLbl><input type="text" value={c.numero_pbs||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="PBS-001" style={cInSt}/></div>
+                            <div><CLbl>H. Inicio Cargue</CLbl><input type="time" value={c.hora_inicio_cargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_cargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>H. Final Cargue</CLbl><input type="time" value={c.hora_final_cargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_cargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>N° PBS Cargue</CLbl><input type="text" value={c.numero_pbs||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="PBS-001" style={cInSt}/></div>
                           </div>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}}>
-                            <div><CLbl>Gls Contador</CLbl><input type="number" value={c.galones_contador||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_contador:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
-                            <div><CLbl>Peso Ing. (kg)</CLbl><input type="number" value={c.peso_ingreso||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_ingreso:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
-                            <div><CLbl>Peso Sal. (kg)</CLbl><input type="number" value={c.peso_salida||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_salida:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
-                            <div><CLbl>Gls Báscula</CLbl><input type="number" value={glsBascula||(Number(c.peso_salida)>0?c.galones_bascula:"")||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_bascula:e.target.value};setCmtPorteoCarros(n);}} style={glsBascula?{...cRoSt,fontWeight:700,color:T.orange}:cInSt} readOnly={!!glsBascula}/></div>
+                          <div>
+                            <CLbl>Gls por Contador</CLbl>
+                            <input type="number" value={c.galones_contador||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_contador:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/>
                           </div>
-                          {pesoNeto>0 && factorCarga>0 && (
-                            <div style={{marginTop:5,fontSize:10,color:T.muted}}>
-                              {fmt(pesoNeto)} kg ÷ {factorCarga} = <b style={{color:T.orange}}>{fmt(glsBascula)} Gls</b>
-                            </div>
-                          )}
                           {cmtPorteoCarros.length>1 && <button onClick={()=>setCmtPorteoCarros(cmtPorteoCarros.filter((_,j)=>j!==i))} style={{marginTop:6,background:`${T.danger}15`,border:`1px solid ${T.danger}33`,borderRadius:5,color:T.danger,padding:"2px 8px",cursor:"pointer",fontSize:10,display:"block"}}>✕ Eliminar carro</button>}
                         </div>
-                      );})}
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
-                        <Btn sm outline color={T.orange} onClick={()=>setCmtPorteoCarros([...cmtPorteoCarros,{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}])}>+ Carro</Btn>
-                        {cmtPorteoCarros.some(c=>Number(c.peso_salida)>0) && (
-                          <span style={{fontSize:11,color:T.orange,fontWeight:700}}>
-                            {fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_salida)>0?Number(c.peso_ingreso||0)-Number(c.peso_salida):0;return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls báscula
-                          </span>
-                        )}
-                      </div>
+                      ))}
+                      <Btn sm outline color={T.orange} onClick={()=>setCmtPorteoCarros([...cmtPorteoCarros,{placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}])}>+ Carro</Btn>
                     </div>
                   </div>
                 </div>
@@ -4868,6 +4851,37 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </div>
                   <div style={{padding:"12px 14px"}}>
                     {renderTanqueSection(T.success, cmtPorteoDescargaPlanta, setCmtPorteoDescargaPlanta, cmtPorteoDescarga, setCmtPorteoDescarga, true)}
+                    {/* Carros — descargue */}
+                    {cmtPorteoCarros.some(c=>c.placa) && (
+                      <div style={{marginTop:12,paddingTop:10,borderTop:`1px solid ${T.success}33`}}>
+                        <div style={{fontSize:10,fontWeight:700,color:T.success,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Carros</div>
+                        {cmtPorteoCarros.filter(c=>c.placa).map((c,idx)=>{
+                          const i = cmtPorteoCarros.indexOf(c);
+                          const pesoNeto = Number(c.peso_salida)>0 ? Number(c.peso_ingreso||0)-Number(c.peso_salida) : 0;
+                          const glsBascula = factorCarga>0 && pesoNeto>0 ? Math.round(pesoNeto/factorCarga) : "";
+                          return (
+                          <div key={i} style={{background:`${T.success}08`,border:`1px solid ${T.success}33`,borderRadius:8,padding:"10px 12px",marginBottom:8}}>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
+                              <div><CLbl>Placa</CLbl><input value={c.placa} readOnly style={{...cRoSt,fontFamily:"monospace",fontWeight:700,color:T.navy}}/></div>
+                              <div><CLbl>Transportadora</CLbl><input value={c.transportadora||""} readOnly style={cRoSt}/></div>
+                            </div>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+                              <div><CLbl>Peso Ing. (kg)</CLbl><input type="number" value={c.peso_ingreso||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_ingreso:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                              <div><CLbl>Peso Sal. (kg)</CLbl><input type="number" value={c.peso_salida||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_salida:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                              <div><CLbl>Gls Báscula</CLbl><input type="number" value={glsBascula||(Number(c.peso_salida)>0?c.galones_bascula:"")||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],galones_bascula:e.target.value};setCmtPorteoCarros(n);}} style={glsBascula?{...cRoSt,fontWeight:700,color:T.success}:cInSt} readOnly={!!glsBascula}/></div>
+                            </div>
+                            {pesoNeto>0 && factorCarga>0 && (
+                              <div style={{marginTop:4,fontSize:10,color:T.muted}}>{fmt(pesoNeto)} kg ÷ {factorCarga} = <b style={{color:T.success}}>{fmt(glsBascula)} Gls</b></div>
+                            )}
+                          </div>
+                        );})}
+                        {cmtPorteoCarros.some(c=>Number(c.peso_salida)>0) && (
+                          <div style={{textAlign:"right",fontSize:11,fontWeight:700,color:T.success}}>
+                            {fmt(cmtPorteoCarros.reduce((a,c)=>{const pn=Number(c.peso_salida)>0?Number(c.peso_ingreso||0)-Number(c.peso_salida):0;return a+(factorCarga>0&&pn>0?Math.round(pn/factorCarga):Number(c.galones_bascula||0));},0))} Gls báscula total
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
