@@ -3226,77 +3226,85 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               else showToast("Error al guardar producto", false);
             };
 
-            const BarraTanque = ({ id }) => {
-              const t    = byId(id);
-              const nivel = Number(t.nivel||0);
-              const cap   = Number(t.capacidad||100000);
-              const pct   = cap > 0 ? Math.min(100, Math.round((nivel/cap)*100)) : 0;
-              const color = getProductColor(t.producto);
-              const libre = Math.max(0, capOp(t) - nivel);
-              const disp  = Math.max(0, nivel - REMANENTE);
-              const nCargue = Math.floor(disp / CARROS);
-              const nDesc   = Math.floor(libre / CARROS);
-              const editando = tankProdEdit?.id === id;
+            // Altura visual proporcional a capacidad (mayor cap = tanque más alto)
+            const MAX_CAP = Math.max(...Object.values(CAP_QBS002));
+            const tankH = id => Math.round(80 + (CAP_QBS002[id]||27000) / MAX_CAP * 100);
 
+            const TanqueVertical = ({ id }) => {
+              const t      = byId(id);
+              const nivel  = Number(t.nivel||0);
+              const cap    = Number(t.capacidad || CAP_QBS002[id] || 27000);
+              const pct    = cap > 0 ? Math.min(100, Math.round((nivel/cap)*100)) : 0;
+              const color  = getProductColor(t.producto);
+              const libre  = Math.max(0, capOp(t) - nivel);
+              const disp   = Math.max(0, nivel - REMANENTE);
+              const nCarg  = Math.floor(disp / CARROS);
+              const nDesc  = Math.floor(libre / CARROS);
+              const editando = tankProdEdit?.id === id;
               const pctColor = pct < 20 ? "#ef4444" : pct < 50 ? "#f59e0b" : "#22c55e";
+              const h = tankH(id);
+              const label = id.replace("QBS002-","");
 
               return (
-                <div style={{ marginBottom:8 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    {/* Etiqueta */}
-                    <div style={{ width:28, flexShrink:0, textAlign:"center", fontWeight:900, fontSize:12,
-                      color:T.navy, fontFamily:"monospace", letterSpacing:0.5 }}>{id.replace("QBS002-","")}</div>
-                    {/* Barra */}
-                    <div style={{ flex:1, background:"#c8d6e5", borderRadius:8, height:48, position:"relative",
-                      overflow:"hidden", border:`1px solid #a8bed4`, cursor:"pointer" }}
-                      onDoubleClick={() => setTankProdEdit({ id, val: t.producto||"" })}>
-                      {/* Relleno */}
-                      <div style={{ position:"absolute", left:0, top:0, bottom:0, width:`${pct}%`,
-                        background: color || "#3d7ab5", borderRadius: pct < 97 ? "8px 0 0 8px" : "8px",
-                        transition:"width 0.6s ease", opacity:0.82 }}/>
-                      {/* Línea agua */}
-                      {pct > 0 && pct < 100 && (
-                        <div style={{ position:"absolute", top:0, bottom:0, left:`${pct}%`,
-                          width:2, background:"rgba(255,255,255,0.5)", pointerEvents:"none" }}/>
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, flex:1, minWidth:0 }}>
+                  {/* Tanque vertical */}
+                  <div
+                    title={`${label} · ${t.producto||"sin producto"} · ${fmt(nivel)} gls`}
+                    onDoubleClick={() => setTankProdEdit({ id, val: t.producto||"" })}
+                    style={{ width:"100%", height:h, position:"relative", cursor:"pointer",
+                      background:"#c8d6e5", border:"2px solid #7a9dbf",
+                      borderRadius:"6px 6px 4px 4px", overflow:"hidden",
+                      boxShadow:"inset 0 2px 6px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.15)" }}>
+                    {/* Relleno desde abajo */}
+                    <div style={{ position:"absolute", bottom:0, left:0, right:0,
+                      height:`${pct}%`, background: color || "#3d7ab5",
+                      transition:"height 0.6s ease", opacity:0.85,
+                      borderRadius:"0 0 3px 3px" }}/>
+                    {/* Línea de nivel */}
+                    {pct > 0 && pct < 100 && (
+                      <div style={{ position:"absolute", left:0, right:0,
+                        bottom:`${pct}%`, height:2,
+                        background:"rgba(255,255,255,0.6)", pointerEvents:"none" }}/>
+                    )}
+                    {/* % badge */}
+                    <div style={{ position:"absolute", top:4, left:0, right:0, textAlign:"center" }}>
+                      <span style={{ fontSize:11, fontWeight:900, color:pctColor,
+                        textShadow:"0 1px 2px rgba(0,0,0,0.5)", fontFamily:"monospace" }}>{pct}%</span>
+                    </div>
+                    {/* Producto editable */}
+                    <div style={{ position:"absolute", bottom:6, left:2, right:2, textAlign:"center" }}>
+                      {editando ? (
+                        <input autoFocus value={tankProdEdit.val}
+                          onChange={e => setTankProdEdit({ id, val:e.target.value })}
+                          onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque2(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
+                          onBlur={() => guardarProductoTanque2(id, tankProdEdit.val)}
+                          style={{ background:"rgba(0,0,0,0.65)", border:`1px solid ${T.orange}`, borderRadius:3,
+                            color:"#fff", fontSize:9, fontWeight:700, padding:"1px 4px", width:"90%",
+                            textTransform:"uppercase", outline:"none", textAlign:"center" }}/>
+                      ) : (
+                        <span style={{ fontSize:9, fontWeight:800,
+                          color: (t.producto && t.producto!=="—") ? "#fff" : "rgba(255,255,255,0.45)",
+                          textShadow:"0 1px 3px rgba(0,0,0,0.8)", letterSpacing:0.5,
+                          display:"block", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                          {t.producto && t.producto !== "—" ? t.producto : "—"}
+                        </span>
                       )}
-                      {/* Contenido superpuesto */}
-                      <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center",
-                        justifyContent:"space-between", padding:"0 10px" }}>
-                        {/* Producto (doble-clic para editar) */}
-                        {editando ? (
-                          <input autoFocus value={tankProdEdit.val}
-                            onChange={e => setTankProdEdit({ id, val:e.target.value })}
-                            onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque2(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
-                            onBlur={() => guardarProductoTanque2(id, tankProdEdit.val)}
-                            style={{ background:"rgba(0,0,0,0.5)", border:`1px solid ${T.orange}`, borderRadius:4,
-                              color:"#fff", fontSize:11, fontWeight:700, padding:"2px 6px", width:90,
-                              textTransform:"uppercase", outline:"none" }}/>
-                        ) : (
-                          <span style={{ fontWeight:800, fontSize:12, color:"#071422",
-                            textShadow:"0 1px 3px rgba(255,255,255,0.9)", letterSpacing:0.5 }}>
-                            {t.producto && t.producto !== "—" ? t.producto : <span style={{color:"#7a8fa8",fontWeight:400,fontSize:11}}>sin producto</span>}
-                          </span>
-                        )}
-                        {/* Stats */}
-                        <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-                          <div style={{ textAlign:"right" }}>
-                            <div style={{ fontSize:8, color:"#4a6080", fontWeight:700, letterSpacing:0.5 }}>NIVEL</div>
-                            <div style={{ fontSize:11, fontWeight:800, color:"#071422", fontFamily:"monospace" }}>{fmt(nivel)} gls</div>
-                          </div>
-                          <div style={{ textAlign:"right" }}>
-                            <div style={{ fontSize:8, color:"#4a6080", fontWeight:700, letterSpacing:0.5 }}>LIBRE</div>
-                            <div style={{ fontSize:11, fontWeight:800, color:"#1a7a3a", fontFamily:"monospace" }}>{fmt(libre)} gls</div>
-                          </div>
-                          <div style={{ textAlign:"right" }}>
-                            <div style={{ fontSize:8, color:"#4a6080", fontWeight:700, letterSpacing:0.5 }}>C↑/D↓</div>
-                            <div style={{ fontSize:11, fontWeight:800, color:"#c05a00", fontFamily:"monospace" }}>{nCargue}/{nDesc}</div>
-                          </div>
-                          <div style={{ background:"rgba(0,0,0,0.15)", borderRadius:6, padding:"2px 8px",
-                            minWidth:40, textAlign:"center", backdropFilter:"blur(2px)" }}>
-                            <div style={{ fontSize:13, fontWeight:900, color:pctColor, fontFamily:"monospace" }}>{pct}%</div>
-                          </div>
-                        </div>
-                      </div>
+                    </div>
+                    {/* Líneas decorativas de refuerzo */}
+                    {[25,50,75].map(p => (
+                      <div key={p} style={{ position:"absolute", left:0, right:0, bottom:`${p}%`,
+                        height:1, background:"rgba(0,0,0,0.08)", pointerEvents:"none" }}/>
+                    ))}
+                  </div>
+                  {/* Etiqueta y stats */}
+                  <div style={{ width:"100%", textAlign:"center" }}>
+                    <div style={{ fontWeight:900, fontSize:12, color:"#fff",
+                      fontFamily:"monospace", letterSpacing:1, background:"rgba(0,0,0,0.35)",
+                      borderRadius:4, padding:"1px 4px", display:"inline-block", marginBottom:2 }}>{label}</div>
+                    <div style={{ fontSize:9, color:"rgba(255,255,255,0.75)", fontFamily:"monospace", lineHeight:1.3 }}>
+                      <div>{fmt(nivel)} gls</div>
+                      <div style={{ color:"#6ee7b7" }}>{fmt(libre)} libre</div>
+                      <div style={{ color:"#fbbf24" }}>{nCarg}C/{nDesc}D</div>
                     </div>
                   </div>
                 </div>
@@ -3304,46 +3312,87 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             };
 
             const totalNivel = [...BABOR,...ESTRIBOR].reduce((a,id)=>a+Number(byId(id).nivel||0),0);
+            const totalLibre = [...BABOR,...ESTRIBOR].reduce((a,id)=>{ const t=byId(id); return a+Math.max(0,capOp(t)-Number(t.nivel||0)); },0);
+
+            // Colores de banda lateral para orientación
+            const BAND_E = "#1e6fa8";
+            const BAND_B = "#0d3d5c";
 
             return (
-              <div style={{ padding:"20px 24px" }}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+              <div style={{ padding:"16px 20px" }}>
+                {/* Header */}
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
                   <div>
                     <div style={{ fontWeight:900, fontSize:20, color:T.navy }}>🚢 Planta 1 — Barcaza QBS002</div>
-                    <div style={{ fontSize:11, color:T.muted }}>10 tanques · Babor (B) y Estribor (E) · doble-clic para editar producto</div>
+                    <div style={{ fontSize:11, color:T.muted }}>10 tanques · Estribor (E) proa · Babor (B) popa · doble-clic para editar producto</div>
                   </div>
-                  <div style={{ background:T.navy, borderRadius:10, padding:"10px 18px", textAlign:"center" }}>
-                    <div style={{ fontSize:9, color:"rgba(255,255,255,0.55)", fontWeight:700, letterSpacing:1.5, textTransform:"uppercase" }}>Stock Total</div>
-                    <div style={{ fontSize:18, fontWeight:900, color:T.orange, fontFamily:"monospace" }}>{fmt(totalNivel)} gls</div>
+                  <div style={{ display:"flex", gap:10 }}>
+                    <div style={{ background:T.navy, borderRadius:10, padding:"8px 16px", textAlign:"center" }}>
+                      <div style={{ fontSize:9, color:"rgba(255,255,255,0.55)", fontWeight:700, letterSpacing:1.2, textTransform:"uppercase" }}>Stock</div>
+                      <div style={{ fontSize:16, fontWeight:900, color:T.orange, fontFamily:"monospace" }}>{fmt(totalNivel)} gls</div>
+                    </div>
+                    <div style={{ background:"#0d3d5c", borderRadius:10, padding:"8px 16px", textAlign:"center" }}>
+                      <div style={{ fontSize:9, color:"rgba(255,255,255,0.55)", fontWeight:700, letterSpacing:1.2, textTransform:"uppercase" }}>Libre</div>
+                      <div style={{ fontSize:16, fontWeight:900, color:"#6ee7b7", fontFamily:"monospace" }}>{fmt(totalLibre)} gls</div>
+                    </div>
                   </div>
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-                  {/* BABOR */}
-                  <div style={{ background:"#eef3f8", borderRadius:12, padding:"16px",
-                    border:`2px solid ${T.navy}33`, boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
-                    <div style={{ fontWeight:800, fontSize:11, color:T.navy, textTransform:"uppercase",
-                      letterSpacing:2, marginBottom:14, paddingBottom:8,
-                      borderBottom:`2px solid ${T.navy}22`, display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{ fontSize:16 }}>⬅</span> BABOR (B)
-                      <span style={{ marginLeft:"auto", fontWeight:600, fontSize:10, color:T.muted }}>
-                        {fmt(BABOR.reduce((a,id)=>a+Number(byId(id).nivel||0),0))} gls
-                      </span>
-                    </div>
-                    {BABOR.map(id => <BarraTanque key={id} id={id}/>)}
+
+                {/* BARCAZA QBS002 */}
+                <div style={{
+                  background:"linear-gradient(180deg,#0d2136 0%,#0f2a42 60%,#0d2136 100%)",
+                  borderRadius:"18px 18px 40px 40px",
+                  border:"3px solid #1a4a6e",
+                  boxShadow:"0 8px 32px rgba(0,0,0,0.45), inset 0 0 40px rgba(0,0,0,0.3)",
+                  padding:"0 0 20px 0",
+                  position:"relative",
+                  overflow:"hidden"
+                }}>
+                  {/* Placa nombre barcaza */}
+                  <div style={{ textAlign:"center", padding:"10px 0 6px",
+                    borderBottom:"2px solid #1a4a6e", marginBottom:4 }}>
+                    <span style={{ fontWeight:900, fontSize:13, color:"#7ec8e3",
+                      letterSpacing:4, textTransform:"uppercase", fontFamily:"monospace" }}>⚓ QBS002</span>
                   </div>
-                  {/* ESTRIBOR */}
-                  <div style={{ background:"#eef3f8", borderRadius:12, padding:"16px",
-                    border:`2px solid ${T.navy}33`, boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
-                    <div style={{ fontWeight:800, fontSize:11, color:T.navy, textTransform:"uppercase",
-                      letterSpacing:2, marginBottom:14, paddingBottom:8,
-                      borderBottom:`2px solid ${T.navy}22`, display:"flex", alignItems:"center", gap:8 }}>
-                      ESTRIBOR (E) <span style={{ fontSize:16 }}>➡</span>
-                      <span style={{ marginLeft:"auto", fontWeight:600, fontSize:10, color:T.muted }}>
-                        {fmt(ESTRIBOR.reduce((a,id)=>a+Number(byId(id).nivel||0),0))} gls
-                      </span>
+
+                  {/* ESTRIBOR (E) — fila superior */}
+                  <div style={{ padding:"10px 16px 6px" }}>
+                    <div style={{ display:"flex", alignItems:"center", marginBottom:8 }}>
+                      <div style={{ width:10, height:"100%", alignSelf:"stretch", background:BAND_E,
+                        borderRadius:3, marginRight:8, minHeight:16 }}/>
+                      <span style={{ fontWeight:800, fontSize:10, color:"#7ec8e3",
+                        letterSpacing:2, textTransform:"uppercase" }}>Estribor (E)</span>
+                      <span style={{ marginLeft:"auto", fontSize:10, color:"rgba(255,255,255,0.5)",
+                        fontFamily:"monospace" }}>{fmt(ESTRIBOR.reduce((a,id)=>a+Number(byId(id).nivel||0),0))} gls</span>
                     </div>
-                    {ESTRIBOR.map(id => <BarraTanque key={id} id={id}/>)}
+                    <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
+                      {ESTRIBOR.map(id => <TanqueVertical key={id} id={id}/>)}
+                    </div>
                   </div>
+
+                  {/* Separador central */}
+                  <div style={{ height:2, background:"linear-gradient(90deg,transparent,#1a4a6e 20%,#2a6a9e 50%,#1a4a6e 80%,transparent)",
+                    margin:"8px 16px" }}/>
+
+                  {/* BABOR (B) — fila inferior */}
+                  <div style={{ padding:"6px 16px 0" }}>
+                    <div style={{ display:"flex", alignItems:"center", marginBottom:8 }}>
+                      <div style={{ width:10, height:"100%", alignSelf:"stretch", background:BAND_B,
+                        borderRadius:3, marginRight:8, minHeight:16 }}/>
+                      <span style={{ fontWeight:800, fontSize:10, color:"#93c5fd",
+                        letterSpacing:2, textTransform:"uppercase" }}>Babor (B)</span>
+                      <span style={{ marginLeft:"auto", fontSize:10, color:"rgba(255,255,255,0.5)",
+                        fontFamily:"monospace" }}>{fmt(BABOR.reduce((a,id)=>a+Number(byId(id).nivel||0),0))} gls</span>
+                    </div>
+                    <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
+                      {BABOR.map(id => <TanqueVertical key={id} id={id}/>)}
+                    </div>
+                  </div>
+
+                  {/* Decoración casco */}
+                  <div style={{ position:"absolute", bottom:0, left:0, right:0, height:8,
+                    background:"linear-gradient(90deg,#0a1e30,#1a4a6e 30%,#2a6a9e 50%,#1a4a6e 70%,#0a1e30)",
+                    borderRadius:"0 0 38px 38px" }}/>
                 </div>
               </div>
             );
