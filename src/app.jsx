@@ -2611,13 +2611,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                               const glsBas = Number(cr.galones_bascula||0) || (factorV>0&&pn>0?Math.round(pn/factorV):0);
                                               return (
                                                 <div key={i} style={{fontSize:11,color:T.muted,marginTop:4,paddingBottom:4,borderBottom:i<carrosConPlaca.length-1?`1px solid ${T.border}33`:"none"}}>
-                                                  <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}>
+                                                  <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
                                                     <b style={{color:T.navy}}>{cr.placa}</b>
-                                                    {cr.hora_inicio_descargue&&<span>Inicio: <b>{cr.hora_inicio_descargue}</b></span>}
-                                                    {cr.hora_final_descargue&&<span>Fin: <b>{cr.hora_final_descargue}</b></span>}
-                                                    {cr.numero_pbs&&<span style={{background:`${T.navy}15`,borderRadius:4,padding:"1px 6px",color:T.navy,fontWeight:700}}>PBS: {cr.numero_pbs}</span>}
+                                                    {Number(cr.peso_salida)>0&&<span>Báscula: <b style={{color:glsBas?T.success:T.muted}}>{glsBas?`${fmt(glsBas)} Gls`:"—"}</b></span>}
                                                   </div>
-                                                  {Number(cr.peso_salida)>0&&<span style={{marginTop:2,display:"block"}}> · Báscula: <b style={{color:glsBas?T.success:T.muted}}>{glsBas?`${fmt(glsBas)} Gls`:"—"}</b></span>}
                                                 </div>
                                               );
                                             })}
