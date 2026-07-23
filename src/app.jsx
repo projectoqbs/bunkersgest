@@ -448,7 +448,32 @@ export default function App() {
   const af = k => e => setAuthForm(p=>({...p,[k]:e.target.value}));
   const f  = k => e => setForm(p=>({...p,[k]: e.target.type==="text"||!e.target.type ? String(e.target.value).toUpperCase() : e.target.value}));
   const fPlaca = k => e => setForm(p=>({...p,[k]: e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)}));
-  const abrirCmt = c => { setForm({...c}); setCmtAntes(c.tanques_antes||[{tanque:"",sonda:"",galones:""}]); setCmtProducto(c.producto||""); setCmtDespues(c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}]); setCmtCarros(c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}]); setCmtRecepcion(c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoCargaPlanta(c.porteo_carga_planta||""); setCmtPorteoDescargaPlanta(c.porteo_descarga_planta||""); setCmtPorteoCarga(c.porteo_carga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoDescarga(c.porteo_descarga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]); setCmtPorteoCarros((c.porteo_carros||[{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}]).map(cr=>({...cr,galones_bascula:Number(cr.peso_salida)>0?cr.galones_bascula:""}))); setModal("cmt"); };
+  const abrirCmt = c => {
+    // Si ya hay un tab abierto para este CMT, simplemente cambiar a él
+    const existingTab = tabs.find(t => t.type === 'form' && t.formType === 'cmt' && t.cmtId === c.id);
+    if (existingTab) { switchToTab(existingTab.id); return; }
+    // Guardar estado del tab actual
+    if (activeTab?.type === 'form') { tabStateCache.current[activeTabId] = captureFormState(); }
+    const cmtState = {
+      form: {...c},
+      cmtAntes: c.tanques_antes||[{tanque:"",sonda:"",galones:""}],
+      cmtDespues: c.tanques_despues||[{tanque:"",producto:"",sonda:"",galones:""}],
+      cmtCarros: c.carros||[{placa:"",guia:"",tiquete:"",pbs_id:""}],
+      cmtProducto: c.producto||"",
+      cmtRecepcion: c.tanques_recepcion||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}],
+      cmtPorteoCargaPlanta: c.porteo_carga_planta||"",
+      cmtPorteoDescargaPlanta: c.porteo_descarga_planta||"",
+      cmtPorteoCarga: c.porteo_carga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}],
+      cmtPorteoDescarga: c.porteo_descarga_tanques||[{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}],
+      cmtPorteoCarros: (c.porteo_carros||[{placa:"",transportadora:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:""}]).map(cr=>({...cr,galones_bascula:Number(cr.peso_salida)>0?cr.galones_bascula:""})),
+      pbsChecklist: Array(26).fill(''), pbsParaCarro: null, pbsEsTrasiego: false, cmtSnapshot: null,
+    };
+    const newTabId = `form-cmt-${c.id}`;
+    tabStateCache.current[newTabId] = cmtState;
+    setTabs(prev => [...prev, { id: newTabId, type:'form', formType:'cmt', cmtId: c.id, title: c.numero_cmt||c.id, icon:'📋', closeable: true }]);
+    setActiveTabId(newTabId);
+    restoreFormState(cmtState);
+  };
 
   function showToast(msg, ok=true) {
     setToast({msg,ok});
@@ -2250,11 +2275,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     }
                     const planta = sede==="MALAMBO" ? plantaElegida : "";
                     const numCmt = genIdCMT(cmts, sede, planta);
-                    setForm({sede, planta, numero_cmt:numCmt, fecha:today()});
-                    setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
-                    setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
-                    setCmtDespues([{tanque:"",producto:"",sonda:"",galones:""}]);
-                    setModal("cmt");
+                    // Guardar estado del tab actual antes de crear uno nuevo
+                    if (activeTab?.type === 'form') {
+                      tabStateCache.current[activeTabId] = captureFormState();
+                    }
+                    const newTabId = `form-cmt-${Date.now()}`;
+                    const newCmtState = {
+                      form: {sede, planta, numero_cmt:numCmt, fecha:today()},
+                      cmtAntes: [{tanque:'',sonda:'',galones:''}],
+                      cmtDespues: [{tanque:'',producto:'',sonda:'',galones:''}],
+                      cmtCarros: [{placa:'',guia:'',tiquete:'',pbs_id:''}],
+                      cmtProducto: '',
+                      cmtRecepcion: [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
+                      cmtPorteoCargaPlanta: '', cmtPorteoDescargaPlanta: '',
+                      cmtPorteoCarga: [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
+                      cmtPorteoDescarga: [{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
+                      cmtPorteoCarros: [{placa:'',transportadora:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:'',hora_inicio_descargue:'',hora_final_descargue:'',numero_pbs:''}],
+                      pbsChecklist: Array(26).fill(''), pbsParaCarro: null, pbsEsTrasiego: false, cmtSnapshot: null,
+                    };
+                    tabStateCache.current[newTabId] = newCmtState;
+                    setTabs(prev => [...prev, { id: newTabId, type:'form', formType:'cmt', title: numCmt, icon:'📋', closeable: true }]);
+                    setActiveTabId(newTabId);
+                    restoreFormState(newCmtState);
                   }}>+ Nuevo CMT</Btn>}
                 </div>
               </div>
