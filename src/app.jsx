@@ -4897,6 +4897,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <div><CLbl>Placa</CLbl><input value={c.placa} readOnly style={{...cRoSt,fontFamily:"monospace",fontWeight:700,color:T.navy}}/></div>
                               <div><CLbl>Transportadora</CLbl><input value={c.transportadora||""} readOnly style={cRoSt}/></div>
                             </div>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:6}}>
+                              <div><CLbl>H. Inicio Descargue</CLbl><input type="time" value={c.hora_inicio_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                              <div><CLbl>H. Final Descargue</CLbl><input type="time" value={c.hora_final_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                              <div><CLbl>N° PBS Descargue</CLbl><input type="text" value={c.numero_pbs_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            </div>
                             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
                               <div><CLbl>Peso Ing. (kg)</CLbl><input type="number" value={c.peso_ingreso||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_ingreso:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                               <div><CLbl>Peso Sal. (kg)</CLbl><input type="number" value={c.peso_salida||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],peso_salida:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
