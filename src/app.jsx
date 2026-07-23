@@ -3226,10 +3226,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               else showToast("Error al guardar producto", false);
             };
 
-            // Altura visual proporcional a capacidad (mayor cap = tanque más alto)
-            const MAX_CAP = Math.max(...Object.values(CAP_QBS002));
-            const tankH = id => Math.round(80 + (CAP_QBS002[id]||27000) / MAX_CAP * 100);
-
             const TanqueVertical = ({ id }) => {
               const t      = byId(id);
               const nivel  = Number(t.nivel||0);
@@ -3242,7 +3238,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const nDesc  = Math.floor(libre / CARROS);
               const editando = tankProdEdit?.id === id;
               const pctColor = pct < 20 ? "#ef4444" : pct < 50 ? "#f59e0b" : "#22c55e";
-              const h = tankH(id);
+              const h = 140;
               const label = id.replace("QBS002-","");
 
               return (
