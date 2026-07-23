@@ -1277,11 +1277,16 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
             if (tanque) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tanque.nivel+diff)}).eq("id",td.tanque);
           }
         }
-        // PORTEO: actualizar niveles de tanques de carga y descarga
+        // PORTEO: actualizar niveles y producto de tanques de carga y descarga
         for (const td of cmtPorteoDescarga) {
           if (!td.tanque) continue;
           const diff = Number(td.galonesFinal||0) - Number(td.galonesInicial||0);
-          if (diff !== 0) { const tq = tanques.find(t=>t.id===td.tanque); if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tq.nivel+diff)}).eq("id",td.tanque); }
+          const tq = tanques.find(t=>t.id===td.tanque);
+          if (tq) {
+            const upd = { nivel: Math.max(0, tq.nivel+diff) };
+            if (cmtProducto) upd.producto = cmtProducto;
+            await supabaseAdmin.from("tanques").update(upd).eq("id",td.tanque);
+          }
         }
         for (const tc of cmtPorteoCarga) {
           if (!tc.tanque) continue;
