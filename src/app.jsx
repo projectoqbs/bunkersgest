@@ -1201,6 +1201,25 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
             if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0, tq.nivel+ajuste)}).eq("id",tanqueId);
           }
         }
+        // PORTEO update: ajuste neto por tanque de carga/descarga
+        const porteoTqIds = new Set([
+          ...(original.porteo_descarga_tanques||[]).map(t=>t.tanque),
+          ...cmtPorteoDescarga.map(t=>t.tanque),
+          ...(original.porteo_carga_tanques||[]).map(t=>t.tanque),
+          ...cmtPorteoCarga.map(t=>t.tanque),
+        ].filter(Boolean));
+        for (const tid of porteoTqIds) {
+          const origDesc = (original.porteo_descarga_tanques||[]).find(t=>t.tanque===tid);
+          const nuevoDesc = cmtPorteoDescarga.find(t=>t.tanque===tid);
+          const origCarg = (original.porteo_carga_tanques||[]).find(t=>t.tanque===tid);
+          const nuevoCarg = cmtPorteoCarga.find(t=>t.tanque===tid);
+          const diffOrigDesc = Number(origDesc?.galonesFinal||0)-Number(origDesc?.galonesInicial||0);
+          const diffNuevoDesc = Number(nuevoDesc?.galonesFinal||0)-Number(nuevoDesc?.galonesInicial||0);
+          const diffOrigCarg = Number(origCarg?.galonesFinal||0)-Number(origCarg?.galonesInicial||0);
+          const diffNuevoCarg = Number(nuevoCarg?.galonesFinal||0)-Number(nuevoCarg?.galonesInicial||0);
+          const ajuste = (diffNuevoDesc - diffOrigDesc) + (diffNuevoCarg - diffOrigCarg);
+          if (ajuste !== 0) { const tq = tanques.find(t=>t.id===tid); if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tq.nivel+ajuste)}).eq("id",tid); }
+        }
         const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
         if (placasCarros.length > 0) {
           for (const placa of placasCarros) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",placa);
@@ -1257,6 +1276,17 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
             const tanque = tanques.find(t=>t.id===td.tanque);
             if (tanque) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tanque.nivel+diff)}).eq("id",td.tanque);
           }
+        }
+        // PORTEO: actualizar niveles de tanques de carga y descarga
+        for (const td of cmtPorteoDescarga) {
+          if (!td.tanque) continue;
+          const diff = Number(td.galonesFinal||0) - Number(td.galonesInicial||0);
+          if (diff !== 0) { const tq = tanques.find(t=>t.id===td.tanque); if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tq.nivel+diff)}).eq("id",td.tanque); }
+        }
+        for (const tc of cmtPorteoCarga) {
+          if (!tc.tanque) continue;
+          const diff = Number(tc.galonesFinal||0) - Number(tc.galonesInicial||0);
+          if (diff !== 0) { const tq = tanques.find(t=>t.id===tc.tanque); if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tq.nivel+diff)}).eq("id",tc.tanque); }
         }
         const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
         if (placasCarros.length > 0) {
