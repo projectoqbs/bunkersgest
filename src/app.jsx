@@ -571,6 +571,16 @@ export default function App() {
       cmtPorteoCarga, cmtPorteoDescarga, cmtPorteoCarros,
       pbsChecklist, pbsParaCarro, pbsEsTrasiego, cmtSnapshot, activeTabId]);
 
+  // Actualizar título de la pestaña con la placa cuando es PORTEO
+  useEffect(() => {
+    if (activeTab?.type !== 'form') return;
+    const placas = cmtPorteoCarros.map(cr => cr.placa).filter(Boolean);
+    const titulo = (form.tipo_operacion === 'PORTEO' && placas.length > 0)
+      ? placas.join(' · ')
+      : (form.numero_cmt || 'Nuevo CMT');
+    setTabs(prev => prev.map(t => t.id === activeTabId ? {...t, title: titulo} : t));
+  }, [cmtPorteoCarros, form.tipo_operacion, form.numero_cmt, activeTabId]);
+
   function closeTab(tabId) {
     const tab = tabs.find(t => t.id === tabId);
     if (!tab?.closeable) return;
