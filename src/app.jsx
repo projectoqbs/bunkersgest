@@ -4795,9 +4795,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               return 0;
             })();
 
+            const onPorteoKey = e => {
+              if (e.key !== 'Enter') return;
+              if (e.target.tagName !== 'INPUT') return;
+              e.preventDefault();
+              const all = Array.from(e.currentTarget.querySelectorAll('input,select'));
+              const idx = all.indexOf(e.target);
+              if (idx >= 0 && idx < all.length - 1) all[idx + 1].focus();
+            };
+
             return (<>
               {/* ── LAYOUT DOS COLUMNAS: CARGUE | DESCARGUE ── */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,alignItems:"start",marginBottom:14}}>
+              <div onKeyDown={onPorteoKey} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,alignItems:"start",marginBottom:14}}>
 
                 {/* ── COLUMNA IZQUIERDA: Planta de Carga + Carros ── */}
                 <div style={{background:T.card,borderRadius:10,border:`2px solid ${T.orange}55`,overflow:"hidden"}}>
