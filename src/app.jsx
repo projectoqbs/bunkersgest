@@ -4406,7 +4406,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     .map(v => normalizarProducto(v.producto||""))
                     .filter(Boolean)
                 )];
-                const opciones = [...new Set([...prodEnPlanta, "VLSFO", "HSFO", "MGO"])].sort();
+                const prodTanques = [...new Set(
+                  tanques.map(t => t.producto||"").filter(Boolean)
+                )];
+                const opciones = [...new Set([...prodEnPlanta, ...prodTanques, "VLSFO", "HSFO", "MGO"])].sort();
                 return (
                   <select value={cmtProducto} onChange={e=>{
                     const val = e.target.value;
