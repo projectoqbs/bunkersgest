@@ -2321,13 +2321,24 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {(perfil.planta||"PLANTA 1").split(",").map(s=>s.trim()).filter(Boolean).map(pl=>(
                     <button key={pl} onClick={()=>{
                       const sede = perfil.sede||"MALAMBO";
-                      const numCmt = genIdCMT(cmts, sede, pl);
-                      setForm({sede, planta:pl, numero_cmt:numCmt, fecha:today()});
-                      setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
-                      setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
-                      setCmtDespues([{tanque:"",producto:"",sonda:"",galones:""}]);
                       setCmtPlantaSelector(false);
-                      setModal("cmt");
+                      if (activeTab?.type === 'form') { tabStateCache.current[activeTabId] = captureFormState(); }
+                      const newTabId2 = `form-cmt-${Date.now()}`;
+                      const newState2 = {
+                        form: {sede, planta:pl, fecha:today()},
+                        cmtAntes:[{tanque:'',sonda:'',galones:''}], cmtDespues:[{tanque:'',producto:'',sonda:'',galones:''}],
+                        cmtCarros:[{placa:'',guia:'',tiquete:'',pbs_id:''}], cmtProducto:'',
+                        cmtRecepcion:[{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
+                        cmtPorteoCargaPlanta:'', cmtPorteoDescargaPlanta:'',
+                        cmtPorteoCarga:[{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
+                        cmtPorteoDescarga:[{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
+                        cmtPorteoCarros:[{placa:'',transportadora:'',hora_inicio_cargue:'',hora_final_cargue:'',numero_pbs:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:''}],
+                        pbsChecklist:Array(26).fill(''), pbsParaCarro:null, pbsEsTrasiego:false, cmtSnapshot:null,
+                      };
+                      tabStateCache.current[newTabId2] = newState2;
+                      setTabs(prev => [...prev, { id:newTabId2, type:'form', formType:'cmt', title:'Nuevo CMT', icon:'📋', closeable:true }]);
+                      setActiveTabId(newTabId2);
+                      restoreFormState(newState2);
                     }} style={{background:T.orange,color:"#fff",border:"none",borderRadius:6,padding:"8px 20px",fontWeight:800,fontSize:13,cursor:"pointer"}}>
                       {pl}
                     </button>
