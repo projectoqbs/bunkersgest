@@ -3172,7 +3172,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const ESTRIBOR = ["1E","2E","3E","4E","5E"];
             const REMANENTE = 4500;
             const CARROS    = 9200;
-            const byId = id => tanques.find(t => t.id === id) || { id, nivel:0, capacidad:100000, producto:"—" };
+            // Capacidades reales de tablas de aforo QBS002 (en galones)
+            const CAP_QBS002 = {
+              "1B":26903,"1E":26903,"2B":47238,"2E":47415,
+              "3B":26874,"3E":26874,"4B":47110,"4E":47144,
+              "5B":27194,"5E":26935,
+            };
+            const byId = id => tanques.find(t => t.id === id) || { id, nivel:0, capacidad: CAP_QBS002[id]||27000, producto:"—" };
             const capOp = t => Math.round((t.capacidad||100000) * 0.9);
 
             const guardarProductoTanque2 = async (tkId, nuevo) => {
