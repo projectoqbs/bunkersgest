@@ -894,7 +894,8 @@ const aprueba = esVLSFO
       await loadData(); setModal(null); setForm({});
       showToast(`Tiquete ${form.id} actualizado — ${aprueba?"APROBADO":"RECHAZADO"}`);
     } else {
-      const id = `TQ-${String(tiquetes.length+1+19571).padStart(5,"0")}`;
+      const {count: tqCount} = await supabase.from("tiquetes").select("id",{count:"exact",head:true});
+      const id = `TQ-${String((tqCount||0)+1+19571).padStart(5,"0")}`;
       const {error} = await supabaseAdmin.from("tiquetes").insert([{
         id,
         ...campos,
@@ -1048,14 +1049,12 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
   function abrirCmtDesdeOt(ot, productoBase) {
     const sedeActual = ot.sede || perfil?.sede || "MALAMBO";
     const plantaActual = sedeActual === "MALAMBO" ? (perfil?.planta || "PLANTA 1") : "";
-    const numeroCmt = genIdCMT(cmts, sedeActual, plantaActual);
     const tanquesOT = [...new Set([
       ot.tanque_destino,
       ...(ot.trasiegos||[]).map(t=>t.origen),
       ...(ot.trasiegos||[]).map(t=>t.destino),
     ].filter(Boolean))];
     setForm({
-      numero_cmt: numeroCmt,
       ot_id: ot.id,
       ot_numero: ot.numero_ot,
       bloqueado_ot: true,
@@ -1204,7 +1203,8 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     } else {
       const sedeActual = form.sede || perfil.sede || "MALAMBO";
       const plantaActual = sedeActual === "MALAMBO" ? (form.planta || perfil.planta || "PLANTA 1") : "";
-      const numeroCmt = form.numero_cmt || genIdCMT(cmts, sedeActual, plantaActual);
+      const {data: cmtsFrescos} = await supabase.from("cmts").select("numero_cmt").order("created_at",{ascending:false});
+      const numeroCmt = genIdCMT(cmtsFrescos||cmts, sedeActual, plantaActual);
       const id = `${numeroCmt}`;
       const {error} = await supabaseAdmin.from("cmts").insert([{
         id, numero_cmt:numeroCmt, pbs_id:form.pbs_id||null,
@@ -2281,7 +2281,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     }
                     const newTabId = `form-cmt-${Date.now()}`;
                     const newCmtState = {
-                      form: {sede, planta, numero_cmt:numCmt, fecha:today()},
+                      form: {sede, planta, fecha:today()},
                       cmtAntes: [{tanque:'',sonda:'',galones:''}],
                       cmtDespues: [{tanque:'',producto:'',sonda:'',galones:''}],
                       cmtCarros: [{placa:'',guia:'',tiquete:'',pbs_id:''}],
@@ -2294,7 +2294,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       pbsChecklist: Array(26).fill(''), pbsParaCarro: null, pbsEsTrasiego: false, cmtSnapshot: null,
                     };
                     tabStateCache.current[newTabId] = newCmtState;
-                    setTabs(prev => [...prev, { id: newTabId, type:'form', formType:'cmt', title: numCmt, icon:'📋', closeable: true }]);
+                    setTabs(prev => [...prev, { id: newTabId, type:'form', formType:'cmt', title: 'Nuevo CMT', icon:'📋', closeable: true }]);
                     setActiveTabId(newTabId);
                     restoreFormState(newCmtState);
                   }}>+ Nuevo CMT</Btn>}
@@ -3826,7 +3826,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <button onClick={()=>{
                     const sede=ot.sede||perfil?.sede||"MALAMBO", planta=ot.planta||perfil?.planta||"PLANTA 1";
                     const tanquesOT=[...new Set([ot.tanque_destino,...(tras||[]).map(t=>t.origen),...(tras||[]).map(t=>t.destino)].filter(Boolean))];
-                    setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),numero_cmt:genIdCMT(cmts,sede,planta),tanques_ot:tanquesOT});
+                    setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),tanques_ot:tanquesOT});
                     setCmtProducto(fo?.producto||"");
                     setCmtAntes([{tanque:tras[0]?.origen||"",sonda:"",galones:""}]);
                     setCmtDespues([{tanque:tras[0]?.destino||"",producto:fo?.producto||"",sonda:"",galones:""}]);
