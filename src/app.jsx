@@ -449,10 +449,12 @@ export default function App() {
   const f  = k => e => setForm(p=>({...p,[k]: e.target.type==="text"||!e.target.type ? String(e.target.value).toUpperCase() : e.target.value}));
   const fPlaca = k => e => setForm(p=>({...p,[k]: e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)}));
   const abrirCmt = c => {
+    // Usar numero_cmt como key única — más confiable que c.id que puede variar
+    const cmtKey = c.numero_cmt || c.id || `cmt-${Date.now()}`;
     // Si ya hay un tab abierto para este CMT, simplemente cambiar a él
-    const existingTab = tabs.find(t => t.type === 'form' && t.formType === 'cmt' && t.cmtId === c.id);
+    const existingTab = tabs.find(t => t.type === 'form' && t.formType === 'cmt' && t.cmtKey === cmtKey);
     if (existingTab) { switchToTab(existingTab.id); return; }
-    // Guardar estado del tab actual
+    // Guardar estado del tab actual antes de abrir el nuevo
     if (activeTab?.type === 'form') { tabStateCache.current[activeTabId] = captureFormState(); }
     const cmtState = {
       form: {...c},
@@ -468,9 +470,9 @@ export default function App() {
       cmtPorteoCarros: (c.porteo_carros||[{placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]).map(cr=>({...cr,galones_bascula:Number(cr.peso_salida)>0?cr.galones_bascula:""})),
       pbsChecklist: Array(26).fill(''), pbsParaCarro: null, pbsEsTrasiego: false, cmtSnapshot: null,
     };
-    const newTabId = `form-cmt-${c.id}`;
+    const newTabId = `form-cmt-${cmtKey}`;
     tabStateCache.current[newTabId] = cmtState;
-    setTabs(prev => [...prev, { id: newTabId, type:'form', formType:'cmt', cmtId: c.id, title: c.numero_cmt||c.id, icon:'📋', closeable: true }]);
+    setTabs(prev => [...prev, { id: newTabId, type:'form', formType:'cmt', cmtKey, cmtId: c.id, title: cmtKey, icon:'📋', closeable: true }]);
     setActiveTabId(newTabId);
     restoreFormState(cmtState);
   };
