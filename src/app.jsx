@@ -2617,11 +2617,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                                     {cr.hora_final_descargue&&<span>Fin: <b>{cr.hora_final_descargue}</b></span>}
                                                     {cr.numero_pbs&&<span style={{background:`${T.navy}15`,borderRadius:4,padding:"1px 6px",color:T.navy,fontWeight:700}}>PBS: {cr.numero_pbs}</span>}
                                                   </div>
-                                                  <div style={{marginTop:2,display:"flex",gap:12,flexWrap:"wrap"}}>
-                                                    {Number(cr.peso_ingreso)>0&&<span>Ing: <b>{fmt(cr.peso_ingreso)} kg</b></span>}
-                                                    {Number(cr.peso_salida)>0&&<span>Sal: <b>{fmt(cr.peso_salida)} kg</b></span>}
-                                                    {Number(cr.peso_salida)>0&&<span>Báscula: <b style={{color:glsBas?T.success:T.muted}}>{glsBas?`${fmt(glsBas)} Gls`:"—"}</b></span>}
-                                                  </div>
+                                                  {Number(cr.peso_salida)>0&&<span style={{marginTop:2,display:"block"}}> · Báscula: <b style={{color:glsBas?T.success:T.muted}}>{glsBas?`${fmt(glsBas)} Gls`:"—"}</b></span>}
                                                 </div>
                                               );
                                             })}
