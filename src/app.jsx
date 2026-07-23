@@ -125,7 +125,8 @@ const NAV_META = {
   tiquetes:     { label:"Tiquetes MP",  icon:"🧪" },
   pbs:          { label:"PBS",          icon:"🔒" },
   cmt:          { label:"CMT",          icon:"📋" },
-  tanques:      { label:"Tanques",      icon:"🛢" },
+  tanques:      { label:"Planta 2",     icon:"🛢" },
+  tanques_p1:   { label:"Planta 1",    icon:"🚢" },
   despacho:     { label:"Despacho",     icon:"🚢" },
   trazabilidad:  { label:"Trazabilidad",  icon:"🔍" },
   usuarios:      { label:"Usuarios",      icon:"👥" },
@@ -1491,6 +1492,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
               liquidador:   { icon:"🔢", label:"LIQUIDADOR",    subs:[{id:"liquidador",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
+              tanques:      { icon:"🛢", label:"TANQUES",        subs:[{id:"tanques",label:"Planta 2 (TK-111–117)"},{id:"tanques_p1",label:"Planta 1 — QBS002"}] },
             };
             const badges = {};
 
@@ -3161,6 +3163,146 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <TanquesLayout fs={false}/>
                 </div>
               </>
+            );
+          })()}
+
+          {/* TANQUES PLANTA 1 — Barcaza QBS002 */}
+          {nav==="tanques_p1" && (()=>{
+            const BABOR    = ["1B","2B","3B","4B","5B"];
+            const ESTRIBOR = ["1E","2E","3E","4E","5E"];
+            const REMANENTE = 4500;
+            const CARROS    = 9200;
+            const byId = id => tanques.find(t => t.id === id) || { id, nivel:0, capacidad:100000, producto:"—" };
+            const capOp = t => Math.round((t.capacidad||100000) * 0.9);
+
+            const guardarProductoTanque2 = async (tkId, nuevo) => {
+              setTankProdEdit(p => p ? {...p, saving:true} : null);
+              const { error } = await supabase.from("tanques").update({ producto: nuevo.toUpperCase() }).eq("id", tkId);
+              setTankProdEdit(null);
+              if (!error) await loadData();
+              else showToast("Error al guardar producto", false);
+            };
+
+            const BarraTanque = ({ id }) => {
+              const t    = byId(id);
+              const nivel = Number(t.nivel||0);
+              const cap   = Number(t.capacidad||100000);
+              const pct   = cap > 0 ? Math.min(100, Math.round((nivel/cap)*100)) : 0;
+              const color = getProductColor(t.producto);
+              const libre = Math.max(0, capOp(t) - nivel);
+              const disp  = Math.max(0, nivel - REMANENTE);
+              const nCargue = Math.floor(disp / CARROS);
+              const nDesc   = Math.floor(libre / CARROS);
+              const editando = tankProdEdit?.id === id;
+
+              const pctColor = pct < 20 ? "#ef4444" : pct < 50 ? "#f59e0b" : "#22c55e";
+
+              return (
+                <div style={{ marginBottom:8 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    {/* Etiqueta */}
+                    <div style={{ width:28, flexShrink:0, textAlign:"center", fontWeight:900, fontSize:12,
+                      color:T.navy, fontFamily:"monospace", letterSpacing:0.5 }}>{id}</div>
+                    {/* Barra */}
+                    <div style={{ flex:1, background:"#c8d6e5", borderRadius:8, height:48, position:"relative",
+                      overflow:"hidden", border:`1px solid #a8bed4`, cursor:"pointer" }}
+                      onDoubleClick={() => setTankProdEdit({ id, val: t.producto||"" })}>
+                      {/* Relleno */}
+                      <div style={{ position:"absolute", left:0, top:0, bottom:0, width:`${pct}%`,
+                        background: color || "#3d7ab5", borderRadius: pct < 97 ? "8px 0 0 8px" : "8px",
+                        transition:"width 0.6s ease", opacity:0.82 }}/>
+                      {/* Línea agua */}
+                      {pct > 0 && pct < 100 && (
+                        <div style={{ position:"absolute", top:0, bottom:0, left:`${pct}%`,
+                          width:2, background:"rgba(255,255,255,0.5)", pointerEvents:"none" }}/>
+                      )}
+                      {/* Contenido superpuesto */}
+                      <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center",
+                        justifyContent:"space-between", padding:"0 10px" }}>
+                        {/* Producto (doble-clic para editar) */}
+                        {editando ? (
+                          <input autoFocus value={tankProdEdit.val}
+                            onChange={e => setTankProdEdit({ id, val:e.target.value })}
+                            onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque2(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
+                            onBlur={() => guardarProductoTanque2(id, tankProdEdit.val)}
+                            style={{ background:"rgba(0,0,0,0.5)", border:`1px solid ${T.orange}`, borderRadius:4,
+                              color:"#fff", fontSize:11, fontWeight:700, padding:"2px 6px", width:90,
+                              textTransform:"uppercase", outline:"none" }}/>
+                        ) : (
+                          <span style={{ fontWeight:800, fontSize:12, color:"#071422",
+                            textShadow:"0 1px 3px rgba(255,255,255,0.9)", letterSpacing:0.5 }}>
+                            {t.producto && t.producto !== "—" ? t.producto : <span style={{color:"#7a8fa8",fontWeight:400,fontSize:11}}>sin producto</span>}
+                          </span>
+                        )}
+                        {/* Stats */}
+                        <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+                          <div style={{ textAlign:"right" }}>
+                            <div style={{ fontSize:8, color:"#4a6080", fontWeight:700, letterSpacing:0.5 }}>NIVEL</div>
+                            <div style={{ fontSize:11, fontWeight:800, color:"#071422", fontFamily:"monospace" }}>{fmt(nivel)} gls</div>
+                          </div>
+                          <div style={{ textAlign:"right" }}>
+                            <div style={{ fontSize:8, color:"#4a6080", fontWeight:700, letterSpacing:0.5 }}>LIBRE</div>
+                            <div style={{ fontSize:11, fontWeight:800, color:"#1a7a3a", fontFamily:"monospace" }}>{fmt(libre)} gls</div>
+                          </div>
+                          <div style={{ textAlign:"right" }}>
+                            <div style={{ fontSize:8, color:"#4a6080", fontWeight:700, letterSpacing:0.5 }}>C↑/D↓</div>
+                            <div style={{ fontSize:11, fontWeight:800, color:"#c05a00", fontFamily:"monospace" }}>{nCargue}/{nDesc}</div>
+                          </div>
+                          <div style={{ background:"rgba(0,0,0,0.15)", borderRadius:6, padding:"2px 8px",
+                            minWidth:40, textAlign:"center", backdropFilter:"blur(2px)" }}>
+                            <div style={{ fontSize:13, fontWeight:900, color:pctColor, fontFamily:"monospace" }}>{pct}%</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            };
+
+            const totalNivel = [...BABOR,...ESTRIBOR].reduce((a,id)=>a+Number(byId(id).nivel||0),0);
+
+            return (
+              <div style={{ padding:"20px 24px" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+                  <div>
+                    <div style={{ fontWeight:900, fontSize:20, color:T.navy }}>🚢 Planta 1 — Barcaza QBS002</div>
+                    <div style={{ fontSize:11, color:T.muted }}>10 tanques · Babor (B) y Estribor (E) · doble-clic para editar producto</div>
+                  </div>
+                  <div style={{ background:T.navy, borderRadius:10, padding:"10px 18px", textAlign:"center" }}>
+                    <div style={{ fontSize:9, color:"rgba(255,255,255,0.55)", fontWeight:700, letterSpacing:1.5, textTransform:"uppercase" }}>Stock Total</div>
+                    <div style={{ fontSize:18, fontWeight:900, color:T.orange, fontFamily:"monospace" }}>{fmt(totalNivel)} gls</div>
+                  </div>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+                  {/* BABOR */}
+                  <div style={{ background:"#eef3f8", borderRadius:12, padding:"16px",
+                    border:`2px solid ${T.navy}33`, boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+                    <div style={{ fontWeight:800, fontSize:11, color:T.navy, textTransform:"uppercase",
+                      letterSpacing:2, marginBottom:14, paddingBottom:8,
+                      borderBottom:`2px solid ${T.navy}22`, display:"flex", alignItems:"center", gap:8 }}>
+                      <span style={{ fontSize:16 }}>⬅</span> BABOR (B)
+                      <span style={{ marginLeft:"auto", fontWeight:600, fontSize:10, color:T.muted }}>
+                        {fmt(BABOR.reduce((a,id)=>a+Number(byId(id).nivel||0),0))} gls
+                      </span>
+                    </div>
+                    {BABOR.map(id => <BarraTanque key={id} id={id}/>)}
+                  </div>
+                  {/* ESTRIBOR */}
+                  <div style={{ background:"#eef3f8", borderRadius:12, padding:"16px",
+                    border:`2px solid ${T.navy}33`, boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+                    <div style={{ fontWeight:800, fontSize:11, color:T.navy, textTransform:"uppercase",
+                      letterSpacing:2, marginBottom:14, paddingBottom:8,
+                      borderBottom:`2px solid ${T.navy}22`, display:"flex", alignItems:"center", gap:8 }}>
+                      ESTRIBOR (E) <span style={{ fontSize:16 }}>➡</span>
+                      <span style={{ marginLeft:"auto", fontWeight:600, fontSize:10, color:T.muted }}>
+                        {fmt(ESTRIBOR.reduce((a,id)=>a+Number(byId(id).nivel||0),0))} gls
+                      </span>
+                    </div>
+                    {ESTRIBOR.map(id => <BarraTanque key={id} id={id}/>)}
+                  </div>
+                </div>
+              </div>
             );
           })()}
 
