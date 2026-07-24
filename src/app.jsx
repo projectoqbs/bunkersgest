@@ -3664,10 +3664,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               </td>
                               <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_cargue||"—"}</td>
                               <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_final_cargue||"—"}</td>
-                              <td style={tdS({color:T.muted})}>{cr.galones_contador>0?fmt(cr.galones_contador):"—"}</td>
+                              <td style={tdS({color:cr.galones_contador>0?T.text:T.muted,fontWeight:cr.galones_contador>0?700:400})}>{cr.galones_contador>0?fmt(cr.galones_contador):"—"}</td>
                               <td style={tdS({color:T.muted})}>{cr.peso_ingreso>0?fmt(cr.peso_ingreso):"—"}</td>
                               <td style={tdS({color:T.muted})}>{cr.peso_salida>0?fmt(cr.peso_salida):"—"}</td>
-                              <td style={tdS({fontWeight:700,color:gls>0?T.success:T.muted})}>{gls>0?fmt(gls):pn>0?fmt(pn):"—"}</td>
+                              <td style={tdS({fontWeight:700,color:gls>0?T.orange:pn>0?T.orange:T.muted})}>{gls>0?fmt(gls):pn>0?fmt(pn):"—"}</td>
                               <td style={tdS({...mono,color:T.navy})}>{ot?.numero_ot||"—"}</td>
                               <td style={{padding:"10px 12px",fontSize:11}}>
                                 {tqsDesc.length>0?tqsDesc.map((t,j)=>{
