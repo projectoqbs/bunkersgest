@@ -91,6 +91,17 @@ function agruparDescarguesPorProducto(descarguesArray) {
 function fmtNum(num) {
   return Number(num).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
+// Calcula diferencia absoluta entre dos strings "HH:MM" → "Xh Ym" o "Ym"
+function duracion(inicio, fin) {
+  if (!inicio || !fin) return "";
+  const [h1,m1] = inicio.split(":").map(Number);
+  const [h2,m2] = fin.split(":").map(Number);
+  if (isNaN(h1)||isNaN(m1)||isNaN(h2)||isNaN(m2)) return "";
+  let mins = Math.abs((h2*60+m2)-(h1*60+m1));
+  if (mins === 0) return "";
+  const h = Math.floor(mins/60), m = mins%60;
+  return h>0 ? `${h}h ${m}m` : `${m}m`;
+}
 const TABLA13 = {1:4.0346,2:4.0043,3:3.9745,4:3.9451,5:3.9162,6:3.8877,7:3.8596,8:3.8319,9:3.8046,10:3.7777,11:3.7511,12:3.7249,13:3.6991,14:3.6737,15:3.6486,16:3.6238,17:3.5994,18:3.5753,19:3.5515,20:3.528,21:3.5048,22:3.482,23:3.4594,24:3.4371,25:3.4151,26:3.3934,27:3.372,28:3.3508,29:3.3299,30:3.3093,31:3.2888,32:3.2687,33:3.2489,34:3.2292,35:3.2097,36:3.1906,37:3.1716,38:3.1529,39:3.1343,40:3.116,41:3.0979,42:3.0801,43:3.0624,44:3.0449,45:3.0276,46:3.0105,47:2.9937,48:2.9769,49:2.9604,50:2.9441};
 const tabla13Factor = api => {
   if (!api || api <= 0) return "";
@@ -392,8 +403,8 @@ export default function App() {
   const [trazDesde, setTrazDesde] = useState("");
   const [trazHasta, setTrazHasta] = useState("");
   const [trazEstado, setTrazEstado] = useState("DESCARGUE");
-  const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","pbs","ot","tanques","horaInicio","horaFinal","pesoIng","pesoSal","pesoNeto","rpm","presion"]));
-  const [trazColsPorteo, setTrazColsPorteo] = useState(new Set(["placa","fecha","cmt","transportadora","tqsCarga","inicio","fin","contador","pesoIng","pesoSal","bascula","ot","tqsDesc"]));
+  const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","pbs","ot","tanques","horaInicio","horaFinal","duracion","pesoIng","pesoSal","pesoNeto","rpm","presion"]));
+  const [trazColsPorteo, setTrazColsPorteo] = useState(new Set(["placa","fecha","cmt","transportadora","tqsCarga","inicio","fin","duracion","contador","pesoIng","pesoSal","bascula","ot","tqsDesc"]));
   const [trazColPanel, setTrazColPanel] = useState(false);
   const [mps, setMps] = useState([ // materias primas en el modal formulación
     { nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }
@@ -3602,14 +3613,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               {k:"placa",l:"Placa"},{k:"fecha",l:"Fecha CMT"},{k:"cmt",l:"CMT"},{k:"producto",l:"Producto"},
                               {k:"transportadora",l:"Transportadora"},{k:"guia",l:"Guía"},{k:"tiquete",l:"Tiquete"},
                               {k:"api",l:"API"},{k:"glsGuia",l:"Gls Guía"},{k:"glsBas",l:"Gls Báscula"},
-                              {k:"horaInicio",l:"Hora Inicio"},{k:"horaFinal",l:"Hora Final"},
+                              {k:"horaInicio",l:"Hora Inicio"},{k:"horaFinal",l:"Hora Final"},{k:"duracion",l:"Duración"},
                               {k:"pesoIng",l:"Peso Ingreso (Kg)"},{k:"pesoSal",l:"Peso Salida (Kg)"},{k:"pesoNeto",l:"Peso Neto (Kg)"},
                               {k:"rpm",l:"RPM"},{k:"presion",l:"Presión (Bar)"},
                               {k:"pbs",l:"PBS"},{k:"ot",l:"OT"},{k:"tanques",l:"Tanques descargados"}
                             ]
                           : [
                               {k:"placa",l:"Placa"},{k:"fecha",l:"Fecha CMT"},{k:"cmt",l:"CMT"},{k:"transportadora",l:"Transportadora"},
-                              {k:"tqsCarga",l:"Tanques Carga"},{k:"inicio",l:"Inicio Cargue"},{k:"fin",l:"Fin Cargue"},
+                              {k:"tqsCarga",l:"Tanques Carga"},{k:"inicio",l:"Inicio Cargue"},{k:"fin",l:"Fin Cargue"},{k:"duracion",l:"Duración"},
                               {k:"contador",l:"Gls Contador"},{k:"pesoIng",l:"Peso Ingreso"},{k:"pesoSal",l:"Peso Salida"},
                               {k:"bascula",l:"Gls Báscula"},{k:"ot",l:"OT"},{k:"tqsDesc",l:"Tanques Descarga"}
                             ];
@@ -3660,6 +3671,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {C.has("glsBas")         && <th style={thStyle}>Gls Báscula</th>}
                         {C.has("horaInicio")     && <th style={thStyle}>Hora Inicio</th>}
                         {C.has("horaFinal")      && <th style={thStyle}>Hora Final</th>}
+                        {C.has("duracion")       && <th style={thStyle}>Duración</th>}
                         {C.has("pesoIng")        && <th style={thStyle}>Peso Ingreso (Kg)</th>}
                         {C.has("pesoSal")        && <th style={thStyle}>Peso Salida (Kg)</th>}
                         {C.has("pesoNeto")       && <th style={thStyle}>Peso Neto (Kg)</th>}
@@ -3689,6 +3701,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             {C.has("glsBas")         && <td style={tdS({fontWeight:700,color:glsBas>0?T.success:T.muted})}>{glsBas>0?fmt(glsBas):"—"}</td>}
                             {C.has("horaInicio")     && <td style={tdS({color:T.muted,fontSize:11})}>{cr.hora_inicio||"—"}</td>}
                             {C.has("horaFinal")      && <td style={tdS({color:T.muted,fontSize:11})}>{cr.hora_final||"—"}</td>}
+                            {C.has("duracion")       && <td style={tdS({...mono,color:T.navy,fontWeight:700})}>{duracion(cr.hora_inicio,cr.hora_final)||"—"}</td>}
                             {C.has("pesoIng")        && <td style={tdS({color:T.muted})}>{Number(cr.peso_ingreso||0)>0?fmt(cr.peso_ingreso):"—"}</td>}
                             {C.has("pesoSal")        && <td style={tdS({color:T.muted})}>{Number(cr.peso_salida||0)>0?fmt(cr.peso_salida):"—"}</td>}
                             {C.has("pesoNeto")       && <td style={tdS({fontWeight:700,color:pesoNeto>0?T.text:T.muted})}>{pesoNeto>0?fmt(pesoNeto):"—"}</td>}
@@ -3726,6 +3739,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {C.has("tqsCarga")       && <th style={thStyle}>Tanques Carga (gls salidos)</th>}
                         {C.has("inicio")         && <th style={thStyle}>Inicio Cargue</th>}
                         {C.has("fin")            && <th style={thStyle}>Fin Cargue</th>}
+                        {C.has("duracion")       && <th style={thStyle}>Duración</th>}
                         {C.has("contador")       && <th style={thStyle}>Gls Contador</th>}
                         {C.has("pesoIng")        && <th style={thStyle}>Peso Ingreso</th>}
                         {C.has("pesoSal")        && <th style={thStyle}>Peso Salida</th>}
@@ -3749,6 +3763,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               </td>}
                               {C.has("inicio")         && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_cargue||"—"}</td>}
                               {C.has("fin")            && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_final_cargue||"—"}</td>}
+                              {C.has("duracion")       && <td style={tdS({...mono,color:T.navy,fontWeight:700})}>{duracion(cr.hora_inicio_cargue,cr.hora_final_cargue)||"—"}</td>}
                               {C.has("contador")       && <td style={tdS({color:cr.galones_contador>0?T.text:T.muted,fontWeight:cr.galones_contador>0?700:400})}>{cr.galones_contador>0?fmt(cr.galones_contador):"—"}</td>}
                               {C.has("pesoIng")        && <td style={tdS({color:T.muted})}>{cr.peso_ingreso>0?fmt(cr.peso_ingreso):"—"}</td>}
                               {C.has("pesoSal")        && <td style={tdS({color:T.muted})}>{cr.peso_salida>0?fmt(cr.peso_salida):"—"}</td>}
@@ -5286,9 +5301,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div><Lbl>Guía</Lbl><input type="text" readOnly value={carro.guia||""} style={{width:"100%",background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
                   <div><Lbl>Tiquete</Lbl><input type="text" readOnly value={carro.tiquete||""} style={{width:"100%",background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(10,1fr)",gap:8,alignItems:"end"}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(11,1fr)",gap:8,alignItems:"end"}}>
                   <div><Lbl>Hora Inicio</Lbl><input type="time" value={carro.hora_inicio||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_inicio=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>Hora Final</Lbl><input type="time" value={carro.hora_final||""} onChange={e=>{const n=[...cmtCarros];n[i].hora_final=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
+                  <div><Lbl>Duración</Lbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",fontSize:13,fontFamily:"monospace",color:duracion(carro.hora_inicio,carro.hora_final)?T.navy:"#aab4be",fontWeight:700,minHeight:43,display:"flex",alignItems:"center"}}>{duracion(carro.hora_inicio,carro.hora_final)||"—"}</div></div>
                   <div><Lbl>Peso Ingreso (Kg)</Lbl><input type="number" value={carro.peso_ingreso||""} onChange={e=>{const n=[...cmtCarros];n[i].peso_ingreso=e.target.value;const neto=Number(e.target.value||0)-Number(n[i].peso_salida||0);if(n[i].peso_salida)n[i].peso_neto=neto>0?String(neto):"";setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>Peso Salida (Kg)</Lbl><input type="number" value={carro.peso_salida||""} onChange={e=>{const val=e.target.value;const n=[...cmtCarros];n[i].peso_salida=val;const neto=Number(n[i].peso_ingreso||0)-Number(val||0);if(n[i].peso_ingreso)n[i].peso_neto=neto>0?String(neto):"";setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
                   <div><Lbl>Peso Neto (Kg)</Lbl><input type="text" readOnly value={carro.peso_neto||""} style={{width:"100%",background:"#e8edf2",border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:"#4a5568",fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box",fontWeight:600,cursor:"default"}}/></div>
@@ -5484,9 +5500,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <div><CLbl>Placa</CLbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...cInSt,fontFamily:"monospace",fontWeight:700}}/></div>
                             <div><CLbl>Transportadora</CLbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                           </div>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:6}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
                             <div><CLbl>H. Inicio Cargue</CLbl><input type="time" value={c.hora_inicio_cargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_cargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                             <div><CLbl>H. Final Cargue</CLbl><input type="time" value={c.hora_final_cargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_cargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>Duración</CLbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"monospace",color:duracion(c.hora_inicio_cargue,c.hora_final_cargue)?T.navy:"#aab4be",fontWeight:700,minHeight:38,display:"flex",alignItems:"center"}}>{duracion(c.hora_inicio_cargue,c.hora_final_cargue)||"—"}</div></div>
                             <div><CLbl>N° PBS Cargue</CLbl><input type="text" value={c.numero_pbs||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="PBS-001" style={cInSt}/></div>
                           </div>
                           <div>
