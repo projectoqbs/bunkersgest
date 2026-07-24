@@ -5205,7 +5205,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 setCmtAntes([...cmtAntes,{tanque:"",sonda:"",galones:""}]);
                 setCmtDespues([...cmtDespues,{tanque:"",producto:cmtProducto,sonda:"",galones:""}]);
               }}>+ TK</Btn>
-              <span style={{ fontSize:12, color:T.orange }}>Total: {fmt(cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
+              {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"
+                ? (() => {
+                    const ini = cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0);
+                    const fin = cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0);
+                    const diff = ini - fin;
+                    return <span style={{fontSize:12,color:diff>0?T.orange:"#94a3b8"}}>Despachado: <b>{diff>0?fmt(diff):"—"} Gls</b></span>;
+                  })()
+                : <span style={{ fontSize:12, color:T.orange }}>Total: {fmt(cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
+              }
             </div>
           </div>)}
           {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && <div style={{marginBottom:18}}>
@@ -5266,6 +5274,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             })()}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
               <Btn sm outline color={T.success} onClick={()=>setCmtRecepcion([...cmtRecepcion,{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}])}>+ TK</Btn>
+              {(()=>{
+                const recibido = cmtRecepcion.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
+                return recibido>0
+                  ? <span style={{fontSize:12,color:T.success}}>Recibido: <b>{fmt(recibido)} Gls</b></span>
+                  : null;
+              })()}
             </div>
           </div>}
           {(form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && (form.tipo_operacion||"")!=="PORTEO" && (<div style={{marginBottom:18}}>
