@@ -3607,8 +3607,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={tdS({color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"})}>{cr.transportadora||"—"}</td>
                             <td style={tdS({...mono,color:T.muted})}>{viaje?.guia||"—"}</td>
                             <td style={tdS()}>
-                              {tq ? <span style={{...mono,color:(tq.resultado||"").toUpperCase()==="APROBADO"?T.success:T.danger}}>{tq.id}</span>
-                                   : <span style={{color:T.muted,fontSize:10}}>—</span>}
+                              {tq ? (() => {
+                                const res = (tq.resultado||"").toUpperCase();
+                                const col = res==="APROBADO"?T.success:res==="RECHAZADO"?T.danger:T.muted;
+                                return <><span style={{...mono,color:col}}>{tq.id}</span>{res&&<div style={{fontSize:9,color:col,marginTop:1}}>{tq.resultado}</div>}</>;
+                              })() : <span style={{color:T.muted,fontSize:10}}>—</span>}
                             </td>
                             <td style={tdS({color:T.muted})}>{tq?.api_corregido ? `${tq.api_corregido}°` : "—"}</td>
                             <td style={tdS({color:T.muted})}>{viaje?.volumen_guia>0?fmt(viaje.volumen_guia):"—"}</td>
