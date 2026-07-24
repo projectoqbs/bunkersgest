@@ -3390,6 +3390,114 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     background:"linear-gradient(90deg,#0a1e30,#1a4a6e 30%,#2a6a9e 50%,#1a4a6e 70%,#0a1e30)",
                     borderRadius:"0 0 38px 38px" }}/>
                 </div>
+
+                {/* TANQUES TIERRA — TKT-1 y TKT-2 */}
+                {(()=>{
+                  const TIERRA = ["TKT-1","TKT-2"];
+                  const CAP_TIERRA = { "TKT-1": 16021, "TKT-2": 16021 };
+                  const byIdT = id => tanques.find(t=>t.id===id) || { id, nivel:0, capacidad:CAP_TIERRA[id]||16021, producto:"—" };
+                  const REMANENTE_T = 2000;
+
+                  const TanqueTierra = ({ id }) => {
+                    const t      = byIdT(id);
+                    const nivel  = Number(t.nivel||0);
+                    const cap    = Number(t.capacidad||16021);
+                    const pct    = cap > 0 ? Math.min(100, Math.round((nivel/cap)*100)) : 0;
+                    const color  = getProductColor(t.producto);
+                    const capOp_ = Math.round(cap * 0.9);
+                    const libre  = Math.max(0, capOp_ - nivel);
+                    const disp   = Math.max(0, nivel - REMANENTE_T);
+                    const nCarg  = Math.floor(disp / CARROS);
+                    const nDesc  = Math.floor(libre / CARROS);
+                    const editando = tankProdEdit?.id === id;
+                    const pctColor = pct < 20 ? "#ef4444" : pct < 50 ? "#f59e0b" : "#22c55e";
+                    const label = id;
+
+                    return (
+                      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, flex:1, minWidth:0 }}>
+                        <div
+                          title={`${label} · ${t.producto||"sin producto"} · ${fmt(nivel)} gls`}
+                          onDoubleClick={() => setTankProdEdit({ id, val: t.producto||"" })}
+                          style={{ width:"100%", height:140, position:"relative", cursor:"pointer",
+                            background:"#d4c8a8", border:"2px solid #8a7a50",
+                            borderRadius:"6px 6px 4px 4px", overflow:"hidden",
+                            boxShadow:"inset 0 2px 6px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.12)" }}>
+                          <div style={{ position:"absolute", bottom:0, left:0, right:0,
+                            height:`${pct}%`, background: color || "#8a6a20",
+                            transition:"height 0.6s ease", opacity:0.85, borderRadius:"0 0 3px 3px" }}/>
+                          {pct > 0 && pct < 100 && (
+                            <div style={{ position:"absolute", left:0, right:0, bottom:`${pct}%`,
+                              height:2, background:"rgba(255,255,255,0.5)", pointerEvents:"none" }}/>
+                          )}
+                          <div style={{ position:"absolute", top:4, left:0, right:0, textAlign:"center" }}>
+                            <span style={{ fontSize:11, fontWeight:900, color:pctColor,
+                              textShadow:"0 1px 2px rgba(0,0,0,0.5)", fontFamily:"monospace" }}>{pct}%</span>
+                          </div>
+                          <div style={{ position:"absolute", bottom:6, left:2, right:2, textAlign:"center" }}>
+                            {editando ? (
+                              <input autoFocus value={tankProdEdit.val}
+                                onChange={e => setTankProdEdit({ id, val:e.target.value })}
+                                onKeyDown={e=>{ if(e.key==="Enter") guardarProductoTanque2(id, tankProdEdit.val); if(e.key==="Escape") setTankProdEdit(null); }}
+                                onBlur={() => guardarProductoTanque2(id, tankProdEdit.val)}
+                                style={{ background:"rgba(0,0,0,0.65)", border:`1px solid ${T.orange}`, borderRadius:3,
+                                  color:"#fff", fontSize:9, fontWeight:700, padding:"1px 4px", width:"90%",
+                                  textTransform:"uppercase", outline:"none", textAlign:"center" }}/>
+                            ) : (
+                              <span style={{ fontSize:9, fontWeight:800,
+                                color: (t.producto && t.producto!=="—") ? "#fff" : "rgba(0,0,0,0.3)",
+                                textShadow:"0 1px 3px rgba(0,0,0,0.6)", letterSpacing:0.5,
+                                display:"block", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                                {t.producto && t.producto !== "—" ? t.producto : "—"}
+                              </span>
+                            )}
+                          </div>
+                          {[25,50,75].map(p => (
+                            <div key={p} style={{ position:"absolute", left:0, right:0, bottom:`${p}%`,
+                              height:1, background:"rgba(0,0,0,0.1)", pointerEvents:"none" }}/>
+                          ))}
+                        </div>
+                        <div style={{ width:"100%", textAlign:"center" }}>
+                          <div style={{ fontWeight:900, fontSize:12, color:T.navy,
+                            fontFamily:"monospace", letterSpacing:1, background:"rgba(0,0,0,0.08)",
+                            borderRadius:4, padding:"1px 4px", display:"inline-block", marginBottom:2 }}>{label}</div>
+                          <div style={{ fontSize:9, color:T.muted, fontFamily:"monospace", lineHeight:1.3 }}>
+                            <div>{fmt(nivel)} gls</div>
+                            <div style={{ color:"#1a7a3a" }}>{fmt(libre)} libre</div>
+                            <div style={{ color:"#c05a00" }}>{nCarg}C/{nDesc}D</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  const totalTierra = TIERRA.reduce((a,id)=>a+Number(byIdT(id).nivel||0),0);
+
+                  return (
+                    <div style={{ marginTop:20,
+                      background:T.card, borderRadius:14, border:`2px solid ${T.border}`,
+                      boxShadow:"0 2px 10px rgba(0,0,0,0.07)", overflow:"hidden" }}>
+                      {/* Header */}
+                      <div style={{ background:"linear-gradient(90deg,#3d2e0f,#6b4e1a)",
+                        padding:"10px 16px", display:"flex", alignItems:"center", gap:10 }}>
+                        <span style={{ fontSize:18 }}>🏭</span>
+                        <div>
+                          <div style={{ fontWeight:900, fontSize:12, color:"#f5d98a", letterSpacing:2, textTransform:"uppercase" }}>Tanques Tierra — Planta 1</div>
+                          <div style={{ fontSize:10, color:"rgba(255,220,100,0.6)" }}>TKT-1 · TKT-2 · doble-clic para editar producto</div>
+                        </div>
+                        <div style={{ marginLeft:"auto", textAlign:"right" }}>
+                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.5)", fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>Stock</div>
+                          <div style={{ fontSize:15, fontWeight:900, color:T.orange, fontFamily:"monospace" }}>{fmt(totalTierra)} gls</div>
+                        </div>
+                      </div>
+                      {/* Tanques */}
+                      <div style={{ padding:"16px", display:"flex", gap:20 }}>
+                        {TIERRA.map(id => <TanqueTierra key={id} id={id}/>)}
+                        {/* Espaciador para que no ocupen todo el ancho */}
+                        <div style={{ flex:3 }}/>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}
