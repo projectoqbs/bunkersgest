@@ -1131,15 +1131,12 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     showToast(ot_id ? `✅ CMT ${num} vinculado a ${ot_numero}` : `✅ CMT ${num} guardado como autónomo`);
   }
 
-  async function reAplicarTanquesCMT(cmt) {
-    if (!confirm(`¿Re-sincronizar niveles de tanques desde CMT ${cmt.numero_cmt}? Esto sobreescribirá los niveles actuales con los valores guardados en el CMT.`)) return;
+  async function aplicarTanquesDesdeCMT(cmt) {
     const tipoOp = (cmt.tipo_operacion||"");
-    // Origen: tanques_despues (valor absoluto)
     for (const td of cmt.tanques_despues||[]) {
       if (!td.tanque || !td.galones) continue;
       await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(td.galones)) }).eq("id", td.tanque);
     }
-    // Destino: tanques_recepcion (galonesFinal absoluto, o delta del origen para TRASIEGO)
     const deltaOrigen = tipoOp === "TRASIEGO DE PRODUCTO"
       ? (cmt.tanques_antes||[]).reduce((s,ta,i) => {
           const td = (cmt.tanques_despues||[])[i];
@@ -1151,21 +1148,20 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       if (tr.galonesFinal) {
         await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tr.galonesFinal)) }).eq("id", tr.tanque);
       } else if (deltaOrigen > 0) {
-        const tqActual = tanques.find(t => t.id === tr.tanque);
-        if (tqActual) await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tqActual.nivel||0) + deltaOrigen) }).eq("id", tr.tanque);
+        const {data: tqDB} = await supabaseAdmin.from("tanques").select("nivel").eq("id", tr.tanque).maybeSingle();
+        if (tqDB) await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tqDB.nivel||0) + deltaOrigen) }).eq("id", tr.tanque);
       }
     }
-    // PORTEO: tanques de descarga y carga
     for (const td of cmt.porteo_descarga_tanques||[]) {
       if (!td.tanque || !td.galonesFinal) continue;
-      await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(td.galonesFinal)) }).eq("id", td.tanque);
+      const upd = { nivel: Math.max(0, Number(td.galonesFinal)) };
+      if (cmt.producto) upd.producto = cmt.producto;
+      await supabaseAdmin.from("tanques").update(upd).eq("id", td.tanque);
     }
     for (const tc of cmt.porteo_carga_tanques||[]) {
       if (!tc.tanque || !tc.galonesFinal) continue;
       await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tc.galonesFinal)) }).eq("id", tc.tanque);
     }
-    await loadData();
-    showToast(`✅ Tanques sincronizados desde CMT ${cmt.numero_cmt}`);
   }
 
   async function guardarCMT(e) {
@@ -1354,36 +1350,8 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         operador:perfil.nombre, creado_por:session.user.id
       }]);
       if (!error) {
-        // Origen: cmtDespues tiene el nivel final absoluto del tanque origen (DESCARGUE, TRASIEGO origen, etc.)
-        for (const td of cmtDespues) {
-          if (!td.tanque || !td.galones) continue;
-          await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(td.galones)) }).eq("id", td.tanque);
-        }
-        // Recepción: actualizar tanques destino
-        // Para TRASIEGO: si galonesFinal está lleno → valor absoluto; si no → sumar delta del origen
-        const deltaOrigen = tipoOp === "TRASIEGO DE PRODUCTO"
-          ? cmtAntes.reduce((s,ta,i) => s + Math.max(0, Number(ta.galones||0) - Number(cmtDespues[i]?.galones||0)), 0)
-          : 0;
-        for (const tr of cmtRecepcion) {
-          if (!tr.tanque) continue;
-          if (tr.galonesFinal) {
-            await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tr.galonesFinal)) }).eq("id", tr.tanque);
-          } else if (deltaOrigen > 0) {
-            const tqActual = tanques.find(t => t.id === tr.tanque);
-            if (tqActual) await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tqActual.nivel||0) + deltaOrigen) }).eq("id", tr.tanque);
-          }
-        }
-        // PORTEO: galonesFinal ES el nivel absoluto del tanque al terminar la operación
-        for (const td of cmtPorteoDescarga) {
-          if (!td.tanque || !td.galonesFinal) continue;
-          const upd = { nivel: Math.max(0, Number(td.galonesFinal)) };
-          if (cmtProducto) upd.producto = cmtProducto;
-          await supabaseAdmin.from("tanques").update(upd).eq("id", td.tanque);
-        }
-        for (const tc of cmtPorteoCarga) {
-          if (!tc.tanque || !tc.galonesFinal) continue;
-          await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tc.galonesFinal)) }).eq("id", tc.tanque);
-        }
+        const {data: cmtGuardado} = await supabaseAdmin.from("cmts").select("*").eq("id", id).maybeSingle();
+        if (cmtGuardado) await aplicarTanquesDesdeCMT(cmtGuardado);
         const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
         if (placasCarros.length > 0) {
           for (const placa of placasCarros) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",placa);
@@ -2858,9 +2826,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                     <span style={{marginLeft:"auto",color: movido>=0?"#059669":"#dc2626",fontWeight:700,fontSize:13}}>
                                       {movido>=0?"▲ Recibido:":"▼ Despachado:"} {fmt(Math.abs(movido))} Gls
                                     </span>
-                                  </div>
-                                  <div style={{gridColumn:"1/-1",display:"flex",justifyContent:"flex-end",paddingTop:8}}>
-                                    <button onClick={()=>reAplicarTanquesCMT(c)} style={{background:`${T.orange}18`,border:`1px solid ${T.orange}55`,borderRadius:8,color:T.orange,padding:"6px 14px",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔄 Sincronizar Tanques</button>
                                   </div>
                                 </div>
                               </td>
