@@ -3607,7 +3607,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={tdS({color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"})}>{cr.transportadora||"—"}</td>
                             <td style={tdS({...mono,color:T.muted})}>{viaje?.guia||"—"}</td>
                             <td style={tdS()}>
-                              {tq ? <span style={{...mono,color:tq.resultado==="APROBADO"?T.success:T.danger}}>{tq.id}</span>
+                              {tq ? <span style={{...mono,color:(tq.resultado||"").toUpperCase()==="APROBADO"?T.success:T.danger}}>{tq.id}</span>
                                    : <span style={{color:T.muted,fontSize:10}}>—</span>}
                             </td>
                             <td style={tdS({color:T.muted})}>{tq?.api_corregido ? `${tq.api_corregido}°` : "—"}</td>
@@ -3645,10 +3645,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {porteoFiltradas.map(({cm,cr,ot,tqsCarga,tqsDesc},i)=>{
                           const pn = Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
                           const gls = Number(cr.galones_bascula||0)||0;
-                          // Gls que SALIERON del tanque de carga = inicial - final
-                          const glsCarga = t => Math.max(0, Number(t.galonesInicial||0) - Number(t.galonesFinal||0));
-                          // Gls que ENTRARON al tanque de descarga = final - inicial
-                          const glsDesc  = t => Math.max(0, Number(t.galonesFinal||0) - Number(t.galonesInicial||0));
+                          // Diferencia absoluta entre medida inicial y final
+                          const glsCarga = t => Math.abs(Number(t.galonesInicial||0) - Number(t.galonesFinal||0));
+                          const glsDesc  = t => Math.abs(Number(t.galonesFinal||0) - Number(t.galonesInicial||0));
                           return (
                             <tr key={`${cm.id}-${cr.placa}-${i}`} style={{background:i%2===0?T.card:"transparent",borderBottom:`1px solid ${T.border}`}}>
                               <td style={tdS({...mono,color:T.navy,fontSize:13})}>{cr.placa}</td>
