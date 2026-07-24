@@ -5178,6 +5178,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={rowD.api||""} onChange={e=>{const n=[...cmtDespues];n[i]={...n[i],api:e.target.value};setCmtDespues(n);calcularGalones(row.tanque,rowD.sonda,rowD.temp,e.target.value,true,i);}} style={inputStyle}/></div>
                     <div><Lbl>{rowD.temp&&rowD.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rowD.galones||""} onChange={e=>{const n=[...cmtDespues];n[i]={...n[i],galones:e.target.value};setCmtDespues(n);}} style={inputStyle}/></div>
                   </div>
+                  {(()=>{const diff=Number(row.galones||0)-Number(rowD.galones||0);return diff>0&&<div style={{marginTop:8,textAlign:"right",fontSize:12,color:T.orange,fontWeight:700}}>Despachado: {fmt(diff)} Gls</div>})()}
                 </div>
                 ) : (
                 <div key={i} style={{background:"#f1f5f9",borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
@@ -5205,14 +5206,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 setCmtAntes([...cmtAntes,{tanque:"",sonda:"",galones:""}]);
                 setCmtDespues([...cmtDespues,{tanque:"",producto:cmtProducto,sonda:"",galones:""}]);
               }}>+ TK</Btn>
-              {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO"
-                ? (() => {
-                    const ini = cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0);
-                    const fin = cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0);
-                    const diff = ini - fin;
-                    return <span style={{fontSize:12,color:diff>0?T.orange:"#94a3b8"}}>Despachado: <b>{diff>0?fmt(diff):"—"} Gls</b></span>;
-                  })()
-                : <span style={{ fontSize:12, color:T.orange }}>Total: {fmt(cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
+              {(form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" &&
+                <span style={{ fontSize:12, color:T.orange }}>Total: {fmt(cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0))} Gls</span>
               }
             </div>
           </div>)}
@@ -5269,17 +5264,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={rec.apiFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],apiFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
                     <div><Lbl>{rec.tempFinal&&rec.apiFinal?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={rec.galonesFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],galonesFinal:e.target.value};setCmtRecepcion(n);}} style={inputStyle}/></div>
                   </div>
+                  {(()=>{const diff=Number(rec.galonesFinal||0)-Number(rec.galonesInicial||0);return diff>0&&<div style={{marginTop:8,textAlign:"right",fontSize:12,color:T.success,fontWeight:700}}>Recibido: {fmt(diff)} Gls</div>})()}
                 </div>
               ));
             })()}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
               <Btn sm outline color={T.success} onClick={()=>setCmtRecepcion([...cmtRecepcion,{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}])}>+ TK</Btn>
-              {(()=>{
-                const recibido = cmtRecepcion.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
-                return recibido>0
-                  ? <span style={{fontSize:12,color:T.success}}>Recibido: <b>{fmt(recibido)} Gls</b></span>
-                  : null;
-              })()}
             </div>
           </div>}
           {(form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && (form.tipo_operacion||"")!=="PORTEO" && (<div style={{marginBottom:18}}>
