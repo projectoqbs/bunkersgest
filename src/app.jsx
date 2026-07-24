@@ -5571,13 +5571,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <div><CLbl>Placa</CLbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...cInSt,fontFamily:"monospace",fontWeight:700}}/></div>
                             <div><CLbl>Transportadora</CLbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                           </div>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
                             <div><CLbl>H. Inicio Cargue</CLbl><input type="time" value={c.hora_inicio_cargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_cargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                             <div><CLbl>H. Final Cargue</CLbl><input type="time" value={c.hora_final_cargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_cargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                             <div><CLbl>Dur. Cargue</CLbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"monospace",color:duracion(c.hora_inicio_cargue,c.hora_final_cargue)?T.navy:"#aab4be",fontWeight:700,minHeight:38,display:"flex",alignItems:"center"}}>{duracion(c.hora_inicio_cargue,c.hora_final_cargue)||"—"}</div></div>
-                            <div><CLbl>H. Inicio Descargue</CLbl><input type="time" value={c.hora_inicio_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
-                            <div><CLbl>H. Final Descargue</CLbl><input type="time" value={c.hora_final_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
-                            <div><CLbl>Dur. Descargue</CLbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"monospace",color:duracion(c.hora_inicio_descargue,c.hora_final_descargue)?T.navy:"#aab4be",fontWeight:700,minHeight:38,display:"flex",alignItems:"center"}}>{duracion(c.hora_inicio_descargue,c.hora_final_descargue)||"—"}</div></div>
                             <div><CLbl>N° PBS Cargue</CLbl><input type="text" value={c.numero_pbs||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="PBS-001" style={cInSt}/></div>
                           </div>
                           <div>
@@ -5612,9 +5609,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <div><CLbl>Placa</CLbl><input value={c.placa} readOnly style={{...cRoSt,fontFamily:"monospace",fontWeight:700,color:T.navy}}/></div>
                               <div><CLbl>Transportadora</CLbl><input value={c.transportadora||""} readOnly style={cRoSt}/></div>
                             </div>
-                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:6}}>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
                               <div><CLbl>H. Inicio Descargue</CLbl><input type="time" value={c.hora_inicio_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                               <div><CLbl>H. Final Descargue</CLbl><input type="time" value={c.hora_final_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                              <div><CLbl>Dur. Descargue</CLbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"monospace",color:duracion(c.hora_inicio_descargue,c.hora_final_descargue)?T.navy:"#aab4be",fontWeight:700,minHeight:38,display:"flex",alignItems:"center"}}>{duracion(c.hora_inicio_descargue,c.hora_final_descargue)||"—"}</div></div>
                               <div><CLbl>N° PBS Descargue</CLbl><input type="text" value={c.numero_pbs_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                             </div>
                             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
