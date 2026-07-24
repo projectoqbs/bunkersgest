@@ -2510,7 +2510,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       const porteo = (cmt.porteo_carros||[]).filter(cr=>cr.placa).map(cr=>({
                         cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
                         sede: cmt.sede, planta: cmt.planta, producto: cmt.producto,
-                        placa: cr.placa, guia: cr.numero_pbs||"", tiquete: "",
+                        placa: cr.placa, guia: "", tiquete: "",
                         hora_inicio: cr.hora_inicio_cargue||"", hora_final: cr.hora_final_cargue||"",
                         peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
                         peso_neto: Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0)),
