@@ -3648,7 +3648,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {porteoFiltradas.map(({cm,cr,ot,tqsCarga,tqsDesc},i)=>{
                           const pn = Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
                           const gls = Number(cr.galones_bascula||0)||0;
-                          // Diferencia absoluta entre medida inicial y final
                           const glsCarga = t => Math.abs(Number(t.galonesInicial||0) - Number(t.galonesFinal||0));
                           const glsDesc  = t => Math.abs(Number(t.galonesFinal||0) - Number(t.galonesInicial||0));
                           return (
@@ -3683,6 +3682,52 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </table>
                   </div>
                 )}
+
+                {/* ── RESUMEN TOTALES PORTEO ─────────────────────────────── */}
+                {trazEstado==="PORTEO" && porteoFiltradas.length>0 && (()=>{
+                  const glsCargaFn = t => Math.abs(Number(t.galonesInicial||0) - Number(t.galonesFinal||0));
+                  const glsDescFn  = t => Math.abs(Number(t.galonesFinal||0) - Number(t.galonesInicial||0));
+                  const totCargados  = porteoFiltradas.reduce((s,{tqsCarga})=> s + tqsCarga.reduce((a,t)=>a+glsCargaFn(t),0), 0);
+                  const totContador  = porteoFiltradas.reduce((s,{cr})=> s + Number(cr.galones_contador||0), 0);
+                  const totBascula   = porteoFiltradas.reduce((s,{cr})=> {
+                    const pn = Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
+                    return s + (Number(cr.galones_bascula||0)||pn);
+                  }, 0);
+                  const totRecibidos = porteoFiltradas.reduce((s,{tqsDesc})=> s + tqsDesc.reduce((a,t)=>a+glsDescFn(t),0), 0);
+
+                  const Stat = ({label, valor, color}) => (
+                    <div style={{flex:1,minWidth:160,background:T.card,border:`1px solid ${T.border}`,borderTop:`3px solid ${color}`,borderRadius:8,padding:"14px 18px",textAlign:"center"}}>
+                      <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>{label}</div>
+                      <div style={{fontSize:22,fontWeight:900,fontFamily:"monospace",color}}>{fmt(Math.round(totCargados===0&&label.includes("Cargados")?0:valor))}</div>
+                      <div style={{fontSize:10,color:T.muted,marginTop:2}}>galones</div>
+                    </div>
+                  );
+
+                  return (
+                    <div style={{marginTop:16,display:"flex",gap:12,flexWrap:"wrap"}}>
+                      <div style={{flex:1,minWidth:160,background:T.card,border:`1px solid ${T.border}`,borderTop:`3px solid ${T.danger}`,borderRadius:8,padding:"14px 18px",textAlign:"center"}}>
+                        <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Gls Cargados (tanques)</div>
+                        <div style={{fontSize:22,fontWeight:900,fontFamily:"monospace",color:T.danger}}>{fmt(Math.round(totCargados))}</div>
+                        <div style={{fontSize:10,color:T.muted,marginTop:2}}>salieron de tanques</div>
+                      </div>
+                      <div style={{flex:1,minWidth:160,background:T.card,border:`1px solid ${T.border}`,borderTop:`3px solid ${T.muted}`,borderRadius:8,padding:"14px 18px",textAlign:"center"}}>
+                        <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Gls por Contador</div>
+                        <div style={{fontSize:22,fontWeight:900,fontFamily:"monospace",color:T.text}}>{fmt(Math.round(totContador))}</div>
+                        <div style={{fontSize:10,color:T.muted,marginTop:2}}>medición contador</div>
+                      </div>
+                      <div style={{flex:1,minWidth:160,background:T.card,border:`1px solid ${T.border}`,borderTop:`3px solid ${T.orange}`,borderRadius:8,padding:"14px 18px",textAlign:"center"}}>
+                        <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Gls por Báscula</div>
+                        <div style={{fontSize:22,fontWeight:900,fontFamily:"monospace",color:T.orange}}>{fmt(Math.round(totBascula))}</div>
+                        <div style={{fontSize:10,color:T.muted,marginTop:2}}>peso neto / factor</div>
+                      </div>
+                      <div style={{flex:1,minWidth:160,background:T.card,border:`1px solid ${T.border}`,borderTop:`3px solid ${T.success}`,borderRadius:8,padding:"14px 18px",textAlign:"center"}}>
+                        <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Gls Recibidos (tanques)</div>
+                        <div style={{fontSize:22,fontWeight:900,fontFamily:"monospace",color:T.success}}>{fmt(Math.round(totRecibidos))}</div>
+                        <div style={{fontSize:10,color:T.muted,marginTop:2}}>entraron a tanques</div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* ── CARGUE (por implementar) ───────────────────────────── */}
                 {trazEstado==="CARGUE" && (
