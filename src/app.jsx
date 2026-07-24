@@ -392,7 +392,7 @@ export default function App() {
   const [trazDesde, setTrazDesde] = useState("");
   const [trazHasta, setTrazHasta] = useState("");
   const [trazEstado, setTrazEstado] = useState("DESCARGUE");
-  const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","pbs","ot","tanques"]));
+  const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","pbs","ot","tanques","horaInicio","horaFinal","pesoIng","pesoSal","pesoNeto","rpm","presion"]));
   const [trazColsPorteo, setTrazColsPorteo] = useState(new Set(["placa","fecha","cmt","transportadora","tqsCarga","inicio","fin","contador","pesoIng","pesoSal","bascula","ot","tqsDesc"]));
   const [trazColPanel, setTrazColPanel] = useState(false);
   const [mps, setMps] = useState([ // materias primas en el modal formulación
@@ -3506,8 +3506,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 (cm.carros||[]).forEach(cr => {
                   if (!cr.placa) return;
                   const tq = tiquetes.find(t=>t.id===cr.tiquete || t.placa===cr.placa);
-                  const pb = pbsList.find(p=>p.placa===cr.placa || (tq && p.viaje_id===tq.viaje_id));
-                  const viaje = viajes.find(v=>v.placa===cr.placa);
+                  const viaje = viajes.find(v=>v.placa===cr.placa || v.id===cr.viaje_id);
+                  const pbDirecto = cr.pbs_id || cr.numero_pbs || "";
+                  const pb = pbDirecto ? {id:pbDirecto} : pbsList.find(p=>p.placa===cr.placa || p.viaje_id===cr.viaje_id || (tq&&p.viaje_id===tq.viaje_id));
                   const factor = Number(tq?.factor_tabla13||0);
                   const pn = Number(cr.peso_neto||0) || Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
                   const glsBas = Number(cr.galones_bascula||0)||(factor>0&&pn>0?Math.round(pn/factor):0);
@@ -3597,8 +3598,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </button>
                       {trazColPanel && (()=>{
                         const colsDef = trazEstado==="DESCARGUE"
-                          ? [{k:"placa",l:"Placa"},{k:"fecha",l:"Fecha"},{k:"cmt",l:"CMT"},{k:"producto",l:"Producto"},{k:"transportadora",l:"Transportadora"},{k:"guia",l:"Guía"},{k:"tiquete",l:"Tiquete"},{k:"api",l:"API"},{k:"glsGuia",l:"Gls Guía"},{k:"glsBas",l:"Gls Báscula"},{k:"pbs",l:"PBS"},{k:"ot",l:"OT"},{k:"tanques",l:"Tanques descargados"}]
-                          : [{k:"placa",l:"Placa"},{k:"fecha",l:"Fecha"},{k:"cmt",l:"CMT"},{k:"transportadora",l:"Transportadora"},{k:"tqsCarga",l:"Tanques Carga"},{k:"inicio",l:"Inicio Cargue"},{k:"fin",l:"Fin Cargue"},{k:"contador",l:"Gls Contador"},{k:"pesoIng",l:"Peso Ingreso"},{k:"pesoSal",l:"Peso Salida"},{k:"bascula",l:"Gls Báscula"},{k:"ot",l:"OT"},{k:"tqsDesc",l:"Tanques Descarga"}];
+                          ? [
+                              {k:"placa",l:"Placa"},{k:"fecha",l:"Fecha CMT"},{k:"cmt",l:"CMT"},{k:"producto",l:"Producto"},
+                              {k:"transportadora",l:"Transportadora"},{k:"guia",l:"Guía"},{k:"tiquete",l:"Tiquete"},
+                              {k:"api",l:"API"},{k:"glsGuia",l:"Gls Guía"},{k:"glsBas",l:"Gls Báscula"},
+                              {k:"horaInicio",l:"Hora Inicio"},{k:"horaFinal",l:"Hora Final"},
+                              {k:"pesoIng",l:"Peso Ingreso (Kg)"},{k:"pesoSal",l:"Peso Salida (Kg)"},{k:"pesoNeto",l:"Peso Neto (Kg)"},
+                              {k:"rpm",l:"RPM"},{k:"presion",l:"Presión (Bar)"},
+                              {k:"pbs",l:"PBS"},{k:"ot",l:"OT"},{k:"tanques",l:"Tanques descargados"}
+                            ]
+                          : [
+                              {k:"placa",l:"Placa"},{k:"fecha",l:"Fecha CMT"},{k:"cmt",l:"CMT"},{k:"transportadora",l:"Transportadora"},
+                              {k:"tqsCarga",l:"Tanques Carga"},{k:"inicio",l:"Inicio Cargue"},{k:"fin",l:"Fin Cargue"},
+                              {k:"contador",l:"Gls Contador"},{k:"pesoIng",l:"Peso Ingreso"},{k:"pesoSal",l:"Peso Salida"},
+                              {k:"bascula",l:"Gls Báscula"},{k:"ot",l:"OT"},{k:"tqsDesc",l:"Tanques Descarga"}
+                            ];
                         const cols = trazEstado==="DESCARGUE" ? trazColsDesc : trazColsPorteo;
                         const setCols = trazEstado==="DESCARGUE" ? setTrazColsDesc : setTrazColsPorteo;
                         const toggle = k => setCols(prev=>{const s=new Set(prev);s.has(k)?s.delete(k):s.add(k);return s;});
@@ -3644,13 +3658,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {C.has("api")            && <th style={thStyle}>API</th>}
                         {C.has("glsGuia")        && <th style={thStyle}>Gls Guía</th>}
                         {C.has("glsBas")         && <th style={thStyle}>Gls Báscula</th>}
+                        {C.has("horaInicio")     && <th style={thStyle}>Hora Inicio</th>}
+                        {C.has("horaFinal")      && <th style={thStyle}>Hora Final</th>}
+                        {C.has("pesoIng")        && <th style={thStyle}>Peso Ingreso (Kg)</th>}
+                        {C.has("pesoSal")        && <th style={thStyle}>Peso Salida (Kg)</th>}
+                        {C.has("pesoNeto")       && <th style={thStyle}>Peso Neto (Kg)</th>}
+                        {C.has("rpm")            && <th style={thStyle}>RPM</th>}
+                        {C.has("presion")        && <th style={thStyle}>Presión (Bar)</th>}
                         {C.has("pbs")            && <th style={thStyle}>PBS</th>}
                         {C.has("ot")             && <th style={thStyle}>OT</th>}
                         {C.has("tanques")        && <th style={thStyle}>Tanques descargados</th>}
                       </tr></thead>
                       <tbody>
-                        {descFiltradas.length===0 && <tr><td colSpan={colCount} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
-                        {descFiltradas.map(({cm,cr,tq,pb,ot,viaje,tanquesDesc,glsBas},i)=>(
+                        {descFiltradas.length===0 && <tr><td colSpan={C.size} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
+                        {descFiltradas.map(({cm,cr,tq,pb,ot,viaje,tanquesDesc,glsBas},i)=>{
+                          const pesoNeto = Number(cr.peso_neto||0)||Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
+                          return (
                           <tr key={`${cm.id}-${cr.placa}-${i}`} style={{background:i%2===0?T.card:"transparent",borderBottom:`1px solid ${T.border}`}}>
                             {C.has("placa")          && <td style={tdS({...mono,color:T.navy,fontSize:13})}>{cr.placa}</td>}
                             {C.has("fecha")          && <td style={tdS({color:T.muted})}>{cm.fecha}</td>}
@@ -3659,20 +3682,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             {C.has("transportadora") && <td style={tdS({color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"})}>{viaje?.transportadora||cr.transportadora||"—"}</td>}
                             {C.has("guia")           && <td style={tdS({...mono,color:T.muted})}>{viaje?.guia||"—"}</td>}
                             {C.has("tiquete")        && <td style={tdS()}>
-                              {tq ? (()=>{const res=(tq.resultado||"").toUpperCase();const col=res==="APROBADO"?T.success:res==="RECHAZADO"?T.danger:T.muted;return <><span style={{...mono,color:col}}>{tq.id}</span><div style={{fontSize:9,color:col,marginTop:1}}>{tq.resultado}</div></>;})():<span style={{color:T.muted,fontSize:10}}>—</span>}
+                              {tq?(()=>{const res=(tq.resultado||"").toUpperCase();const col=res==="APROBADO"?T.success:res==="RECHAZADO"?T.danger:T.muted;return<><span style={{...mono,color:col}}>{tq.id}</span><div style={{fontSize:9,color:col,marginTop:1}}>{tq.resultado}</div></>;})():<span style={{color:T.muted,fontSize:10}}>—</span>}
                             </td>}
                             {C.has("api")            && <td style={tdS({color:T.muted})}>{tq?.api_corregido?`${tq.api_corregido}°`:"—"}</td>}
-                            {C.has("glsGuia")        && <td style={tdS({color:T.muted})}>{viaje?.volumen_guia>0?fmt(viaje.volumen_guia):"—"}</td>}
+                            {C.has("glsGuia")        && <td style={tdS({color:T.muted})}>{Number(cr.galones_guia||viaje?.volumen_guia||0)>0?fmt(Number(cr.galones_guia||viaje?.volumen_guia)):"—"}</td>}
                             {C.has("glsBas")         && <td style={tdS({fontWeight:700,color:glsBas>0?T.success:T.muted})}>{glsBas>0?fmt(glsBas):"—"}</td>}
-                            {C.has("pbs")            && <td style={tdS({...mono,color:T.orange})}>{pb?.id||cr.numero_pbs||"—"}</td>}
+                            {C.has("horaInicio")     && <td style={tdS({color:T.muted,fontSize:11})}>{cr.hora_inicio||"—"}</td>}
+                            {C.has("horaFinal")      && <td style={tdS({color:T.muted,fontSize:11})}>{cr.hora_final||"—"}</td>}
+                            {C.has("pesoIng")        && <td style={tdS({color:T.muted})}>{Number(cr.peso_ingreso||0)>0?fmt(cr.peso_ingreso):"—"}</td>}
+                            {C.has("pesoSal")        && <td style={tdS({color:T.muted})}>{Number(cr.peso_salida||0)>0?fmt(cr.peso_salida):"—"}</td>}
+                            {C.has("pesoNeto")       && <td style={tdS({fontWeight:700,color:pesoNeto>0?T.text:T.muted})}>{pesoNeto>0?fmt(pesoNeto):"—"}</td>}
+                            {C.has("rpm")            && <td style={tdS({color:T.muted})}>{cr.rpm||"—"}</td>}
+                            {C.has("presion")        && <td style={tdS({color:T.muted})}>{cr.presion||"—"}</td>}
+                            {C.has("pbs")            && <td style={tdS({...mono,color:T.orange})}>{pb?.id||"—"}</td>}
                             {C.has("ot")             && <td style={tdS({...mono,color:T.navy})}>{ot?.numero_ot||"—"}</td>}
                             {C.has("tanques")        && <td style={{padding:"10px 12px",fontSize:11}}>
                               {tanquesDesc.length>0?tanquesDesc.map((t,j)=>(
-                                <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{t.galones&&<span style={{fontSize:10,color:T.muted}}> {fmt(t.galones)} gls</span>}</div>
+                                <div key={j}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span></div>
                               )):<span style={{color:T.muted,fontSize:10}}>—</span>}
                             </td>}
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
