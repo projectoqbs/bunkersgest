@@ -3660,7 +3660,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <td style={{padding:"10px 12px",fontSize:11}}>
                                 {tqsCarga.length>0?tqsCarga.map((t,j)=>{
                                   const g=glsCarga(t);
-                                  return <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{g>0&&<span style={{fontSize:10,color:T.danger,fontWeight:700}}> −{fmt(g)} gls</span>}</div>;
+                                  return <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{g>0&&<span style={{fontSize:10,color:T.danger,fontWeight:700}}> {fmt(g)} gls</span>}</div>;
                                 }):<span style={{color:T.muted,fontSize:10}}>—</span>}
                               </td>
                               <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_cargue||"—"}</td>
