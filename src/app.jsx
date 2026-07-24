@@ -392,6 +392,9 @@ export default function App() {
   const [trazDesde, setTrazDesde] = useState("");
   const [trazHasta, setTrazHasta] = useState("");
   const [trazEstado, setTrazEstado] = useState("DESCARGUE");
+  const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","pbs","ot","tanques"]));
+  const [trazColsPorteo, setTrazColsPorteo] = useState(new Set(["placa","fecha","cmt","transportadora","tqsCarga","inicio","fin","contador","pesoIng","pesoSal","bascula","ot","tqsDesc"]));
+  const [trazColPanel, setTrazColPanel] = useState(false);
   const [mps, setMps] = useState([ // materias primas en el modal formulación
     { nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }
   ]);
@@ -3571,8 +3574,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <TabBtn id="CARGUE"    label="Cargue"    count={0}/>
                 </div>
 
-                {/* Barra de búsqueda y fechas */}
-                <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
+                {/* Barra de búsqueda, fechas y selector de columnas */}
+                <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"center",position:"relative"}}>
                   <input placeholder="Buscar placa, CMT, tiquete, PBS, OT, transportadora..." value={trazBuscar}
                     onChange={e=>setTrazBuscar(e.target.value)}
                     style={{flex:1,minWidth:240,background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 14px",color:T.text,fontSize:12,outline:"none"}}/>
@@ -3585,103 +3588,152 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <button onClick={()=>{setTrazBuscar("");setTrazDesde("");setTrazHasta("");}}
                       style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 12px",color:T.muted,fontSize:12,cursor:"pointer"}}>✕</button>
                   )}
+                  {/* Botón columnas */}
+                  {trazEstado!=="CARGUE" && (
+                    <div style={{position:"relative"}}>
+                      <button onClick={()=>setTrazColPanel(p=>!p)}
+                        style={{background:trazColPanel?T.navy:"transparent",border:`1px solid ${trazColPanel?T.navy:T.border}`,borderRadius:8,padding:"8px 14px",color:trazColPanel?"#fff":T.muted,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontWeight:600}}>
+                        ⊞ Columnas
+                      </button>
+                      {trazColPanel && (()=>{
+                        const colsDef = trazEstado==="DESCARGUE"
+                          ? [{k:"placa",l:"Placa"},{k:"fecha",l:"Fecha"},{k:"cmt",l:"CMT"},{k:"producto",l:"Producto"},{k:"transportadora",l:"Transportadora"},{k:"guia",l:"Guía"},{k:"tiquete",l:"Tiquete"},{k:"api",l:"API"},{k:"glsGuia",l:"Gls Guía"},{k:"glsBas",l:"Gls Báscula"},{k:"pbs",l:"PBS"},{k:"ot",l:"OT"},{k:"tanques",l:"Tanques descargados"}]
+                          : [{k:"placa",l:"Placa"},{k:"fecha",l:"Fecha"},{k:"cmt",l:"CMT"},{k:"transportadora",l:"Transportadora"},{k:"tqsCarga",l:"Tanques Carga"},{k:"inicio",l:"Inicio Cargue"},{k:"fin",l:"Fin Cargue"},{k:"contador",l:"Gls Contador"},{k:"pesoIng",l:"Peso Ingreso"},{k:"pesoSal",l:"Peso Salida"},{k:"bascula",l:"Gls Báscula"},{k:"ot",l:"OT"},{k:"tqsDesc",l:"Tanques Descarga"}];
+                        const cols = trazEstado==="DESCARGUE" ? trazColsDesc : trazColsPorteo;
+                        const setCols = trazEstado==="DESCARGUE" ? setTrazColsDesc : setTrazColsPorteo;
+                        const toggle = k => setCols(prev=>{const s=new Set(prev);s.has(k)?s.delete(k):s.add(k);return s;});
+                        const allOn = colsDef.every(c=>cols.has(c.k));
+                        return (
+                          <div style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 16px",zIndex:50,minWidth:200,boxShadow:"0 8px 24px #0006"}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,paddingBottom:8,borderBottom:`1px solid ${T.border}`}}>
+                              <span style={{fontSize:11,fontWeight:700,color:T.navy,textTransform:"uppercase",letterSpacing:1}}>Columnas visibles</span>
+                              <button onClick={()=>setCols(allOn?new Set(["placa"]):new Set(colsDef.map(c=>c.k)))}
+                                style={{fontSize:10,color:T.muted,background:"transparent",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+                                {allOn?"Ocultar todas":"Mostrar todas"}
+                              </button>
+                            </div>
+                            {colsDef.map(({k,l})=>(
+                              <label key={k} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",cursor:"pointer",userSelect:"none"}}>
+                                <input type="checkbox" checked={cols.has(k)} onChange={()=>toggle(k)}
+                                  style={{width:14,height:14,accentColor:T.navy,cursor:"pointer"}}/>
+                                <span style={{fontSize:12,color:cols.has(k)?T.text:T.muted}}>{l}</span>
+                              </label>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 {/* ── TABLA DESCARGUE ────────────────────────────────────── */}
-                {trazEstado==="DESCARGUE" && (
+                {trazEstado==="DESCARGUE" && (()=>{
+                  const C = trazColsDesc;
+                  const colCount = C.size;
+                  return (
                   <div style={{overflow:"auto",maxHeight:"calc(100vh - 310px)",borderRadius:10,border:`1px solid ${T.border}`}}>
-                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:1100}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:400}}>
                       <thead><tr>
-                        {["Placa","Fecha CMT","CMT","Producto","Transportadora","Guía","Tiquete","API","Gls Guía","Gls Báscula","PBS","OT","Tanques descargados"].map(h=>(
-                          <th key={h} style={thStyle}>{h}</th>
-                        ))}
+                        {C.has("placa")          && <th style={thStyle}>Placa</th>}
+                        {C.has("fecha")          && <th style={thStyle}>Fecha CMT</th>}
+                        {C.has("cmt")            && <th style={thStyle}>CMT</th>}
+                        {C.has("producto")       && <th style={thStyle}>Producto</th>}
+                        {C.has("transportadora") && <th style={thStyle}>Transportadora</th>}
+                        {C.has("guia")           && <th style={thStyle}>Guía</th>}
+                        {C.has("tiquete")        && <th style={thStyle}>Tiquete</th>}
+                        {C.has("api")            && <th style={thStyle}>API</th>}
+                        {C.has("glsGuia")        && <th style={thStyle}>Gls Guía</th>}
+                        {C.has("glsBas")         && <th style={thStyle}>Gls Báscula</th>}
+                        {C.has("pbs")            && <th style={thStyle}>PBS</th>}
+                        {C.has("ot")             && <th style={thStyle}>OT</th>}
+                        {C.has("tanques")        && <th style={thStyle}>Tanques descargados</th>}
                       </tr></thead>
                       <tbody>
-                        {descFiltradas.length===0 && <tr><td colSpan={13} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
+                        {descFiltradas.length===0 && <tr><td colSpan={colCount} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
                         {descFiltradas.map(({cm,cr,tq,pb,ot,viaje,tanquesDesc,glsBas},i)=>(
                           <tr key={`${cm.id}-${cr.placa}-${i}`} style={{background:i%2===0?T.card:"transparent",borderBottom:`1px solid ${T.border}`}}>
-                            <td style={tdS({...mono,color:T.navy,fontSize:13})}>{cr.placa}</td>
-                            <td style={tdS({color:T.muted})}>{cm.fecha}</td>
-                            <td style={tdS({...mono,color:T.success})}>{cm.numero_cmt}</td>
-                            <td style={tdS({fontWeight:700})}>{cm.producto||viaje?.producto||"—"}</td>
-                            <td style={tdS({color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"})}>{viaje?.transportadora||cr.transportadora||"—"}</td>
-                            <td style={tdS({...mono,color:T.muted})}>{viaje?.guia||"—"}</td>
-                            <td style={tdS()}>
-                              {tq ? (() => {
-                                const res = (tq.resultado||"").toUpperCase();
-                                const col = res==="APROBADO"?T.success:res==="RECHAZADO"?T.danger:T.muted;
-                                return <><span style={{...mono,color:col}}>{tq.id}</span>{res&&<div style={{fontSize:9,color:col,marginTop:1}}>{tq.resultado}</div>}</>;
-                              })() : <span style={{color:T.muted,fontSize:10}}>—</span>}
-                            </td>
-                            <td style={tdS({color:T.muted})}>{tq?.api_corregido ? `${tq.api_corregido}°` : "—"}</td>
-                            <td style={tdS({color:T.muted})}>{viaje?.volumen_guia>0?fmt(viaje.volumen_guia):"—"}</td>
-                            <td style={tdS({fontWeight:700,color:glsBas>0?T.success:T.muted})}>{glsBas>0?fmt(glsBas):"—"}</td>
-                            <td style={tdS({...mono,color:T.orange})}>{pb?.id||cr.numero_pbs||"—"}</td>
-                            <td style={tdS({...mono,color:T.navy})}>{ot?.numero_ot||"—"}</td>
-                            <td style={{padding:"10px 12px",fontSize:11}}>
-                              {tanquesDesc.length>0
-                                ? tanquesDesc.map((t,j)=>(
-                                    <div key={j} style={{whiteSpace:"nowrap"}}>
-                                      <span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>
-                                      {t.galones&&<span style={{fontSize:10,color:T.muted}}> {fmt(t.galones)} gls</span>}
-                                    </div>))
-                                : <span style={{color:T.muted,fontSize:10}}>—</span>}
-                            </td>
+                            {C.has("placa")          && <td style={tdS({...mono,color:T.navy,fontSize:13})}>{cr.placa}</td>}
+                            {C.has("fecha")          && <td style={tdS({color:T.muted})}>{cm.fecha}</td>}
+                            {C.has("cmt")            && <td style={tdS({...mono,color:T.success})}>{cm.numero_cmt}</td>}
+                            {C.has("producto")       && <td style={tdS({fontWeight:700})}>{cm.producto||viaje?.producto||"—"}</td>}
+                            {C.has("transportadora") && <td style={tdS({color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"})}>{viaje?.transportadora||cr.transportadora||"—"}</td>}
+                            {C.has("guia")           && <td style={tdS({...mono,color:T.muted})}>{viaje?.guia||"—"}</td>}
+                            {C.has("tiquete")        && <td style={tdS()}>
+                              {tq ? (()=>{const res=(tq.resultado||"").toUpperCase();const col=res==="APROBADO"?T.success:res==="RECHAZADO"?T.danger:T.muted;return <><span style={{...mono,color:col}}>{tq.id}</span><div style={{fontSize:9,color:col,marginTop:1}}>{tq.resultado}</div></>;})():<span style={{color:T.muted,fontSize:10}}>—</span>}
+                            </td>}
+                            {C.has("api")            && <td style={tdS({color:T.muted})}>{tq?.api_corregido?`${tq.api_corregido}°`:"—"}</td>}
+                            {C.has("glsGuia")        && <td style={tdS({color:T.muted})}>{viaje?.volumen_guia>0?fmt(viaje.volumen_guia):"—"}</td>}
+                            {C.has("glsBas")         && <td style={tdS({fontWeight:700,color:glsBas>0?T.success:T.muted})}>{glsBas>0?fmt(glsBas):"—"}</td>}
+                            {C.has("pbs")            && <td style={tdS({...mono,color:T.orange})}>{pb?.id||cr.numero_pbs||"—"}</td>}
+                            {C.has("ot")             && <td style={tdS({...mono,color:T.navy})}>{ot?.numero_ot||"—"}</td>}
+                            {C.has("tanques")        && <td style={{padding:"10px 12px",fontSize:11}}>
+                              {tanquesDesc.length>0?tanquesDesc.map((t,j)=>(
+                                <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{t.galones&&<span style={{fontSize:10,color:T.muted}}> {fmt(t.galones)} gls</span>}</div>
+                              )):<span style={{color:T.muted,fontSize:10}}>—</span>}
+                            </td>}
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* ── TABLA PORTEO ───────────────────────────────────────── */}
-                {trazEstado==="PORTEO" && (
+                {trazEstado==="PORTEO" && (()=>{
+                  const C = trazColsPorteo;
+                  const glsCarga = t => Math.abs(Number(t.galonesInicial||0) - Number(t.galonesFinal||0));
+                  const glsDesc  = t => Math.abs(Number(t.galonesFinal||0) - Number(t.galonesInicial||0));
+                  return (
                   <div style={{overflow:"auto",maxHeight:"calc(100vh - 310px)",borderRadius:10,border:`1px solid ${T.border}`}}>
-                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:1000}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:400}}>
                       <thead><tr>
-                        {["Placa","Fecha CMT","CMT","Transportadora","Tanques Carga (gls salidos)","Inicio Cargue","Fin Cargue","Gls Contador","Peso Ingreso","Peso Salida","Gls Báscula","OT","Tanques Descarga (gls recibidos)"].map(h=>(
-                          <th key={h} style={thStyle}>{h}</th>
-                        ))}
+                        {C.has("placa")          && <th style={thStyle}>Placa</th>}
+                        {C.has("fecha")          && <th style={thStyle}>Fecha CMT</th>}
+                        {C.has("cmt")            && <th style={thStyle}>CMT</th>}
+                        {C.has("transportadora") && <th style={thStyle}>Transportadora</th>}
+                        {C.has("tqsCarga")       && <th style={thStyle}>Tanques Carga (gls salidos)</th>}
+                        {C.has("inicio")         && <th style={thStyle}>Inicio Cargue</th>}
+                        {C.has("fin")            && <th style={thStyle}>Fin Cargue</th>}
+                        {C.has("contador")       && <th style={thStyle}>Gls Contador</th>}
+                        {C.has("pesoIng")        && <th style={thStyle}>Peso Ingreso</th>}
+                        {C.has("pesoSal")        && <th style={thStyle}>Peso Salida</th>}
+                        {C.has("bascula")        && <th style={thStyle}>Gls Báscula</th>}
+                        {C.has("ot")             && <th style={thStyle}>OT</th>}
+                        {C.has("tqsDesc")        && <th style={thStyle}>Tanques Descarga (gls recibidos)</th>}
                       </tr></thead>
                       <tbody>
-                        {porteoFiltradas.length===0 && <tr><td colSpan={13} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
+                        {porteoFiltradas.length===0 && <tr><td colSpan={C.size} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
                         {porteoFiltradas.map(({cm,cr,ot,tqsCarga,tqsDesc},i)=>{
                           const pn = Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
                           const gls = Number(cr.galones_bascula||0)||0;
-                          const glsCarga = t => Math.abs(Number(t.galonesInicial||0) - Number(t.galonesFinal||0));
-                          const glsDesc  = t => Math.abs(Number(t.galonesFinal||0) - Number(t.galonesInicial||0));
                           return (
                             <tr key={`${cm.id}-${cr.placa}-${i}`} style={{background:i%2===0?T.card:"transparent",borderBottom:`1px solid ${T.border}`}}>
-                              <td style={tdS({...mono,color:T.navy,fontSize:13})}>{cr.placa}</td>
-                              <td style={tdS({color:T.muted})}>{cm.fecha}</td>
-                              <td style={tdS({...mono,color:T.success})}>{cm.numero_cmt}</td>
-                              <td style={tdS({color:T.muted})}>{cr.transportadora||"—"}</td>
-                              <td style={{padding:"10px 12px",fontSize:11}}>
-                                {tqsCarga.length>0?tqsCarga.map((t,j)=>{
-                                  const g=glsCarga(t);
-                                  return <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{g>0&&<span style={{fontSize:10,color:T.danger,fontWeight:700}}> {fmt(g)} gls</span>}</div>;
-                                }):<span style={{color:T.muted,fontSize:10}}>—</span>}
-                              </td>
-                              <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_cargue||"—"}</td>
-                              <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_final_cargue||"—"}</td>
-                              <td style={tdS({color:cr.galones_contador>0?T.text:T.muted,fontWeight:cr.galones_contador>0?700:400})}>{cr.galones_contador>0?fmt(cr.galones_contador):"—"}</td>
-                              <td style={tdS({color:T.muted})}>{cr.peso_ingreso>0?fmt(cr.peso_ingreso):"—"}</td>
-                              <td style={tdS({color:T.muted})}>{cr.peso_salida>0?fmt(cr.peso_salida):"—"}</td>
-                              <td style={tdS({fontWeight:700,color:gls>0?T.orange:pn>0?T.orange:T.muted})}>{gls>0?fmt(gls):pn>0?fmt(pn):"—"}</td>
-                              <td style={tdS({...mono,color:T.navy})}>{ot?.numero_ot||"—"}</td>
-                              <td style={{padding:"10px 12px",fontSize:11}}>
-                                {tqsDesc.length>0?tqsDesc.map((t,j)=>{
-                                  const g=glsDesc(t);
-                                  return <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{g>0&&<span style={{fontSize:10,color:T.success,fontWeight:700}}> +{fmt(g)} gls</span>}</div>;
-                                }):<span style={{color:T.muted,fontSize:10}}>—</span>}
-                              </td>
+                              {C.has("placa")          && <td style={tdS({...mono,color:T.navy,fontSize:13})}>{cr.placa}</td>}
+                              {C.has("fecha")          && <td style={tdS({color:T.muted})}>{cm.fecha}</td>}
+                              {C.has("cmt")            && <td style={tdS({...mono,color:T.success})}>{cm.numero_cmt}</td>}
+                              {C.has("transportadora") && <td style={tdS({color:T.muted})}>{cr.transportadora||"—"}</td>}
+                              {C.has("tqsCarga")       && <td style={{padding:"10px 12px",fontSize:11}}>
+                                {tqsCarga.length>0?tqsCarga.map((t,j)=>{const g=glsCarga(t);return <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{g>0&&<span style={{fontSize:10,color:T.danger,fontWeight:700}}> {fmt(g)} gls</span>}</div>;}):<span style={{color:T.muted,fontSize:10}}>—</span>}
+                              </td>}
+                              {C.has("inicio")         && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_cargue||"—"}</td>}
+                              {C.has("fin")            && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_final_cargue||"—"}</td>}
+                              {C.has("contador")       && <td style={tdS({color:cr.galones_contador>0?T.text:T.muted,fontWeight:cr.galones_contador>0?700:400})}>{cr.galones_contador>0?fmt(cr.galones_contador):"—"}</td>}
+                              {C.has("pesoIng")        && <td style={tdS({color:T.muted})}>{cr.peso_ingreso>0?fmt(cr.peso_ingreso):"—"}</td>}
+                              {C.has("pesoSal")        && <td style={tdS({color:T.muted})}>{cr.peso_salida>0?fmt(cr.peso_salida):"—"}</td>}
+                              {C.has("bascula")        && <td style={tdS({fontWeight:700,color:gls>0?T.orange:pn>0?T.orange:T.muted})}>{gls>0?fmt(gls):pn>0?fmt(pn):"—"}</td>}
+                              {C.has("ot")             && <td style={tdS({...mono,color:T.navy})}>{ot?.numero_ot||"—"}</td>}
+                              {C.has("tqsDesc")        && <td style={{padding:"10px 12px",fontSize:11}}>
+                                {tqsDesc.length>0?tqsDesc.map((t,j)=>{const g=glsDesc(t);return <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{g>0&&<span style={{fontSize:10,color:T.success,fontWeight:700}}> +{fmt(g)} gls</span>}</div>;}):<span style={{color:T.muted,fontSize:10}}>—</span>}
+                              </td>}
                             </tr>
                           );
                         })}
                       </tbody>
                     </table>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* ── RESUMEN TOTALES PORTEO ─────────────────────────────── */}
                 {trazEstado==="PORTEO" && porteoFiltradas.length>0 && (()=>{
