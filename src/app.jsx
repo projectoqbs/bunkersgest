@@ -1183,11 +1183,14 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       });
     })() : cmtPorteoCarros;
 
+    // Validar pbs_id contra la tabla pbs para evitar FK violation
+    const pbsIdValidado = form.pbs_id && pbsList.some(p=>p.id===form.pbs_id) ? form.pbs_id : null;
+
     if (form.id) {
       // EDICIÓN: revertir impacto original y aplicar nuevo
       const original = cmts.find(c=>c.id===form.id);
       const {error} = await supabaseAdmin.from("cmts").update({
-        numero_cmt:form.numero_cmt, pbs_id:form.pbs_id||null,
+        numero_cmt:form.numero_cmt, pbs_id:pbsIdValidado,
         tiquete_entrada:form.tiquete_entrada||null, producto:cmtProducto,
         tipo_operacion:form.tipo_operacion, tanques_antes:cmtAntes,
         tanques_despues:cmtDespues, tanques_recepcion:cmtRecepcion, total_antes:totalAntes,
@@ -1275,7 +1278,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       const numeroCmt = genIdCMT(cmtsFrescos||cmts, sedeActual, plantaActual);
       const id = `${numeroCmt}`;
       const {error} = await supabaseAdmin.from("cmts").insert([{
-        id, numero_cmt:numeroCmt, pbs_id:form.pbs_id||null,
+        id, numero_cmt:numeroCmt, pbs_id:pbsIdValidado,
         ot_id:form.ot_id||null, ot_numero:form.ot_numero||null,
         tiquete_entrada:form.tiquete_entrada||null, fecha:form.fecha||today(),
         producto:cmtProducto,
