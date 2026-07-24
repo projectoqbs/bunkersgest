@@ -1332,7 +1332,16 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       showToast(`CMT ${form.numero_cmt} corregido — ${fmt(totalMovido)} Gls`);
     } else {
       const sedeActual = form.sede || perfil.sede || "MALAMBO";
-      const plantaActual = sedeActual === "MALAMBO" ? (form.planta || perfil.planta || "PLANTA 1") : "";
+      let plantaActual = sedeActual === "MALAMBO" ? (form.planta || perfil.planta || "PLANTA 1") : "";
+      if (sedeActual === "MALAMBO") {
+        const tanqueOrigen = tipoOp === "TRASIEGO DE PRODUCTO" ? cmtAntes[0]?.tanque
+          : tipoOp === "PORTEO" ? (cmtPorteoCarga[0]?.tanque || "")
+          : cmtDespues[0]?.tanque;
+        if (tanqueOrigen) {
+          if (tanqueOrigen.startsWith("TK-")) plantaActual = "PLANTA 2";
+          else if (tanqueOrigen.startsWith("QBS002-") || tanqueOrigen.startsWith("TKT-")) plantaActual = "PLANTA 1";
+        }
+      }
       const {data: cmtsFrescos} = await supabase.from("cmts").select("numero_cmt").order("created_at",{ascending:false});
       const numeroCmt = genIdCMT(cmtsFrescos||cmts, sedeActual, plantaActual);
       const id = `${numeroCmt}`;
