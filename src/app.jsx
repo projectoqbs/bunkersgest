@@ -1220,8 +1220,17 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       });
     })() : cmtPorteoCarros;
 
-    // Validar pbs_id contra la tabla pbs para evitar FK violation
-    const pbsIdValidado = form.pbs_id && pbsList.some(p=>p.id===form.pbs_id) ? form.pbs_id : null;
+    // Validar pbs_id: si no existe en pbsList, crearlo automáticamente para evitar FK violation
+    let pbsIdValidado = form.pbs_id && pbsList.some(p=>p.id===form.pbs_id) ? form.pbs_id : null;
+    if (form.pbs_id && !pbsIdValidado) {
+      const {error: pbsAutoErr} = await supabaseAdmin.from("pbs").insert([{
+        id: form.pbs_id, fecha: form.fecha||today(),
+        sede: form.sede||perfil.sede||"MALAMBO", planta: form.planta||perfil.planta||"",
+        creado_por: session.user.id, firma_auxiliar: perfil.nombre,
+        checklist: Array(26).fill(""),
+      }]);
+      if (!pbsAutoErr) { pbsIdValidado = form.pbs_id; await loadData(); }
+    }
 
     if (form.id) {
       // EDICIÓN: revertir impacto original y aplicar nuevo
@@ -2850,11 +2859,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                       {movido>=0?"▲ Recibido:":"▼ Despachado:"} {fmt(Math.abs(movido))} Gls
                                     </span>
                                   </div>
-                                  {["administrador","coordinador","gerencia"].includes(perfil.rol) && (
-                                    <div style={{gridColumn:"1/-1",display:"flex",justifyContent:"flex-end",paddingTop:8}}>
-                                      <button onClick={()=>reAplicarTanquesCMT(c)} style={{background:`${T.orange}18`,border:`1px solid ${T.orange}55`,borderRadius:8,color:T.orange,padding:"6px 14px",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔄 Sincronizar Tanques</button>
-                                    </div>
-                                  )}
+                                  <div style={{gridColumn:"1/-1",display:"flex",justifyContent:"flex-end",paddingTop:8}}>
+                                    <button onClick={()=>reAplicarTanquesCMT(c)} style={{background:`${T.orange}18`,border:`1px solid ${T.orange}55`,borderRadius:8,color:T.orange,padding:"6px 14px",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔄 Sincronizar Tanques</button>
+                                  </div>
                                 </div>
                               </td>
                             </tr>
