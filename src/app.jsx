@@ -3234,7 +3234,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const nCarg  = Math.floor(disp / CARROS);
               const nDesc  = Math.floor(libre / CARROS);
               const editando = tankProdEdit?.id === id;
-              const pctColor = pct < 20 ? "#ef4444" : pct < 50 ? "#f59e0b" : "#22c55e";
+              const pctColor = "#0077CC";
               const h = 140;
               const label = id.replace("QBS002-","");
 
@@ -3407,7 +3407,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const nCarg  = Math.floor(disp / CARROS);
                     const nDesc  = Math.floor(libre / CARROS);
                     const editando = tankProdEdit?.id === id;
-                    const pctColor = pct < 20 ? "#ef4444" : pct < 50 ? "#f59e0b" : "#22c55e";
+                    const pctColor = "#0077CC";
                     const label = id;
 
                     return (
@@ -3416,7 +3416,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           title={`${label} · ${t.producto||"sin producto"} · ${fmt(nivel)} gls`}
                           onDoubleClick={() => setTankProdEdit({ id, val: t.producto||"" })}
                           style={{ width:"100%", height:140, position:"relative", cursor:"pointer",
-                            background:"#d4c8a8", border:"2px solid #8a7a50",
+                            background:"#c8d6e5", border:"2px solid #7a9dbf",
                             borderRadius:"6px 6px 4px 4px", overflow:"hidden",
                             boxShadow:"inset 0 2px 6px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.12)" }}>
                           <div style={{ position:"absolute", bottom:0, left:0, right:0,
@@ -3454,13 +3454,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           ))}
                         </div>
                         <div style={{ width:"100%", textAlign:"center" }}>
-                          <div style={{ fontWeight:900, fontSize:12, color:T.navy,
-                            fontFamily:"monospace", letterSpacing:1, background:"rgba(0,0,0,0.08)",
+                          <div style={{ fontWeight:900, fontSize:12, color:"#fff",
+                            fontFamily:"monospace", letterSpacing:1, background:"rgba(0,0,0,0.35)",
                             borderRadius:4, padding:"1px 4px", display:"inline-block", marginBottom:2 }}>{label}</div>
-                          <div style={{ fontSize:9, color:T.muted, fontFamily:"monospace", lineHeight:1.3 }}>
+                          <div style={{ fontSize:9, color:"rgba(255,255,255,0.75)", fontFamily:"monospace", lineHeight:1.3 }}>
                             <div>{fmt(nivel)} gls</div>
-                            <div style={{ color:"#1a7a3a" }}>{fmt(libre)} libre</div>
-                            <div style={{ color:"#c05a00" }}>{nCarg}C/{nDesc}D</div>
+                            <div style={{ color:"#6ee7b7" }}>{fmt(libre)} libre</div>
+                            <div style={{ color:"#fbbf24" }}>{nCarg}C/{nDesc}D</div>
                           </div>
                         </div>
                       </div>
@@ -3474,12 +3474,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       background:T.card, borderRadius:14, border:`2px solid ${T.border}`,
                       boxShadow:"0 2px 10px rgba(0,0,0,0.07)", overflow:"hidden" }}>
                       {/* Header */}
-                      <div style={{ background:"linear-gradient(90deg,#3d2e0f,#6b4e1a)",
+                      <div style={{ background:"linear-gradient(90deg,#0d2136,#1a4a6e)",
                         padding:"10px 16px", display:"flex", alignItems:"center", gap:10 }}>
                         <span style={{ fontSize:18 }}>🏭</span>
                         <div>
-                          <div style={{ fontWeight:900, fontSize:12, color:"#f5d98a", letterSpacing:2, textTransform:"uppercase" }}>Tanques Tierra — Planta 1</div>
-                          <div style={{ fontSize:10, color:"rgba(255,220,100,0.6)" }}>TKT-1 · TKT-2 · doble-clic para editar producto</div>
+                          <div style={{ fontWeight:900, fontSize:12, color:"#7ec8e3", letterSpacing:2, textTransform:"uppercase" }}>Tanques Tierra — Planta 1</div>
+                          <div style={{ fontSize:10, color:"rgba(126,200,227,0.6)" }}>TKT-1 · TKT-2 · doble-clic para editar producto</div>
                         </div>
                         <div style={{ marginLeft:"auto", textAlign:"right" }}>
                           <div style={{ fontSize:9, color:"rgba(255,255,255,0.5)", fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>Stock</div>
