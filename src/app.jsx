@@ -2505,7 +2505,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         hora_inicio: cr.hora_inicio||"", hora_final: cr.hora_final||"",
                         peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
                         peso_neto: Number(cr.peso_neto||0)||Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0)),
-                        gls_guia: Number(cr.galones_guia||0), gls_bascula: Number(cr.galones_bascula||0),
+                        gls_guia: Number(cr.galones_guia||0), gls_bascula: (()=>{
+                          if (Number(cr.galones_bascula||0) > 0) return Number(cr.galones_bascula);
+                          const tiq = tiquetes.find(t=>t.id===cr.tiquete);
+                          const factor = Number(tiq?.factor_tabla13||0);
+                          const pn = Number(cr.peso_neto||0)||Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
+                          return factor>0 && pn>0 ? Math.round(pn/factor) : 0;
+                        })(),
                       }));
                       const porteo = (cmt.porteo_carros||[]).filter(cr=>cr.placa).map(cr=>({
                         cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
