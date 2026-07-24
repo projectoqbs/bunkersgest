@@ -2372,7 +2372,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const matchFH = !cmtFiltroFechaH || (c.fecha||"")<=cmtFiltroFechaH;
                   return matchQ && matchTipo && matchFD && matchFH;
                 });
-                const thStyle = {padding:"10px 12px",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg};
+                const thStyle = {padding:"10px 12px",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,position:"sticky",top:0,zIndex:2};
                 const tdStyle = {padding:"10px 12px",fontSize:12,fontFamily:"monospace",borderBottom:"1px solid #ffffff08",verticalAlign:"middle"};
                 return (<>
                   <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"flex-end"}}>
@@ -2528,13 +2528,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const totalGlsBascula = todosCarros.reduce((a,r)=>a+r.gls_bascula,0);
                     const totalGlsGuia = todosCarros.reduce((a,r)=>a+r.gls_guia,0);
                     return (
-                      <div style={{overflowX:"auto"}}>
+                      <div>
                         <div style={{fontSize:11,color:T.muted,marginBottom:8}}>{todosCarros.length} carro(s) encontrados</div>
-                        <table style={{width:"100%",borderCollapse:"collapse",background:T.card,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
+                        <div style={{overflow:"auto",maxHeight:"calc(100vh - 280px)",borderRadius:8,border:`1px solid ${T.border}`}}>
+                        <table style={{width:"100%",borderCollapse:"collapse",background:T.card}}>
                           <thead>
                             <tr style={{background:T.bg}}>
                               {["N° CMT","Fecha","Tipo","Sede","Planta","Producto","Placa","Guía","Tiquete","H. Inicio","H. Final","Peso Ing.","Peso Sal.","Peso Neto","Gls Guía","Gls Báscula"].map(h=>(
-                                <th key={h} style={{padding:"9px 10px",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg}}>{h}</th>
+                                <th key={h} style={{padding:"9px 10px",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,position:"sticky",top:0,zIndex:2}}>{h}</th>
                               ))}
                             </tr>
                           </thead>
@@ -2570,10 +2571,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             )}
                           </tbody>
                         </table>
+                        </div>
                       </div>
                     );
-                  })() : <div style={{overflowX:"auto"}}>
-                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
+                  })() : <div style={{overflow:"auto",maxHeight:"calc(100vh - 280px)",borderRadius:8,border:`1px solid ${T.border}`}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card}}>
                       <thead>
                         <tr style={{background:T.bg}}>
                           <th style={thStyle}>N° CMT</th>
