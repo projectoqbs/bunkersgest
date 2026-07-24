@@ -3604,7 +3604,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={tdS({color:T.muted})}>{cm.fecha}</td>
                             <td style={tdS({...mono,color:T.success})}>{cm.numero_cmt}</td>
                             <td style={tdS({fontWeight:700})}>{cm.producto||viaje?.producto||"—"}</td>
-                            <td style={tdS({color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"})}>{cr.transportadora||"—"}</td>
+                            <td style={tdS({color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"})}>{viaje?.transportadora||cr.transportadora||"—"}</td>
                             <td style={tdS({...mono,color:T.muted})}>{viaje?.guia||"—"}</td>
                             <td style={tdS()}>
                               {tq ? (() => {
