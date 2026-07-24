@@ -1131,6 +1131,43 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     showToast(ot_id ? `✅ CMT ${num} vinculado a ${ot_numero}` : `✅ CMT ${num} guardado como autónomo`);
   }
 
+  async function reAplicarTanquesCMT(cmt) {
+    if (!confirm(`¿Re-sincronizar niveles de tanques desde CMT ${cmt.numero_cmt}? Esto sobreescribirá los niveles actuales con los valores guardados en el CMT.`)) return;
+    const tipoOp = (cmt.tipo_operacion||"");
+    // Origen: tanques_despues (valor absoluto)
+    for (const td of cmt.tanques_despues||[]) {
+      if (!td.tanque || !td.galones) continue;
+      await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(td.galones)) }).eq("id", td.tanque);
+    }
+    // Destino: tanques_recepcion (galonesFinal absoluto, o delta del origen para TRASIEGO)
+    const deltaOrigen = tipoOp === "TRASIEGO DE PRODUCTO"
+      ? (cmt.tanques_antes||[]).reduce((s,ta,i) => {
+          const td = (cmt.tanques_despues||[])[i];
+          return s + Math.max(0, Number(ta.galones||0) - Number(td?.galones||0));
+        }, 0)
+      : 0;
+    for (const tr of cmt.tanques_recepcion||[]) {
+      if (!tr.tanque) continue;
+      if (tr.galonesFinal) {
+        await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tr.galonesFinal)) }).eq("id", tr.tanque);
+      } else if (deltaOrigen > 0) {
+        const tqActual = tanques.find(t => t.id === tr.tanque);
+        if (tqActual) await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tqActual.nivel||0) + deltaOrigen) }).eq("id", tr.tanque);
+      }
+    }
+    // PORTEO: tanques de descarga y carga
+    for (const td of cmt.porteo_descarga_tanques||[]) {
+      if (!td.tanque || !td.galonesFinal) continue;
+      await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(td.galonesFinal)) }).eq("id", td.tanque);
+    }
+    for (const tc of cmt.porteo_carga_tanques||[]) {
+      if (!tc.tanque || !tc.galonesFinal) continue;
+      await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tc.galonesFinal)) }).eq("id", tc.tanque);
+    }
+    await loadData();
+    showToast(`✅ Tanques sincronizados desde CMT ${cmt.numero_cmt}`);
+  }
+
   async function guardarCMT(e) {
     e.preventDefault(); setSaving(true);
 
@@ -2813,6 +2850,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                       {movido>=0?"▲ Recibido:":"▼ Despachado:"} {fmt(Math.abs(movido))} Gls
                                     </span>
                                   </div>
+                                  {["administrador","coordinador","gerencia"].includes(perfil.rol) && (
+                                    <div style={{gridColumn:"1/-1",display:"flex",justifyContent:"flex-end",paddingTop:8}}>
+                                      <button onClick={()=>reAplicarTanquesCMT(c)} style={{background:`${T.orange}18`,border:`1px solid ${T.orange}55`,borderRadius:8,color:T.orange,padding:"6px 14px",fontSize:11,fontWeight:700,cursor:"pointer"}}>🔄 Sincronizar Tanques</button>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                             </tr>
