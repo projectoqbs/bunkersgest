@@ -388,6 +388,10 @@ export default function App() {
   const [modalVinculacionOT, setModalVinculacionOT] = useState({mostrar:false, cmtId:null, cmtNumero:null});
   const [otVincSeleccionada, setOtVincSeleccionada] = useState("");
   const [formFormulacion, setFormFormulacion] = useState(null); // null=cerrado, {}=nuevo, {id,...}=editar
+  const [trazBuscar, setTrazBuscar] = useState("");
+  const [trazDesde, setTrazDesde] = useState("");
+  const [trazHasta, setTrazHasta] = useState("");
+  const [trazEstado, setTrazEstado] = useState("TODOS");
   const [mps, setMps] = useState([ // materias primas en el modal formulación
     { nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }
   ]);
@@ -3485,11 +3489,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
           {/* TRAZABILIDAD */}
           {nav==="trazabilidad" && (()=>{
-            const [trazBuscar, setTrazBuscar] = React.useState("");
-            const [trazDesde, setTrazDesde] = React.useState("");
-            const [trazHasta, setTrazHasta] = React.useState("");
-            const [trazEstado, setTrazEstado] = React.useState("TODOS");
-
             // Para cada viaje construir la cadena completa
             const filas = viajes.map(v => {
               const tq  = tiquetes.find(t => t.viaje_id === v.id || t.placa === v.placa);
