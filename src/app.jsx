@@ -1183,42 +1183,47 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         porteo_carros:porteoCarrosConGls,
       }).eq("id", form.id);
       if (!error && original) {
-        // Calcular impacto neto por tanque: (nuevo - anterior) - (original_despues - original_antes)
+        // Recolectar todos los tanques afectados y calcular ajuste neto
+        const ajustesPorTanque = {};
+        const acumular = (id, delta) => { if (id) ajustesPorTanque[id] = (ajustesPorTanque[id]||0) + delta; };
+
+        // CMT normal: delta = (nuevo despues - nuevo antes) - (orig despues - orig antes)
         const tanquesAfectados = new Set([
           ...(original.tanques_despues||[]).map(t=>t.tanque),
           ...cmtDespues.map(t=>t.tanque),
         ].filter(Boolean));
-        for (const tanqueId of tanquesAfectados) {
-          const origAntes = (original.tanques_antes||[]).find(t=>t.tanque===tanqueId);
-          const origDespues = (original.tanques_despues||[]).find(t=>t.tanque===tanqueId);
-          const nuevoAntes = cmtAntes.find(t=>t.tanque===tanqueId);
-          const nuevoDespues = cmtDespues.find(t=>t.tanque===tanqueId);
-          const diffOrig = Number(origDespues?.galones||0) - Number(origAntes?.galones||0);
-          const diffNuevo = Number(nuevoDespues?.galones||0) - Number(nuevoAntes?.galones||0);
-          const ajuste = diffNuevo - diffOrig;
-          if (ajuste !== 0) {
-            const tq = tanques.find(t=>t.id===tanqueId);
-            if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0, tq.nivel+ajuste)}).eq("id",tanqueId);
-          }
+        for (const id of tanquesAfectados) {
+          const origA = (original.tanques_antes||[]).find(t=>t.tanque===id);
+          const origD = (original.tanques_despues||[]).find(t=>t.tanque===id);
+          const nuevoA = cmtAntes.find(t=>t.tanque===id);
+          const nuevoD = cmtDespues.find(t=>t.tanque===id);
+          const ajuste = (Number(nuevoD?.galones||0)-Number(nuevoA?.galones||0)) - (Number(origD?.galones||0)-Number(origA?.galones||0));
+          acumular(id, ajuste);
         }
-        // PORTEO update: ajuste neto por tanque de carga/descarga
+        // PORTEO: ajuste neto en tanques de carga/descarga
         const porteoTqIds = new Set([
           ...(original.porteo_descarga_tanques||[]).map(t=>t.tanque),
           ...cmtPorteoDescarga.map(t=>t.tanque),
           ...(original.porteo_carga_tanques||[]).map(t=>t.tanque),
           ...cmtPorteoCarga.map(t=>t.tanque),
         ].filter(Boolean));
-        for (const tid of porteoTqIds) {
-          const origDesc = (original.porteo_descarga_tanques||[]).find(t=>t.tanque===tid);
-          const nuevoDesc = cmtPorteoDescarga.find(t=>t.tanque===tid);
-          const origCarg = (original.porteo_carga_tanques||[]).find(t=>t.tanque===tid);
-          const nuevoCarg = cmtPorteoCarga.find(t=>t.tanque===tid);
-          const diffOrigDesc = Number(origDesc?.galonesFinal||0)-Number(origDesc?.galonesInicial||0);
-          const diffNuevoDesc = Number(nuevoDesc?.galonesFinal||0)-Number(nuevoDesc?.galonesInicial||0);
-          const diffOrigCarg = Number(origCarg?.galonesFinal||0)-Number(origCarg?.galonesInicial||0);
-          const diffNuevoCarg = Number(nuevoCarg?.galonesFinal||0)-Number(nuevoCarg?.galonesInicial||0);
-          const ajuste = (diffNuevoDesc - diffOrigDesc) + (diffNuevoCarg - diffOrigCarg);
-          if (ajuste !== 0) { const tq = tanques.find(t=>t.id===tid); if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tq.nivel+ajuste)}).eq("id",tid); }
+        for (const id of porteoTqIds) {
+          const oD = (original.porteo_descarga_tanques||[]).find(t=>t.tanque===id);
+          const nD = cmtPorteoDescarga.find(t=>t.tanque===id);
+          const oC = (original.porteo_carga_tanques||[]).find(t=>t.tanque===id);
+          const nC = cmtPorteoCarga.find(t=>t.tanque===id);
+          const ajuste = (Number(nD?.galonesFinal||0)-Number(oD?.galonesFinal||0))
+                       + (Number(nC?.galonesFinal||0)-Number(oC?.galonesFinal||0));
+          acumular(id, ajuste);
+        }
+        // Aplicar ajustes leyendo el nivel actual desde la DB (no desde estado React)
+        const idsAfectados = Object.keys(ajustesPorTanque).filter(id => ajustesPorTanque[id] !== 0);
+        if (idsAfectados.length > 0) {
+          const { data: tqsActuales } = await supabaseAdmin.from("tanques").select("id,nivel").in("id", idsAfectados);
+          for (const tq of (tqsActuales||[])) {
+            const nuevoNivel = Math.max(0, Number(tq.nivel||0) + ajustesPorTanque[tq.id]);
+            await supabaseAdmin.from("tanques").update({ nivel: nuevoNivel }).eq("id", tq.id);
+          }
         }
         const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
         if (placasCarros.length > 0) {
@@ -1269,29 +1274,21 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         operador:perfil.nombre, creado_por:session.user.id
       }]);
       if (!error) {
+        // Usar valores absolutos del CMT (no deltas sobre estado React, que puede estar desactualizado)
         for (const td of cmtDespues) {
-          const ta = cmtAntes.find(t=>t.tanque===td.tanque);
-          if (ta && td.tanque) {
-            const diff = Number(td.galones||0)-Number(ta.galones||0);
-            const tanque = tanques.find(t=>t.id===td.tanque);
-            if (tanque) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tanque.nivel+diff)}).eq("id",td.tanque);
-          }
+          if (!td.tanque || !td.galones) continue;
+          await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(td.galones)) }).eq("id", td.tanque);
         }
-        // PORTEO: actualizar niveles y producto de tanques de carga y descarga
+        // PORTEO: galonesFinal ES el nivel absoluto del tanque al terminar la operación
         for (const td of cmtPorteoDescarga) {
-          if (!td.tanque) continue;
-          const diff = Number(td.galonesFinal||0) - Number(td.galonesInicial||0);
-          const tq = tanques.find(t=>t.id===td.tanque);
-          if (tq) {
-            const upd = { nivel: Math.max(0, tq.nivel+diff) };
-            if (cmtProducto) upd.producto = cmtProducto;
-            await supabaseAdmin.from("tanques").update(upd).eq("id",td.tanque);
-          }
+          if (!td.tanque || !td.galonesFinal) continue;
+          const upd = { nivel: Math.max(0, Number(td.galonesFinal)) };
+          if (cmtProducto) upd.producto = cmtProducto;
+          await supabaseAdmin.from("tanques").update(upd).eq("id", td.tanque);
         }
         for (const tc of cmtPorteoCarga) {
-          if (!tc.tanque) continue;
-          const diff = Number(tc.galonesFinal||0) - Number(tc.galonesInicial||0);
-          if (diff !== 0) { const tq = tanques.find(t=>t.id===tc.tanque); if (tq) await supabaseAdmin.from("tanques").update({nivel:Math.max(0,tq.nivel+diff)}).eq("id",tc.tanque); }
+          if (!tc.tanque || !tc.galonesFinal) continue;
+          await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tc.galonesFinal)) }).eq("id", tc.tanque);
         }
         const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
         if (placasCarros.length > 0) {
