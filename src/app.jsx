@@ -3484,51 +3484,178 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           )}
 
           {/* TRAZABILIDAD */}
-          {nav==="trazabilidad" && (
-            <div>
-              <div style={{ fontWeight:800, fontSize:20, color:T.navy, marginBottom:4 }}>Trazabilidad Completa</div>
-              <div style={{ fontSize:11, color:T.muted, marginBottom:22 }}>Cargue → Tiquete → PBS → CMT → Despacho</div>
-              <div style={{ display:"grid", gap:14 }}>
-                {viajes.map(v=>{
-                  const tq = tiquetes.find(t=>t.viaje_id===v.id);
-                  const pb = pbsList.find(p=>p.viaje_id===v.id);
-                  const cm = cmts.find(c=>c.placa===v.placa);
-                  return (
-                    <Card key={v.id}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-                          <span style={{ color:T.orange, fontWeight:700 }}>{v.id}</span>
-                          <span style={{ fontWeight:700 }}>{v.producto}</span>
-                          <span style={{ color:T.muted, fontSize:11 }}>{v.placa} · {v.fecha}</span>
-                        </div>
-                        <Badge label={v.estado} color={v.estado==="Descargado"?T.success:v.estado==="Rechazado"?T.danger:T.orange}/>
-                      </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:10 }}>
-                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${T.orange}` }}>
-                          <div style={{ fontSize:10, color:T.orange, marginBottom:6 }}>🚛 LOGÍSTICA</div>
-                          <div style={{ fontSize:11 }}>{v.transportadora}</div>
-                          <div style={{ fontSize:11, color:T.muted }}>Guía: {v.guia}</div>
-                          <div style={{ fontSize:11, color:T.muted }}>{fmt(v.volumen_guia)} Gls</div>
-                        </div>
-                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${tq?(tq.resultado==="APROBADO"?T.success:T.danger):T.muted}` }}>
-                          <div style={{ fontSize:10, color:T.orange, marginBottom:6 }}>🧪 TIQUETE</div>
-                          {tq?<><Badge label={tq.resultado} color={tq.resultado==="APROBADO"?T.success:T.danger}/><div style={{ fontSize:11, color:T.muted, marginTop:4 }}>API: {tq.api_corregido}° · {fmt(tq.galones_recibidos)} Gls</div></>:<div style={{ fontSize:11, color:T.orange }}>Pendiente</div>}
-                        </div>
-                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${pb?T.danger:T.muted}` }}>
-                          <div style={{ fontSize:10, color:T.danger, marginBottom:6 }}>🔒 PBS</div>
-                          {pb?<><div style={{ fontSize:11 }}>{pb.id}</div><div style={{ fontSize:11, color:T.muted }}>{pb.bodega_recibe}</div></>:<div style={{ fontSize:11, color:T.orange }}>Pendiente</div>}
-                        </div>
-                        <div style={{ background:"#162535", borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${cm?T.success:T.muted}` }}>
-                          <div style={{ fontSize:10, color:T.success, marginBottom:6 }}>📋 CMT</div>
-                          {cm?<><div style={{ fontSize:11 }}>No. {cm.numero_cmt}</div><div style={{ fontSize:11, fontWeight:700, color:T.success }}>+{fmt(cm.total_movido)} Gls</div></>:<div style={{ fontSize:11, color:T.orange }}>Pendiente</div>}
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
+          {nav==="trazabilidad" && (()=>{
+            const [trazBuscar, setTrazBuscar] = React.useState("");
+            const [trazDesde, setTrazDesde] = React.useState("");
+            const [trazHasta, setTrazHasta] = React.useState("");
+            const [trazEstado, setTrazEstado] = React.useState("TODOS");
+
+            // Para cada viaje construir la cadena completa
+            const filas = viajes.map(v => {
+              const tq  = tiquetes.find(t => t.viaje_id === v.id || t.placa === v.placa);
+              const pb  = pbsList.find(p => p.viaje_id === v.id || p.placa === v.placa);
+              // Buscar CMT: por placa directa o dentro de carros[]
+              const cm  = cmts.find(c =>
+                c.placa === v.placa ||
+                (c.carros||[]).some(cr => cr.placa === v.placa)
+              );
+              const carro = cm ? ((cm.carros||[]).find(cr=>cr.placa===v.placa) || {}) : {};
+              const ot  = cm?.ot_id ? (ordenesTrabaio||[]).find(o => o.id === cm.ot_id) : null;
+              // Tanques donde se descargó (cmtDespues del CMT)
+              const tanquesDesc = cm ? (cm.tanques_despues||[]).filter(t=>t.tanque) : [];
+              // Galones báscula
+              const factor = Number(tq?.factor_tabla13||0);
+              const pn = Number(carro.peso_neto||0) || Math.max(0, Number(carro.peso_ingreso||0)-Number(carro.peso_salida||0));
+              const glsBas = Number(carro.galones_bascula||0) || (factor>0&&pn>0 ? Math.round(pn/factor) : 0);
+              return { v, tq, pb, cm, carro, ot, tanquesDesc, glsBas };
+            });
+
+            // Filtros
+            const q = trazBuscar.trim().toUpperCase();
+            const filtradas = filas.filter(({v, tq, pb, cm, ot}) => {
+              if (trazEstado !== "TODOS" && v.estado !== trazEstado) return false;
+              if (trazDesde && v.fecha < trazDesde) return false;
+              if (trazHasta && v.fecha > trazHasta) return false;
+              if (!q) return true;
+              return (
+                (v.placa||"").toUpperCase().includes(q) ||
+                (v.guia||"").toUpperCase().includes(q) ||
+                (v.id||"").toUpperCase().includes(q) ||
+                (tq?.id||"").toUpperCase().includes(q) ||
+                (pb?.id||"").toUpperCase().includes(q) ||
+                (cm?.numero_cmt||"").toUpperCase().includes(q) ||
+                (ot?.numero_ot||"").toUpperCase().includes(q) ||
+                (v.transportadora||"").toUpperCase().includes(q)
+              );
+            });
+
+            const Chip = ({label, val, color="#334155"}) => val ? (
+              <span style={{display:"inline-block",background:`${color}22`,border:`1px solid ${color}44`,borderRadius:20,padding:"2px 10px",fontSize:10,fontWeight:700,color,marginRight:4,marginBottom:2,whiteSpace:"nowrap"}}>{label}: {val}</span>
+            ) : null;
+
+            const Step = ({icon, label, done, children}) => (
+              <div style={{flex:1,minWidth:130,background:done?"#0d2a0d22":"#1a202c",borderRadius:8,padding:"10px 12px",borderLeft:`3px solid ${done?T.success:T.muted}`,opacity:done?1:0.55}}>
+                <div style={{fontSize:9,fontWeight:700,color:done?T.success:T.muted,letterSpacing:1,textTransform:"uppercase",marginBottom:5}}>{icon} {label}</div>
+                {children}
               </div>
-            </div>
-          )}
+            );
+
+            return (
+              <div style={{padding:"0 0 20px"}}>
+                {/* Header */}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+                  <div>
+                    <div style={{fontWeight:900,fontSize:20,color:T.navy}}>🔍 Trazabilidad</div>
+                    <div style={{fontSize:11,color:T.muted}}>Cargue → Llegada → Tiquete → PBS → OT → CMT → Tanques</div>
+                  </div>
+                  <div style={{fontSize:11,color:T.muted,fontWeight:600}}>{filtradas.length} registro(s)</div>
+                </div>
+
+                {/* Filtros */}
+                <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"flex-end"}}>
+                  <input placeholder="Buscar placa, guía, tiquete, PBS, CMT, OT..." value={trazBuscar}
+                    onChange={e=>setTrazBuscar(e.target.value)}
+                    style={{flex:1,minWidth:240,background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 14px",color:T.text,fontSize:13,outline:"none"}}/>
+                  <input type="date" value={trazDesde} onChange={e=>setTrazDesde(e.target.value)}
+                    style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 10px",color:T.text,fontSize:12,outline:"none"}}/>
+                  <input type="date" value={trazHasta} onChange={e=>setTrazHasta(e.target.value)}
+                    style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 10px",color:T.text,fontSize:12,outline:"none"}}/>
+                  <select value={trazEstado} onChange={e=>setTrazEstado(e.target.value)}
+                    style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 12px",color:T.text,fontSize:12,outline:"none"}}>
+                    <option value="TODOS">Todos los estados</option>
+                    <option value="En Planta">En Planta</option>
+                    <option value="Descargado">Descargado</option>
+                    <option value="Rechazado">Rechazado</option>
+                    <option value="En Tránsito">En Tránsito</option>
+                  </select>
+                  {(trazBuscar||trazDesde||trazHasta||trazEstado!=="TODOS") && (
+                    <button onClick={()=>{setTrazBuscar("");setTrazDesde("");setTrazHasta("");setTrazEstado("TODOS");}}
+                      style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 14px",color:T.muted,fontSize:12,cursor:"pointer"}}>✕ Limpiar</button>
+                  )}
+                </div>
+
+                {/* Tabla */}
+                <div style={{overflow:"auto",maxHeight:"calc(100vh - 280px)",borderRadius:10,border:`1px solid ${T.border}`}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:1000}}>
+                    <thead>
+                      <tr>
+                        {["Placa","Fecha","Producto","Transportadora","Guía / Gls Guía","Tiquete / API / Gls","PBS","OT","CMT","Tanques descargados","Estado"].map(h=>(
+                          <th key={h} style={{padding:"10px 12px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,position:"sticky",top:0,zIndex:2}}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtradas.length === 0 && (
+                        <tr><td colSpan={11} style={{padding:40,textAlign:"center",color:T.muted,fontSize:13}}>Sin registros para los filtros aplicados</td></tr>
+                      )}
+                      {filtradas.map(({v, tq, pb, cm, ot, tanquesDesc, glsBas},i) => {
+                        const estadoColor = v.estado==="Descargado"?T.success:v.estado==="Rechazado"?T.danger:T.orange;
+                        return (
+                          <tr key={v.id} style={{background:i%2===0?T.card:"transparent",borderBottom:`1px solid ${T.border}`}}>
+                            {/* Placa */}
+                            <td style={{padding:"10px 12px",fontWeight:900,fontSize:13,fontFamily:"monospace",color:T.navy,whiteSpace:"nowrap"}}>{v.placa||"—"}</td>
+                            {/* Fecha */}
+                            <td style={{padding:"10px 12px",fontSize:11,color:T.muted,whiteSpace:"nowrap"}}>{v.fecha}</td>
+                            {/* Producto */}
+                            <td style={{padding:"10px 12px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>{v.producto||"—"}</td>
+                            {/* Transportadora */}
+                            <td style={{padding:"10px 12px",fontSize:11,color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.transportadora||"—"}</td>
+                            {/* Guía */}
+                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
+                              <div style={{fontFamily:"monospace",color:T.text}}>{v.guia||"—"}</div>
+                              {v.volumen_guia>0 && <div style={{fontSize:10,color:T.muted}}>{fmt(v.volumen_guia)} gls</div>}
+                            </td>
+                            {/* Tiquete */}
+                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
+                              {tq ? <>
+                                <div style={{fontFamily:"monospace",fontWeight:700,color:tq.resultado==="APROBADO"?T.success:T.danger}}>{tq.id}</div>
+                                <div style={{fontSize:10,color:T.muted}}>API {tq.api_corregido}° · {fmt(tq.galones_recibidos||0)} gls</div>
+                                {glsBas>0 && <div style={{fontSize:10,color:T.success,fontWeight:700}}>{fmt(glsBas)} gls báscula</div>}
+                              </> : <span style={{color:T.muted,fontSize:10}}>Pendiente</span>}
+                            </td>
+                            {/* PBS */}
+                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
+                              {pb ? <>
+                                <div style={{fontFamily:"monospace",fontWeight:700,color:T.orange}}>{pb.id}</div>
+                                <div style={{fontSize:10,color:T.muted}}>{pb.bodega_recibe||""}</div>
+                              </> : <span style={{color:T.muted,fontSize:10}}>—</span>}
+                            </td>
+                            {/* OT */}
+                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
+                              {ot ? <div style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{ot.numero_ot}</div>
+                                   : <span style={{color:T.muted,fontSize:10}}>—</span>}
+                            </td>
+                            {/* CMT */}
+                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
+                              {cm ? <>
+                                <div style={{fontFamily:"monospace",fontWeight:700,color:T.success}}>{cm.numero_cmt}</div>
+                                <div style={{fontSize:10,color:T.muted}}>{cm.tipo_operacion}</div>
+                              </> : <span style={{color:T.muted,fontSize:10}}>Pendiente</span>}
+                            </td>
+                            {/* Tanques */}
+                            <td style={{padding:"10px 12px",fontSize:11}}>
+                              {tanquesDesc.length>0
+                                ? tanquesDesc.map((t,j)=>(
+                                    <div key={j} style={{whiteSpace:"nowrap"}}>
+                                      <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{t.tanque}</span>
+                                      {t.galones && <span style={{fontSize:10,color:T.muted}}> · {fmt(t.galones)} gls</span>}
+                                    </div>
+                                  ))
+                                : <span style={{color:T.muted,fontSize:10}}>—</span>}
+                            </td>
+                            {/* Estado */}
+                            <td style={{padding:"10px 12px",whiteSpace:"nowrap"}}>
+                              <span style={{background:`${estadoColor}22`,color:estadoColor,border:`1px solid ${estadoColor}55`,borderRadius:20,padding:"3px 10px",fontSize:10,fontWeight:700}}>{v.estado}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
          {nav==="usuarios" && (
   <div>
     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
