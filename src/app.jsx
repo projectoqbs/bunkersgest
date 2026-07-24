@@ -1219,12 +1219,19 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     // Validar pbs_id: si no existe en pbsList, crearlo automáticamente para evitar FK violation
     let pbsIdValidado = null;
     if (form.pbs_id) {
-      await supabaseAdmin.from("pbs").upsert([{
-        id: form.pbs_id, fecha: form.fecha||today(),
-        sede: form.sede||perfil.sede||"MALAMBO", planta: form.planta||perfil.planta||"",
-        creado_por: session.user.id, firma_auxiliar: perfil.nombre,
-        checklist: Array(26).fill(""),
-      }], {onConflict: "id", ignoreDuplicates: true});
+      const {data: pbsExiste} = await supabaseAdmin.from("pbs").select("id").eq("id", form.pbs_id).maybeSingle();
+      if (!pbsExiste) {
+        const {error: pbsErr} = await supabaseAdmin.from("pbs").insert([{
+          id: form.pbs_id, fecha: form.fecha||today(),
+          sede: form.sede||perfil.sede||"MALAMBO", planta: form.planta||perfil.planta||"",
+          creado_por: session.user.id, firma_auxiliar: perfil.nombre,
+          checklist: Array(26).fill(""),
+        }]);
+        if (pbsErr && pbsErr.code !== "23505") {
+          setSaving(false);
+          return showToast("Error al registrar PBS: " + pbsErr.message, false);
+        }
+      }
       pbsIdValidado = form.pbs_id;
     }
 
