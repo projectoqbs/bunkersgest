@@ -2313,32 +2313,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     )}
                   </>)}
                   {puedeCrear("cmt") && <Btn
-                    disabled={["administrador","gerencia"].includes(perfil.rol) && (
-                      !sedeFiltro || sedeFiltro==="TODAS" || (sedeFiltro==="MALAMBO" && !plantaFiltro)
-                    )}
                     onClick={()=>{
                     const esAdmin = ["administrador","gerencia"].includes(perfil.rol);
-                    const sede = esAdmin ? sedeFiltro : (perfil.sede||"MALAMBO");
-                    if (!sede || sede==="TODAS") return showToast("Seleccione una sede para crear un CMT",false);
-                    // Para admin/gerencia usan plantaFiltro; para operarios usar perfil.planta
-                    const plantasDisponibles = esAdmin
-                      ? (sede==="MALAMBO" ? PLANTAS : [])
-                      : (perfil.planta||"PLANTA 1").split(",").map(s=>s.trim()).filter(Boolean);
-                    const plantaElegida = esAdmin ? plantaFiltro : (plantasDisponibles.length===1 ? plantasDisponibles[0] : null);
-                    if (sede==="MALAMBO" && !plantaElegida) {
-                      // Mostrar selector de planta inline si hay varias
-                      setCmtPlantaSelector(true);
-                      return;
-                    }
-                    const planta = sede==="MALAMBO" ? plantaElegida : "";
-                    const numCmt = genIdCMT(cmts, sede, planta);
-                    // Guardar estado del tab actual antes de crear uno nuevo
-                    if (activeTab?.type === 'form') {
-                      tabStateCache.current[activeTabId] = captureFormState();
-                    }
+                    const sede = esAdmin ? (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO") : (perfil.sede||"MALAMBO");
+                    if (activeTab?.type === 'form') { tabStateCache.current[activeTabId] = captureFormState(); }
                     const newTabId = `form-cmt-${Date.now()}`;
                     const newCmtState = {
-                      form: {sede, planta, fecha:today()},
+                      form: {sede, fecha:today()},
                       cmtAntes: [{tanque:'',sonda:'',galones:''}],
                       cmtDespues: [{tanque:'',producto:'',sonda:'',galones:''}],
                       cmtCarros: [{placa:'',guia:'',tiquete:'',pbs_id:''}],
@@ -2358,38 +2339,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               </div>
 
-              {/* Selector de planta para operarios con múltiples plantas */}
-              {cmtPlantaSelector && (
-                <div style={{background:`${T.orange}12`,border:`2px solid ${T.orange}`,borderRadius:10,padding:"16px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-                  <span style={{fontWeight:800,fontSize:13,color:T.navy}}>¿En qué planta vas a trabajar?</span>
-                  {(perfil.planta||"PLANTA 1").split(",").map(s=>s.trim()).filter(Boolean).map(pl=>(
-                    <button key={pl} onClick={()=>{
-                      const sede = perfil.sede||"MALAMBO";
-                      setCmtPlantaSelector(false);
-                      if (activeTab?.type === 'form') { tabStateCache.current[activeTabId] = captureFormState(); }
-                      const newTabId2 = `form-cmt-${Date.now()}`;
-                      const newState2 = {
-                        form: {sede, planta:pl, fecha:today()},
-                        cmtAntes:[{tanque:'',sonda:'',galones:''}], cmtDespues:[{tanque:'',producto:'',sonda:'',galones:''}],
-                        cmtCarros:[{placa:'',guia:'',tiquete:'',pbs_id:''}], cmtProducto:'',
-                        cmtRecepcion:[{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
-                        cmtPorteoCargaPlanta:'', cmtPorteoDescargaPlanta:'',
-                        cmtPorteoCarga:[{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
-                        cmtPorteoDescarga:[{tanque:'',sondaInicial:'',tempInicial:'',apiInicial:'',galonesInicial:'',sondaFinal:'',tempFinal:'',apiFinal:'',galonesFinal:''}],
-                        cmtPorteoCarros:[{placa:'',transportadora:'',hora_inicio_cargue:'',hora_final_cargue:'',numero_pbs:'',galones_contador:'',peso_ingreso:'',peso_salida:'',galones_bascula:''}],
-                        pbsChecklist:Array(26).fill(''), pbsParaCarro:null, pbsEsTrasiego:false, cmtSnapshot:null,
-                      };
-                      tabStateCache.current[newTabId2] = newState2;
-                      setTabs(prev => [...prev, { id:newTabId2, type:'form', formType:'cmt', title:'Nuevo CMT', icon:'📋', closeable:true }]);
-                      setActiveTabId(newTabId2);
-                      restoreFormState(newState2);
-                    }} style={{background:T.orange,color:"#fff",border:"none",borderRadius:6,padding:"8px 20px",fontWeight:800,fontSize:13,cursor:"pointer"}}>
-                      {pl}
-                    </button>
-                  ))}
-                  <button onClick={()=>setCmtPlantaSelector(false)} style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 14px",color:T.muted,fontSize:12,cursor:"pointer"}}>Cancelar</button>
-                </div>
-              )}
 
               {/* Aviso prominente cuando no hay sede seleccionada (solo admin/gerencia) */}
               {["administrador","gerencia"].includes(perfil.rol) && ((!sedeFiltro||sedeFiltro==="TODAS") || (sedeFiltro==="MALAMBO"&&!plantaFiltro)) && (
@@ -4737,7 +4686,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (
               <div>
                 <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Planta</div>
-                <div style={{fontSize:13,fontWeight:700,color:T.navy}}>{form.planta||perfil.planta||"PLANTA 1"}</div>
+                <div style={{fontSize:12,fontWeight:700,color:T.navy}}>{form.planta||<span style={{color:T.muted,fontWeight:400}}>Por seleccionar</span>}</div>
               </div>
             )}
             <div style={{marginLeft:"auto",fontSize:11,color:T.muted}}>Generado automáticamente</div>
@@ -4782,6 +4731,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 );
               })()}
             </div>
+            {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (
+              <div style={{width:160,flexShrink:0}}>
+                <Sel label="Planta" value={form.planta||""} onChange={e=>{setForm(prev=>({...prev,planta:e.target.value}));}}>
+                  <option value="">Seleccionar...</option>
+                  <option value="PLANTA 1">PLANTA 1</option>
+                  <option value="PLANTA 2">PLANTA 2</option>
+                </Sel>
+              </div>
+            )}
           </div>
           {(form.tipo_operacion||"")!=="PORTEO" && (<div style={{marginBottom:18}}>
             <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.orange}33`}}>
@@ -4789,8 +4747,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             {(()=>{
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
-              const cmtPlantaRaw = form.planta || (perfil?.planta||"PLANTA 1").split(",")[0].trim();
-              const tanquesBase = cmtSede==="MALAMBO" ? tanques.filter(t=>!t.planta || t.planta===cmtPlantaRaw) : [];
+              const cmtPlantaRaw = form.planta || "";
+              const esTrasiegoInterplanta = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
+              const tankEnPlanta = (t, p) => {
+                if (!p || esTrasiegoInterplanta) return true;
+                if (p==="PLANTA 1") return t.id.startsWith("QBS002-") || t.id.startsWith("TKT-");
+                if (p==="PLANTA 2") return t.id.startsWith("TK-");
+                return true;
+              };
+              const tanquesBase = cmtSede==="MALAMBO" ? tanques.filter(t=>tankEnPlanta(t,cmtPlantaRaw)) : [];
               const tanquesDisponibles = form.tanques_ot?.length ? tanquesBase.filter(t=>form.tanques_ot.includes(t.id)) : tanquesBase;
               const esTrasiego = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
               const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
@@ -4862,8 +4827,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             {(()=>{
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
-              const cmtPlantaRaw = form.planta || (perfil?.planta||"PLANTA 1").split(",")[0].trim();
-              const tanquesBase = cmtSede==="MALAMBO" ? tanques.filter(t=>!t.planta || t.planta===cmtPlantaRaw) : [];
+              const cmtPlantaRaw = form.planta || "";
+              const esTrasiegoInterplanta = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
+              const tankEnPlanta = (t, p) => {
+                if (!p || esTrasiegoInterplanta) return true;
+                if (p==="PLANTA 1") return t.id.startsWith("QBS002-") || t.id.startsWith("TKT-");
+                if (p==="PLANTA 2") return t.id.startsWith("TK-");
+                return true;
+              };
+              const tanquesBase = cmtSede==="MALAMBO" ? tanques.filter(t=>tankEnPlanta(t,cmtPlantaRaw)) : [];
               const tanquesDisponibles = form.tanques_ot?.length ? tanquesBase.filter(t=>form.tanques_ot.includes(t.id)) : tanquesBase;
               const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
               return cmtRecepcion.map((rec,i)=>(
