@@ -3230,9 +3230,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const pct    = cap > 0 ? Math.min(100, Math.round((nivel/cap)*100)) : 0;
               const color  = getProductColor(t.producto);
               const libre  = Math.max(0, capOp(t) - nivel);
-              const disp   = Math.max(0, nivel - REMANENTE);
-              const nCarg  = Math.floor(disp / CARROS);
-              const nDesc  = Math.floor(libre / CARROS);
               const editando = tankProdEdit?.id === id;
               const pctColor = "#0077CC";
               const h = 140;
@@ -3297,7 +3294,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{ fontSize:9, color:"rgba(255,255,255,0.75)", fontFamily:"monospace", lineHeight:1.3 }}>
                       <div>{fmt(nivel)} gls</div>
                       <div style={{ color:"#6ee7b7" }}>{fmt(libre)} libre</div>
-                      <div style={{ color:"#fbbf24" }}>{nCarg}C/{nDesc}D</div>
                     </div>
                   </div>
                 </div>
@@ -3403,9 +3399,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const color  = getProductColor(t.producto);
                     const capOp_ = Math.round(cap * 0.9);
                     const libre  = Math.max(0, capOp_ - nivel);
-                    const disp   = Math.max(0, nivel - REMANENTE_T);
-                    const nCarg  = Math.floor(disp / CARROS);
-                    const nDesc  = Math.floor(libre / CARROS);
                     const editando = tankProdEdit?.id === id;
                     const pctColor = "#0077CC";
                     const label = id;
@@ -3460,7 +3453,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <div style={{ fontSize:9, color:"rgba(255,255,255,0.75)", fontFamily:"monospace", lineHeight:1.3 }}>
                             <div>{fmt(nivel)} gls</div>
                             <div style={{ color:"#6ee7b7" }}>{fmt(libre)} libre</div>
-                            <div style={{ color:"#fbbf24" }}>{nCarg}C/{nDesc}D</div>
                           </div>
                         </div>
                       </div>
