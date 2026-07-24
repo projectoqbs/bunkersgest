@@ -3636,22 +3636,31 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{overflow:"auto",maxHeight:"calc(100vh - 310px)",borderRadius:10,border:`1px solid ${T.border}`}}>
                     <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:1000}}>
                       <thead><tr>
-                        {["Placa","Fecha CMT","CMT","Transportadora","PBS","Inicio Cargue","Fin Cargue","Gls Contador","Peso Ingreso","Peso Salida","Gls Báscula","OT","Tanques Carga","Tanques Descarga"].map(h=>(
+                        {["Placa","Fecha CMT","CMT","Transportadora","Tanques Carga (gls salidos)","Inicio Cargue","Fin Cargue","Gls Contador","Peso Ingreso","Peso Salida","Gls Báscula","OT","Tanques Descarga (gls recibidos)"].map(h=>(
                           <th key={h} style={thStyle}>{h}</th>
                         ))}
                       </tr></thead>
                       <tbody>
-                        {porteoFiltradas.length===0 && <tr><td colSpan={14} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
+                        {porteoFiltradas.length===0 && <tr><td colSpan={13} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
                         {porteoFiltradas.map(({cm,cr,ot,tqsCarga,tqsDesc},i)=>{
                           const pn = Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
                           const gls = Number(cr.galones_bascula||0)||0;
+                          // Gls que SALIERON del tanque de carga = inicial - final
+                          const glsCarga = t => Math.max(0, Number(t.galonesInicial||0) - Number(t.galonesFinal||0));
+                          // Gls que ENTRARON al tanque de descarga = final - inicial
+                          const glsDesc  = t => Math.max(0, Number(t.galonesFinal||0) - Number(t.galonesInicial||0));
                           return (
                             <tr key={`${cm.id}-${cr.placa}-${i}`} style={{background:i%2===0?T.card:"transparent",borderBottom:`1px solid ${T.border}`}}>
                               <td style={tdS({...mono,color:T.navy,fontSize:13})}>{cr.placa}</td>
                               <td style={tdS({color:T.muted})}>{cm.fecha}</td>
                               <td style={tdS({...mono,color:T.success})}>{cm.numero_cmt}</td>
                               <td style={tdS({color:T.muted})}>{cr.transportadora||"—"}</td>
-                              <td style={tdS({...mono,color:T.orange})}>{cr.numero_pbs||"—"}</td>
+                              <td style={{padding:"10px 12px",fontSize:11}}>
+                                {tqsCarga.length>0?tqsCarga.map((t,j)=>{
+                                  const g=glsCarga(t);
+                                  return <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{g>0&&<span style={{fontSize:10,color:T.danger,fontWeight:700}}> −{fmt(g)} gls</span>}</div>;
+                                }):<span style={{color:T.muted,fontSize:10}}>—</span>}
+                              </td>
                               <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_cargue||"—"}</td>
                               <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_final_cargue||"—"}</td>
                               <td style={tdS({color:T.muted})}>{cr.galones_contador>0?fmt(cr.galones_contador):"—"}</td>
@@ -3660,10 +3669,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <td style={tdS({fontWeight:700,color:gls>0?T.success:T.muted})}>{gls>0?fmt(gls):pn>0?fmt(pn):"—"}</td>
                               <td style={tdS({...mono,color:T.navy})}>{ot?.numero_ot||"—"}</td>
                               <td style={{padding:"10px 12px",fontSize:11}}>
-                                {tqsCarga.length>0?tqsCarga.map((t,j)=><div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{t.galonesFinal>0&&<span style={{fontSize:10,color:T.muted}}> {fmt(t.galonesFinal)} gls</span>}</div>):<span style={{color:T.muted,fontSize:10}}>—</span>}
-                              </td>
-                              <td style={{padding:"10px 12px",fontSize:11}}>
-                                {tqsDesc.length>0?tqsDesc.map((t,j)=><div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{t.galonesFinal>0&&<span style={{fontSize:10,color:T.muted}}> {fmt(t.galonesFinal)} gls</span>}</div>):<span style={{color:T.muted,fontSize:10}}>—</span>}
+                                {tqsDesc.length>0?tqsDesc.map((t,j)=>{
+                                  const g=glsDesc(t);
+                                  return <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{g>0&&<span style={{fontSize:10,color:T.success,fontWeight:700}}> +{fmt(g)} gls</span>}</div>;
+                                }):<span style={{color:T.muted,fontSize:10}}>—</span>}
                               </td>
                             </tr>
                           );
