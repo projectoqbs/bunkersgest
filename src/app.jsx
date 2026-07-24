@@ -1223,7 +1223,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       if (!pbsExiste) {
         const {error: pbsErr} = await supabaseAdmin.from("pbs").insert([{
           id: form.pbs_id, fecha: form.fecha||today(),
-          sede: form.sede||perfil.sede||"MALAMBO", planta: form.planta||perfil.planta||"",
+          sede: form.sede||perfil.sede||"MALAMBO",
           creado_por: session.user.id, firma_auxiliar: perfil.nombre,
           checklist: Array(26).fill(""),
         }]);
