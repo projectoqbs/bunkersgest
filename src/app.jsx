@@ -391,7 +391,7 @@ export default function App() {
   const [trazBuscar, setTrazBuscar] = useState("");
   const [trazDesde, setTrazDesde] = useState("");
   const [trazHasta, setTrazHasta] = useState("");
-  const [trazEstado, setTrazEstado] = useState("TODOS");
+  const [trazEstado, setTrazEstado] = useState("DESCARGUE");
   const [mps, setMps] = useState([ // materias primas en el modal formulación
     { nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }
   ]);
@@ -3489,169 +3489,198 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
           {/* TRAZABILIDAD */}
           {nav==="trazabilidad" && (()=>{
-            // Para cada viaje construir la cadena completa
-            const filas = viajes.map(v => {
-              const tq  = tiquetes.find(t => t.viaje_id === v.id || t.placa === v.placa);
-              const pb  = pbsList.find(p => p.viaje_id === v.id || p.placa === v.placa);
-              // Buscar CMT: por placa directa o dentro de carros[]
-              const cm  = cmts.find(c =>
-                c.placa === v.placa ||
-                (c.carros||[]).some(cr => cr.placa === v.placa)
-              );
-              const carro = cm ? ((cm.carros||[]).find(cr=>cr.placa===v.placa) || {}) : {};
-              const ot  = cm?.ot_id ? (ordenesTrabaio||[]).find(o => o.id === cm.ot_id) : null;
-              // Tanques donde se descargó (cmtDespues del CMT)
-              const tanquesDesc = cm ? (cm.tanques_despues||[]).filter(t=>t.tanque) : [];
-              // Galones báscula
-              const factor = Number(tq?.factor_tabla13||0);
-              const pn = Number(carro.peso_neto||0) || Math.max(0, Number(carro.peso_ingreso||0)-Number(carro.peso_salida||0));
-              const glsBas = Number(carro.galones_bascula||0) || (factor>0&&pn>0 ? Math.round(pn/factor) : 0);
-              return { v, tq, pb, cm, carro, ot, tanquesDesc, glsBas };
-            });
-
-            // Filtros
             const q = trazBuscar.trim().toUpperCase();
-            const filtradas = filas.filter(({v, tq, pb, cm, ot}) => {
-              if (trazEstado !== "TODOS" && v.estado !== trazEstado) return false;
-              if (trazDesde && v.fecha < trazDesde) return false;
-              if (trazHasta && v.fecha > trazHasta) return false;
+            const thStyle = {padding:"10px 12px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,position:"sticky",top:0,zIndex:2};
+            const tdS = (extra={}) => ({padding:"10px 12px",fontSize:11,whiteSpace:"nowrap",...extra});
+            const mono = {fontFamily:"monospace",fontWeight:700};
+
+            // ── DESCARGUE ─────────────────────────────────────────────────
+            const filasDescargue = (() => {
+              const rows = [];
+              (cmts||[]).filter(c=>(c.tipo_operacion||"")==="DESCARGUE DE CARROTANQUE").forEach(cm => {
+                const ot = cm.ot_id ? (ordenesTrabaio||[]).find(o=>o.id===cm.ot_id) : null;
+                const tanquesDesc = (cm.tanques_despues||[]).filter(t=>t.tanque);
+                (cm.carros||[]).forEach(cr => {
+                  if (!cr.placa) return;
+                  const tq = tiquetes.find(t=>t.id===cr.tiquete || t.placa===cr.placa);
+                  const pb = pbsList.find(p=>p.placa===cr.placa || (tq && p.viaje_id===tq.viaje_id));
+                  const viaje = viajes.find(v=>v.placa===cr.placa);
+                  const factor = Number(tq?.factor_tabla13||0);
+                  const pn = Number(cr.peso_neto||0) || Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
+                  const glsBas = Number(cr.galones_bascula||0)||(factor>0&&pn>0?Math.round(pn/factor):0);
+                  rows.push({cm,cr,tq,pb,ot,viaje,tanquesDesc,glsBas});
+                });
+              });
+              return rows;
+            })();
+
+            const descFiltradas = filasDescargue.filter(({cm,cr,tq,pb,ot,viaje})=>{
+              if (trazDesde && cm.fecha < trazDesde) return false;
+              if (trazHasta && cm.fecha > trazHasta) return false;
               if (!q) return true;
-              return (
-                (v.placa||"").toUpperCase().includes(q) ||
-                (v.guia||"").toUpperCase().includes(q) ||
-                (v.id||"").toUpperCase().includes(q) ||
-                (tq?.id||"").toUpperCase().includes(q) ||
-                (pb?.id||"").toUpperCase().includes(q) ||
-                (cm?.numero_cmt||"").toUpperCase().includes(q) ||
-                (ot?.numero_ot||"").toUpperCase().includes(q) ||
-                (v.transportadora||"").toUpperCase().includes(q)
-              );
+              return [cr.placa,cm.numero_cmt,tq?.id,pb?.id,ot?.numero_ot,cr.transportadora,viaje?.guia,cm.producto||viaje?.producto]
+                .some(v=>(v||"").toUpperCase().includes(q));
             });
 
-            const Chip = ({label, val, color="#334155"}) => val ? (
-              <span style={{display:"inline-block",background:`${color}22`,border:`1px solid ${color}44`,borderRadius:20,padding:"2px 10px",fontSize:10,fontWeight:700,color,marginRight:4,marginBottom:2,whiteSpace:"nowrap"}}>{label}: {val}</span>
-            ) : null;
+            // ── PORTEO ────────────────────────────────────────────────────
+            const filasPorteo = (() => {
+              const rows = [];
+              (cmts||[]).filter(c=>(c.tipo_operacion||"")==="PORTEO").forEach(cm => {
+                const ot = cm.ot_id ? (ordenesTrabaio||[]).find(o=>o.id===cm.ot_id) : null;
+                const tqsCarga = (cm.porteo_carga_tanques||cm.tanques_antes||[]).filter(t=>t.tanque);
+                const tqsDesc  = (cm.porteo_descarga_tanques||cm.tanques_despues||[]).filter(t=>t.tanque);
+                (cm.porteo_carros||cm.carros||[]).forEach(cr => {
+                  if (!cr.placa) return;
+                  rows.push({cm,cr,ot,tqsCarga,tqsDesc});
+                });
+              });
+              return rows;
+            })();
 
-            const Step = ({icon, label, done, children}) => (
-              <div style={{flex:1,minWidth:130,background:done?"#0d2a0d22":"#1a202c",borderRadius:8,padding:"10px 12px",borderLeft:`3px solid ${done?T.success:T.muted}`,opacity:done?1:0.55}}>
-                <div style={{fontSize:9,fontWeight:700,color:done?T.success:T.muted,letterSpacing:1,textTransform:"uppercase",marginBottom:5}}>{icon} {label}</div>
-                {children}
-              </div>
+            const porteoFiltradas = filasPorteo.filter(({cm,cr,ot})=>{
+              if (trazDesde && cm.fecha < trazDesde) return false;
+              if (trazHasta && cm.fecha > trazHasta) return false;
+              if (!q) return true;
+              return [cr.placa,cm.numero_cmt,ot?.numero_ot,cr.transportadora,cr.numero_pbs]
+                .some(v=>(v||"").toUpperCase().includes(q));
+            });
+
+            const TabBtn = ({id,label,count}) => (
+              <button onClick={()=>setTrazEstado(id)} style={{padding:"8px 20px",borderRadius:8,border:"none",fontWeight:700,fontSize:12,cursor:"pointer",
+                background:trazEstado===id?T.navy:"transparent",color:trazEstado===id?"#fff":T.muted,
+                borderBottom:trazEstado===id?`3px solid ${T.orange}`:"3px solid transparent"}}>
+                {label} <span style={{fontSize:10,opacity:0.7}}>({count})</span>
+              </button>
             );
+
+            const modoActivo = ["TODOS","Descargado","Rechazado","En Planta","En Tránsito"].includes(trazEstado) ? "DESCARGUE"
+              : trazEstado === "PORTEO" ? "PORTEO" : "CARGUE";
 
             return (
               <div style={{padding:"0 0 20px"}}>
                 {/* Header */}
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-                  <div>
-                    <div style={{fontWeight:900,fontSize:20,color:T.navy}}>🔍 Trazabilidad</div>
-                    <div style={{fontSize:11,color:T.muted}}>Cargue → Llegada → Tiquete → PBS → OT → CMT → Tanques</div>
-                  </div>
-                  <div style={{fontSize:11,color:T.muted,fontWeight:600}}>{filtradas.length} registro(s)</div>
+                <div style={{marginBottom:14}}>
+                  <div style={{fontWeight:900,fontSize:20,color:T.navy}}>Trazabilidad de Carros</div>
+                  <div style={{fontSize:11,color:T.muted}}>Movimientos de producto por carrotanque</div>
                 </div>
 
-                {/* Filtros */}
-                <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap",alignItems:"flex-end"}}>
-                  <input placeholder="Buscar placa, guía, tiquete, PBS, CMT, OT..." value={trazBuscar}
+                {/* Pestañas de modo */}
+                <div style={{display:"flex",gap:4,marginBottom:16,borderBottom:`1px solid ${T.border}`,paddingBottom:2}}>
+                  <TabBtn id="DESCARGUE" label="Descargue" count={filasDescargue.length}/>
+                  <TabBtn id="PORTEO"    label="Porteo"    count={filasPorteo.length}/>
+                  <TabBtn id="CARGUE"    label="Cargue"    count={0}/>
+                </div>
+
+                {/* Barra de búsqueda y fechas */}
+                <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
+                  <input placeholder="Buscar placa, CMT, tiquete, PBS, OT, transportadora..." value={trazBuscar}
                     onChange={e=>setTrazBuscar(e.target.value)}
-                    style={{flex:1,minWidth:240,background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 14px",color:T.text,fontSize:13,outline:"none"}}/>
+                    style={{flex:1,minWidth:240,background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 14px",color:T.text,fontSize:12,outline:"none"}}/>
                   <input type="date" value={trazDesde} onChange={e=>setTrazDesde(e.target.value)}
-                    style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 10px",color:T.text,fontSize:12,outline:"none"}}/>
+                    style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,outline:"none"}}/>
+                  <span style={{color:T.muted,fontSize:11}}>—</span>
                   <input type="date" value={trazHasta} onChange={e=>setTrazHasta(e.target.value)}
-                    style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 10px",color:T.text,fontSize:12,outline:"none"}}/>
-                  <select value={trazEstado} onChange={e=>setTrazEstado(e.target.value)}
-                    style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 12px",color:T.text,fontSize:12,outline:"none"}}>
-                    <option value="TODOS">Todos los estados</option>
-                    <option value="En Planta">En Planta</option>
-                    <option value="Descargado">Descargado</option>
-                    <option value="Rechazado">Rechazado</option>
-                    <option value="En Tránsito">En Tránsito</option>
-                  </select>
-                  {(trazBuscar||trazDesde||trazHasta||trazEstado!=="TODOS") && (
-                    <button onClick={()=>{setTrazBuscar("");setTrazDesde("");setTrazHasta("");setTrazEstado("TODOS");}}
-                      style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:8,padding:"9px 14px",color:T.muted,fontSize:12,cursor:"pointer"}}>✕ Limpiar</button>
+                    style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,outline:"none"}}/>
+                  {(trazBuscar||trazDesde||trazHasta) && (
+                    <button onClick={()=>{setTrazBuscar("");setTrazDesde("");setTrazHasta("");}}
+                      style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 12px",color:T.muted,fontSize:12,cursor:"pointer"}}>✕</button>
                   )}
                 </div>
 
-                {/* Tabla */}
-                <div style={{overflow:"auto",maxHeight:"calc(100vh - 280px)",borderRadius:10,border:`1px solid ${T.border}`}}>
-                  <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:1000}}>
-                    <thead>
-                      <tr>
-                        {["Placa","Fecha","Producto","Transportadora","Guía / Gls Guía","Tiquete / API / Gls","PBS","OT","CMT","Tanques descargados","Estado"].map(h=>(
-                          <th key={h} style={{padding:"10px 12px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,position:"sticky",top:0,zIndex:2}}>{h}</th>
+                {/* ── TABLA DESCARGUE ────────────────────────────────────── */}
+                {trazEstado==="DESCARGUE" && (
+                  <div style={{overflow:"auto",maxHeight:"calc(100vh - 310px)",borderRadius:10,border:`1px solid ${T.border}`}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:1100}}>
+                      <thead><tr>
+                        {["Placa","Fecha CMT","CMT","Producto","Transportadora","Guía","Tiquete","API","Gls Guía","Gls Báscula","PBS","OT","Tanques descargados"].map(h=>(
+                          <th key={h} style={thStyle}>{h}</th>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtradas.length === 0 && (
-                        <tr><td colSpan={11} style={{padding:40,textAlign:"center",color:T.muted,fontSize:13}}>Sin registros para los filtros aplicados</td></tr>
-                      )}
-                      {filtradas.map(({v, tq, pb, cm, ot, tanquesDesc, glsBas},i) => {
-                        const estadoColor = v.estado==="Descargado"?T.success:v.estado==="Rechazado"?T.danger:T.orange;
-                        return (
-                          <tr key={v.id} style={{background:i%2===0?T.card:"transparent",borderBottom:`1px solid ${T.border}`}}>
-                            {/* Placa */}
-                            <td style={{padding:"10px 12px",fontWeight:900,fontSize:13,fontFamily:"monospace",color:T.navy,whiteSpace:"nowrap"}}>{v.placa||"—"}</td>
-                            {/* Fecha */}
-                            <td style={{padding:"10px 12px",fontSize:11,color:T.muted,whiteSpace:"nowrap"}}>{v.fecha}</td>
-                            {/* Producto */}
-                            <td style={{padding:"10px 12px",fontSize:11,fontWeight:700,whiteSpace:"nowrap"}}>{v.producto||"—"}</td>
-                            {/* Transportadora */}
-                            <td style={{padding:"10px 12px",fontSize:11,color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.transportadora||"—"}</td>
-                            {/* Guía */}
-                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
-                              <div style={{fontFamily:"monospace",color:T.text}}>{v.guia||"—"}</div>
-                              {v.volumen_guia>0 && <div style={{fontSize:10,color:T.muted}}>{fmt(v.volumen_guia)} gls</div>}
-                            </td>
-                            {/* Tiquete */}
-                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
-                              {tq ? <>
-                                <div style={{fontFamily:"monospace",fontWeight:700,color:tq.resultado==="APROBADO"?T.success:T.danger}}>{tq.id}</div>
-                                <div style={{fontSize:10,color:T.muted}}>API {tq.api_corregido}° · {fmt(tq.galones_recibidos||0)} gls</div>
-                                {glsBas>0 && <div style={{fontSize:10,color:T.success,fontWeight:700}}>{fmt(glsBas)} gls báscula</div>}
-                              </> : <span style={{color:T.muted,fontSize:10}}>Pendiente</span>}
-                            </td>
-                            {/* PBS */}
-                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
-                              {pb ? <>
-                                <div style={{fontFamily:"monospace",fontWeight:700,color:T.orange}}>{pb.id}</div>
-                                <div style={{fontSize:10,color:T.muted}}>{pb.bodega_recibe||""}</div>
-                              </> : <span style={{color:T.muted,fontSize:10}}>—</span>}
-                            </td>
-                            {/* OT */}
-                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
-                              {ot ? <div style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{ot.numero_ot}</div>
+                      </tr></thead>
+                      <tbody>
+                        {descFiltradas.length===0 && <tr><td colSpan={13} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
+                        {descFiltradas.map(({cm,cr,tq,pb,ot,viaje,tanquesDesc,glsBas},i)=>(
+                          <tr key={`${cm.id}-${cr.placa}-${i}`} style={{background:i%2===0?T.card:"transparent",borderBottom:`1px solid ${T.border}`}}>
+                            <td style={tdS({...mono,color:T.navy,fontSize:13})}>{cr.placa}</td>
+                            <td style={tdS({color:T.muted})}>{cm.fecha}</td>
+                            <td style={tdS({...mono,color:T.success})}>{cm.numero_cmt}</td>
+                            <td style={tdS({fontWeight:700})}>{cm.producto||viaje?.producto||"—"}</td>
+                            <td style={tdS({color:T.muted,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis"})}>{cr.transportadora||"—"}</td>
+                            <td style={tdS({...mono,color:T.muted})}>{viaje?.guia||"—"}</td>
+                            <td style={tdS()}>
+                              {tq ? <span style={{...mono,color:tq.resultado==="APROBADO"?T.success:T.danger}}>{tq.id}</span>
                                    : <span style={{color:T.muted,fontSize:10}}>—</span>}
                             </td>
-                            {/* CMT */}
-                            <td style={{padding:"10px 12px",fontSize:11,whiteSpace:"nowrap"}}>
-                              {cm ? <>
-                                <div style={{fontFamily:"monospace",fontWeight:700,color:T.success}}>{cm.numero_cmt}</div>
-                                <div style={{fontSize:10,color:T.muted}}>{cm.tipo_operacion}</div>
-                              </> : <span style={{color:T.muted,fontSize:10}}>Pendiente</span>}
-                            </td>
-                            {/* Tanques */}
+                            <td style={tdS({color:T.muted})}>{tq?.api_corregido ? `${tq.api_corregido}°` : "—"}</td>
+                            <td style={tdS({color:T.muted})}>{viaje?.volumen_guia>0?fmt(viaje.volumen_guia):"—"}</td>
+                            <td style={tdS({fontWeight:700,color:glsBas>0?T.success:T.muted})}>{glsBas>0?fmt(glsBas):"—"}</td>
+                            <td style={tdS({...mono,color:T.orange})}>{pb?.id||cr.numero_pbs||"—"}</td>
+                            <td style={tdS({...mono,color:T.navy})}>{ot?.numero_ot||"—"}</td>
                             <td style={{padding:"10px 12px",fontSize:11}}>
                               {tanquesDesc.length>0
                                 ? tanquesDesc.map((t,j)=>(
                                     <div key={j} style={{whiteSpace:"nowrap"}}>
-                                      <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{t.tanque}</span>
-                                      {t.galones && <span style={{fontSize:10,color:T.muted}}> · {fmt(t.galones)} gls</span>}
-                                    </div>
-                                  ))
+                                      <span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>
+                                      {t.galones&&<span style={{fontSize:10,color:T.muted}}> {fmt(t.galones)} gls</span>}
+                                    </div>))
                                 : <span style={{color:T.muted,fontSize:10}}>—</span>}
                             </td>
-                            {/* Estado */}
-                            <td style={{padding:"10px 12px",whiteSpace:"nowrap"}}>
-                              <span style={{background:`${estadoColor}22`,color:estadoColor,border:`1px solid ${estadoColor}55`,borderRadius:20,padding:"3px 10px",fontSize:10,fontWeight:700}}>{v.estado}</span>
-                            </td>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* ── TABLA PORTEO ───────────────────────────────────────── */}
+                {trazEstado==="PORTEO" && (
+                  <div style={{overflow:"auto",maxHeight:"calc(100vh - 310px)",borderRadius:10,border:`1px solid ${T.border}`}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:1000}}>
+                      <thead><tr>
+                        {["Placa","Fecha CMT","CMT","Transportadora","PBS","Inicio Cargue","Fin Cargue","Gls Contador","Peso Ingreso","Peso Salida","Gls Báscula","OT","Tanques Carga","Tanques Descarga"].map(h=>(
+                          <th key={h} style={thStyle}>{h}</th>
+                        ))}
+                      </tr></thead>
+                      <tbody>
+                        {porteoFiltradas.length===0 && <tr><td colSpan={14} style={{padding:40,textAlign:"center",color:T.muted}}>Sin registros</td></tr>}
+                        {porteoFiltradas.map(({cm,cr,ot,tqsCarga,tqsDesc},i)=>{
+                          const pn = Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
+                          const gls = Number(cr.galones_bascula||0)||0;
+                          return (
+                            <tr key={`${cm.id}-${cr.placa}-${i}`} style={{background:i%2===0?T.card:"transparent",borderBottom:`1px solid ${T.border}`}}>
+                              <td style={tdS({...mono,color:T.navy,fontSize:13})}>{cr.placa}</td>
+                              <td style={tdS({color:T.muted})}>{cm.fecha}</td>
+                              <td style={tdS({...mono,color:T.success})}>{cm.numero_cmt}</td>
+                              <td style={tdS({color:T.muted})}>{cr.transportadora||"—"}</td>
+                              <td style={tdS({...mono,color:T.orange})}>{cr.numero_pbs||"—"}</td>
+                              <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_cargue||"—"}</td>
+                              <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_final_cargue||"—"}</td>
+                              <td style={tdS({color:T.muted})}>{cr.galones_contador>0?fmt(cr.galones_contador):"—"}</td>
+                              <td style={tdS({color:T.muted})}>{cr.peso_ingreso>0?fmt(cr.peso_ingreso):"—"}</td>
+                              <td style={tdS({color:T.muted})}>{cr.peso_salida>0?fmt(cr.peso_salida):"—"}</td>
+                              <td style={tdS({fontWeight:700,color:gls>0?T.success:T.muted})}>{gls>0?fmt(gls):pn>0?fmt(pn):"—"}</td>
+                              <td style={tdS({...mono,color:T.navy})}>{ot?.numero_ot||"—"}</td>
+                              <td style={{padding:"10px 12px",fontSize:11}}>
+                                {tqsCarga.length>0?tqsCarga.map((t,j)=><div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{t.galonesFinal>0&&<span style={{fontSize:10,color:T.muted}}> {fmt(t.galonesFinal)} gls</span>}</div>):<span style={{color:T.muted,fontSize:10}}>—</span>}
+                              </td>
+                              <td style={{padding:"10px 12px",fontSize:11}}>
+                                {tqsDesc.length>0?tqsDesc.map((t,j)=><div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{t.galonesFinal>0&&<span style={{fontSize:10,color:T.muted}}> {fmt(t.galonesFinal)} gls</span>}</div>):<span style={{color:T.muted,fontSize:10}}>—</span>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* ── CARGUE (por implementar) ───────────────────────────── */}
+                {trazEstado==="CARGUE" && (
+                  <div style={{textAlign:"center",padding:"60px 20px",color:T.muted}}>
+                    <div style={{fontSize:40,marginBottom:12}}>🚛</div>
+                    <div style={{fontWeight:700,fontSize:16,marginBottom:6}}>Cargue hacia proveedor externo</div>
+                    <div style={{fontSize:12}}>Esta funcionalidad estará disponible cuando se registren operaciones de cargue en el sistema</div>
+                  </div>
+                )}
               </div>
             );
           })()}
