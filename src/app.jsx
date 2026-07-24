@@ -5567,9 +5567,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{fontSize:10,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8}}>Carros</div>
                       {cmtPorteoCarros.map((c,i)=>(
                         <div key={i} style={{background:`${T.orange}08`,border:`1px solid ${T.orange}33`,borderRadius:8,padding:"10px 12px",marginBottom:8}}>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
-                            <div><CLbl>Placa</CLbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...cInSt,fontFamily:"monospace",fontWeight:700}}/></div>
-                            <div><CLbl>Transportadora</CLbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
+                            <div style={{gridColumn:"span 2"}}><CLbl>Placa</CLbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...cInSt,fontFamily:"monospace",fontWeight:700}}/></div>
+                            <div style={{gridColumn:"span 2"}}><CLbl>Transportadora</CLbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                           </div>
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
                             <div><CLbl>H. Inicio Cargue</CLbl><input type="time" value={c.hora_inicio_cargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_cargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
