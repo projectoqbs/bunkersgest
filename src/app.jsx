@@ -1223,6 +1223,25 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
           const ajuste = (Number(nuevoD?.galones||0)-Number(nuevoA?.galones||0)) - (Number(origD?.galones||0)-Number(origA?.galones||0));
           acumular(id, ajuste);
         }
+        // Recepción: ajuste neto en tanques de recepción (TRASIEGO, DESCARGUE, etc.)
+        const recepcionTqIds = new Set([
+          ...(original.tanques_recepcion||[]).map(t=>t.tanque),
+          ...cmtRecepcion.map(t=>t.tanque),
+        ].filter(Boolean));
+        for (const id of recepcionTqIds) {
+          const oR = (original.tanques_recepcion||[]).find(t=>t.tanque===id);
+          const nR = cmtRecepcion.find(t=>t.tanque===id);
+          const ajuste = Number(nR?.galonesFinal||0) - Number(oR?.galonesFinal||0);
+          acumular(id, ajuste);
+        }
+        // TRASIEGO: ajuste neto en tanques origen (cmtAntes)
+        if (tipoOp === "TRASIEGO DE PRODUCTO") {
+          const origTransf = (original.tanques_recepcion||[]).reduce((s,r)=>s+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
+          const nuevoTransf = cmtRecepcion.reduce((s,r)=>s+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
+          const ajusteOrigen = origTransf - nuevoTransf;
+          const origenTqIds = new Set([...(original.tanques_antes||[]).map(t=>t.tanque),...cmtAntes.map(t=>t.tanque)].filter(Boolean));
+          for (const id of origenTqIds) acumular(id, ajusteOrigen / origenTqIds.size);
+        }
         // PORTEO: ajuste neto en tanques de carga/descarga
         const porteoTqIds = new Set([
           ...(original.porteo_descarga_tanques||[]).map(t=>t.tanque),
@@ -1306,6 +1325,16 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         for (const tr of cmtRecepcion) {
           if (!tr.tanque || !tr.galonesFinal) continue;
           await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tr.galonesFinal)) }).eq("id", tr.tanque);
+        }
+        // TRASIEGO: actualizar tanques origen (Planta 2) restando lo trasegado
+        if (tipoOp === "TRASIEGO DE PRODUCTO") {
+          const totalTransferido = cmtRecepcion.reduce((s,r) => s + Math.max(0, Number(r.galonesFinal||0) - Number(r.galonesInicial||0)), 0);
+          if (totalTransferido > 0) {
+            for (const ta of cmtAntes) {
+              if (!ta.tanque || !ta.galones) continue;
+              await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(ta.galones) - totalTransferido) }).eq("id", ta.tanque);
+            }
+          }
         }
         // PORTEO: galonesFinal ES el nivel absoluto del tanque al terminar la operación
         for (const td of cmtPorteoDescarga) {
