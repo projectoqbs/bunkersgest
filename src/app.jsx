@@ -1217,15 +1217,15 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     })() : cmtPorteoCarros;
 
     // Validar pbs_id: si no existe en pbsList, crearlo automáticamente para evitar FK violation
-    let pbsIdValidado = form.pbs_id && pbsList.some(p=>p.id===form.pbs_id) ? form.pbs_id : null;
-    if (form.pbs_id && !pbsIdValidado) {
-      const {error: pbsAutoErr} = await supabaseAdmin.from("pbs").insert([{
+    let pbsIdValidado = null;
+    if (form.pbs_id) {
+      await supabaseAdmin.from("pbs").upsert([{
         id: form.pbs_id, fecha: form.fecha||today(),
         sede: form.sede||perfil.sede||"MALAMBO", planta: form.planta||perfil.planta||"",
         creado_por: session.user.id, firma_auxiliar: perfil.nombre,
         checklist: Array(26).fill(""),
-      }]);
-      if (!pbsAutoErr) { pbsIdValidado = form.pbs_id; await loadData(); }
+      }], {onConflict: "id", ignoreDuplicates: true});
+      pbsIdValidado = form.pbs_id;
     }
 
     if (form.id) {
