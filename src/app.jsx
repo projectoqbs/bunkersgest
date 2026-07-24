@@ -780,16 +780,16 @@ export default function App() {
   async function loadData() {
     const [t,v,tq,p,c,d,pr,permR,prog,form2,ot] = await Promise.all([
       supabase.from("tanques").select("*").order("id"),
-      supabase.from("viajes").select("*").order("created_at",{ascending:false}),
-      supabase.from("tiquetes").select("*").order("created_at",{ascending:false}),
-      supabase.from("pbs").select("*").order("created_at",{ascending:false}),
-      supabase.from("cmts").select("*").order("created_at",{ascending:false}),
-      supabase.from("despachos").select("*").order("created_at",{ascending:false}),
+      supabase.from("viajes").select("*").order("created_at",{ascending:false}).limit(300),
+      supabase.from("tiquetes").select("*").order("created_at",{ascending:false}).limit(300),
+      supabase.from("pbs").select("*").order("created_at",{ascending:false}).limit(300),
+      supabase.from("cmts").select("*").order("created_at",{ascending:false}).limit(200),
+      supabase.from("despachos").select("*").order("created_at",{ascending:false}).limit(300),
       supabase.from("perfiles").select("*").order("nombre"),
       supabase.from("permisos_roles").select("*").order("rol").order("modulo"),
-      supabase.from("programaciones").select("*").order("fecha",{ascending:false}),
-      supabase.from("formulaciones").select("*").order("created_at",{ascending:false}),
-      supabase.from("ordenes_trabajo").select("*").order("created_at",{ascending:false}),
+      supabase.from("programaciones").select("*").order("fecha",{ascending:false}).limit(100),
+      supabase.from("formulaciones").select("*").order("created_at",{ascending:false}).limit(100),
+      supabase.from("ordenes_trabajo").select("*").order("created_at",{ascending:false}).limit(200),
     ]);
     if (t.data) setTanques(t.data);
     if (v.data) setViajes(v.data);
@@ -1223,7 +1223,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
           const ajuste = (Number(nuevoD?.galones||0)-Number(nuevoA?.galones||0)) - (Number(origD?.galones||0)-Number(origA?.galones||0));
           acumular(id, ajuste);
         }
-        // Recepción: ajuste neto en tanques de recepción (TRASIEGO, DESCARGUE, etc.)
+        // Recepción: ajuste neto en tanques destino via galonesFinal
         const recepcionTqIds = new Set([
           ...(original.tanques_recepcion||[]).map(t=>t.tanque),
           ...cmtRecepcion.map(t=>t.tanque),
@@ -1233,14 +1233,6 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
           const nR = cmtRecepcion.find(t=>t.tanque===id);
           const ajuste = Number(nR?.galonesFinal||0) - Number(oR?.galonesFinal||0);
           acumular(id, ajuste);
-        }
-        // TRASIEGO: ajuste neto en tanques origen (cmtAntes)
-        if (tipoOp === "TRASIEGO DE PRODUCTO") {
-          const origTransf = (original.tanques_recepcion||[]).reduce((s,r)=>s+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
-          const nuevoTransf = cmtRecepcion.reduce((s,r)=>s+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
-          const ajusteOrigen = origTransf - nuevoTransf;
-          const origenTqIds = new Set([...(original.tanques_antes||[]).map(t=>t.tanque),...cmtAntes.map(t=>t.tanque)].filter(Boolean));
-          for (const id of origenTqIds) acumular(id, ajusteOrigen / origenTqIds.size);
         }
         // PORTEO: ajuste neto en tanques de carga/descarga
         const porteoTqIds = new Set([
@@ -1316,24 +1308,23 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         operador:perfil.nombre, creado_por:session.user.id
       }]);
       if (!error) {
-        // Usar valores absolutos del CMT (no deltas sobre estado React, que puede estar desactualizado)
+        // Origen: cmtDespues tiene el nivel final absoluto del tanque origen (DESCARGUE, TRASIEGO origen, etc.)
         for (const td of cmtDespues) {
           if (!td.tanque || !td.galones) continue;
           await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(td.galones)) }).eq("id", td.tanque);
         }
-        // Recepción: actualizar tanques de recepción (aplica a TRASIEGO, DESCARGUE, etc.)
+        // Recepción: actualizar tanques destino
+        // Para TRASIEGO: si galonesFinal está lleno → valor absoluto; si no → sumar delta del origen
+        const deltaOrigen = tipoOp === "TRASIEGO DE PRODUCTO"
+          ? cmtAntes.reduce((s,ta,i) => s + Math.max(0, Number(ta.galones||0) - Number(cmtDespues[i]?.galones||0)), 0)
+          : 0;
         for (const tr of cmtRecepcion) {
-          if (!tr.tanque || !tr.galonesFinal) continue;
-          await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tr.galonesFinal)) }).eq("id", tr.tanque);
-        }
-        // TRASIEGO: actualizar tanques origen (Planta 2) restando lo trasegado
-        if (tipoOp === "TRASIEGO DE PRODUCTO") {
-          const totalTransferido = cmtRecepcion.reduce((s,r) => s + Math.max(0, Number(r.galonesFinal||0) - Number(r.galonesInicial||0)), 0);
-          if (totalTransferido > 0) {
-            for (const ta of cmtAntes) {
-              if (!ta.tanque || !ta.galones) continue;
-              await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(ta.galones) - totalTransferido) }).eq("id", ta.tanque);
-            }
+          if (!tr.tanque) continue;
+          if (tr.galonesFinal) {
+            await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tr.galonesFinal)) }).eq("id", tr.tanque);
+          } else if (deltaOrigen > 0) {
+            const tqActual = tanques.find(t => t.id === tr.tanque);
+            if (tqActual) await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tqActual.nivel||0) + deltaOrigen) }).eq("id", tr.tanque);
           }
         }
         // PORTEO: galonesFinal ES el nivel absoluto del tanque al terminar la operación
