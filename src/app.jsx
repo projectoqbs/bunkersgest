@@ -1302,12 +1302,10 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
           if (!td.tanque || !td.galones) continue;
           await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(td.galones)) }).eq("id", td.tanque);
         }
-        // TRASIEGO: actualizar tanques de recepción (planta destino)
-        if (tipoOp === "TRASIEGO DE PRODUCTO") {
-          for (const tr of cmtRecepcion) {
-            if (!tr.tanque || !tr.galonesFinal) continue;
-            await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tr.galonesFinal)) }).eq("id", tr.tanque);
-          }
+        // Recepción: actualizar tanques de recepción (aplica a TRASIEGO, DESCARGUE, etc.)
+        for (const tr of cmtRecepcion) {
+          if (!tr.tanque || !tr.galonesFinal) continue;
+          await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tr.galonesFinal)) }).eq("id", tr.tanque);
         }
         // PORTEO: galonesFinal ES el nivel absoluto del tanque al terminar la operación
         for (const td of cmtPorteoDescarga) {
