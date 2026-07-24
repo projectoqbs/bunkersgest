@@ -91,13 +91,15 @@ function agruparDescarguesPorProducto(descarguesArray) {
 function fmtNum(num) {
   return Number(num).toLocaleString("es-CO", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
-// Calcula diferencia absoluta entre dos strings "HH:MM" → "Xh Ym" o "Ym"
+// Calcula diferencia entre dos strings "HH:MM" → "Xh Ym"
+// Soporta cruce de medianoche: si fin < inicio asume que pasó al día siguiente
 function duracion(inicio, fin) {
   if (!inicio || !fin) return "";
   const [h1,m1] = inicio.split(":").map(Number);
   const [h2,m2] = fin.split(":").map(Number);
   if (isNaN(h1)||isNaN(m1)||isNaN(h2)||isNaN(m2)) return "";
-  let mins = Math.abs((h2*60+m2)-(h1*60+m1));
+  let mins = (h2*60+m2) - (h1*60+m1);
+  if (mins < 0) mins += 24*60; // cruzó medianoche
   if (mins === 0) return "";
   const h = Math.floor(mins/60), m = mins%60;
   return h>0 ? `${h}h ${m}m` : `${m}m`;
@@ -379,7 +381,7 @@ export default function App() {
   const [cmtDespues, setCmtDespues] = useState([{tanque:"",producto:"",sonda:"",galones:""}]);
   const [cmtRecepcion, setCmtRecepcion] = useState([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
   const PORTEO_ROW = {tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""};
-  const PORTEO_CARRO = {placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""};
+  const PORTEO_CARRO = {placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",hora_inicio_descargue:"",hora_final_descargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""};
   const [cmtPorteoCargaPlanta, setCmtPorteoCargaPlanta] = useState("");
   const [cmtPorteoDescargaPlanta, setCmtPorteoDescargaPlanta] = useState("");
   const [cmtPorteoCarga, setCmtPorteoCarga] = useState([{...PORTEO_ROW}]);
@@ -404,7 +406,7 @@ export default function App() {
   const [trazHasta, setTrazHasta] = useState("");
   const [trazEstado, setTrazEstado] = useState("DESCARGUE");
   const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","pbs","ot","tanques","horaInicio","horaFinal","duracion","pesoIng","pesoSal","pesoNeto","rpm","presion"]));
-  const [trazColsPorteo, setTrazColsPorteo] = useState(new Set(["placa","fecha","cmt","transportadora","tqsCarga","inicio","fin","duracion","contador","pesoIng","pesoSal","bascula","ot","tqsDesc"]));
+  const [trazColsPorteo, setTrazColsPorteo] = useState(new Set(["placa","fecha","cmt","transportadora","tqsCarga","inicio","fin","durCargue","inicioDesc","finDesc","durDescargue","contador","pesoIng","pesoSal","bascula","ot","tqsDesc"]));
   const [trazColPanel, setTrazColPanel] = useState(false);
   const [mps, setMps] = useState([ // materias primas en el modal formulación
     { nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }
@@ -3620,7 +3622,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             ]
                           : [
                               {k:"placa",l:"Placa"},{k:"fecha",l:"Fecha CMT"},{k:"cmt",l:"CMT"},{k:"transportadora",l:"Transportadora"},
-                              {k:"tqsCarga",l:"Tanques Carga"},{k:"inicio",l:"Inicio Cargue"},{k:"fin",l:"Fin Cargue"},{k:"duracion",l:"Duración"},
+                              {k:"tqsCarga",l:"Tanques Carga"},
+                              {k:"inicio",l:"Inicio Cargue"},{k:"fin",l:"Fin Cargue"},{k:"durCargue",l:"Dur. Cargue"},
+                              {k:"inicioDesc",l:"Inicio Descargue"},{k:"finDesc",l:"Fin Descargue"},{k:"durDescargue",l:"Dur. Descargue"},
                               {k:"contador",l:"Gls Contador"},{k:"pesoIng",l:"Peso Ingreso"},{k:"pesoSal",l:"Peso Salida"},
                               {k:"bascula",l:"Gls Báscula"},{k:"ot",l:"OT"},{k:"tqsDesc",l:"Tanques Descarga"}
                             ];
@@ -3739,7 +3743,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {C.has("tqsCarga")       && <th style={thStyle}>Tanques Carga (gls salidos)</th>}
                         {C.has("inicio")         && <th style={thStyle}>Inicio Cargue</th>}
                         {C.has("fin")            && <th style={thStyle}>Fin Cargue</th>}
-                        {C.has("duracion")       && <th style={thStyle}>Duración</th>}
+                        {C.has("durCargue")      && <th style={thStyle}>Dur. Cargue</th>}
+                        {C.has("inicioDesc")     && <th style={thStyle}>Inicio Descargue</th>}
+                        {C.has("finDesc")        && <th style={thStyle}>Fin Descargue</th>}
+                        {C.has("durDescargue")   && <th style={thStyle}>Dur. Descargue</th>}
                         {C.has("contador")       && <th style={thStyle}>Gls Contador</th>}
                         {C.has("pesoIng")        && <th style={thStyle}>Peso Ingreso</th>}
                         {C.has("pesoSal")        && <th style={thStyle}>Peso Salida</th>}
@@ -3763,7 +3770,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               </td>}
                               {C.has("inicio")         && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_cargue||"—"}</td>}
                               {C.has("fin")            && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_final_cargue||"—"}</td>}
-                              {C.has("duracion")       && <td style={tdS({...mono,color:T.navy,fontWeight:700})}>{duracion(cr.hora_inicio_cargue,cr.hora_final_cargue)||"—"}</td>}
+                              {C.has("durCargue")      && <td style={tdS({...mono,color:T.navy,fontWeight:700})}>{duracion(cr.hora_inicio_cargue,cr.hora_final_cargue)||"—"}</td>}
+                              {C.has("inicioDesc")     && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_descargue||"—"}</td>}
+                              {C.has("finDesc")        && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_final_descargue||"—"}</td>}
+                              {C.has("durDescargue")   && <td style={tdS({...mono,color:T.navy,fontWeight:700})}>{duracion(cr.hora_inicio_descargue,cr.hora_final_descargue)||"—"}</td>}
                               {C.has("contador")       && <td style={tdS({color:cr.galones_contador>0?T.text:T.muted,fontWeight:cr.galones_contador>0?700:400})}>{cr.galones_contador>0?fmt(cr.galones_contador):"—"}</td>}
                               {C.has("pesoIng")        && <td style={tdS({color:T.muted})}>{cr.peso_ingreso>0?fmt(cr.peso_ingreso):"—"}</td>}
                               {C.has("pesoSal")        && <td style={tdS({color:T.muted})}>{cr.peso_salida>0?fmt(cr.peso_salida):"—"}</td>}
@@ -5500,10 +5510,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <div><CLbl>Placa</CLbl><input value={c.placa||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],placa:e.target.value.replace(/[^A-Z0-9]/gi,"").toUpperCase().slice(0,6)};setCmtPorteoCarros(n);}} placeholder="ABC123" maxLength={6} style={{...cInSt,fontFamily:"monospace",fontWeight:700}}/></div>
                             <div><CLbl>Transportadora</CLbl><input value={c.transportadora||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],transportadora:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                           </div>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
                             <div><CLbl>H. Inicio Cargue</CLbl><input type="time" value={c.hora_inicio_cargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_cargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
                             <div><CLbl>H. Final Cargue</CLbl><input type="time" value={c.hora_final_cargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_cargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
-                            <div><CLbl>Duración</CLbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"monospace",color:duracion(c.hora_inicio_cargue,c.hora_final_cargue)?T.navy:"#aab4be",fontWeight:700,minHeight:38,display:"flex",alignItems:"center"}}>{duracion(c.hora_inicio_cargue,c.hora_final_cargue)||"—"}</div></div>
+                            <div><CLbl>Dur. Cargue</CLbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"monospace",color:duracion(c.hora_inicio_cargue,c.hora_final_cargue)?T.navy:"#aab4be",fontWeight:700,minHeight:38,display:"flex",alignItems:"center"}}>{duracion(c.hora_inicio_cargue,c.hora_final_cargue)||"—"}</div></div>
+                            <div><CLbl>H. Inicio Descargue</CLbl><input type="time" value={c.hora_inicio_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_inicio_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>H. Final Descargue</CLbl><input type="time" value={c.hora_final_descargue||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],hora_final_descargue:e.target.value};setCmtPorteoCarros(n);}} style={cInSt}/></div>
+                            <div><CLbl>Dur. Descargue</CLbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"8px 10px",fontSize:13,fontFamily:"monospace",color:duracion(c.hora_inicio_descargue,c.hora_final_descargue)?T.navy:"#aab4be",fontWeight:700,minHeight:38,display:"flex",alignItems:"center"}}>{duracion(c.hora_inicio_descargue,c.hora_final_descargue)||"—"}</div></div>
                             <div><CLbl>N° PBS Cargue</CLbl><input type="text" value={c.numero_pbs||""} onChange={e=>{const n=[...cmtPorteoCarros];n[i]={...n[i],numero_pbs:e.target.value.toUpperCase()};setCmtPorteoCarros(n);}} placeholder="PBS-001" style={cInSt}/></div>
                           </div>
                           <div>
