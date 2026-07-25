@@ -3541,7 +3541,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                 <thead>
-                  <tr>{[["ID",90],["Fecha Reg.",80],["MN",140],["ETA",80],["ETD",80],["Agencia",110],["MT VLSO",70],["MT HSFO",70],["MT MGO",70],["Puerto",110],["Horas Op.",70],["Contrato",90],["IMO",90],["Bandera",80],["Ciudad",90],["Estado",90],["",60]].map(([c,w])=>(
+                  <tr>{[["ID",90],["Fecha Reg.",80],["MN",140],["ETA",80],["ETD",80],["Agencia",110],["MT VLSO",70],["MT HSFO",70],["MT MGO",70],["Puerto",110],["Horas Op.",70],["Contrato",90],["IMO",90],["Bandera",80],["Ciudad",90],["Estado",90]].map(([c,w])=>(
                     <th key={c} style={{padding:"8px 10px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,minWidth:w}}>{c}</th>
                   ))}</tr>
                 </thead>
@@ -3550,7 +3550,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const estadoColor = d.estado==="COMPLETADO"?T.success:d.estado==="EN OPERACIÓN"?T.orange:T.muted;
                     return (
                       <tr key={d.id} style={{background:i%2===0?T.bg:T.card,borderBottom:`1px solid ${T.border}`}}>
-                        <td style={{padding:"8px 10px",fontFamily:"monospace",fontWeight:700,color:T.primary,whiteSpace:"nowrap"}}>{d.id}</td>
+                        <td style={{padding:"8px 10px",fontFamily:"monospace",fontWeight:700,whiteSpace:"nowrap"}}><span onClick={()=>{setForm({...d});setModal("despacho");}} style={{color:T.primary,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>{d.id}</span></td>
                         <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.fecha}</td>
                         <td style={{padding:"8px 10px",fontWeight:700,whiteSpace:"nowrap"}}>{d.buque}</td>
                         <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.eta||"—"}</td>
@@ -3566,15 +3566,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.bandera||"—"}</td>
                         <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.ciudad||"—"}</td>
                         <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}><span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span></td>
-                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>
-                          {puedeEditar("despachos",d.creado_por,d.created_at)
-                            ? <button onClick={()=>{setForm({...d});setModal("despacho");}} style={{background:`${T.muted}22`,border:`1px solid ${T.muted}55`,borderRadius:6,color:T.muted,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>Editar</button>
-                            : null}
-                        </td>
                       </tr>
                     );
                   })}
-                  {despachosFiltrados.length===0&&<tr><td colSpan={17} style={{padding:"28px",textAlign:"center",color:T.muted,fontSize:12}}>Sin despachos registrados</td></tr>}
+                  {despachosFiltrados.length===0&&<tr><td colSpan={16} style={{padding:"28px",textAlign:"center",color:T.muted,fontSize:12}}>Sin despachos registrados</td></tr>}
                 </tbody>
               </table>
               </div>
