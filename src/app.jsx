@@ -1400,10 +1400,15 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
   async function guardarDespacho(e) {
     e.preventDefault(); setSaving(true);
     if (!form.buque) { setSaving(false); return showToast("El nombre del buque es obligatorio", false); }
+    const vlso=Number(form.mt_vlso||0), hsfo=Number(form.mt_hsfo||0), mgo=Number(form.mt_mgo||0);
+    const productoDerivado = [["VLSO",vlso],["HSFO",hsfo],["MGO",mgo]].sort((a,b)=>b[1]-a[1])[0][1]>0
+      ? [["VLSO",vlso],["HSFO",hsfo],["MGO",mgo]].filter(([,v])=>v>0).map(([p])=>p).join("/")
+      : "BUNKERS";
     const campos = {
       buque: form.buque||"", imo: form.imo||"", bandera: form.bandera||"",
       eta: form.eta||"", agencia: form.agencia||"", etd: form.etd||"",
-      mt_vlso: Number(form.mt_vlso||0), mt_hsfo: Number(form.mt_hsfo||0), mt_mgo: Number(form.mt_mgo||0),
+      mt_vlso: vlso, mt_hsfo: hsfo, mt_mgo: mgo,
+      producto: productoDerivado,
       destino: form.destino||"", horas_op: Number(form.horas_op||0),
       contrato: form.contrato||"", ciudad: form.ciudad||perfil.sede||"MALAMBO",
       estado: form.estado||"PENDIENTE",
