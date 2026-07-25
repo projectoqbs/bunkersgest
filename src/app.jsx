@@ -1399,42 +1399,31 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
 
   async function guardarDespacho(e) {
     e.preventDefault(); setSaving(true);
-    const vol = Number(form.volumen||0);
+    if (!form.buque) { setSaving(false); return showToast("El nombre del buque es obligatorio", false); }
+    const campos = {
+      buque: form.buque||"", imo: form.imo||"", bandera: form.bandera||"",
+      eta: form.eta||"", agencia: form.agencia||"", etd: form.etd||"",
+      mt_vlso: Number(form.mt_vlso||0), mt_hsfo: Number(form.mt_hsfo||0), mt_mgo: Number(form.mt_mgo||0),
+      destino: form.destino||"", horas_op: Number(form.horas_op||0),
+      contrato: form.contrato||"", ciudad: form.ciudad||perfil.sede||"MALAMBO",
+      estado: form.estado||"PENDIENTE",
+      sede: form.sede||perfil.sede||"MALAMBO",
+      operador: perfil.nombre, creado_por: session.user.id,
+    };
     if (form.id) {
-      const original = despachos.find(d=>d.id===form.id);
-      const volOrig = Number(original?.volumen||0);
-      const tqOrig = tanques.find(t=>t.id===original?.tanque);
-      const tqNuevo = tanques.find(t=>t.id===form.tanque);
-      const mismoTanque = form.tanque === original?.tanque;
-      const nivelDisponible = mismoTanque ? (tqOrig?.nivel||0)+volOrig : (tqNuevo?.nivel||0);
-      if (vol > nivelDisponible) { setSaving(false); return showToast("Volumen supera stock disponible",false); }
-      const {error} = await supabaseAdmin.from("despachos").update({...form, volumen:vol}).eq("id",form.id);
-      if (!error) {
-        if (mismoTanque && tqOrig) {
-          await supabaseAdmin.from("tanques").update({nivel: tqOrig.nivel + volOrig - vol}).eq("id",form.tanque);
-        } else {
-          if (tqOrig) await supabaseAdmin.from("tanques").update({nivel: tqOrig.nivel + volOrig}).eq("id",original.tanque);
-          if (tqNuevo) await supabaseAdmin.from("tanques").update({nivel: tqNuevo.nivel - vol}).eq("id",form.tanque);
-        }
-      }
+      const {error} = await supabaseAdmin.from("despachos").update(campos).eq("id", form.id);
       setSaving(false);
-      if (error) return showToast("Error: "+error.message,false);
+      if (error) return showToast("Error: "+error.message, false);
       await loadData(); setModal(null); setForm({});
       showToast(`Despacho ${form.id} actualizado`);
     } else {
-      const tanque = tanques.find(t=>t.id===form.tanque);
-      if (!tanque||vol>tanque.nivel) { setSaving(false); return showToast("Volumen supera stock disponible",false); }
-      const id = genId("DSP", despachos);
-      const {error} = await supabaseAdmin.from("despachos").insert([{
-        id, ...form, volumen:vol, operador:perfil.nombre,
-        sede: form.sede || perfil.sede || "MALAMBO",
-        fecha:today(), creado_por:session.user.id
-      }]);
-      if (!error) await supabaseAdmin.from("tanques").update({nivel:tanque.nivel-vol}).eq("id",form.tanque);
+      const num = String((despachos||[]).length + 1).padStart(5, "0");
+      const id = `DESP-${num}`;
+      const {error} = await supabaseAdmin.from("despachos").insert([{ id, fecha: form.fecha||today(), ...campos }]);
       setSaving(false);
-      if (error) return showToast("Error: "+error.message,false);
+      if (error) return showToast("Error: "+error.message, false);
       await loadData(); setModal(null); setForm({});
-      showToast(`Despacho ${id} — ${fmt(vol)} Gls a ${form.buque}`);
+      showToast(`Despacho ${id} registrado — ${form.buque}`);
     }
   }
 
@@ -3544,19 +3533,46 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {puedeCrear("despachos") && <Btn color="#c084fc" onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro});setModal("despacho");}}>+ Nuevo Despacho</Btn>}
                 </div>
               </div>
-              <Table
-                cols={["ID","Fecha","Buque","Producto","Volumen (Gls)","Barcaza","Tanque","Destino","Operador",""]}
-                rows={despachosFiltrados.map(d=>[
-                  <span style={{color:T.muted}}>{d.id}</span>,
-                  d.fecha, d.buque,
-                  <Badge label={d.producto} color={d.producto==="MGO"?T.navy:T.success}/>,
-                  <span style={{fontWeight:700}}>{fmt(d.volumen)}</span>,
-                  d.barcaza, d.tanque, d.destino, d.operador,
-                  puedeEditar("despachos",d.creado_por,d.created_at)
-                    ? <button onClick={()=>{setForm({...d});setModal("despacho");}} style={{background:`${T.muted}22`,border:`1px solid ${T.muted}55`,borderRadius:6,color:T.muted,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>Editar</button>
-                    : null,
-                ])}
-              />
+              <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                <thead>
+                  <tr>{[["ID",90],["Fecha Reg.",80],["MN",140],["ETA",80],["ETD",80],["Agencia",110],["MT VLSO",70],["MT HSFO",70],["MT MGO",70],["Puerto",110],["Horas Op.",70],["Contrato",90],["IMO",90],["Bandera",80],["Ciudad",90],["Estado",90],["",60]].map(([c,w])=>(
+                    <th key={c} style={{padding:"8px 10px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,minWidth:w}}>{c}</th>
+                  ))}</tr>
+                </thead>
+                <tbody>
+                  {despachosFiltrados.map((d,i)=>{
+                    const estadoColor = d.estado==="COMPLETADO"?T.success:d.estado==="EN OPERACIÓN"?T.orange:T.muted;
+                    return (
+                      <tr key={d.id} style={{background:i%2===0?T.bg:T.card,borderBottom:`1px solid ${T.border}`}}>
+                        <td style={{padding:"8px 10px",fontFamily:"monospace",fontWeight:700,color:T.primary,whiteSpace:"nowrap"}}>{d.id}</td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.fecha}</td>
+                        <td style={{padding:"8px 10px",fontWeight:700,whiteSpace:"nowrap"}}>{d.buque}</td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.eta||"—"}</td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.etd||"—"}</td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.agencia||"—"}</td>
+                        <td style={{padding:"8px 10px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_vlso>0?Number(d.mt_vlso).toLocaleString():"—"}</td>
+                        <td style={{padding:"8px 10px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_hsfo>0?Number(d.mt_hsfo).toLocaleString():"—"}</td>
+                        <td style={{padding:"8px 10px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_mgo>0?Number(d.mt_mgo).toLocaleString():"—"}</td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.destino||"—"}</td>
+                        <td style={{padding:"8px 10px",textAlign:"right",whiteSpace:"nowrap"}}>{d.horas_op>0?d.horas_op:"—"}</td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.contrato||"—"}</td>
+                        <td style={{padding:"8px 10px",fontFamily:"monospace",whiteSpace:"nowrap"}}>{d.imo||"—"}</td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.bandera||"—"}</td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>{d.ciudad||"—"}</td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}><span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span></td>
+                        <td style={{padding:"8px 10px",whiteSpace:"nowrap"}}>
+                          {puedeEditar("despachos",d.creado_por,d.created_at)
+                            ? <button onClick={()=>{setForm({...d});setModal("despacho");}} style={{background:`${T.muted}22`,border:`1px solid ${T.muted}55`,borderRadius:6,color:T.muted,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>Editar</button>
+                            : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {despachosFiltrados.length===0&&<tr><td colSpan={17} style={{padding:"28px",textAlign:"center",color:T.muted,fontSize:12}}>Sin despachos registrados</td></tr>}
+                </tbody>
+              </table>
+              </div>
             </div>
           )}
 
@@ -5683,30 +5699,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       {modal==="despacho" && (
         <Modal title={form.id ? `Editar Despacho ${form.id}` : "Registrar Despacho a Buque"} onClose={()=>setModal(null)} wide inline>
-          <Grid cols={2}>
-            <Inp label="Fecha" type="date" value={form.fecha||""} onChange={f("fecha")}/>
-            <Inp label="Nombre del Buque" type="text" placeholder="MV / MT / BT ..." value={form.buque||""} onChange={f("buque")}/>
-            <Sel label="Tanque Origen" value={form.tanque||""} onChange={f("tanque")}>
-              <option value="">Seleccionar...</option>
-              {tanques.filter(t=>t.tipo==="terminado").map(t=><option key={t.id} value={t.id}>{t.id} · {t.producto} · {fmt(t.nivel)} Gls disponibles</option>)}
+          <Grid cols={3}>
+            <Inp label="Fecha Registro" type="date" value={form.fecha||today()} onChange={f("fecha")}/>
+            <div style={{gridColumn:"span 2"}}><Inp label="MN (Nombre del Buque)" type="text" placeholder="MV / MT / BT ..." value={form.buque||""} onChange={f("buque")}/></div>
+            <Inp label="IMO" type="text" placeholder="IMO 1234567" value={form.imo||""} onChange={f("imo")}/>
+            <Inp label="Bandera" type="text" placeholder="Colombia / Panama ..." value={form.bandera||""} onChange={f("bandera")}/>
+            <Inp label="Agencia" type="text" placeholder="Agencia naviera" value={form.agencia||""} onChange={f("agencia")}/>
+            <Inp label="ETA" type="date" value={form.eta||""} onChange={f("eta")}/>
+            <Inp label="ETD" type="date" value={form.etd||""} onChange={f("etd")}/>
+            <Inp label="Horas Op." type="number" placeholder="0" value={form.horas_op||""} onChange={f("horas_op")}/>
+            <Inp label="MT VLSO" type="number" placeholder="0" value={form.mt_vlso||""} onChange={f("mt_vlso")}/>
+            <Inp label="MT HSFO" type="number" placeholder="0" value={form.mt_hsfo||""} onChange={f("mt_hsfo")}/>
+            <Inp label="MT MGO" type="number" placeholder="0" value={form.mt_mgo||""} onChange={f("mt_mgo")}/>
+            <Inp label="Puerto" type="text" placeholder="SPSM / Cartagena / Palermo" value={form.destino||""} onChange={f("destino")}/>
+            <Inp label="Contrato" type="text" placeholder="N° Contrato" value={form.contrato||""} onChange={f("contrato")}/>
+            <Inp label="Ciudad" type="text" placeholder="Barranquilla / Santa Marta ..." value={form.ciudad||perfil.sede||""} onChange={f("ciudad")}/>
+            <Sel label="Estado" value={form.estado||"PENDIENTE"} onChange={f("estado")}>
+              {["PENDIENTE","EN OPERACIÓN","COMPLETADO","CANCELADO"].map(s=><option key={s}>{s}</option>)}
             </Sel>
-            <Inp label="Volumen (Gls)" type="number" value={form.volumen||""} onChange={f("volumen")}/>
-            <Sel label="Barcaza" value={form.barcaza||""} onChange={f("barcaza")}>
-              <option value="">Seleccionar...</option>
-              {BARCAZAS.map(b=><option key={b}>{b}</option>)}
-            </Sel>
-            {form.barcaza && TANQUES_BARCAZA[form.barcaza] && (
-              <Sel label={`Compartimento ${form.barcaza}`} value={form.compartimento||""} onChange={f("compartimento")}>
-                <option value="">Seleccionar compartimento...</option>
-                {TANQUES_BARCAZA[form.barcaza].map(c=><option key={c}>{c}</option>)}
-              </Sel>
-            )}
-            <Inp label="Guía de Despacho" type="text" value={form.guia||""} onChange={f("guia")}/>
-            <Inp label="Puerto Destino" type="text" placeholder="SPSM / Cartagena / Palermo" value={form.destino||""} onChange={f("destino")}/>
           </Grid>
           <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:12 }}>
             <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
-            <Btn color="#c084fc" onClick={guardarDespacho} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Despacho":"Confirmar Despacho"}</Btn>
+            <Btn color="#c084fc" onClick={guardarDespacho} disabled={saving}>{saving?"Guardando...":form.id?"Actualizar Despacho":"Registrar Despacho"}</Btn>
           </div>
         </Modal>
       )}
