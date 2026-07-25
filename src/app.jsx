@@ -283,7 +283,7 @@ function Modal({ title, onClose, children, wide, inline }) {
         <span style={{ fontSize:15, fontWeight:800, color:"#ffffff", letterSpacing:1, textTransform:"uppercase" }}>{title}</span>
         <button onClick={onClose} style={{ background:"rgba(255,255,255,0.1)", border:"none", color:"#ffffff", fontSize:18, cursor:"pointer", borderRadius:6, width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
       </div>
-      <div style={{ padding:24, ...(inline ? { flex:1, overflowY:'auto' } : {}) }}>{children}</div>
+      <div style={{ padding:24, background:T.bg, ...(inline ? { flex:1, overflowY:'auto' } : {}) }}>{children}</div>
     </div>
   );
   if (inline) return <div style={{ height:"100%", display:"flex", flexDirection:"column" }}>{inner}</div>;
