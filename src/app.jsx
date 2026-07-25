@@ -1407,7 +1407,6 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       destino: form.destino||"", horas_op: Number(form.horas_op||0),
       contrato: form.contrato||"", ciudad: form.ciudad||perfil.sede||"MALAMBO",
       estado: form.estado||"PENDIENTE",
-      sede: form.sede||perfil.sede||"MALAMBO",
       operador: perfil.nombre, creado_por: session.user.id,
     };
     if (form.id) {
