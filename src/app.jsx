@@ -1409,6 +1409,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       eta: form.eta||"", agencia: form.agencia||"", etd: form.etd||"",
       mt_vlso: vlso, mt_hsfo: hsfo, mt_mgo: mgo,
       producto: productoDerivado,
+      volumen: vlso + hsfo + mgo,
       destino: form.destino||"", horas_op: Number(form.horas_op||0),
       contrato: form.contrato||"", ciudad: form.ciudad||perfil.sede||"MALAMBO",
       estado: form.estado||"PENDIENTE",
