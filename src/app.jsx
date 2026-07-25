@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
 import { calcularGalonesP1, parseTankId } from "./utils/aforoP1";
 import LiquidadorPlanta2 from "./components/LiquidadorPlanta2";
-import { LayoutDashboard, Truck, FlaskConical, Settings2, ClipboardList, Cylinder, Ship, Search, Users, CalendarDays, Calculator, RefreshCw, Crown, BarChart2, Package, Lock } from "lucide-react";
+import { LayoutDashboard, Truck, FlaskConical, Settings2, ClipboardList, Cylinder, Ship, Search, Users, CalendarDays, Calculator, RefreshCw, Crown, BarChart2, Package, Lock, AlertTriangle, CheckCircle, X, Pencil, Trash2, Save, Fuel, Anchor, MapPin, ArrowDownToLine, Wrench, HardHat, Factory, Clock, CircleCheck, CirclePause, Timer, Beaker, ChevronRight, GaugeCircle, Droplets, Flame } from "lucide-react";
 
 const ICON_MAP = {
   dashboard:    LayoutDashboard,
@@ -1128,7 +1128,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
     setCmtDespues([{tanque:"",producto:"",sonda:"",galones:""}]);
     setCmtRecepcion([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
-    showToast(ot_id ? `✅ CMT ${num} vinculado a ${ot_numero}` : `✅ CMT ${num} guardado como autónomo`);
+    showToast(ot_id ? `CMT${num} vinculado a ${ot_numero}` : `CMT${num} guardado como autónomo`);
   }
 
   async function aplicarTanquesDesdeCMT(cmt) {
@@ -1388,7 +1388,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         setCmtPorteoCarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
         setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
         setCmtPorteoCarros([{placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]);
-        showToast(`✅ CMT ${numeroCmt} vinculado a ${form.ot_numero}`);
+        showToast(`CMT${numeroCmt} vinculado a ${form.ot_numero}`);
       } else {
         // CMT autónomo → preguntar si vincular a OT
         setModal(null);
@@ -1756,14 +1756,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
               <div style={{ fontSize:11, color:T.muted, marginBottom:22 }}>QBS · {new Date().toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:12, marginBottom:22 }}>
-                <Stat label="🚚 Carros en Ruta" value={enRuta} color={T.orange} sub="hacia planta" />
+                <Stat label="Carros en Ruta" value={enRuta} color={T.orange} sub="hacia planta" />
                 <Stat label="⏳ Tiquetes Pend." value={pendTiquetes} color={T.navy} sub="esperan laboratorio" />
-                <Stat label="⚙️ PBS Pendientes" value={pendPBS} color={T.orange} sub="esperan operaciones" />
-                <Stat label="✅ CMT Pendientes" value={pendCMT} color={T.success} sub="esperan coordinador" />
-                <Stat label="⛽ Stock VLSFO" value={`${fmt(tanques.filter(t=>t.producto==="VLSFO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.success} />
-                <Stat label="⛽ Stock MGO" value={`${fmt(tanques.filter(t=>t.producto==="MGO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.navy} />
+                <Stat label="PBS Pendientes" value={pendPBS} color={T.orange} sub="esperan operaciones" />
+                <Stat label="CMT Pendientes" value={pendCMT} color={T.success} sub="esperan coordinador" />
+                <Stat label="Stock VLSFO" value={`${fmt(tanques.filter(t=>t.producto==="VLSFO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.success} />
+                <Stat label="Stock MGO" value={`${fmt(tanques.filter(t=>t.producto==="MGO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.navy} />
               </div>
-              <div style={{ fontWeight:800, fontSize:14, color:T.navy, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${T.orange}22` }}>🛢 Inventario de Tanques</div>
+              <div style={{ fontWeight:800, fontSize:14, color:T.navy, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${T.orange}22`, display:"flex", alignItems:"center", gap:6 }}><Cylinder size={15}/>Inventario de Tanques</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:10 }}>
                 {tanques.map(t=>{
                   const pct = Math.round((t.nivel/t.capacidad)*100);
@@ -1838,7 +1838,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <input type="date" value={viajesFiltroFechaD} onChange={e=>setViajesFiltroFechaD(e.target.value)} style={selStyle} title="Fecha cargue desde"/>
                   <input type="date" value={viajesFiltroFechaH} onChange={e=>setViajesFiltroFechaH(e.target.value)} style={selStyle} title="Fecha cargue hasta"/>
                   {(viajesBusqueda||viajesFiltroEstado||viajesFiltroProducto||viajesFiltroFechaD||viajesFiltroFechaH) && (
-                    <button onClick={()=>{setViajesBusqueda("");setViajesFiltroEstado("");setViajesFiltroProducto("");setViajesFiltroFechaD("");setViajesFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"monospace"}}>✕ Limpiar</button>
+                    <button onClick={()=>{setViajesBusqueda("");setViajesFiltroEstado("");setViajesFiltroProducto("");setViajesFiltroFechaD("");setViajesFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"monospace"}}>Limpiar</button>
                   )}
                 </div>
               </div>
@@ -1880,7 +1880,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       : <span style={{color:"#ffffff18"}}>—</span>,
                     <Badge label={v.estado} color={v.estado==="Descargado"?T.success:v.estado==="En Ruta"?T.orange:v.estado==="Rechazado"?T.danger:T.orange}/>,
                     puedeEditar("viajes",v.creado_por,v.created_at)
-                      ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                      ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>Editar</button>
                       : null,
                   ];
                 })}
@@ -1940,7 +1940,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <input type="date" value={plantaFiltroFechaD||""} onChange={e=>setPlantaFiltroFechaD(e.target.value)} style={selStyle} title="Llegada desde"/>
                   <input type="date" value={plantaFiltroFechaH||""} onChange={e=>setPlantaFiltroFechaH(e.target.value)} style={selStyle} title="Llegada hasta"/>
                   {(plantaBusqueda||plantaFiltroProducto||plantaFiltroFechaD||plantaFiltroFechaH) && (
-                    <button onClick={()=>{setPlantaBusqueda("");setPlantaFiltroProducto("");setPlantaFiltroFechaD("");setPlantaFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                    <button onClick={()=>{setPlantaBusqueda("");setPlantaFiltroProducto("");setPlantaFiltroFechaD("");setPlantaFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11}}>Limpiar</button>
                   )}
                 </div>
               </div>
@@ -2015,7 +2015,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                 style={{background:T.navy,border:"none",borderRadius:6,color:"#ffffff",padding:"5px 14px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}
                                 onMouseEnter={e=>e.currentTarget.style.background=T.orange}
                                 onMouseLeave={e=>e.currentTarget.style.background=T.navy}>
-                                {llegó ? "✏ Editar" : "📍 Registrar llegada"}
+                                {llegó ? "Editar" : "📍 Registrar llegada"}
                               </button>
                               {perfil.rol==="administrador" && (
                                 <button onClick={async()=>{
@@ -2103,7 +2103,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
                 {/* Carros en planta sin tiquete */}
                 <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
-                  <div style={{fontSize:12,fontWeight:700,color:T.navy,marginBottom:10}}>🚛 Carros en planta pendientes de análisis</div>
+                  <div style={{fontSize:12,fontWeight:700,color:T.navy,marginBottom:10}}>Carros en planta pendientes de análisis</div>
                   {carrosSinTiquete.length===0
                     ? <div style={{fontSize:12,color:T.muted}}>Sin carros pendientes</div>
                     : <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
@@ -2122,7 +2122,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
                 {/* Recirculaciones pendientes de análisis */}
                 <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 18px"}}>
-                  <div style={{fontSize:12,fontWeight:700,color:T.orange,marginBottom:10}}>⚗️ Recirculaciones pendientes de análisis</div>
+                  <div style={{fontSize:12,fontWeight:700,color:T.orange,marginBottom:10}}>Recirculaciones pendientes de análisis</div>
                   {otsPendientesLab.length===0
                     ? <div style={{fontSize:12,color:T.muted}}>Sin recirculaciones pendientes</div>
                     : <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
@@ -2136,7 +2136,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <b>{o.numero_ot}</b> · {tanquesLabel||"—"}
                               {horasRecirc&&<span style={{color:T.muted,fontSize:11}}> · {horasRecirc}</span>}
                               <button onClick={()=>{setForm({tipo_analisis:"Planta 2",ot_id:o.id,ot_numero:o.numero_ot});setModal("tiquete");}}
-                                style={{marginLeft:10,background:T.orange,color:"#071422",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>🧪 Analizar</button>
+                                style={{marginLeft:10,background:T.orange,color:"#071422",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Analizar</button>
                             </div>
                           );
                         })}
@@ -2179,12 +2179,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <input type="date" value={tiqFiltroFechaD||""} onChange={e=>setTiqFiltroFechaD(e.target.value)} style={selSt} title="Desde"/>
                 <input type="date" value={tiqFiltroFechaH||""} onChange={e=>setTiqFiltroFechaH(e.target.value)} style={selSt} title="Hasta"/>
                 {(tiqBusqueda||tiqFiltroProducto||tiqFiltroResultado||tiqFiltroFechaD||tiqFiltroFechaH) && (
-                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11}}>Limpiar</button>
                 )}
               </div>
               {viajes.filter(v=>v.estado==="En Planta"&&!v.tiquete_id).length>0 && (
                 <Card style={{ marginBottom:18, borderColor:`${T.orange}33` }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:T.orange, marginBottom:10 }}>⚠ Carros en planta sin tiquete</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.orange, marginBottom:10 }}>Carros en planta sin tiquete</div>
                   <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
                     {viajes.filter(v=>v.estado==="En Planta"&&!v.tiquete_id).map(v=>(
                       <div key={v.id} style={{ background:`${T.orange}18`, border:`1px solid ${T.orange}33`, borderRadius:8, padding:"8px 14px", fontSize:12 }}>
@@ -2206,7 +2206,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <Badge label={t.resultado} color={t.resultado==="APROBADO"?T.success:T.danger}/>,
                   t.autoriza_nombre,
                   puedeEditar("tiquetes",t.creado_por,t.created_at)
-                    ? <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                    ? <button onClick={()=>{setForm({...t});setModal("tiquete");}} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>Editar</button>
                     : null,
                 ])}
               />
@@ -2264,7 +2264,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <input type="date" value={tiqFiltroFechaD||""} onChange={e=>setTiqFiltroFechaD(e.target.value)} style={selSt} title="Desde"/>
                 <input type="date" value={tiqFiltroFechaH||""} onChange={e=>setTiqFiltroFechaH(e.target.value)} style={selSt} title="Hasta"/>
                 {(tiqBusqueda||tiqFiltroProducto||tiqFiltroResultado||tiqFiltroFechaD||tiqFiltroFechaH||resFiltroTipo) && (
-                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");setResFiltroTipo("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11}}>✕ Limpiar</button>
+                  <button onClick={()=>{setTiqBusqueda("");setTiqFiltroProducto("");setTiqFiltroResultado("");setTiqFiltroFechaD("");setTiqFiltroFechaH("");setResFiltroTipo("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11}}>Limpiar</button>
                 )}
               </div>
               <Table
@@ -3346,7 +3346,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {/* Header */}
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
                   <div>
-                    <div style={{ fontWeight:900, fontSize:20, color:T.navy }}>🚢 Planta 1 — Barcaza QBS002</div>
+                    <div style={{ fontWeight:900, fontSize:20, color:T.navy, display:"flex", alignItems:"center", gap:8 }}><Ship size={20}/>Planta 1 — Barcaza QBS002</div>
                     <div style={{ fontSize:11, color:T.muted }}>10 tanques · Estribor (E) proa · Babor (B) popa · doble-clic para editar producto</div>
                   </div>
                   <div style={{ display:"flex", gap:10 }}>
@@ -3375,7 +3375,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{ textAlign:"center", padding:"10px 0 6px",
                     borderBottom:"2px solid #1a4a6e", marginBottom:4 }}>
                     <span style={{ fontWeight:900, fontSize:13, color:"#7ec8e3",
-                      letterSpacing:4, textTransform:"uppercase", fontFamily:"monospace" }}>⚓ QBS002</span>
+                      letterSpacing:4, textTransform:"uppercase", fontFamily:"monospace", display:"flex", alignItems:"center", gap:5 }}><Anchor size={13}/>QBS002</span>
                   </div>
 
                   {/* ESTRIBOR (E) — fila superior */}
@@ -3553,7 +3553,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <span style={{fontWeight:700}}>{fmt(d.volumen)}</span>,
                   d.barcaza, d.tanque, d.destino, d.operador,
                   puedeEditar("despachos",d.creado_por,d.created_at)
-                    ? <button onClick={()=>{setForm({...d});setModal("despacho");}} style={{background:`${T.muted}22`,border:`1px solid ${T.muted}55`,borderRadius:6,color:T.muted,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>✏ Editar</button>
+                    ? <button onClick={()=>{setForm({...d});setModal("despacho");}} style={{background:`${T.muted}22`,border:`1px solid ${T.muted}55`,borderRadius:6,color:T.muted,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>Editar</button>
                     : null,
                 ])}
               />
@@ -4389,7 +4389,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   style={{ background:`${T.orange}18`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>
                   + Agregar MP
                 </button>
-                {fModo==="AUTO" && <button onClick={aplicarAuto} style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}55`,borderRadius:6,color:T.navy,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>🔄 Recalcular histórico</button>}
+                {fModo==="AUTO" && <button onClick={aplicarAuto} style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}55`,borderRadius:6,color:T.navy,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700 }}>Recalcular histórico</button>}
               </div>
 
               {/* Cards resumen */}
@@ -4428,8 +4428,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   if(error) return showToast("Error: "+error.message,false);
                   await loadData();
                   closeTab(activeTabId);
-                  showToast("✅ Formulación guardada");
-                }}>{saving?"Guardando...":"💾 Guardar Formulación"}</Btn>
+                  showToast("Formulación guardada");
+                }}>{saving?"Guardando...":"Guardar Formulación"}</Btn>
               </div>
             </div>
             );
@@ -4474,7 +4474,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             {/* PASO 1: TRASIEGOS */}
             <Card style={{ marginBottom:16,padding:16 }}>
               <div style={{ fontWeight:700,fontSize:13,color:T.navy,marginBottom:10 }}>
-                {ot.estado==="TRASIEGOS"?"⏳":"✅"} PASO 1 — TRASIEGOS
+                PASO 1 — TRASIEGOS
               </div>
               {tras.length===0 ? (
                 <div style={{ color:T.muted,fontSize:12 }}>Sin trasiegos requeridos</div>
@@ -4534,7 +4534,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             {/* PASO 2: DESCARGUES */}
             <Card style={{ marginBottom:16,padding:16 }}>
               <div style={{ fontWeight:700,fontSize:13,color:T.navy,marginBottom:10 }}>
-                {ot.estado==="COMPLETADA"||ot.estado==="RECIRCULANDO"?"✅":"⏳"} PASO 2 — DESCARGUES
+                PASO 2 — DESCARGUES
                 {ot.estado==="DESCARGANDO" && <span style={{ marginLeft:10,fontSize:11,color:T.orange }}>{pct}% completado</span>}
               </div>
               {desc.length===0 ? <div style={{ color:T.muted,fontSize:12 }}>Sin descargues</div> : (() => {
@@ -4654,7 +4654,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             {/* PASO 3: RECIRCULACIÓN */}
             <Card style={{ marginBottom:16,padding:16 }}>
               <div style={{ fontWeight:700,fontSize:13,color:T.navy,marginBottom:10 }}>
-                {["COMPLETADA","ANALIZADA"].includes(ot.estado)?"✅":ot.estado==="RECIRCULANDO"?"⏳":"⏸️"} PASO 3 — RECIRCULACIÓN
+                PASO 3 — RECIRCULACIÓN
               </div>
               <div style={{ fontSize:12,color:T.muted,marginBottom:8 }}>Tiempo programado: <b style={{ color:T.text }}>{ot.recirculacion_tiempo_total} min ({(ot.recirculacion_tiempo_total/60).toFixed(1)}h)</b></div>
               {ot.estado==="RECIRCULANDO" && (
@@ -4946,7 +4946,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       await loadData();
                       setSaving(false);
                       setForm(p=>({...p,ot_id:form._vincularOT,_vincularOT:""}));
-                      showToast("✅ Análisis vinculado a la OT");
+                      showToast("Análisis vinculado a la OT");
                     }}>Vincular</Btn>
                   </div>
                 </div>
@@ -5556,7 +5556,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {/* ── COLUMNA IZQUIERDA: Planta de Carga + Carros ── */}
                 <div style={{background:T.card,borderRadius:10,border:`2px solid ${T.orange}55`,overflow:"hidden"}}>
                   <div style={{background:`${T.orange}18`,padding:"8px 14px",borderBottom:`1px solid ${T.orange}44`,display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:12,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:0.5}}>🚛 Planta de Carga</span>
+                    <span style={{fontSize:12,fontWeight:700,color:T.orange,textTransform:"uppercase",letterSpacing:0.5,display:"flex",alignItems:"center",gap:5}}><Truck size={13}/>Planta de Carga</span>
                     <span style={{fontSize:11,color:T.muted,fontWeight:600}}>{fmt(cmtPorteoCarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0))} Gls despachados</span>
                   </div>
                   <div style={{padding:"12px 14px"}}>
@@ -5590,7 +5590,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {/* ── COLUMNA DERECHA: Planta de Descarga ── */}
                 <div style={{background:T.card,borderRadius:10,border:`2px solid ${T.success}55`,overflow:"hidden"}}>
                   <div style={{background:`${T.success}18`,padding:"8px 14px",borderBottom:`1px solid ${T.success}44`,display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:12,fontWeight:700,color:T.success,textTransform:"uppercase",letterSpacing:0.5}}>📥 Planta de Descarga</span>
+                    <span style={{fontSize:12,fontWeight:700,color:T.success,textTransform:"uppercase",letterSpacing:0.5,display:"flex",alignItems:"center",gap:5}}><ArrowDownToLine size={13}/>Planta de Descarga</span>
                     <span style={{fontSize:11,color:T.muted,fontWeight:600}}>{fmt(cmtPorteoDescarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0))} Gls recibidos</span>
                   </div>
                   <div style={{padding:"12px 14px"}}>
@@ -5717,7 +5717,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}}>
       <div style={{background:T.card,borderRadius:12,padding:28,width:440,maxWidth:"95vw",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
         <div style={{fontWeight:800,fontSize:16,color:T.navy,marginBottom:16}}>¿Vincular a una Orden de Trabajo?</div>
-        <div style={{background:`${T.success}18`,border:`1px solid ${T.success}33`,borderRadius:8,padding:"10px 14px",fontSize:12,color:T.success,marginBottom:16}}>✅ CMT {modalVinculacionOT.cmtNumero} creado exitosamente</div>
+        <div style={{background:`${T.success}18`,border:`1px solid ${T.success}33`,borderRadius:8,padding:"10px 14px",fontSize:12,color:T.success,marginBottom:16}}>CMT{modalVinculacionOT.cmtNumero} creado exitosamente</div>
         <div style={{fontSize:11,color:T.muted,fontWeight:600,marginBottom:6}}>ÓRDENES DISPONIBLES</div>
         {otsDisponibles.length===0 ? (
           <div style={{background:T.bg,borderRadius:8,padding:"12px 14px",color:T.muted,fontSize:12,textAlign:"center",marginBottom:16}}>No hay OTs completadas disponibles<br/><span style={{fontSize:11}}>El CMT se guardará como autónomo</span></div>
@@ -5838,7 +5838,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     if(error) return showToast("Error: "+error.message,false);
     await loadData();
     setOtModal(null);
-    showToast(`✅ ${numeroOt} creada exitosamente`);
+    showToast(`${numeroOt} creada exitosamente`);
   };
 
   return (
@@ -5995,7 +5995,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             )}
             <div style={{ display:"flex",justifyContent:"space-between" }}>
               <button onClick={()=>setM({step:2})} style={{ background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13 }}>← Atrás</button>
-              <button onClick={crearOT} disabled={otSaving} style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:800,fontSize:13 }}>{otSaving?"Creando...":"✅ Crear Orden de Trabajo"}</button>
+              <button onClick={crearOT} disabled={otSaving} style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:800,fontSize:13 }}>{otSaving?"Creando...":"Crear Orden de Trabajo"}</button>
             </div>
           </div>
         )}
@@ -6188,7 +6188,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             if (e2) return showToast("Error perfil: "+e2.message, false);
             await loadData(); setEditUsuario(null);
             showToast(`Usuario ${editUsuario.nombre} ${desactivar?"deshabilitado":"habilitado"}`);
-          }}>{editUsuario.activo===false ? "✅ Habilitar" : "⛔ Deshabilitar"}</Btn>
+          }}>{editUsuario.activo===false ? "Habilitar" : "Deshabilitar"}</Btn>
           <Btn color={T.danger} sm onClick={async()=>{
             if (!confirm(`¿Eliminar a ${editUsuario.nombre}? Esta acción no se puede deshacer.`)) return;
             const {error:e1} = await supabaseAdmin.from("perfiles").delete().eq("id",editUsuario.id);
@@ -6197,7 +6197,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             if (e2) return showToast("Error auth: "+e2.message, false);
             await loadData(); setEditUsuario(null);
             showToast(`Usuario ${editUsuario.nombre} eliminado`);
-          }}>🗑 Eliminar</Btn>
+          }}>Eliminar</Btn>
         </div>
         <div style={{display:"flex",gap:10}}>
           <Btn outline onClick={()=>setEditUsuario(null)}>Cancelar</Btn>
