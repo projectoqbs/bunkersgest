@@ -6295,9 +6295,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           id:userId, nombre:form.nombre, email:emailFinal,
           rol:form.rol, planta:form.planta||"PLANTA 1", sede:form.sede||"MALAMBO",
           cedula:form.cedula, activo:true, permisos:{}
-        });
+        }});
         setSaving(false);
-        if (e2) return showToast("Error perfil: "+e2.message, false);
+        if (e2) return showToast("Error perfil: "+e2, false);
         await loadData(); setModal(null); setForm({});
         showToast(`Usuario ${form.nombre} creado · Cédula: ${form.cedula}`);
       }}>{saving?"Creando...":"Crear Usuario"}</Btn>
