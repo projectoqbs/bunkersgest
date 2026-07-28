@@ -34,9 +34,31 @@ document.head.appendChild(_style);
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://pahulcaneuzfiknrzlbc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_6A3JvUT-O5UpP5FAYUIKaA_6-Xihr7N";
-const SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhaHVsY2FuZXV6ZmlrbnJ6bGJjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTg3Mjg2OCwiZXhwIjoyMDk1NDQ4ODY4fQ.jwQZ3-FZe7zv3CGMgQvNiphxHtlFbfZX2HTq5orX46E";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+
+// ─── API HELPERS (service_role vive solo en el servidor) ──────────────────────
+async function getToken() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token || "";
+}
+async function dbCall({ table, op, data, filters = [], select = "*", single = false }) {
+  const token = await getToken();
+  const res = await fetch("/api/db", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+    body: JSON.stringify({ table, op, data, filters, select, single }),
+  });
+  return res.json();
+}
+async function authAdminCall({ op, userId, data }) {
+  const token = await getToken();
+  const res = await fetch("/api/auth-admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+    body: JSON.stringify({ op, userId, data }),
+  });
+  return res.json();
+}
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 const MATERIAS_PRIMAS = ["FRONTERA","PENDARE","ALBERTA","CARRIZALES NORTE P","CARRIZALES NORTE B","OMI","VIGIA","KIMBO","CUERVA","SOGAMOSO","TK205","RUMBA","MATEGUAFA","DESTILADO REFISAMAG"];
@@ -809,7 +831,7 @@ export default function App() {
     const { data: pr } = await supabase.from("perfiles").select("*").order("nombre");
     if (!pr) return;
     try {
-      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      const { data: authUsers } = await authAdminCall({ op:"listUsers", data:{ perPage: 1000 } });
       const emailMap = {};
       (authUsers?.users||[]).forEach(u => { emailMap[u.id] = u.email; });
       setPerfiles(pr.map(p => ({
@@ -854,7 +876,7 @@ export default function App() {
   async function guardarViaje(e) {
     e.preventDefault(); setSaving(true);
     if (form.id) {
-      const {error} = await supabaseAdmin.from("viajes").update({
+      const {error} = await dbCall({ table:"viajes", op:"update", data:{
         fecha:form.fecha, producto:form.producto, transportadora:form.transportadora,
         placa:form.placa, conductor:form.conductor, cedula:form.cedula,
         guia:form.guia, volumen_guia:Number(form.volumen_guia||0),
@@ -864,23 +886,23 @@ export default function App() {
         fecha_llegada:form.fecha_llegada||null, fecha_aprox_llegada:form.fecha_aprox_llegada||null,
         fecha_descargue:form.fecha_descargue||null,
         valor_standby:Number(form.valor_standby||0), observacion:form.observacion||null,
-      }).eq("id", form.id);
+      }, filters:[{col:"id",val:form.id}] });
       setSaving(false);
-      if (error) return showToast("Error: "+error.message, false);
+      if (error) return showToast("Error: "+error, false);
       await loadData(); setModal(null); setForm({});
       showToast(`Viaje ${form.id} actualizado`);
     } else {
       const id = genId("VJ", viajes);
-      const {error} = await supabaseAdmin.from("viajes").insert([{
+      const {error} = await dbCall({ table:"viajes", op:"insert", data:{
         id, ...form, volumen_guia:Number(form.volumen_guia||0),
         standby:Number(form.standby||0), flete:Number(form.flete||0),
         bono:Number(form.bono||0), barriles_nsv:Number(form.barriles_nsv||0),
         gls_netos_guia:Number(form.gls_netos_guia||0), gls_recibidos:Number(form.gls_recibidos||0),
         valor_standby:Number(form.valor_standby||0), fecha_descargue:form.fecha_descargue||null,
         estado:"En Ruta", creado_por:session.user.id
-      }]);
+      }});
       setSaving(false);
-      if (error) return showToast("Error al guardar: "+error.message,false);
+      if (error) return showToast("Error al guardar: "+error,false);
       await loadData(); setModal(null); setForm({});
       showToast(`Viaje ${id} registrado — ${form.placa}`);
     }
@@ -921,18 +943,10 @@ const aprueba = esVLSFO
       resultado:aprueba?"APROBADO":"RECHAZADO",
     };
     if (form.id) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/tiquetes?id=eq.${encodeURIComponent(form.id)}`, {
-        method:"PATCH",
-        headers:{"apikey":SUPABASE_SERVICE_KEY,"Authorization":`Bearer ${SUPABASE_SERVICE_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"},
-        body:JSON.stringify(campos)
-      });
-      if (!res.ok) { setSaving(false); return showToast("Error: "+await res.text(), false); }
+      const {error} = await dbCall({ table:"tiquetes", op:"update", data:campos, filters:[{col:"id",val:form.id}] });
+      if (error) { setSaving(false); return showToast("Error: "+error, false); }
       if (form.viaje_id) {
-        await fetch(`${SUPABASE_URL}/rest/v1/viajes?id=eq.${form.viaje_id}`, {
-          method:"PATCH",
-          headers:{"apikey":SUPABASE_SERVICE_KEY,"Authorization":`Bearer ${SUPABASE_SERVICE_KEY}`,"Content-Type":"application/json"},
-          body:JSON.stringify({estado:aprueba?"En Planta":"Rechazado"})
-        });
+        await dbCall({ table:"viajes", op:"update", data:{estado:aprueba?"En Planta":"Rechazado"}, filters:[{col:"id",val:form.viaje_id}] });
       }
       setSaving(false);
       await loadData(); setModal(null); setForm({});
@@ -940,19 +954,15 @@ const aprueba = esVLSFO
     } else {
       const {count: tqCount} = await supabase.from("tiquetes").select("id",{count:"exact",head:true});
       const id = `TQ-${String((tqCount||0)+1+19571).padStart(5,"0")}`;
-      const {error} = await supabaseAdmin.from("tiquetes").insert([{
-        id,
-        ...campos,
-        creado_por:session.user.id,
-      }]);
+      const {error} = await dbCall({ table:"tiquetes", op:"insert", data:{ id, ...campos, creado_por:session.user.id } });
       if (!error && form.viaje_id) {
-        await supabaseAdmin.from("viajes").update({estado:aprueba?"En Planta":"Rechazado", tiquete_id:id}).eq("id",form.viaje_id);
+        await dbCall({ table:"viajes", op:"update", data:{estado:aprueba?"En Planta":"Rechazado", tiquete_id:id}, filters:[{col:"id",val:form.viaje_id}] });
       }
       if (!error && form.ot_id) {
-        await supabaseAdmin.from("ordenes_trabajo").update({estado:"ANALIZADA", tiquete_id:id, updated_at:new Date().toISOString()}).eq("id",form.ot_id);
+        await dbCall({ table:"ordenes_trabajo", op:"update", data:{estado:"ANALIZADA", tiquete_id:id, updated_at:new Date().toISOString()}, filters:[{col:"id",val:form.ot_id}] });
       }
       setSaving(false);
-      if (error) return showToast("Error: "+error.message,false);
+      if (error) return showToast("Error: "+error,false);
       await loadData(); setModal(null); setForm({});
       showToast(aprueba?"Tiquete emitido — APROBADO ✔":"Tiquete emitido — RECHAZADO",aprueba);
     }
@@ -961,9 +971,7 @@ const aprueba = esVLSFO
   async function guardarPBS(e) {
     e.preventDefault(); setSaving(true);
     if (form.id) {
-      const {error} = await supabaseAdmin.from("pbs").update({
-        ...form, checklist:pbsChecklist,
-      }).eq("id", form.id);
+      const {error} = await dbCall({ table:"pbs", op:"update", data:{ ...form, checklist:pbsChecklist }, filters:[{col:"id",val:form.id}] });
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
       await loadData();
@@ -986,10 +994,10 @@ const aprueba = esVLSFO
       showToast(`PBS ${form.id} guardado`);
     } else {
       const id = `PBS-${String(pbsList.length+1+19454).padStart(5,"0")}`;
-      const {error} = await supabaseAdmin.from("pbs").insert([{
+      const {error} = await dbCall({ table:"pbs", op:"insert", data:{
         id, ...form, checklist:pbsChecklist, fecha:today(),
         firma_auxiliar:perfil.nombre, creado_por:session.user.id
-      }]);
+      }});
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
       await loadData(); setPbsChecklist(Array(26).fill(""));
@@ -1117,7 +1125,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
 
   async function handleConfirmarVinculacionOT(ot_id, ot_numero) {
     if (ot_id) {
-      await supabaseAdmin.from("cmts").update({ot_id, ot_numero}).eq("id", modalVinculacionOT.cmtId);
+      await dbCall({ table:"cmts", op:"update", data:{ot_id, ot_numero}, filters:[{col:"id",val:modalVinculacionOT.cmtId}] });
     }
     await loadData();
     const num = modalVinculacionOT.cmtNumero;
@@ -1135,7 +1143,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     const tipoOp = (cmt.tipo_operacion||"");
     for (const td of cmt.tanques_despues||[]) {
       if (!td.tanque || !td.galones) continue;
-      await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(td.galones)) }).eq("id", td.tanque);
+      await dbCall({ table:"tanques", op:"update", data:{ nivel: Math.max(0, Number(td.galones)) }, filters:[{col:"id",val:td.tanque}] });
     }
     const deltaOrigen = tipoOp === "TRASIEGO DE PRODUCTO"
       ? (cmt.tanques_antes||[]).reduce((s,ta,i) => {
@@ -1146,21 +1154,21 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     for (const tr of cmt.tanques_recepcion||[]) {
       if (!tr.tanque) continue;
       if (tr.galonesFinal) {
-        await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tr.galonesFinal)) }).eq("id", tr.tanque);
+        await dbCall({ table:"tanques", op:"update", data:{ nivel: Math.max(0, Number(tr.galonesFinal)) }, filters:[{col:"id",val:tr.tanque}] });
       } else if (deltaOrigen > 0) {
-        const {data: tqDB} = await supabaseAdmin.from("tanques").select("nivel").eq("id", tr.tanque).maybeSingle();
-        if (tqDB) await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tqDB.nivel||0) + deltaOrigen) }).eq("id", tr.tanque);
+        const {data: tqDB} = await dbCall({ table:"tanques", op:"select", select:"nivel", filters:[{col:"id",val:tr.tanque}], single:true });
+        if (tqDB) await dbCall({ table:"tanques", op:"update", data:{ nivel: Math.max(0, Number(tqDB.nivel||0) + deltaOrigen) }, filters:[{col:"id",val:tr.tanque}] });
       }
     }
     for (const td of cmt.porteo_descarga_tanques||[]) {
       if (!td.tanque || !td.galonesFinal) continue;
       const upd = { nivel: Math.max(0, Number(td.galonesFinal)) };
       if (cmt.producto) upd.producto = cmt.producto;
-      await supabaseAdmin.from("tanques").update(upd).eq("id", td.tanque);
+      await dbCall({ table:"tanques", op:"update", data:upd, filters:[{col:"id",val:td.tanque}] });
     }
     for (const tc of cmt.porteo_carga_tanques||[]) {
       if (!tc.tanque || !tc.galonesFinal) continue;
-      await supabaseAdmin.from("tanques").update({ nivel: Math.max(0, Number(tc.galonesFinal)) }).eq("id", tc.tanque);
+      await dbCall({ table:"tanques", op:"update", data:{ nivel: Math.max(0, Number(tc.galonesFinal)) }, filters:[{col:"id",val:tc.tanque}] });
     }
   }
 
@@ -1219,16 +1227,16 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     // Validar pbs_id: si no existe en pbsList, crearlo automáticamente para evitar FK violation
     let pbsIdValidado = null;
     if (form.pbs_id) {
-      const {data: pbsExiste} = await supabaseAdmin.from("pbs").select("id").eq("id", form.pbs_id).maybeSingle();
+      const {data: pbsExiste} = await dbCall({ table:"pbs", op:"select", select:"id", filters:[{col:"id",val:form.pbs_id}], single:true });
       if (!pbsExiste) {
-        const {error: pbsErr} = await supabaseAdmin.from("pbs").insert([{
+        const {error: pbsErr} = await dbCall({ table:"pbs", op:"insert", data:{
           id: form.pbs_id, fecha: form.fecha||today(),
           creado_por: session.user.id, firma_auxiliar: perfil.nombre,
           checklist: Array(26).fill(""),
-        }]);
-        if (pbsErr && pbsErr.code !== "23505") {
+        }});
+        if (pbsErr && !pbsErr.includes("23505")) {
           setSaving(false);
-          return showToast("Error al registrar PBS: " + pbsErr.message, false);
+          return showToast("Error al registrar PBS: " + pbsErr, false);
         }
       }
       pbsIdValidado = form.pbs_id;
@@ -1237,7 +1245,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     if (form.id) {
       // EDICIÓN: revertir impacto original y aplicar nuevo
       const original = cmts.find(c=>c.id===form.id);
-      const {error} = await supabaseAdmin.from("cmts").update({
+      const {error} = await dbCall({ table:"cmts", op:"update", data:{
         numero_cmt:form.numero_cmt, pbs_id:pbsIdValidado,
         tiquete_entrada:form.tiquete_entrada||null, producto:cmtProducto,
         tipo_operacion:form.tipo_operacion, tanques_antes:cmtAntes,
@@ -1252,7 +1260,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         porteo_carga_tanques:cmtPorteoCarga,
         porteo_descarga_tanques:cmtPorteoDescarga,
         porteo_carros:porteoCarrosConGls,
-      }).eq("id", form.id);
+      }, filters:[{col:"id",val:form.id}] });
       if (!error && original) {
         // Recolectar todos los tanques afectados y calcular ajuste neto
         const ajustesPorTanque = {};
@@ -1301,17 +1309,17 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         // Aplicar ajustes leyendo el nivel actual desde la DB (no desde estado React)
         const idsAfectados = Object.keys(ajustesPorTanque).filter(id => ajustesPorTanque[id] !== 0);
         if (idsAfectados.length > 0) {
-          const { data: tqsActuales } = await supabaseAdmin.from("tanques").select("id,nivel").in("id", idsAfectados);
-          for (const tq of (tqsActuales||[])) {
+          const { data: tqsActuales } = await dbCall({ table:"tanques", op:"select", select:"id,nivel", filters:[] });
+          for (const tq of (tqsActuales||[]).filter(t=>idsAfectados.includes(t.id))) {
             const nuevoNivel = Math.max(0, Number(tq.nivel||0) + ajustesPorTanque[tq.id]);
-            await supabaseAdmin.from("tanques").update({ nivel: nuevoNivel }).eq("id", tq.id);
+            await dbCall({ table:"tanques", op:"update", data:{ nivel: nuevoNivel }, filters:[{col:"id",val:tq.id}] });
           }
         }
         const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
         if (placasCarros.length > 0) {
-          for (const placa of placasCarros) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",placa);
+          for (const placa of placasCarros) await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"placa",val:placa}] });
         } else if (form.placa) {
-          await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
+          await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"placa",val:form.placa}] });
         }
       }
       setSaving(false);
@@ -1345,7 +1353,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       const {data: cmtsFrescos} = await supabase.from("cmts").select("numero_cmt").order("created_at",{ascending:false});
       const numeroCmt = genIdCMT(cmtsFrescos||cmts, sedeActual, plantaActual);
       const id = `${numeroCmt}`;
-      const {error} = await supabaseAdmin.from("cmts").insert([{
+      const {error} = await dbCall({ table:"cmts", op:"insert", data:{
         id, numero_cmt:numeroCmt, pbs_id:pbsIdValidado,
         ot_id:form.ot_id||null, ot_numero:form.ot_numero||null,
         tiquete_entrada:form.tiquete_entrada||null, fecha:form.fecha||today(),
@@ -1363,15 +1371,15 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         porteo_descarga_tanques:cmtPorteoDescarga,
         porteo_carros:porteoCarrosConGls,
         operador:perfil.nombre, creado_por:session.user.id
-      }]);
+      }});
       if (!error) {
-        const {data: cmtGuardado} = await supabaseAdmin.from("cmts").select("*").eq("id", id).maybeSingle();
+        const {data: cmtGuardado} = await dbCall({ table:"cmts", op:"select", filters:[{col:"id",val:id}], single:true });
         if (cmtGuardado) await aplicarTanquesDesdeCMT(cmtGuardado);
         const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
         if (placasCarros.length > 0) {
-          for (const placa of placasCarros) await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",placa);
+          for (const placa of placasCarros) await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"placa",val:placa}] });
         } else if (form.placa) {
-          await supabaseAdmin.from("viajes").update({estado:"Descargado"}).eq("placa",form.placa);
+          await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"placa",val:form.placa}] });
         }
       }
       setSaving(false);
@@ -1416,17 +1424,17 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       operador: perfil.nombre, creado_por: session.user.id,
     };
     if (form.id) {
-      const {error} = await supabaseAdmin.from("despachos").update(campos).eq("id", form.id);
+      const {error} = await dbCall({ table:"despachos", op:"update", data:campos, filters:[{col:"id",val:form.id}] });
       setSaving(false);
-      if (error) return showToast("Error: "+error.message, false);
+      if (error) return showToast("Error: "+error, false);
       await loadData(); setModal(null); setForm({});
       showToast(`Despacho ${form.id} actualizado`);
     } else {
       const num = String((despachos||[]).length + 1).padStart(5, "0");
       const id = `DESP-${num}`;
-      const {error} = await supabaseAdmin.from("despachos").insert([{ id, fecha: form.fecha||today(), ...campos }]);
+      const {error} = await dbCall({ table:"despachos", op:"insert", data:{ id, fecha: form.fecha||today(), ...campos } });
       setSaving(false);
-      if (error) return showToast("Error: "+error.message, false);
+      if (error) return showToast("Error: "+error, false);
       await loadData(); setModal(null); setForm({});
       showToast(`Despacho ${id} registrado — ${form.buque}`);
     }
@@ -2015,23 +2023,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                 <button onClick={async()=>{
                                   if (!confirm(`¿Eliminar carro ${v.placa} del listado? Esta acción no se puede deshacer.`)) return;
                                   // Cascada completa antes de eliminar viaje
-                                  const {data:pbsIds} = await supabaseAdmin.from("pbs").select("id").eq("viaje_id",v.id);
+                                  const {data:pbsIds} = await dbCall({ table:"pbs", op:"select", select:"id", filters:[{col:"viaje_id",val:v.id}] });
                                   if (pbsIds?.length) {
                                     for (const p of pbsIds) {
-                                      await supabaseAdmin.from("cmts").delete().eq("pbs_id",p.id);
+                                      await dbCall({ table:"cmts", op:"delete", filters:[{col:"pbs_id",val:p.id}] });
                                     }
                                   }
-                                  await supabaseAdmin.from("tiquetes").delete().eq("viaje_id",v.id);
-                                  await supabaseAdmin.from("pbs").delete().eq("viaje_id",v.id);
-                                  await supabaseAdmin.from("despachos").delete().eq("viaje_id",v.id);
-                                  // Llamada directa a la REST API con service role para garantizar el delete
-                                  const res = await fetch(`${SUPABASE_URL}/rest/v1/viajes?id=eq.${v.id}`, {
-                                    method:"DELETE",
-                                    headers:{"apikey":SUPABASE_SERVICE_KEY,"Authorization":`Bearer ${SUPABASE_SERVICE_KEY}`,"Content-Type":"application/json","Prefer":"return=representation"}
-                                  });
-                                  if (!res.ok) return showToast(`Error viaje: ${res.status} ${await res.text()}`, false);
-                                  const deleted = await res.json();
-                                  if (!deleted.length) return showToast("No se eliminó: puede haber otra FK pendiente", false);
+                                  await dbCall({ table:"tiquetes", op:"delete", filters:[{col:"viaje_id",val:v.id}] });
+                                  await dbCall({ table:"pbs", op:"delete", filters:[{col:"viaje_id",val:v.id}] });
+                                  await dbCall({ table:"despachos", op:"delete", filters:[{col:"viaje_id",val:v.id}] });
+                                  const {error:errViaje} = await dbCall({ table:"viajes", op:"delete", filters:[{col:"id",val:v.id}] });
+                                  if (errViaje) return showToast(`Error viaje: ${errViaje}`, false);
                                   await loadData();
                                   showToast(`Carro ${v.placa} eliminado del listado`);
                                 }}
@@ -2293,7 +2295,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         const autorizado = viaje.autorizado_descargue;
                         return (
                           <button onClick={async()=>{
-                            await supabaseAdmin.from("viajes").update({autorizado_descargue:!autorizado, autorizado_por: !autorizado?perfil.nombre:null}).eq("id",t.viaje_id);
+                            await dbCall({ table:"viajes", op:"update", data:{autorizado_descargue:!autorizado, autorizado_por: !autorizado?perfil.nombre:null}, filters:[{col:"id",val:t.viaje_id}] });
                             await loadData();
                             showToast(!autorizado?"Descargue autorizado ✔":"Autorización retirada", !autorizado);
                           }} style={{background:autorizado?`${T.danger}22`:`${T.orange}22`,border:`1px solid ${autorizado?`${T.danger}55`:`${T.orange}55`}`,borderRadius:6,color:autorizado?T.danger:T.orange,padding:"3px 8px",fontSize:11,cursor:"pointer",fontWeight:700,whiteSpace:"nowrap"}}>
@@ -4105,7 +4107,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{ padding:"12px 14px", display:"flex", gap:8 }}>
                             <button onClick={()=>openFormulacionTab(fo)} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Editar</button>
                             {(()=>{ const otAsoc = (ordenesTrabaio||[]).find(o=>o.formulacion_id===fo.id); return otAsoc ? <button onClick={()=>{ const id=`ot-${otAsoc.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:otAsoc.numero_ot,icon:"🏗️",closeable:true,otId:otAsoc.id}]); setActiveTabId(id); }} style={{ background:"none",border:"none",color:T.success,cursor:"pointer",fontSize:12,fontWeight:700 }}>{otAsoc.numero_ot}</button> : <button onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",formulacionId:fo.id,recircHoras:4})} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>+ OT</button>; })()}
-                            <button onClick={async()=>{ if(!confirm(`¿Eliminar formulación del ${fo.fecha}?`)) return; await supabaseAdmin.from("formulaciones").delete().eq("id",fo.id); await loadData(); }} style={{ background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:12,fontWeight:700 }}>Eliminar</button>
+                            <button onClick={async()=>{ if(!confirm(`¿Eliminar formulación del ${fo.fecha}?`)) return; await dbCall({ table:"formulaciones", op:"delete", filters:[{col:"id",val:fo.id}] }); await loadData(); }} style={{ background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:12,fontWeight:700 }}>Eliminar</button>
                           </td>
                         </tr>
                       ))}
@@ -4439,9 +4441,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   if(!totalG) return showToast("Ingresa galones para al menos una MP",false);
                   setSaving(true);
                   const payload={fecha:fForm.fecha||today(),tanque:fForm.tanque||null,producto:fForm.producto||null,mps:fMps,api_planeado:pond.api,visc_planeado:pond.visc,azufre_planeado:pond.azufre,agua_planeada:pond.agua,flash_point_planeado:pond.flash,total_galones:totalG,total_carros:pond.carros,estado:fForm.estado||"PLANEADA",created_by:session.user.id};
-                  const {error}=fForm.id?await supabaseAdmin.from("formulaciones").update(payload).eq("id",fForm.id):await supabaseAdmin.from("formulaciones").insert([payload]);
+                  const {error}=fForm.id
+                    ? await dbCall({ table:"formulaciones", op:"update", data:payload, filters:[{col:"id",val:fForm.id}] })
+                    : await dbCall({ table:"formulaciones", op:"insert", data:payload });
                   setSaving(false);
-                  if(error) return showToast("Error: "+error.message,false);
+                  if(error) return showToast("Error: "+error,false);
                   await loadData();
                   closeTab(activeTabId);
                   showToast("Formulación guardada");
@@ -4472,7 +4476,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const estadoColor = e=>e==="ANALIZADA"?T.success:e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
 
         const actualizarOT = async(patch) => {
-          await supabaseAdmin.from("ordenes_trabajo").update({...patch,updated_at:new Date().toISOString()}).eq("id",ot.id);
+          await dbCall({ table:"ordenes_trabajo", op:"update", data:{...patch,updated_at:new Date().toISOString()}, filters:[{col:"id",val:ot.id}] });
           await loadData();
         };
 
@@ -4957,8 +4961,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </select>
                     <Btn color={T.navy} disabled={!form._vincularOT||saving} onClick={async()=>{
                       setSaving(true);
-                      await supabaseAdmin.from("tiquetes").update({ot_id:form._vincularOT}).eq("id",form.id);
-                      await supabaseAdmin.from("ordenes_trabajo").update({tiquete_id:form.id}).eq("id",form._vincularOT);
+                      await dbCall({ table:"tiquetes", op:"update", data:{ot_id:form._vincularOT}, filters:[{col:"id",val:form.id}] });
+                      await dbCall({ table:"ordenes_trabajo", op:"update", data:{tiquete_id:form.id}, filters:[{col:"id",val:form._vincularOT}] });
                       await loadData();
                       setSaving(false);
                       setForm(p=>({...p,ot_id:form._vincularOT,_vincularOT:""}));
@@ -5783,10 +5787,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const id = form.id || `PROG-${String(Date.now()).slice(-6)}`;
         const payload = { id, fecha:form.fecha||today(), producto:form.producto||null, operacion:form.operacion||null, referencia:form.referencia||null, volumen:form.volumen?Number(form.volumen):null, estado:form.estado||"Pendiente", observaciones:form.observaciones||null, sede:perfil.sede||null, creado_por:session.user.id };
         const { error } = form.id
-          ? await supabaseAdmin.from("programaciones").update(payload).eq("id", id)
-          : await supabaseAdmin.from("programaciones").insert([payload]);
+          ? await dbCall({ table:"programaciones", op:"update", data:payload, filters:[{col:"id",val:id}] })
+          : await dbCall({ table:"programaciones", op:"insert", data:payload });
         setSaving(false);
-        if (error) return showToast("Error: "+error.message, false);
+        if (error) return showToast("Error: "+error, false);
         await loadData();
         setModal(null); setForm({});
       }}>{saving?"Guardando...":form.id ? "Guardar Cambios" : "Registrar"}</Btn>
@@ -5847,9 +5851,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       creado_por: session.user.id,
       ...(estadoInicial==="DESCARGANDO"?{fecha_inicio_descargue:new Date().toISOString()}:{fecha_inicio_trasiegos:new Date().toISOString()}),
     };
-    const {error} = await supabaseAdmin.from("ordenes_trabajo").insert([payload]);
+    const {error} = await dbCall({ table:"ordenes_trabajo", op:"insert", data:payload });
     setOtSaving(false);
-    if(error) return showToast("Error: "+error.message,false);
+    if(error) return showToast("Error: "+error,false);
     await loadData();
     setOtModal(null);
     showToast(`${numeroOt} creada exitosamente`);
@@ -6092,15 +6096,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         // Calcular siguiente turno: máximo turno_planta actual + 1
         const {data:turnos} = await supabase.from("viajes").select("turno_planta").not("turno_planta","is",null);
         const maxTurno = turnos&&turnos.length>0 ? Math.max(...turnos.map(t=>t.turno_planta||0)) : 0;
-        const {error, data} = await supabaseAdmin.from("viajes").update({
+        const {error} = await dbCall({ table:"viajes", op:"update", data:{
           fecha_llegada: form.fecha_llegada,
           observacion: form.observacion||null,
           estado: "En Planta",
           turno_planta: maxTurno + 1,
-        }).eq("id", form.viaje_id).select();
+        }, filters:[{col:"id",val:form.viaje_id}] });
         setSaving(false);
-        if(error){showToast("Error: "+error.message,false);return;}
-        if(!data||data.length===0){showToast("No se pudo actualizar. Verifica permisos.",false);return;}
+        if(error){showToast("Error: "+error,false);return;}
         await loadData();
         setModal(null); setForm({});
         showToast(`✅ ${viajeTarget?.placa} · Turno #${maxTurno+1}`,true);
@@ -6196,19 +6199,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const label = desactivar ? "deshabilitar" : "habilitar";
             if (!confirm(`¿${label.charAt(0).toUpperCase()+label.slice(1)} a ${editUsuario.nombre}?`)) return;
             const ban = desactivar ? "876600h" : "none";
-            const {error:e1} = await supabaseAdmin.auth.admin.updateUserById(editUsuario.id, {ban_duration: ban});
-            if (e1) return showToast("Error auth: "+e1.message, false);
-            const {error:e2} = await supabaseAdmin.from("perfiles").update({activo: !desactivar}).eq("id",editUsuario.id);
-            if (e2) return showToast("Error perfil: "+e2.message, false);
+            const {error:e1} = await authAdminCall({ op:"updateUser", userId:editUsuario.id, data:{ban_duration: ban} });
+            if (e1) return showToast("Error auth: "+e1, false);
+            const {error:e2} = await dbCall({ table:"perfiles", op:"update", data:{activo: !desactivar}, filters:[{col:"id",val:editUsuario.id}] });
+            if (e2) return showToast("Error perfil: "+e2, false);
             await loadData(); setEditUsuario(null);
             showToast(`Usuario ${editUsuario.nombre} ${desactivar?"deshabilitado":"habilitado"}`);
           }}>{editUsuario.activo===false ? "Habilitar" : "Deshabilitar"}</Btn>
           <Btn color={T.danger} sm onClick={async()=>{
             if (!confirm(`¿Eliminar a ${editUsuario.nombre}? Esta acción no se puede deshacer.`)) return;
-            const {error:e1} = await supabaseAdmin.from("perfiles").delete().eq("id",editUsuario.id);
-            if (e1) return showToast("Error perfil: "+e1.message, false);
-            const {error:e2} = await supabaseAdmin.auth.admin.deleteUser(editUsuario.id);
-            if (e2) return showToast("Error auth: "+e2.message, false);
+            const {error:e1} = await dbCall({ table:"perfiles", op:"delete", filters:[{col:"id",val:editUsuario.id}] });
+            if (e1) return showToast("Error perfil: "+e1, false);
+            const {error:e2} = await authAdminCall({ op:"deleteUser", userId:editUsuario.id });
+            if (e2) return showToast("Error auth: "+e2, false);
             await loadData(); setEditUsuario(null);
             showToast(`Usuario ${editUsuario.nombre} eliminado`);
           }}>Eliminar</Btn>
@@ -6219,11 +6222,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             setSaving(true);
             const plantasArr = Array.isArray(editUsuario.plantas) ? editUsuario.plantas : [editUsuario.planta||"PLANTA 1"];
             const plantaGuardar = plantasArr.join(",") || "PLANTA 1";
-            const {error} = await supabaseAdmin.from("perfiles").update({
-              rol:editUsuario.rol, planta:plantaGuardar, permisos:permsEdit
-            }).eq("id",editUsuario.id);
+            const {error} = await dbCall({ table:"perfiles", op:"update", data:{ rol:editUsuario.rol, planta:plantaGuardar, permisos:permsEdit }, filters:[{col:"id",val:editUsuario.id}] });
             setSaving(false);
-            if (error) return showToast("Error: "+error.message, false);
+            if (error) return showToast("Error: "+error, false);
             await loadData(); setEditUsuario(null);
             showToast(`Usuario ${editUsuario.nombre} actualizado`);
           }}>{saving?"Guardando...":"Guardar Cambios"}</Btn>
@@ -6274,25 +6275,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         setSaving(true);
         const emailFinal = rolSel==="administrador" ? form.email.trim().toLowerCase() : cedulaToEmail(form.cedula);
         let userId;
-        const {data:newUser, error} = await supabaseAdmin.auth.admin.createUser({
+        const {data:newUser, error} = await authAdminCall({ op:"createUser", data:{
           email:emailFinal, password:form.password, email_confirm:true,
           user_metadata:{nombre:form.nombre, rol:form.rol, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
-        });
+        }});
         if (error) {
-          if (error.message.includes("already been registered")) {
-            // El usuario existe en Auth pero no en perfiles — buscamos el ID
-            const {data:list} = await supabaseAdmin.auth.admin.listUsers();
+          if ((error||"").includes("already been registered")) {
+            const {data:list} = await authAdminCall({ op:"listUsers" });
             const existing = (list?.users||[]).find(u=>u.email===emailFinal);
             if (!existing) { setSaving(false); return showToast("Error: cédula ya registrada", false); }
-            // Actualizamos contraseña y metadata
-            await supabaseAdmin.auth.admin.updateUserById(existing.id, {
+            await authAdminCall({ op:"updateUser", userId:existing.id, data:{
               password:form.password, email_confirm:true,
               user_metadata:{nombre:form.nombre, rol:form.rol, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
-            });
+            }});
             userId = existing.id;
-          } else { setSaving(false); return showToast("Error: "+error.message, false); }
+          } else { setSaving(false); return showToast("Error: "+error, false); }
         } else { userId = newUser.user.id; }
-        const {error:e2} = await supabaseAdmin.from("perfiles").upsert({
+        const {error:e2} = await dbCall({ table:"perfiles", op:"upsert", data:{
           id:userId, nombre:form.nombre, email:emailFinal,
           rol:form.rol, planta:form.planta||"PLANTA 1", sede:form.sede||"MALAMBO",
           cedula:form.cedula, activo:true, permisos:{}
