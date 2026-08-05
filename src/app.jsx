@@ -1999,8 +1999,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const glsEnPlanta = vEnPlanta.reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
             const totalEntrante = glsTransito + glsEnPlanta; // galones entrantes totales a Planta 2
 
-            // espacio disponible y por cargar (Planta 2, receptor habitual)
-            const espacioDisp = Math.max(0, p2Cap - p2Nivel);
+            // espacio disponible = libre en Planta 1 + Planta 2
+            const espacioDisp = Math.max(0, (p1Cap + p2Cap) - (p1Nivel + p2Nivel));
             const espacioPorCargar = Math.max(0, espacioDisp - totalEntrante);
 
             // agrupar entradas proyectadas por fecha y producto (solo en tránsito con fecha)
@@ -2088,7 +2088,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:10, margin:"16px 0" }}>
                 <Stat label="Carros en Tránsito" value={vTransito.length} color={T.orange} sub="en camino a planta" />
                 <Stat label="Carros en Planta" value={vEnPlanta.length} color={T.navy} sub="pendientes descargue" />
-                <Stat label="Espacio Disponible" value={`${fmt(espacioDisp)} gls`} color={T.success} sub="Planta 2 libre" />
+                <Stat label="Espacio Disponible" value={`${fmt(espacioDisp)} gls`} color={T.success} sub="Planta 1 + Planta 2" />
                 <Stat label="Galones Entrantes" value={`${fmt(totalEntrante)} gls`} color={T.orange} sub={`${vTransito.length+vEnPlanta.length} carros`} />
                 <Stat label="Espacio por Cargar" value={`${fmt(espacioPorCargar)} gls`} color={espacioPorCargar<=0?T.danger:T.success} sub={espacioPorCargar<=0?"⚠ Sin espacio":"disponible tras entrantes"} />
               </div>
