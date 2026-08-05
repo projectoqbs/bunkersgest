@@ -455,6 +455,8 @@ export default function App() {
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroTrans, setViajesFiltroTrans] = useState("");
   const [dashFamilia, setDashFamilia] = useState("negro");
+  const [tankFamilias, setTankFamilias] = useState(() => { try { return JSON.parse(localStorage.getItem("tankFamilias")||"{}"); } catch{ return {}; } });
+  const [modalTankAdmin, setModalTankAdmin] = useState(false);
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
   const [viajesFiltroFechaH, setViajesFiltroFechaH] = useState("");
   const [importExcel, setImportExcel] = useState(null); // null | { rows, preview, pestaña }
@@ -1988,8 +1990,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const p2Cap   = p2Tanks.reduce((a,t)=>a+tkCap(t),0);
             const p2Nivel = p2Tanks.reduce((a,t)=>a+Number(t.nivel||0),0);
 
-            // clasificación por familia de producto
-            const isBlanco = p => { const u=(p||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL"); };
+            // clasificación por familia usando configuración de tankFamilias (localStorage)
+            const isProdBlanco = p => { const u=(p||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL"); };
+            const isTankBlanco = t => tankFamilias[t.id] ? tankFamilias[t.id]==="blanco" : isProdBlanco(t.producto);
+            const isTankNegro  = t => !isTankBlanco(t);
+            const isBlanco = p => isProdBlanco(p);
             const isNegro  = p => !isBlanco(p);
 
             // carros en tránsito y en planta
@@ -2007,8 +2012,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             // capacidad por familia (P1 + P2 juntas)
             const allTanks = [...p1Tanks, ...p2Tanks];
-            const tanksNegro  = allTanks.filter(t=>isNegro(t.producto));
-            const tanksBlanco = allTanks.filter(t=>isBlanco(t.producto));
+            const tanksNegro  = allTanks.filter(t=>isTankNegro(t));
+            const tanksBlanco = allTanks.filter(t=>isTankBlanco(t));
 
             const capNegro   = tanksNegro.reduce((a,t)=>a+tkCap(t),0);
             const nivelNegro = tanksNegro.reduce((a,t)=>a+Number(t.nivel||0),0);
@@ -2103,8 +2108,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               </div>
 
-              {/* Selector familia */}
-              <div style={{display:"flex",gap:0,margin:"16px 0 12px",borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,width:"fit-content"}}>
+              {/* Selector familia + botón admin tanques */}
+              <div style={{display:"flex",alignItems:"center",gap:12,margin:"16px 0 12px",flexWrap:"wrap"}}>
+              <div style={{display:"flex",gap:0,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,width:"fit-content"}}>
                 {[{k:"negro",label:"⬛ Producto Negro"},{k:"blanco",label:"⬜ Producto Blanco"}].map(({k,label})=>(
                   <button key={k} onClick={()=>setDashFamilia(k)}
                     style={{padding:"8px 22px",fontWeight:700,fontSize:12,cursor:"pointer",border:"none",outline:"none",
@@ -2114,6 +2120,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {label}
                   </button>
                 ))}
+              </div>
+              {["administrador","logistica"].includes(perfil?.rol) && (
+                <button onClick={()=>setModalTankAdmin(true)}
+                  style={{padding:"8px 16px",fontWeight:700,fontSize:12,cursor:"pointer",borderRadius:8,
+                    border:`1px solid ${T.border}`,background:T.card,color:T.navy,display:"flex",alignItems:"center",gap:6}}>
+                  <Wrench size={13}/> Administrar Tanques
+                </button>
+              )}
               </div>
 
               {/* Stats rápidas — filtradas por familia */}
@@ -2150,10 +2164,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
                     <Ship size={14}/> Planta 1 · Barcaza + TKT
                   </div>
-                  {(()=>{ const sub=p1Tanks.filter(t=>dashFamilia==="negro"?isNegro(t.producto):isBlanco(t.producto)); return sub.length>0 ? <CapBar nivel={sub.reduce((a,t)=>a+Number(t.nivel||0),0)} cap={sub.reduce((a,t)=>a+tkCap(t),0)} incoming={0} label={dashFamilia==="negro"?"⬛ Negro":"⬜ Blanco"} alert={false}/> : <div style={{fontSize:11,color:T.muted,padding:"8px 0"}}>Sin tanques de producto {dashFamilia} en Planta 1</div>; })()}
+                  {(()=>{ const sub=p1Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t)); return sub.length>0 ? <CapBar nivel={sub.reduce((a,t)=>a+Number(t.nivel||0),0)} cap={sub.reduce((a,t)=>a+tkCap(t),0)} incoming={0} label={dashFamilia==="negro"?"⬛ Negro":"⬜ Blanco"} alert={false}/> : <div style={{fontSize:11,color:T.muted,padding:"8px 0"}}>Sin tanques de producto {dashFamilia} en Planta 1</div>; })()}
                   {/* Detalle por tanque */}
                   <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
-                    {p1Tanks.filter(t=>dashFamilia==="negro"?isNegro(t.producto):isBlanco(t.producto)).map(t=>{
+                    {p1Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t)).map(t=>{
                       const cap=tkCap(t); const niv=Number(t.nivel||0);
                       const pct=cap>0?Math.min(100,Math.round((niv/cap)*100)):0;
                       const bc=pct>80?T.danger:pct>50?T.success:T.orange;
@@ -2175,9 +2189,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
                     <Factory size={14}/> Planta 2 · TK-111 a TK-117
                   </div>
-                  {(()=>{ const sub=p2Tanks.filter(t=>dashFamilia==="negro"?isNegro(t.producto):isBlanco(t.producto)); const inc=dashFamilia==="negro"?glsEntrantesNegro:glsEntrantesBlanco; const al=dashFamilia==="negro"?alertNegro:alertBlanco; return sub.length>0 ? <CapBar nivel={sub.reduce((a,t)=>a+Number(t.nivel||0),0)} cap={sub.reduce((a,t)=>a+tkCap(t),0)} incoming={inc} label={dashFamilia==="negro"?"⬛ Negro":"⬜ Blanco"} alert={al}/> : <div style={{fontSize:11,color:T.muted,padding:"8px 0"}}>Sin tanques de producto {dashFamilia} en Planta 2</div>; })()}
+                  {(()=>{ const sub=p2Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t)); const inc=dashFamilia==="negro"?glsEntrantesNegro:glsEntrantesBlanco; const al=dashFamilia==="negro"?alertNegro:alertBlanco; return sub.length>0 ? <CapBar nivel={sub.reduce((a,t)=>a+Number(t.nivel||0),0)} cap={sub.reduce((a,t)=>a+tkCap(t),0)} incoming={inc} label={dashFamilia==="negro"?"⬛ Negro":"⬜ Blanco"} alert={al}/> : <div style={{fontSize:11,color:T.muted,padding:"8px 0"}}>Sin tanques de producto {dashFamilia} en Planta 2</div>; })()}
                   <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
-                    {p2Tanks.filter(t=>dashFamilia==="negro"?isNegro(t.producto):isBlanco(t.producto)).map(t=>{
+                    {p2Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t)).map(t=>{
                       const cap=tkCap(t); const niv=Number(t.nivel||0);
                       const pct=cap>0?Math.min(100,Math.round((niv/cap)*100)):0;
                       const bc=pct>80?T.danger:pct>50?T.success:T.orange;
@@ -5352,6 +5366,48 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {saving?"Importando...":`Importar ${n} viajes`}
                 </Btn>;
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalTankAdmin && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{background:T.card,borderRadius:14,padding:24,width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 8px 32px rgba(0,0,0,0.22)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+              <div style={{fontWeight:800,fontSize:16,color:T.navy,display:"flex",alignItems:"center",gap:8}}><Wrench size={16}/>Asignación de Tanques por Familia</div>
+              <button onClick={()=>setModalTankAdmin(false)} style={{background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:20,lineHeight:1}}>×</button>
+            </div>
+            <div style={{fontSize:11,color:T.muted,marginBottom:16}}>Define si cada tanque almacena producto Negro o Blanco (MGO/Diesel). Esta configuración se guarda localmente.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {[...tanques].sort((a,b)=>a.id.localeCompare(b.id)).map(t=>{
+                const current = tankFamilias[t.id] || ((() => { const u=(t.producto||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL") ? "blanco" : "negro"; })());
+                return (
+                  <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:T.bg,borderRadius:8,border:`1px solid ${T.border}`}}>
+                    <span style={{fontWeight:700,color:T.navy,width:90,flexShrink:0,fontSize:12}}>{t.id}</span>
+                    <span style={{flex:1,fontSize:11,color:T.muted}}>{t.producto||"Sin producto"} · {((t.nivel||0)/1000).toFixed(1)}k / {((t.capacidad||0)/1000).toFixed(1)}k gls</span>
+                    <div style={{display:"flex",gap:0,borderRadius:6,overflow:"hidden",border:`1px solid ${T.border}`}}>
+                      {["negro","blanco"].map(fam=>(
+                        <button key={fam} onClick={()=>{
+                          const nuevo = {...tankFamilias, [t.id]:fam};
+                          setTankFamilias(nuevo);
+                          localStorage.setItem("tankFamilias", JSON.stringify(nuevo));
+                        }} style={{padding:"4px 12px",fontSize:11,fontWeight:700,cursor:"pointer",border:"none",outline:"none",
+                          background:current===fam?(fam==="negro"?T.navy:"#38bdf8"):T.card,
+                          color:current===fam?"#fff":T.muted,transition:"background 0.15s"}}>
+                          {fam==="negro"?"⬛":"⬜"} {fam}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",justifyContent:"flex-end",marginTop:18}}>
+              <button onClick={()=>setModalTankAdmin(false)}
+                style={{padding:"9px 24px",background:T.navy,color:"#fff",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                Listo
+              </button>
             </div>
           </div>
         </div>
