@@ -619,7 +619,7 @@ export default function App() {
 
   // Actualizar título de la pestaña con la placa cuando es PORTEO
   useEffect(() => {
-    if (activeTab?.type !== 'form') return;
+    if (activeTab?.type !== 'form' || activeTab?.formType !== 'cmt') return;
     const placas = cmtPorteoCarros.map(cr => cr.placa).filter(Boolean);
     const titulo = (form.tipo_operacion === 'PORTEO' && placas.length > 0)
       ? placas.join(' · ')
