@@ -455,6 +455,7 @@ export default function App() {
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
   const [viajesFiltroFechaH, setViajesFiltroFechaH] = useState("");
+  const [importExcel, setImportExcel] = useState(null); // null | { rows, preview, pestaña }
   const [analisisNav, setAnalisisNav] = useState("");
   const [resFiltroTipo, setResFiltroTipo] = useState("");
   const [tiqBusqueda, setTiqBusqueda] = useState("");
@@ -870,6 +871,118 @@ export default function App() {
     setTabs([{ id: 'tab-dashboard', type: 'nav', section: 'dashboard', title: 'Dashboard', icon: '▦', closeable: false }]);
     setActiveTabId('tab-dashboard');
     tabStateCache.current = {};
+  }
+
+  // ── IMPORTAR EXCEL VIAJES ──
+  function leerExcelViajes(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wb = XLSX.read(e.target.result, { type:"array", cellDates:true });
+      const pestañas = wb.SheetNames.filter(n => n.toUpperCase().includes("FLOTA"));
+      if (!pestañas.length) return showToast("No se encontraron pestañas FLOTA en el archivo", false);
+
+      const MAPA = {
+        "N° GUIA":"guia","NUMERO DE GUIA":"guia","GUIA":"guia","N GUIA":"guia",
+        "TRANSPORTADORA":"transportadora","EMPRESA":"transportadora",
+        "PLACA":"placa","PLACA ":"placa","VEHICULO":"placa",
+        "PRODUCTO":"producto","COMBUSTIBLE":"producto",
+        "FECHA DE CARGUE":"fecha","FECHA CARGUE":"fecha",
+        "FECHA APROX. DE LLEGADA":"fecha_aprox_llegada","FECHA APROX DE LLEGADA":"fecha_aprox_llegada",
+        "GLS NETOS GUIA":"gls_netos_guia","GLS NETOS":"gls_netos_guia",
+        "OBSERVACIÓN":"observacion","OBSERVACION":"observacion",
+        "NOMBRE":"conductor","CONDUCTOR":"conductor",
+        "CEDULA":"cedula","CEDULA ":"cedula",
+        "FLETE":"flete","BONO":"bono",
+        "BARRILES NSV":"barriles_nsv","STAND BY":"standby",
+        "VOLUMEN":"volumen_guia","GALONES":"volumen_guia",
+      };
+
+      const todasFilas = [];
+      pestañas.forEach(nombre => {
+        const ws = wb.Sheets[nombre];
+        const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
+        // Buscar fila de encabezados (primera fila con al menos 3 celdas no vacías)
+        let hdrIdx = raw.findIndex(r => r.filter(c=>c!=="").length >= 3);
+        if (hdrIdx < 0) return;
+        const hdrs = raw[hdrIdx].map(h => String(h||"").trim().toUpperCase());
+        const mapIdx = {};
+        hdrs.forEach((h,i) => { if (MAPA[h]) mapIdx[MAPA[h]] = i; });
+
+        for (let i = hdrIdx+1; i < raw.length; i++) {
+          const r = raw[i];
+          if (r.every(c=>c===""||c===null)) continue;
+          const get = campo => {
+            const idx = mapIdx[campo];
+            if (idx === undefined) return "";
+            const v = r[idx];
+            if (v === "" || v === null || v === undefined) return "";
+            // Fechas Excel (número serial) → string YYYY-MM-DD
+            if (campo.includes("fecha") || campo === "fecha") {
+              if (v instanceof Date) return v.toISOString().slice(0,10);
+              if (typeof v === "number") {
+                const d = XLSX.SSF.parse_date_code(v);
+                if (d) return `${d.y}-${String(d.m).padStart(2,"0")}-${String(d.d).padStart(2,"0")}`;
+              }
+            }
+            return String(v).trim();
+          };
+          const placa = get("placa").toUpperCase();
+          const transportadora = get("transportadora").toUpperCase();
+          const producto = get("producto").toUpperCase();
+          if (!placa && !transportadora) continue;
+          todasFilas.push({
+            _pestaña: nombre,
+            placa, transportadora, producto,
+            guia: get("guia"),
+            fecha: get("fecha") || today(),
+            fecha_aprox_llegada: get("fecha_aprox_llegada"),
+            gls_netos_guia: get("gls_netos_guia") ? Number(get("gls_netos_guia")) : 0,
+            observacion: get("observacion"),
+            conductor: get("conductor"),
+            cedula: get("cedula"),
+            flete: get("flete") ? Number(get("flete")) : 0,
+            bono: get("bono") ? Number(get("bono")) : 0,
+            barriles_nsv: get("barriles_nsv") ? Number(get("barriles_nsv")) : 0,
+            standby: get("standby") ? Number(get("standby")) : 0,
+          });
+        }
+      });
+
+      if (!todasFilas.length) return showToast("No se encontraron filas con datos", false);
+
+      // Marcar duplicados por guía
+      const guiasExistentes = new Set((viajes||[]).map(v=>v.guia).filter(Boolean));
+      const preview = todasFilas.map(f => ({
+        ...f,
+        _duplicado: f.guia && guiasExistentes.has(f.guia),
+      }));
+      setImportExcel({ preview, pestañas });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  async function confirmarImportExcel() {
+    if (!importExcel) return;
+    setSaving(true);
+    const filas = importExcel.preview.filter(f => !f._duplicado);
+    let ok = 0, err = 0;
+    for (const f of filas) {
+      const id = genId("VJ", viajes);
+      const { error } = await dbCall({ table:"viajes", op:"insert", data:{
+        id, placa:f.placa, transportadora:f.transportadora, producto:f.producto,
+        guia:f.guia||null, fecha:f.fecha, fecha_aprox_llegada:f.fecha_aprox_llegada||null,
+        gls_netos_guia:f.gls_netos_guia||0, observacion:f.observacion||null,
+        conductor:f.conductor||null, cedula:f.cedula||null,
+        flete:f.flete||0, bono:f.bono||0, barriles_nsv:f.barriles_nsv||0,
+        standby:f.standby||0, estado:"En Ruta", creado_por:session.user.id,
+        sede:perfil.sede||"MALAMBO", planta:perfil.planta||"PLANTA 1",
+      }});
+      if (error) err++; else ok++;
+    }
+    setSaving(false);
+    setImportExcel(null);
+    await loadData();
+    showToast(`Importados: ${ok} viajes${err>0?` · ${err} errores`:""}`, err===0);
   }
 
   // ── GUARDAR DATOS ──
@@ -1816,7 +1929,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Listado Tránsito</div>
                     <div style={{ fontSize:11, color:T.muted }}>Carros en ruta · <b style={{color:T.orange}}>{viajesFinal.length}</b> resultado(s)</div>
                   </div>
-                  {puedeCrear("viajes") && <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>}
+                  <div style={{display:"flex",gap:8}}>
+                    {puedeCrear("viajes") && (<>
+                      <label style={{background:T.success,color:"#fff",border:"none",borderRadius:6,padding:"9px 20px",fontWeight:700,fontSize:13,cursor:"pointer",whiteSpace:"nowrap",letterSpacing:0.3}}>
+                        ↑ Importar Excel
+                        <input type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={e=>{if(e.target.files[0])leerExcelViajes(e.target.files[0]);e.target.value="";}}/>
+                      </label>
+                      <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>
+                    </>)}
+                  </div>
                 </div>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
                   <input value={viajesBusqueda} onChange={e=>setViajesBusqueda(e.target.value)} placeholder="🔍 Buscar placa, guía, transportadora..." style={{...selStyle,width:240,padding:"6px 12px"}}/>
@@ -4788,6 +4909,58 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       })()}
 
       {/* ═══ FORMS (inline in content area) ═══ */}
+
+      {importExcel && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{background:T.card,borderRadius:12,width:"100%",maxWidth:900,maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+            <div style={{background:T.navy,borderBottom:`3px solid ${T.orange}`,padding:"16px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+              <div>
+                <div style={{fontWeight:800,fontSize:15,color:"#fff",letterSpacing:1}}>VISTA PREVIA — IMPORTAR EXCEL</div>
+                <div style={{fontSize:11,color:"#ffffff88",marginTop:2}}>Pestañas: {importExcel.pestañas.join(", ")} · {importExcel.preview.length} filas leídas</div>
+              </div>
+              <button onClick={()=>setImportExcel(null)} style={{background:"rgba(255,255,255,0.1)",border:"none",color:"#fff",fontSize:18,cursor:"pointer",borderRadius:6,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+            </div>
+            <div style={{padding:"12px 16px",background:T.bg,flexShrink:0,display:"flex",gap:16,alignItems:"center",fontSize:12}}>
+              <span style={{color:T.success,fontWeight:700}}>✔ {importExcel.preview.filter(f=>!f._duplicado).length} para importar</span>
+              <span style={{color:T.danger,fontWeight:700}}>✖ {importExcel.preview.filter(f=>f._duplicado).length} duplicadas (guía ya existe)</span>
+            </div>
+            <div style={{overflowY:"auto",flex:1}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                <thead>
+                  <tr>{["Estado","Pestaña","Placa","Transportadora","Producto","Guía","Fecha","Gls Guía","Conductor"].map(c=>(
+                    <th key={c} style={{padding:"8px 10px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",background:T.bg,textAlign:"left"}}>{c}</th>
+                  ))}</tr>
+                </thead>
+                <tbody>
+                  {importExcel.preview.map((f,i)=>(
+                    <tr key={i} style={{background:f._duplicado?"#fff1f1":i%2===0?T.bg:T.card,opacity:f._duplicado?0.5:1,borderBottom:`1px solid ${T.border}`}}>
+                      <td style={{padding:"7px 10px",whiteSpace:"nowrap"}}>
+                        {f._duplicado
+                          ? <span style={{color:T.danger,fontWeight:700,fontSize:10}}>DUPLICADA</span>
+                          : <span style={{color:T.success,fontWeight:700,fontSize:10}}>IMPORTAR</span>}
+                      </td>
+                      <td style={{padding:"7px 10px",whiteSpace:"nowrap",color:T.muted,fontSize:10}}>{f._pestaña}</td>
+                      <td style={{padding:"7px 10px",fontWeight:700,whiteSpace:"nowrap"}}>{f.placa}</td>
+                      <td style={{padding:"7px 10px",whiteSpace:"nowrap"}}>{f.transportadora}</td>
+                      <td style={{padding:"7px 10px",whiteSpace:"nowrap"}}>{f.producto}</td>
+                      <td style={{padding:"7px 10px",fontFamily:"monospace",whiteSpace:"nowrap"}}>{f.guia||<span style={{color:T.muted}}>—</span>}</td>
+                      <td style={{padding:"7px 10px",whiteSpace:"nowrap"}}>{f.fecha}</td>
+                      <td style={{padding:"7px 10px",textAlign:"right",whiteSpace:"nowrap"}}>{f.gls_netos_guia>0?f.gls_netos_guia.toLocaleString():"—"}</td>
+                      <td style={{padding:"7px 10px",whiteSpace:"nowrap"}}>{f.conductor||"—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{padding:16,background:T.bg,borderTop:`1px solid ${T.border}`,display:"flex",justifyContent:"flex-end",gap:10,flexShrink:0}}>
+              <Btn outline onClick={()=>setImportExcel(null)}>Cancelar</Btn>
+              <Btn color={T.success} onClick={confirmarImportExcel} disabled={saving||importExcel.preview.filter(f=>!f._duplicado).length===0}>
+                {saving?"Importando...": `Importar ${importExcel.preview.filter(f=>!f._duplicado).length} viajes`}
+              </Btn>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modal==="viaje" && (
         <Modal title={form.id ? `Editar Viaje ${form.id}` : "Registrar Nuevo Viaje"} onClose={()=>setModal(null)} wide inline>
