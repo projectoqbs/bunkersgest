@@ -337,7 +337,7 @@ function Stat({ label, value, color, sub }) {
 }
 function Table({ cols, rows, emptyMsg }) {
   return (
-    <div style={{ background:T.card, borderRadius:8, border:`1px solid ${T.border}`, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
+    <div style={{ background:T.card, borderRadius:8, border:`1px solid ${T.border}`, overflow:"auto", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
       <table style={{ width:"100%", borderCollapse:"collapse", minWidth:500 }}>
         <thead><tr style={{ background:T.bg }}>{cols.map(c=><th key={c} style={{ padding:"10px 14px", textAlign:"left", fontSize:10, color:T.navy, letterSpacing:1, textTransform:"uppercase", fontWeight:700, whiteSpace:"nowrap", borderBottom:`2px solid ${T.border}` }}>{c}</th>)}</tr></thead>
         <tbody>
@@ -1999,7 +1999,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     : horasStandby < 16  ? T.orange
                     : T.danger;
                   return [
-                    <span style={{color:T.orange}}>{v.id}</span>,
+                    <a onClick={()=>{setForm({...v});setModal("viaje");}} style={{color:T.orange,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"monospace"}}>{v.id}</a>,
                     <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?T.muted:v.sede==="CARTAGENA"?T.danger:T.orange}/>,
                     v.fecha,
                     v.fecha_llegada||<span style={{color:T.muted,fontSize:10}}>—</span>,
@@ -2015,9 +2015,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         </span>
                       : <span style={{color:"#ffffff18"}}>—</span>,
                     <Badge label={v.estado} color={v.estado==="Descargado"?T.success:v.estado==="En Ruta"?T.orange:v.estado==="Rechazado"?T.danger:T.orange}/>,
-                    puedeEditar("viajes",v.creado_por,v.created_at)
-                      ? <button onClick={()=>{setForm({...v});setModal("viaje");}} style={{background:`${T.orange}22`,border:`1px solid ${T.orange}55`,borderRadius:6,color:T.orange,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"monospace"}}>Editar</button>
-                      : null,
+                    null,
                   ];
                 })}
               />
