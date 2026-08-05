@@ -996,7 +996,7 @@ export default function App() {
         standby:f.standby||0, estado:"En Ruta", creado_por:session.user.id,
         sede:perfil.sede||"MALAMBO", planta:perfil.planta||"PLANTA 1",
       }});
-      if (error) err++; else ok++;
+      if (error) { err++; if (err===1) console.error("IMPORT ERR:", error, JSON.stringify(f)); } else ok++;
     }
     setSaving(false);
     setImportExcel(null);
