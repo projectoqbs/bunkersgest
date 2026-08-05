@@ -1016,6 +1016,7 @@ export default function App() {
     }
     setSaving(false);
     await loadData();
+    setFlotaFechaDesde(""); setFlotaFechaHasta("");
     showToast(`Fechas actualizadas: ${ok} viajes${err>0?` · ${err} errores`:""}`, err===0);
   }
 
@@ -2078,7 +2079,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <a onClick={()=>openViajeTab(v)} style={{color:T.orange,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"monospace"}}>{v.id}</a>,
                     <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?T.muted:v.sede==="CARTAGENA"?T.danger:T.orange}/>,
                     v.fecha,
-                    v.fecha_llegada||<span style={{color:T.muted,fontSize:10}}>—</span>,
+                    v.fecha_aprox_llegada
+                      ? <span style={{color:T.success,fontWeight:600}}>{v.fecha_aprox_llegada}</span>
+                      : <span style={{color:T.muted,fontSize:10}}>—</span>,
                     v.producto, v.transportadora, v.placa, v.guia,
                     fmt(v.gls_netos_guia||v.volumen_guia||0),
                     v.gls_recibidos>0?<span style={{color:T.success,fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:T.muted,fontSize:10}}>—</span>,
