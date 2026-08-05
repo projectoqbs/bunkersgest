@@ -978,8 +978,15 @@ export default function App() {
     setSaving(true);
     const filas = importExcel.preview.filter(f => !f._duplicado && (!importFechaDesde || f.fecha >= importFechaDesde));
     let ok = 0, err = 0;
+    // Calcular el número máximo actual para no colisionar IDs en el loop
+    const maxVJ = (viajes||[]).reduce((max, v) => {
+      const n = parseInt((v.id||"").replace("VJ-","")) || 0;
+      return Math.max(max, n);
+    }, 0);
+    let nextVJ = maxVJ;
     for (const f of filas) {
-      const id = genId("VJ", viajes);
+      nextVJ++;
+      const id = `VJ-${String(nextVJ).padStart(3,"0")}`;
       const { error } = await dbCall({ table:"viajes", op:"insert", data:{
         id, placa:f.placa, transportadora:f.transportadora, producto:f.producto,
         guia:f.guia||null, fecha:f.fecha, fecha_aprox_llegada:f.fecha_aprox_llegada||null,
