@@ -989,9 +989,9 @@ export default function App() {
       const id = `VJ-${String(nextVJ).padStart(3,"0")}`;
       const { error } = await dbCall({ table:"viajes", op:"insert", data:{
         id, placa:f.placa, transportadora:f.transportadora, producto:f.producto,
-        guia:f.guia||null, fecha:f.fecha, fecha_aprox_llegada:f.fecha_aprox_llegada||null,
-        gls_netos_guia:f.gls_netos_guia||0, observacion:f.observacion||null,
-        conductor:f.conductor||null, cedula:f.cedula||null,
+        guia:f.guia||"", fecha:f.fecha, fecha_aprox_llegada:f.fecha_aprox_llegada||null,
+        gls_netos_guia:f.gls_netos_guia||0, observacion:f.observacion||"",
+        conductor:f.conductor||"", cedula:f.cedula||"",
         flete:f.flete||0, bono:f.bono||0, barriles_nsv:f.barriles_nsv||0,
         standby:f.standby||0, estado:"En Ruta", creado_por:session.user.id,
         sede:perfil.sede||"MALAMBO", planta:perfil.planta||"PLANTA 1",
