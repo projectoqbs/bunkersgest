@@ -456,6 +456,8 @@ export default function App() {
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
   const [viajesFiltroFechaH, setViajesFiltroFechaH] = useState("");
   const [importExcel, setImportExcel] = useState(null); // null | { rows, preview, pestaña }
+  const [importLoading, setImportLoading] = useState(false);
+  const [importFechaDesde, setImportFechaDesde] = useState("");
   const [analisisNav, setAnalisisNav] = useState("");
   const [resFiltroTipo, setResFiltroTipo] = useState("");
   const [tiqBusqueda, setTiqBusqueda] = useState("");
@@ -875,8 +877,11 @@ export default function App() {
 
   // ── IMPORTAR EXCEL VIAJES ──
   function leerExcelViajes(file) {
+    setImportLoading(true);
     const reader = new FileReader();
     reader.onload = e => {
+      setTimeout(() => { // cede el hilo para que el spinner aparezca antes del procesamiento
+
       const wb = XLSX.read(e.target.result, { type:"array", cellDates:true });
       const pestañas = wb.SheetNames.filter(n => n.toUpperCase().includes("FLOTA"));
       if (!pestañas.length) return showToast("No se encontraron pestañas FLOTA en el archivo", false);
@@ -952,7 +957,7 @@ export default function App() {
         }
       });
 
-      if (!todasFilas.length) return showToast("No se encontraron filas con datos", false);
+      if (!todasFilas.length) { setImportLoading(false); return showToast("No se encontraron filas con datos", false); }
 
       // Marcar duplicados por guía
       const guiasExistentes = new Set((viajes||[]).map(v=>v.guia).filter(Boolean));
@@ -960,7 +965,10 @@ export default function App() {
         ...f,
         _duplicado: f.guia && guiasExistentes.has(f.guia),
       }));
+      setImportLoading(false);
+      setImportFechaDesde("");
       setImportExcel({ preview, pestañas });
+      }, 50); // fin setTimeout
     };
     reader.readAsArrayBuffer(file);
   }
@@ -968,7 +976,7 @@ export default function App() {
   async function confirmarImportExcel() {
     if (!importExcel) return;
     setSaving(true);
-    const filas = importExcel.preview.filter(f => !f._duplicado);
+    const filas = importExcel.preview.filter(f => !f._duplicado && (!importFechaDesde || f.fecha >= importFechaDesde));
     let ok = 0, err = 0;
     for (const f of filas) {
       const id = genId("VJ", viajes);
@@ -1935,10 +1943,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </div>
                   <div style={{display:"flex",gap:8}}>
                     {puedeCrear("viajes") && (<>
-                      <label style={{background:T.success,color:"#fff",border:"none",borderRadius:6,padding:"9px 20px",fontWeight:700,fontSize:13,cursor:"pointer",whiteSpace:"nowrap",letterSpacing:0.3}}>
-                        ↑ Importar Excel
-                        <input type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={e=>{if(e.target.files[0])leerExcelViajes(e.target.files[0]);e.target.value="";}}/>
+                      <label style={{background:importLoading?`${T.success}88`:T.success,color:"#fff",border:"none",borderRadius:6,padding:"9px 20px",fontWeight:700,fontSize:13,cursor:importLoading?"not-allowed":"pointer",whiteSpace:"nowrap",letterSpacing:0.3,display:"flex",alignItems:"center",gap:8}}>
+                        {importLoading ? <><span style={{display:"inline-block",width:14,height:14,border:"2px solid #fff",borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.7s linear infinite"}}/>Analizando...</> : "↑ Importar Excel"}
+                        <input type="file" accept=".xlsx,.xls" style={{display:"none"}} disabled={importLoading} onChange={e=>{if(e.target.files[0])leerExcelViajes(e.target.files[0]);e.target.value="";}}/>
                       </label>
+                      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
                       <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>
                     </>)}
                   </div>
@@ -4924,9 +4933,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
               <button onClick={()=>setImportExcel(null)} style={{background:"rgba(255,255,255,0.1)",border:"none",color:"#fff",fontSize:18,cursor:"pointer",borderRadius:6,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
             </div>
-            <div style={{padding:"12px 16px",background:T.bg,flexShrink:0,display:"flex",gap:16,alignItems:"center",fontSize:12}}>
-              <span style={{color:T.success,fontWeight:700}}>✔ {importExcel.preview.filter(f=>!f._duplicado).length} para importar</span>
-              <span style={{color:T.danger,fontWeight:700}}>✖ {importExcel.preview.filter(f=>f._duplicado).length} duplicadas (guía ya existe)</span>
+            <div style={{padding:"12px 16px",background:T.bg,flexShrink:0,display:"flex",gap:16,alignItems:"center",fontSize:12,flexWrap:"wrap"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{color:T.muted,fontWeight:700,fontSize:11,textTransform:"uppercase",letterSpacing:1}}>Importar desde:</span>
+                <input type="date" value={importFechaDesde} onChange={e=>setImportFechaDesde(e.target.value)}
+                  style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 10px",color:T.text,fontSize:12,outline:"none"}}/>
+                {importFechaDesde && <button onClick={()=>setImportFechaDesde("")} style={{background:"none",border:"none",color:T.muted,cursor:"pointer",fontSize:12}}>✕ Quitar filtro</button>}
+              </div>
+              {(()=>{
+                const filtradas = importExcel.preview.filter(f=>!f._duplicado&&(!importFechaDesde||f.fecha>=importFechaDesde));
+                const dupls = importExcel.preview.filter(f=>f._duplicado);
+                const omitFecha = importExcel.preview.filter(f=>!f._duplicado&&importFechaDesde&&f.fecha<importFechaDesde).length;
+                return (<>
+                  <span style={{color:T.success,fontWeight:700}}>✔ {filtradas.length} para importar</span>
+                  <span style={{color:T.danger,fontWeight:700}}>✖ {dupls.length} duplicadas</span>
+                  {omitFecha>0&&<span style={{color:T.muted,fontWeight:700}}>⊘ {omitFecha} anteriores a la fecha</span>}
+                </>);
+              })()}
             </div>
             <div style={{overflowY:"auto",flex:1}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
@@ -4936,11 +4959,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   ))}</tr>
                 </thead>
                 <tbody>
-                  {importExcel.preview.map((f,i)=>(
-                    <tr key={i} style={{background:f._duplicado?"#fff1f1":i%2===0?T.bg:T.card,opacity:f._duplicado?0.5:1,borderBottom:`1px solid ${T.border}`}}>
+                  {importExcel.preview.map((f,i)=>{
+                    const omitida = !f._duplicado && importFechaDesde && f.fecha < importFechaDesde;
+                    return (
+                    <tr key={i} style={{background:f._duplicado||omitida?"#f5f5f5":i%2===0?T.bg:T.card,opacity:f._duplicado||omitida?0.4:1,borderBottom:`1px solid ${T.border}`}}>
                       <td style={{padding:"7px 10px",whiteSpace:"nowrap"}}>
-                        {f._duplicado
-                          ? <span style={{color:T.danger,fontWeight:700,fontSize:10}}>DUPLICADA</span>
+                        {f._duplicado ? <span style={{color:T.danger,fontWeight:700,fontSize:10}}>DUPLICADA</span>
+                          : omitida ? <span style={{color:T.muted,fontWeight:700,fontSize:10}}>OMITIDA</span>
                           : <span style={{color:T.success,fontWeight:700,fontSize:10}}>IMPORTAR</span>}
                       </td>
                       <td style={{padding:"7px 10px",whiteSpace:"nowrap",color:T.muted,fontSize:10}}>{f._pestaña}</td>
@@ -4952,15 +4977,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <td style={{padding:"7px 10px",textAlign:"right",whiteSpace:"nowrap"}}>{f.gls_netos_guia>0?f.gls_netos_guia.toLocaleString():"—"}</td>
                       <td style={{padding:"7px 10px",whiteSpace:"nowrap"}}>{f.conductor||"—"}</td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
             <div style={{padding:16,background:T.bg,borderTop:`1px solid ${T.border}`,display:"flex",justifyContent:"flex-end",gap:10,flexShrink:0}}>
               <Btn outline onClick={()=>setImportExcel(null)}>Cancelar</Btn>
-              <Btn color={T.success} onClick={confirmarImportExcel} disabled={saving||importExcel.preview.filter(f=>!f._duplicado).length===0}>
-                {saving?"Importando...": `Importar ${importExcel.preview.filter(f=>!f._duplicado).length} viajes`}
-              </Btn>
+              {(()=>{
+                const n = importExcel.preview.filter(f=>!f._duplicado&&(!importFechaDesde||f.fecha>=importFechaDesde)).length;
+                return <Btn color={T.success} onClick={confirmarImportExcel} disabled={saving||n===0}>
+                  {saving?"Importando...":`Importar ${n} viajes`}
+                </Btn>;
+              })()}
             </div>
           </div>
         </div>
