@@ -5007,7 +5007,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {form.id && (
                 <div>
                   <Lbl>Fecha de Registro</Lbl>
-                  <div style={{background:"#162535",border:"1px solid #ffffff14",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:T.muted}}>
+                  <div style={{background:"#c8d0d8",border:"1px solid #b0bac4",borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:"#555e6a"}}>
                     {form.created_at ? new Date(form.created_at).toLocaleString("es-CO",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}
                   </div>
                 </div>
