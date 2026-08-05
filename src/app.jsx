@@ -454,6 +454,7 @@ export default function App() {
   const [viajesFiltroEstado, setViajesFiltroEstado] = useState("");
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroTrans, setViajesFiltroTrans] = useState("");
+  const [dashFamilia, setDashFamilia] = useState("negro");
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
   const [viajesFiltroFechaH, setViajesFiltroFechaH] = useState("");
   const [importExcel, setImportExcel] = useState(null); // null | { rows, preview, pestaña }
@@ -2102,17 +2103,42 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </div>
               </div>
 
-              {/* Stats rápidas */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, margin:"16px 0" }}>
-                <Stat label="Carros en Tránsito" value={vTransito.length} color={T.orange} sub="en camino a planta" />
-                <Stat label="Carros en Planta" value={vEnPlanta.length} color={T.navy} sub="pendientes descargue" />
-                <Stat label="Esp. Disp. Negro" value={`${fmt(espacioDispNegro)} gls`} color={T.success} sub={`Cap: ${fmt(capNegro)} gls`} />
-                <Stat label="Esp. Disp. Blanco" value={`${fmt(espacioDispBlanco)} gls`} color="#38bdf8" sub={`Cap: ${fmt(capBlanco)} gls`} />
-                <Stat label="Entrantes Negro" value={`${fmt(glsEntrantesNegro)} gls`} color={T.orange} sub={`${allActivos.filter(v=>isNegro(v.producto)).length} carros`} />
-                <Stat label="Entrantes Blanco" value={`${fmt(glsEntrantesBlanco)} gls`} color="#38bdf8" sub={`${allActivos.filter(v=>isBlanco(v.producto)).length} carros`} />
-                <Stat label="Por Cargar Negro" value={`${fmt(espacioPorCargarNegro)} gls`} color={alertNegro?T.danger:T.success} sub={alertNegro?"⚠ Sin espacio":"tras entrantes negro"} />
-                <Stat label="Por Cargar Blanco" value={`${fmt(espacioPorCargarBlanco)} gls`} color={alertBlanco?T.danger:"#38bdf8"} sub={alertBlanco?"⚠ Sin espacio":"tras entrantes blanco"} />
+              {/* Selector familia */}
+              <div style={{display:"flex",gap:0,margin:"16px 0 12px",borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,width:"fit-content"}}>
+                {[{k:"negro",label:"⬛ Producto Negro"},{k:"blanco",label:"⬜ Producto Blanco"}].map(({k,label})=>(
+                  <button key={k} onClick={()=>setDashFamilia(k)}
+                    style={{padding:"8px 22px",fontWeight:700,fontSize:12,cursor:"pointer",border:"none",outline:"none",
+                      background:dashFamilia===k ? T.navy : T.card,
+                      color:dashFamilia===k ? "#fff" : T.muted,
+                      transition:"background 0.2s"}}>
+                    {label}
+                  </button>
+                ))}
               </div>
+
+              {/* Stats rápidas — filtradas por familia */}
+              {(()=>{
+                const esNegro = dashFamilia==="negro";
+                const cap      = esNegro ? capNegro      : capBlanco;
+                const nivel    = esNegro ? nivelNegro     : nivelBlanco;
+                const espDisp  = esNegro ? espacioDispNegro  : espacioDispBlanco;
+                const glsEnt   = esNegro ? glsEntrantesNegro : glsEntrantesBlanco;
+                const espCarg  = esNegro ? espacioPorCargarNegro : espacioPorCargarBlanco;
+                const alert    = esNegro ? alertNegro     : alertBlanco;
+                const nCarros  = allActivos.filter(v=> esNegro ? isNegro(v.producto) : isBlanco(v.producto)).length;
+                const acColor  = esNegro ? T.navy : "#38bdf8";
+                return (
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, marginBottom:16 }}>
+                    <Stat label="Carros en Tránsito" value={vTransito.length} color={T.orange} sub="en camino a planta" />
+                    <Stat label="Carros en Planta"   value={vEnPlanta.length} color={T.navy}  sub="pendientes descargue" />
+                    <Stat label="Capacidad Total"    value={`${fmt(cap)} gls`}    color={acColor} sub={`${esNegro?"negro":"blanco"} P1+P2`} />
+                    <Stat label="Inventario Actual"  value={`${fmt(nivel)} gls`}  color={acColor} sub={`${Math.round(cap>0?(nivel/cap)*100:0)}% lleno`} />
+                    <Stat label="Espacio Disponible" value={`${fmt(espDisp)} gls`} color={T.success} sub="libre ahora" />
+                    <Stat label="Galones Entrantes"  value={`${fmt(glsEnt)} gls`} color={T.orange} sub={`${nCarros} carros`} />
+                    <Stat label="Espacio por Cargar" value={`${fmt(espCarg)} gls`} color={alert?T.danger:T.success} sub={alert?"⚠ Sin espacio":"tras descontar entrantes"} />
+                  </div>
+                );
+              })()}
 
               {/* Capacidad por planta */}
               <div style={{ fontWeight:800, fontSize:14, color:T.navy, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${T.orange}22`, display:"flex", alignItems:"center", gap:6 }}>
@@ -2124,12 +2150,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
                     <Ship size={14}/> Planta 1 · Barcaza + TKT
                   </div>
-                  {p1Tanks.filter(t=>isNegro(t.producto)).length>0 && <CapBar nivel={p1Tanks.filter(t=>isNegro(t.producto)).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p1Tanks.filter(t=>isNegro(t.producto)).reduce((a,t)=>a+tkCap(t),0)} incoming={0} label="⬛ Negro" alert={false}/>}
-                  {p1Tanks.filter(t=>isBlanco(t.producto)).length>0 && <CapBar nivel={p1Tanks.filter(t=>isBlanco(t.producto)).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p1Tanks.filter(t=>isBlanco(t.producto)).reduce((a,t)=>a+tkCap(t),0)} incoming={0} label="⬜ Blanco" alert={false}/>}
-                  {p1Tanks.filter(t=>!t.producto).length>0 && <CapBar nivel={p1Tanks.filter(t=>!t.producto).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p1Tanks.filter(t=>!t.producto).reduce((a,t)=>a+tkCap(t),0)} incoming={0} label="— Sin producto" alert={false}/>}
+                  {(()=>{ const sub=p1Tanks.filter(t=>dashFamilia==="negro"?isNegro(t.producto):isBlanco(t.producto)); return sub.length>0 ? <CapBar nivel={sub.reduce((a,t)=>a+Number(t.nivel||0),0)} cap={sub.reduce((a,t)=>a+tkCap(t),0)} incoming={0} label={dashFamilia==="negro"?"⬛ Negro":"⬜ Blanco"} alert={false}/> : <div style={{fontSize:11,color:T.muted,padding:"8px 0"}}>Sin tanques de producto {dashFamilia} en Planta 1</div>; })()}
                   {/* Detalle por tanque */}
                   <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
-                    {p1Tanks.map(t=>{
+                    {p1Tanks.filter(t=>dashFamilia==="negro"?isNegro(t.producto):isBlanco(t.producto)).map(t=>{
                       const cap=tkCap(t); const niv=Number(t.nivel||0);
                       const pct=cap>0?Math.min(100,Math.round((niv/cap)*100)):0;
                       const bc=pct>80?T.danger:pct>50?T.success:T.orange;
@@ -2151,11 +2175,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
                     <Factory size={14}/> Planta 2 · TK-111 a TK-117
                   </div>
-                  {p2Tanks.filter(t=>isNegro(t.producto)).length>0 && <CapBar nivel={p2Tanks.filter(t=>isNegro(t.producto)).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p2Tanks.filter(t=>isNegro(t.producto)).reduce((a,t)=>a+tkCap(t),0)} incoming={glsEntrantesNegro} label="⬛ Negro" alert={alertNegro}/>}
-                  {p2Tanks.filter(t=>isBlanco(t.producto)).length>0 && <CapBar nivel={p2Tanks.filter(t=>isBlanco(t.producto)).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p2Tanks.filter(t=>isBlanco(t.producto)).reduce((a,t)=>a+tkCap(t),0)} incoming={glsEntrantesBlanco} label="⬜ Blanco" alert={alertBlanco}/>}
-                  {p2Tanks.filter(t=>!t.producto).length>0 && <CapBar nivel={p2Tanks.filter(t=>!t.producto).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p2Tanks.filter(t=>!t.producto).reduce((a,t)=>a+tkCap(t),0)} incoming={0} label="— Sin producto" alert={false}/>}
+                  {(()=>{ const sub=p2Tanks.filter(t=>dashFamilia==="negro"?isNegro(t.producto):isBlanco(t.producto)); const inc=dashFamilia==="negro"?glsEntrantesNegro:glsEntrantesBlanco; const al=dashFamilia==="negro"?alertNegro:alertBlanco; return sub.length>0 ? <CapBar nivel={sub.reduce((a,t)=>a+Number(t.nivel||0),0)} cap={sub.reduce((a,t)=>a+tkCap(t),0)} incoming={inc} label={dashFamilia==="negro"?"⬛ Negro":"⬜ Blanco"} alert={al}/> : <div style={{fontSize:11,color:T.muted,padding:"8px 0"}}>Sin tanques de producto {dashFamilia} en Planta 2</div>; })()}
                   <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
-                    {p2Tanks.map(t=>{
+                    {p2Tanks.filter(t=>dashFamilia==="negro"?isNegro(t.producto):isBlanco(t.producto)).map(t=>{
                       const cap=tkCap(t); const niv=Number(t.nivel||0);
                       const pct=cap>0?Math.min(100,Math.round((niv/cap)*100)):0;
                       const bc=pct>80?T.danger:pct>50?T.success:T.orange;
@@ -2176,25 +2198,36 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
               {/* Entradas proyectadas por fecha */}
               <div style={{ fontWeight:800, fontSize:14, color:T.navy, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${T.orange}22`, display:"flex", alignItems:"center", gap:6 }}>
-                <Truck size={15}/> Entradas Proyectadas por Fecha de Llegada
+                <Truck size={15}/> Entradas Proyectadas · {dashFamilia==="negro"?"Producto Negro":"Producto Blanco"}
               </div>
-              {vEnRuta.length === 0 ? (
+              {(()=>{
+                const vFiltrados = vEnRuta.filter(v=>dashFamilia==="negro"?isNegro(v.producto):isBlanco(v.producto));
+                const byFechaFam = {};
+                vFiltrados.forEach(v=>{
+                  const key=v.fecha_aprox_llegada; if(!byFechaFam[key]) byFechaFam[key]={};
+                  const p=v.producto||"Sin producto"; byFechaFam[key][p]=(byFechaFam[key][p]||0)+Number(v.gls_netos_guia);
+                });
+                const fechasFam = Object.keys(byFechaFam).sort();
+                const prodsFam = [...new Set(vFiltrados.map(v=>v.producto||"Sin producto"))].sort();
+                const totalFam = vFiltrados.reduce((a,v)=>a+Number(v.gls_netos_guia),0);
+              return vFiltrados.length === 0 ? (
                 <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes En Ruta con fecha estimada de llegada registrada.</div>
+                <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes en tránsito con fecha estimada para producto {dashFamilia}.</div>
               ) : (
                 <div style={{overflowX:"auto"}}>
                   <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                     <thead>
                       <tr style={{background:T.navy+"18"}}>
-                        <th style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:T.navy,borderRadius:"6px 0 0 0"}}>F. Llegada Est.</th>
-                        {allProds.map(p=>(
+                        <th style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:T.navy}}>F. Llegada Est.</th>
+                        {prodsFam.map(p=>(
                           <th key={p} style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:prodColor(p)}}>{p}</th>
                         ))}
-                        <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:T.navy,borderRadius:"0 6px 0 0"}}>Total (gls)</th>
+                        <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:T.navy}}>Total (gls)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {fechas.map((f,i)=>{
-                        const row = byFecha[f];
+                      {fechasFam.map((f,i)=>{
+                        const row = byFechaFam[f];
                         const total = Object.values(row).reduce((a,b)=>a+b,0);
                         const esHoy = f === new Date().toISOString().slice(0,10);
                         const esPasado = f < new Date().toISOString().slice(0,10);
@@ -2203,7 +2236,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={{padding:"6px 10px",fontWeight:esHoy?800:600,color:esHoy?T.orange:esPasado?T.muted:T.navy}}>
                               {esPasado?"🔴 ":esHoy?"🟡 ":"🟢 "}{new Date(f+"T12:00:00").toLocaleDateString("es-CO",{weekday:"short",day:"2-digit",month:"short"})}
                             </td>
-                            {allProds.map(p=>(
+                            {prodsFam.map(p=>(
                               <td key={p} style={{padding:"6px 10px",textAlign:"right",color:row[p]?prodColor(p):T.muted}}>
                                 {row[p]?fmt(row[p]):"—"}
                               </td>
@@ -2212,19 +2245,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           </tr>
                         );
                       })}
-                      {/* Total row */}
                       <tr style={{background:T.navy+"22",borderTop:`2px solid ${T.navy}44`}}>
                         <td style={{padding:"7px 10px",fontWeight:800,color:T.navy}}>TOTAL ENTRANTE</td>
-                        {allProds.map(p=>{
-                          const tot = vEnRuta.filter(v=>(v.producto||"Sin producto")===p).reduce((a,v)=>a+Number(v.gls_netos_guia),0);
+                        {prodsFam.map(p=>{
+                          const tot = vFiltrados.filter(v=>(v.producto||"Sin producto")===p).reduce((a,v)=>a+Number(v.gls_netos_guia),0);
                           return <td key={p} style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:prodColor(p)}}>{fmt(tot)}</td>;
                         })}
-                        <td style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:T.navy}}>{fmt(totalEntrante)}</td>
+                        <td style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:T.navy}}>{fmt(totalFam)}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-              )}
+              );
+              })()}
 
               {/* Alertas */}
               {(alertNegro || alertBlanco) && (
