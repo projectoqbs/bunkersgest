@@ -472,6 +472,12 @@ export default function App() {
   const [flotaRedirProducto, setFlotaRedirProducto] = useState("");
   const [flotaRedirPlaca, setFlotaRedirPlaca] = useState("");
   const [flotaRedirSedeActual, setFlotaRedirSedeActual] = useState("");
+  const [flotaElimDesde, setFlotaElimDesde] = useState("");
+  const [flotaElimHasta, setFlotaElimHasta] = useState("");
+  const [flotaElimTrans, setFlotaElimTrans] = useState("");
+  const [flotaElimProducto, setFlotaElimProducto] = useState("");
+  const [flotaElimPlaca, setFlotaElimPlaca] = useState("");
+  const [flotaElimConfirm, setFlotaElimConfirm] = useState(false);
   const [analisisNav, setAnalisisNav] = useState("");
   const [resFiltroTipo, setResFiltroTipo] = useState("");
   const [tiqBusqueda, setTiqBusqueda] = useState("");
@@ -1047,6 +1053,21 @@ export default function App() {
     setSaving(false);
     await loadData();
     showToast(`Sede actualizada: ${ok} viajes → ${flotaRedirSede}${err>0?` · ${err} errores`:""}`, err===0);
+  }
+
+  async function eliminarViajesFlota(viajesAEliminar) {
+    setSaving(true);
+    let ok = 0, err = 0;
+    for (const v of viajesAEliminar) {
+      const {error} = await dbCall({ table:"viajes", op:"delete", filters:[{col:"id",val:v.id}] });
+      if (error) err++; else ok++;
+    }
+    setSaving(false);
+    setFlotaElimConfirm(false);
+    setFlotaElimDesde(""); setFlotaElimHasta("");
+    setFlotaElimTrans(""); setFlotaElimProducto(""); setFlotaElimPlaca("");
+    await loadData();
+    showToast(`Eliminados: ${ok} viajes${err>0?` · ${err} errores`:""}`, err===0);
   }
 
   async function confirmarImportExcel() {
@@ -5210,6 +5231,84 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </Btn>
             </div>
           </Section>
+
+          {/* SECCIÓN 3: Eliminar registros */}
+          {(()=>{
+            const viajesElim = (viajes||[]).filter(v =>
+              (!flotaElimDesde || v.fecha >= flotaElimDesde) &&
+              (!flotaElimHasta || v.fecha <= flotaElimHasta) &&
+              (!flotaElimTrans || v.transportadora === flotaElimTrans) &&
+              (!flotaElimProducto || v.producto === flotaElimProducto) &&
+              (!flotaElimPlaca || (v.placa||"").toUpperCase().includes(flotaElimPlaca.toUpperCase()))
+            );
+            const hayFiltro = flotaElimDesde||flotaElimHasta||flotaElimTrans||flotaElimProducto||flotaElimPlaca;
+            return (
+            <Section title="Eliminar Registros" color={T.danger}>
+              <div style={{fontSize:12,color:T.muted,marginBottom:10}}>
+                Selecciona los viajes a eliminar usando los filtros. Se requiere al menos un filtro para habilitar la eliminación.
+              </div>
+              <div style={{display:"flex",gap:12,alignItems:"flex-end",flexWrap:"wrap",marginBottom:10}}>
+                <div><Lbl>Fecha cargue desde</Lbl><input type="date" value={flotaElimDesde} onChange={e=>setFlotaElimDesde(e.target.value)} style={inpStyle}/></div>
+                <div><Lbl>Fecha cargue hasta</Lbl><input type="date" value={flotaElimHasta} onChange={e=>setFlotaElimHasta(e.target.value)} style={inpStyle}/></div>
+                <div>
+                  <Lbl>Transportadora</Lbl>
+                  <select value={flotaElimTrans} onChange={e=>setFlotaElimTrans(e.target.value)} style={inpStyle}>
+                    <option value="">Todas</option>
+                    {[...new Set((viajes||[]).map(v=>v.transportadora).filter(Boolean))].sort().map(t=><option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Lbl>Producto</Lbl>
+                  <select value={flotaElimProducto} onChange={e=>setFlotaElimProducto(e.target.value)} style={inpStyle}>
+                    <option value="">Todos</option>
+                    {[...new Set((viajes||[]).map(v=>v.producto).filter(Boolean))].sort().map(p=><option key={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Lbl>Placa</Lbl>
+                  <input type="text" value={flotaElimPlaca} onChange={e=>setFlotaElimPlaca(e.target.value)} placeholder="Buscar..." style={{...inpStyle,width:90}}/>
+                </div>
+                <div style={{fontSize:12,paddingBottom:4}}>
+                  <b style={{color:T.danger}}>{viajesElim.length}</b> <span style={{color:T.muted}}>viajes seleccionados</span>
+                </div>
+              </div>
+              {viajesElim.length>0 && hayFiltro && (
+                <div style={{maxHeight:150,overflowY:"auto",background:T.bg,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:11}}>
+                  {viajesElim.slice(0,60).map(v=>(
+                    <div key={v.id} style={{display:"flex",gap:8,padding:"3px 0",borderBottom:`1px solid ${T.border}`}}>
+                      <span style={{color:T.danger,fontFamily:"monospace",minWidth:70}}>{v.id}</span>
+                      <span style={{color:T.muted,minWidth:80}}>{v.fecha}</span>
+                      <span style={{color:T.text,minWidth:100}}>{v.producto}</span>
+                      <span style={{color:T.muted,minWidth:80}}>{v.placa}</span>
+                      <span style={{color:T.muted}}>{v.transportadora}</span>
+                    </div>
+                  ))}
+                  {viajesElim.length>60 && <div style={{color:T.muted,textAlign:"center",paddingTop:4}}>…y {viajesElim.length-60} más</div>}
+                </div>
+              )}
+              {!flotaElimConfirm ? (
+                <div style={{display:"flex",justifyContent:"flex-end"}}>
+                  <Btn color={T.danger} disabled={!hayFiltro||viajesElim.length===0}
+                    onClick={()=>setFlotaElimConfirm(true)}>
+                    🗑 Eliminar {viajesElim.length} viajes
+                  </Btn>
+                </div>
+              ) : (
+                <div style={{background:`${T.danger}18`,border:`1px solid ${T.danger}44`,borderRadius:8,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                  <span style={{fontSize:13,fontWeight:700,color:T.danger}}>
+                    ⚠ ¿Confirmas eliminar {viajesElim.length} viajes? Esta acción no se puede deshacer.
+                  </span>
+                  <div style={{display:"flex",gap:8}}>
+                    <Btn outline onClick={()=>setFlotaElimConfirm(false)}>Cancelar</Btn>
+                    <Btn color={T.danger} onClick={()=>eliminarViajesFlota(viajesElim)} disabled={saving}>
+                      {saving?"Eliminando...":"Sí, eliminar"}
+                    </Btn>
+                  </div>
+                </div>
+              )}
+            </Section>
+            );
+          })()}
         </Modal>
         );
       })()}
