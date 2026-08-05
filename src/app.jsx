@@ -1987,10 +1987,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const p2Cap   = p2Tanks.reduce((a,t)=>a+tkCap(t),0);
             const p2Nivel = p2Tanks.reduce((a,t)=>a+Number(t.nivel||0),0);
 
-            // viajes en ruta con fecha estimada
-            const vEnRuta = (viajes||[]).filter(v=>v.estado==="En Ruta" && v.fecha_aprox_llegada && Number(v.gls_netos_guia)>0);
+            // carros en tránsito y en planta
+            const vTransito  = (viajes||[]).filter(v=>v.estado==="En Ruta");
+            const vEnPlanta  = (viajes||[]).filter(v=>v.estado==="En Planta");
 
-            // agrupar por fecha y producto
+            // viajes con galones y fecha estimada (para la tabla de proyección)
+            const vEnRuta = vTransito.filter(v=>v.fecha_aprox_llegada && Number(v.gls_netos_guia)>0);
+
+            // galones: todo lo que viene (en tránsito + en planta, con gls registrados) va a Planta 2 por defecto
+            const glsTransito = vTransito.reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
+            const glsEnPlanta = vEnPlanta.reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
+            const totalEntrante = glsTransito + glsEnPlanta; // galones entrantes totales a Planta 2
+
+            // espacio disponible y por cargar (Planta 2, receptor habitual)
+            const espacioDisp = Math.max(0, p2Cap - p2Nivel);
+            const espacioPorCargar = Math.max(0, espacioDisp - totalEntrante);
+
+            // agrupar entradas proyectadas por fecha y producto (solo en tránsito con fecha)
             const byFecha = {};
             vEnRuta.forEach(v=>{
               const key = v.fecha_aprox_llegada;
@@ -2000,13 +2013,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             });
             const fechas = Object.keys(byFecha).sort();
 
-            // totales entrantes por planta (aproximado: destino sede o todos)
-            const totalEntrante = vEnRuta.reduce((a,v)=>a+Number(v.gls_netos_guia),0);
-
-            // por producto para planta 2 (TK- tanks suelen ser tierra VLSFO/MGO)
-            const entranteP2 = vEnRuta.filter(v=>["VLSFO","MGO","PENDARE","DISEL"].some(p=>(v.producto||"").toUpperCase().includes(p)));
-            const totalEntranteP2 = entranteP2.reduce((a,v)=>a+Number(v.gls_netos_guia),0);
-
             // colores producto
             const prodColor = p => {
               const u = (p||"").toUpperCase();
@@ -2014,12 +2020,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               if(u.includes("MGO"))   return "#00b4ff";
               if(u.includes("PENDARE")) return "#f59e0b";
               if(u.includes("DISEL") || u.includes("DIESEL")) return "#f59e0b";
+              if(u.includes("FRONTERA")) return "#22c55e";
+              if(u.includes("CARRIZAL")) return "#a78bfa";
               return "#7c8fa6";
             };
 
-            // alertas
-            const p2Alert = (p2Nivel + totalEntranteP2) > p2Cap;
-            const p1Alert = (p1Nivel + (totalEntrante - totalEntranteP2)) > p1Cap;
+            // alertas: todo lo entrante se descarga en Planta 2
+            const p2Alert = (p2Nivel + totalEntrante) > p2Cap;
+            const p1Alert = false; // Planta 1 no recibe directamente
 
             // barra de capacidad
             const CapBar = ({ nivel, cap, incoming, label, alert }) => {
@@ -2078,11 +2086,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
               {/* Stats rápidas */}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:10, margin:"16px 0" }}>
-                <Stat label="Carros en Ruta" value={enRuta} color={T.orange} sub="hacia planta" />
-                <Stat label="Tiquetes Pend." value={pendTiquetes} color={T.navy} sub="laboratorio" />
-                <Stat label="PBS Pendientes" value={pendPBS} color={T.orange} sub="operaciones" />
-                <Stat label="CMT Pendientes" value={pendCMT} color={T.success} sub="coordinador" />
-                <Stat label="Entrantes (gls)" value={fmt(totalEntrante)} color={T.orange} sub={`${vEnRuta.length} viajes en ruta`} />
+                <Stat label="Carros en Tránsito" value={vTransito.length} color={T.orange} sub="en camino a planta" />
+                <Stat label="Carros en Planta" value={vEnPlanta.length} color={T.navy} sub="pendientes descargue" />
+                <Stat label="Espacio Disponible" value={`${fmt(espacioDisp)} gls`} color={T.success} sub="Planta 2 libre" />
+                <Stat label="Galones Entrantes" value={`${fmt(totalEntrante)} gls`} color={T.orange} sub={`${vTransito.length+vEnPlanta.length} carros`} />
+                <Stat label="Espacio por Cargar" value={`${fmt(espacioPorCargar)} gls`} color={espacioPorCargar<=0?T.danger:T.success} sub={espacioPorCargar<=0?"⚠ Sin espacio":"disponible tras entrantes"} />
               </div>
 
               {/* Capacidad por planta */}
@@ -2095,7 +2103,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
                     <Ship size={14}/> Planta 1 · Barcaza + TKT
                   </div>
-                  <CapBar nivel={p1Nivel} cap={p1Cap} incoming={totalEntrante-totalEntranteP2} label="" alert={p1Alert}/>
+                  <CapBar nivel={p1Nivel} cap={p1Cap} incoming={0} label="" alert={false}/>
                   {/* Detalle por tanque */}
                   <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
                     {p1Tanks.map(t=>{
@@ -2120,7 +2128,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
                     <Factory size={14}/> Planta 2 · TK-111 a TK-117
                   </div>
-                  <CapBar nivel={p2Nivel} cap={p2Cap} incoming={totalEntranteP2} label="" alert={p2Alert}/>
+                  <CapBar nivel={p2Nivel} cap={p2Cap} incoming={totalEntrante} label="" alert={p2Alert}/>
                   <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
                     {p2Tanks.map(t=>{
                       const cap=tkCap(t); const niv=Number(t.nivel||0);
@@ -2199,8 +2207,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <AlertTriangle size={18} style={{color:T.danger,flexShrink:0,marginTop:1}}/>
                   <div>
                     <div style={{fontWeight:800,color:T.danger,fontSize:13,marginBottom:4}}>Alerta de Capacidad</div>
-                    {p1Alert && <div style={{fontSize:12,color:T.danger}}>Planta 1: el inventario actual más las entradas proyectadas ({fmt(p1Nivel+totalEntrante-totalEntranteP2)} gls) supera la capacidad total ({fmt(p1Cap)} gls).</div>}
-                    {p2Alert && <div style={{fontSize:12,color:T.danger}}>Planta 2: el inventario actual más las entradas proyectadas ({fmt(p2Nivel+totalEntranteP2)} gls) supera la capacidad total ({fmt(p2Cap)} gls).</div>}
+                    {p2Alert && <div style={{fontSize:12,color:T.danger}}>Planta 2: el inventario actual ({fmt(p2Nivel)} gls) más los galones entrantes ({fmt(totalEntrante)} gls) = {fmt(p2Nivel+totalEntrante)} gls, supera la capacidad total de {fmt(p2Cap)} gls.</div>}
                   </div>
                 </div>
               )}
