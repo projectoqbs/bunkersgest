@@ -901,8 +901,12 @@ export default function App() {
       pestañas.forEach(nombre => {
         const ws = wb.Sheets[nombre];
         const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
-        // Buscar fila de encabezados (primera fila con al menos 3 celdas no vacías)
-        let hdrIdx = raw.findIndex(r => r.filter(c=>c!=="").length >= 3);
+        // Buscar fila de encabezados: la que contenga al menos 2 palabras clave conocidas
+        const KEYWORDS = ["PLACA","GUIA","GUÍA","TRANSPORTADORA","PRODUCTO","CONDUCTOR","FLETE"];
+        let hdrIdx = raw.findIndex(r => {
+          const cels = r.map(c=>String(c||"").trim().toUpperCase());
+          return KEYWORDS.filter(k => cels.some(c=>c.includes(k))).length >= 2;
+        });
         if (hdrIdx < 0) return;
         const hdrs = raw[hdrIdx].map(h => String(h||"").trim().toUpperCase());
         const mapIdx = {};
