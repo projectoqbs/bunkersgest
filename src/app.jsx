@@ -726,6 +726,17 @@ export default function App() {
     setActiveTabId(id);
   }
 
+  // Abre una pestaña única por viaje (permite múltiples viajes abiertos simultáneamente)
+  function openViajeTab(v) {
+    const tabId = `form-viaje-${v.id}`;
+    const existing = tabs.find(t => t.id === tabId);
+    if (existing) { switchToTab(tabId); return; }
+    if (activeTab?.type === 'form') tabStateCache.current[activeTabId] = captureFormState();
+    setForm({...v});
+    setTabs(prev => [...prev, { id: tabId, type:'form', formType:'viaje_edit', title: v.id, icon:'🚛', closeable: true }]);
+    setActiveTabId(tabId);
+  }
+
   // Backward-compat shims so all existing setModal / setNav calls work
   function setModal(formType) { openFormTab(formType); }
   function setNav(section) { openNavTab(section); }
@@ -1021,7 +1032,7 @@ export default function App() {
       }, filters:[{col:"id",val:form.id}] });
       setSaving(false);
       if (error) return showToast("Error: "+error, false);
-      await loadData(); setModal(null); setForm({});
+      await loadData(); closeTab(activeTabId); setForm({});
       showToast(`Viaje ${form.id} actualizado`);
     } else {
       const id = genId("VJ", viajes);
@@ -2006,7 +2017,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     : horasStandby < 16  ? T.orange
                     : T.danger;
                   return [
-                    <a onClick={()=>{setForm({...v});setModal("viaje");const vt=tabs.find(t=>t.section==="viajes");if(vt)setActiveTabId(vt.id);}} style={{color:T.orange,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"monospace"}}>{v.id}</a>,
+                    <a onClick={()=>openViajeTab(v)} style={{color:T.orange,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"monospace"}}>{v.id}</a>,
                     <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?T.muted:v.sede==="CARTAGENA"?T.danger:T.orange}/>,
                     v.fecha,
                     v.fecha_llegada||<span style={{color:T.muted,fontSize:10}}>—</span>,
@@ -4999,7 +5010,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </div>
       )}
 
-      {modal==="viaje" && (
+      {(modal==="viaje" || modal==="viaje_edit") && (
         <Modal title={form.id ? `Editar Viaje ${form.id}` : "Registrar Nuevo Viaje"} onClose={()=>setModal(null)} wide inline>
           <Section title="Identificación del Viaje" color={T.orange}>
             <Grid cols={3}>
