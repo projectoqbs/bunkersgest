@@ -2006,7 +2006,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     : horasStandby < 16  ? T.orange
                     : T.danger;
                   return [
-                    <a onClick={()=>{setForm({...v});setModal("viaje");}} style={{color:T.orange,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"monospace"}}>{v.id}</a>,
+                    <a onClick={()=>{setForm({...v});setModal("viaje");const vt=tabs.find(t=>t.section==="viajes");if(vt)setActiveTabId(vt.id);}} style={{color:T.orange,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"monospace"}}>{v.id}</a>,
                     <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?T.muted:v.sede==="CARTAGENA"?T.danger:T.orange}/>,
                     v.fecha,
                     v.fecha_llegada||<span style={{color:T.muted,fontSize:10}}>—</span>,
