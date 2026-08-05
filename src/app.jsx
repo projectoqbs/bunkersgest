@@ -458,6 +458,15 @@ export default function App() {
   const [importExcel, setImportExcel] = useState(null); // null | { rows, preview, pestaña }
   const [importLoading, setImportLoading] = useState(false);
   const [importFechaDesde, setImportFechaDesde] = useState("");
+  const [modalFlota, setModalFlota] = useState(false);
+  const [flotaDiasProducto, setFlotaDiasProducto] = useState(()=>{
+    try { return JSON.parse(localStorage.getItem("flota_dias_producto")||"{}"); } catch{ return {}; }
+  });
+  const [flotaFechaDesde, setFlotaFechaDesde] = useState("");
+  const [flotaFechaHasta, setFlotaFechaHasta] = useState("");
+  const [flotaRedirDesde, setFlotaRedirDesde] = useState("");
+  const [flotaRedirHasta, setFlotaRedirHasta] = useState("");
+  const [flotaRedirSede, setFlotaRedirSede] = useState("MALAMBO");
   const [analisisNav, setAnalisisNav] = useState("");
   const [resFiltroTipo, setResFiltroTipo] = useState("");
   const [tiqBusqueda, setTiqBusqueda] = useState("");
@@ -982,6 +991,52 @@ export default function App() {
       }, 50); // fin setTimeout
     };
     reader.readAsArrayBuffer(file);
+  }
+
+  async function aplicarFechasFlota() {
+    const viajesToUpdate = (viajes||[]).filter(v =>
+      v.estado === "En Ruta" &&
+      (!flotaFechaDesde || v.fecha >= flotaFechaDesde) &&
+      (!flotaFechaHasta || v.fecha <= flotaFechaHasta) &&
+      flotaDiasProducto[v.producto] > 0
+    );
+    if (!viajesToUpdate.length) return showToast("No hay viajes en ese rango con días configurados", false);
+    setSaving(true);
+    let ok = 0, err = 0;
+    for (const v of viajesToUpdate) {
+      const dias = Number(flotaDiasProducto[v.producto]||0);
+      if (!dias) continue;
+      const fechaLlegada = new Date(v.fecha);
+      fechaLlegada.setDate(fechaLlegada.getDate() + dias);
+      const fechaStr = fechaLlegada.toISOString().slice(0,10);
+      const {error} = await dbCall({ table:"viajes", op:"update",
+        data:{ fecha_aprox_llegada: fechaStr },
+        filters:[{col:"id",val:v.id}] });
+      if (error) err++; else ok++;
+    }
+    setSaving(false);
+    await loadData();
+    showToast(`Fechas actualizadas: ${ok} viajes${err>0?` · ${err} errores`:""}`, err===0);
+  }
+
+  async function redirigirSedeFlota() {
+    const viajesToUpdate = (viajes||[]).filter(v =>
+      v.estado === "En Ruta" &&
+      (!flotaRedirDesde || v.fecha >= flotaRedirDesde) &&
+      (!flotaRedirHasta || v.fecha <= flotaRedirHasta)
+    );
+    if (!viajesToUpdate.length) return showToast("No hay viajes en ese rango", false);
+    setSaving(true);
+    let ok = 0, err = 0;
+    for (const v of viajesToUpdate) {
+      const {error} = await dbCall({ table:"viajes", op:"update",
+        data:{ sede: flotaRedirSede },
+        filters:[{col:"id",val:v.id}] });
+      if (error) err++; else ok++;
+    }
+    setSaving(false);
+    await loadData();
+    showToast(`Sede actualizada: ${ok} viajes → ${flotaRedirSede}${err>0?` · ${err} errores`:""}`, err===0);
   }
 
   async function confirmarImportExcel() {
@@ -1966,6 +2021,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <input type="file" accept=".xlsx,.xls" style={{display:"none"}} disabled={importLoading} onChange={e=>{if(e.target.files[0])leerExcelViajes(e.target.files[0]);e.target.value="";}}/>
                       </label>
                       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                      {["logistica","administrador"].includes(perfil?.rol) && (
+                        <Btn outline onClick={()=>setModalFlota(true)}>⚙ Administrar Flota</Btn>
+                      )}
                       <Btn onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro,planta:"PLANTA 1"});setModal("viaje");}}>+ Nuevo Viaje</Btn>
                     </>)}
                   </div>
@@ -5009,6 +5067,102 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </div>
         </div>
       )}
+
+      {modalFlota && (()=>{
+        const productos = [...new Set((viajes||[]).map(v=>v.producto).filter(Boolean))].sort();
+        const viajesFechas = (viajes||[]).filter(v =>
+          v.estado==="En Ruta" &&
+          (!flotaFechaDesde || v.fecha >= flotaFechaDesde) &&
+          (!flotaFechaHasta || v.fecha <= flotaFechaHasta)
+        );
+        const viajesConDias = viajesFechas.filter(v => Number(flotaDiasProducto[v.producto]||0) > 0);
+        const viajesRedir = (viajes||[]).filter(v =>
+          v.estado==="En Ruta" &&
+          (!flotaRedirDesde || v.fecha >= flotaRedirDesde) &&
+          (!flotaRedirHasta || v.fecha <= flotaRedirHasta)
+        );
+        const inpStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:12,outline:"none",fontFamily:"system-ui,sans-serif"};
+        const numStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"4px 8px",color:T.text,fontSize:12,outline:"none",width:60,textAlign:"center"};
+        return (
+        <Modal title="⚙ Administrar Flota" onClose={()=>setModalFlota(false)} wide>
+          {/* SECCIÓN 1: Calcular fechas estimadas */}
+          <Section title="Calcular Fechas Estimadas de Llegada" color={T.orange}>
+            <div style={{fontSize:12,color:T.muted,marginBottom:10}}>
+              Selecciona el período de cargue y configura los días de viaje por producto. Se actualizará la fecha estimada de llegada de todos los viajes "En Ruta" en ese rango.
+            </div>
+            <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:14,flexWrap:"wrap"}}>
+              <div><Lbl>Fecha cargue desde</Lbl><input type="date" value={flotaFechaDesde} onChange={e=>setFlotaFechaDesde(e.target.value)} style={inpStyle}/></div>
+              <div><Lbl>Fecha cargue hasta</Lbl><input type="date" value={flotaFechaHasta} onChange={e=>setFlotaFechaHasta(e.target.value)} style={inpStyle}/></div>
+              <div style={{marginTop:16,fontSize:12,color:T.muted}}>
+                {viajesFechas.length} viajes en el rango · <b style={{color:T.orange}}>{viajesConDias.length}</b> con días configurados
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:8,marginBottom:14}}>
+              {productos.map(p => (
+                <div key={p} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.bg,borderRadius:6,padding:"6px 10px",gap:8}}>
+                  <span style={{fontSize:12,fontWeight:600,color:T.text}}>{p}</span>
+                  <div style={{display:"flex",alignItems:"center",gap:4}}>
+                    <input type="number" min="0" max="30" value={flotaDiasProducto[p]||""} placeholder="días"
+                      style={numStyle}
+                      onChange={e=>{
+                        const v={...flotaDiasProducto,[p]:e.target.value};
+                        setFlotaDiasProducto(v);
+                        localStorage.setItem("flota_dias_producto",JSON.stringify(v));
+                      }}/>
+                    <span style={{fontSize:11,color:T.muted}}>días</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",justifyContent:"flex-end"}}>
+              <Btn color={T.orange} onClick={aplicarFechasFlota} disabled={saving||viajesConDias.length===0}>
+                {saving?"Aplicando...": `Aplicar a ${viajesConDias.length} viajes`}
+              </Btn>
+            </div>
+          </Section>
+
+          {/* SECCIÓN 2: Redirigir sede */}
+          <Section title="Redirigir Sede de Destino" color="#6366f1">
+            <div style={{fontSize:12,color:T.muted,marginBottom:10}}>
+              Selecciona viajes por período de cargue y asígnales una nueva sede destino. Útil cuando un lote cargado se redirige internamente a otra planta.
+            </div>
+            <div style={{display:"flex",gap:12,alignItems:"flex-end",flexWrap:"wrap",marginBottom:14}}>
+              <div><Lbl>Fecha cargue desde</Lbl><input type="date" value={flotaRedirDesde} onChange={e=>setFlotaRedirDesde(e.target.value)} style={inpStyle}/></div>
+              <div><Lbl>Fecha cargue hasta</Lbl><input type="date" value={flotaRedirHasta} onChange={e=>setFlotaRedirHasta(e.target.value)} style={inpStyle}/></div>
+              <div>
+                <Lbl>Nueva sede destino</Lbl>
+                <select value={flotaRedirSede} onChange={e=>setFlotaRedirSede(e.target.value)} style={{...inpStyle,fontWeight:700}}>
+                  {SEDES.map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div style={{fontSize:12,color:T.muted,paddingBottom:4}}>
+                <b style={{color:"#6366f1"}}>{viajesRedir.length}</b> viajes seleccionados
+              </div>
+            </div>
+            {viajesRedir.length>0 && (
+              <div style={{maxHeight:160,overflowY:"auto",background:T.bg,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:11}}>
+                {viajesRedir.slice(0,50).map(v=>(
+                  <div key={v.id} style={{display:"flex",gap:8,padding:"3px 0",borderBottom:`1px solid ${T.border}`}}>
+                    <span style={{color:T.orange,fontFamily:"monospace",minWidth:70}}>{v.id}</span>
+                    <span style={{color:T.muted,minWidth:80}}>{v.fecha}</span>
+                    <span style={{color:T.text,minWidth:100}}>{v.producto}</span>
+                    <span style={{color:T.muted}}>{v.placa}</span>
+                    <span style={{marginLeft:"auto",color:T.danger,fontSize:10}}>{v.sede} →</span>
+                    <span style={{color:"#6366f1",fontWeight:700,fontSize:10}}>{flotaRedirSede}</span>
+                  </div>
+                ))}
+                {viajesRedir.length>50 && <div style={{color:T.muted,textAlign:"center",paddingTop:4}}>…y {viajesRedir.length-50} más</div>}
+              </div>
+            )}
+            <div style={{display:"flex",justifyContent:"flex-end"}}>
+              <Btn color="#6366f1" onClick={redirigirSedeFlota} disabled={saving||viajesRedir.length===0}>
+                {saving?"Aplicando...":`Redirigir ${viajesRedir.length} viajes → ${flotaRedirSede}`}
+              </Btn>
+            </div>
+          </Section>
+        </Modal>
+        );
+      })()}
 
       {(modal==="viaje" || modal==="viaje_edit") && (
         <Modal title={form.id ? `Editar Viaje ${form.id}` : "Registrar Nuevo Viaje"} onClose={()=>setModal(null)} wide inline>
