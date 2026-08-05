@@ -915,9 +915,9 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = e => {
       setTimeout(() => { // cede el hilo para que el spinner aparezca antes del procesamiento
+      try {
 
       const wb = XLSX.read(e.target.result, { type:"array", cellDates:true });
-      const KEYWORDS_FLOTA = ["PLACA","GUIA","GUÍA","TRANSPORTADORA","PRODUCTO","CONDUCTOR","FLETE","OPS"];
       const pestañas = wb.SheetNames.filter(n => {
         const u = n.toUpperCase();
         // Acepta hojas FLOTA o de producto blanco (MGO, DIESEL, DISEL, BLANCO)
@@ -1019,6 +1019,7 @@ export default function App() {
       setImportLoading(false);
       setImportFechaDesde("");
       setImportExcel({ preview, pestañas });
+      } catch(err) { setImportLoading(false); showToast("Error al leer el archivo: "+err.message, false); }
       }, 50); // fin setTimeout
     };
     reader.readAsArrayBuffer(file);
