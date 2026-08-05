@@ -453,6 +453,7 @@ export default function App() {
   const toggleOtExpandir = (productoBase) => setOtExpandidos(prev => ({ ...prev, [productoBase]: !prev[productoBase] }));
   const [viajesFiltroEstado, setViajesFiltroEstado] = useState("");
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
+  const [viajesFiltroTrans, setViajesFiltroTrans] = useState("");
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
   const [viajesFiltroFechaH, setViajesFiltroFechaH] = useState("");
   const [importExcel, setImportExcel] = useState(null); // null | { rows, preview, pestaña }
@@ -470,6 +471,7 @@ export default function App() {
   const [flotaRedirTrans, setFlotaRedirTrans] = useState("");
   const [flotaRedirProducto, setFlotaRedirProducto] = useState("");
   const [flotaRedirPlaca, setFlotaRedirPlaca] = useState("");
+  const [flotaRedirSedeActual, setFlotaRedirSedeActual] = useState("");
   const [analisisNav, setAnalisisNav] = useState("");
   const [resFiltroTipo, setResFiltroTipo] = useState("");
   const [tiqBusqueda, setTiqBusqueda] = useState("");
@@ -1030,7 +1032,8 @@ export default function App() {
       (!flotaRedirHasta || v.fecha <= flotaRedirHasta) &&
       (!flotaRedirTrans || v.transportadora === flotaRedirTrans) &&
       (!flotaRedirProducto || v.producto === flotaRedirProducto) &&
-      (!flotaRedirPlaca || (v.placa||"").toUpperCase().includes(flotaRedirPlaca.toUpperCase()))
+      (!flotaRedirPlaca || (v.placa||"").toUpperCase().includes(flotaRedirPlaca.toUpperCase())) &&
+      (!flotaRedirSedeActual || v.sede === flotaRedirSedeActual)
     );
     if (!viajesToUpdate.length) return showToast("No hay viajes en ese rango", false);
     setSaving(true);
@@ -2009,6 +2012,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const estadoFiltro = viajesFiltroEstado || "En Ruta";
               if (v.estado !== estadoFiltro) return false;
               if (viajesFiltroProducto && v.producto !== viajesFiltroProducto) return false;
+              if (viajesFiltroTrans && v.transportadora !== viajesFiltroTrans) return false;
               if (viajesFiltroFechaD && v.fecha < viajesFiltroFechaD) return false;
               if (viajesFiltroFechaH && v.fecha > viajesFiltroFechaH) return false;
               return true;
@@ -2054,10 +2058,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <option value="">Todos los productos</option>
                     {productosUnicos.map(p=><option key={p}>{p}</option>)}
                   </select>
+                  <select value={viajesFiltroTrans} onChange={e=>setViajesFiltroTrans(e.target.value)} style={selStyle}>
+                    <option value="">Todas las transportadoras</option>
+                    {[...new Set((viajes||[]).map(v=>v.transportadora).filter(Boolean))].sort().map(t=><option key={t}>{t}</option>)}
+                  </select>
                   <input type="date" value={viajesFiltroFechaD} onChange={e=>setViajesFiltroFechaD(e.target.value)} style={selStyle} title="Fecha cargue desde"/>
                   <input type="date" value={viajesFiltroFechaH} onChange={e=>setViajesFiltroFechaH(e.target.value)} style={selStyle} title="Fecha cargue hasta"/>
-                  {(viajesBusqueda||viajesFiltroEstado||viajesFiltroProducto||viajesFiltroFechaD||viajesFiltroFechaH) && (
-                    <button onClick={()=>{setViajesBusqueda("");setViajesFiltroEstado("");setViajesFiltroProducto("");setViajesFiltroFechaD("");setViajesFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"monospace"}}>Limpiar</button>
+                  {(viajesBusqueda||viajesFiltroEstado||viajesFiltroProducto||viajesFiltroTrans||viajesFiltroFechaD||viajesFiltroFechaH) && (
+                    <button onClick={()=>{setViajesBusqueda("");setViajesFiltroEstado("");setViajesFiltroProducto("");setViajesFiltroTrans("");setViajesFiltroFechaD("");setViajesFiltroFechaH("");}} style={{background:`${T.danger}22`,border:`1px solid ${T.danger}44`,borderRadius:8,color:T.danger,padding:"6px 12px",cursor:"pointer",fontSize:11,fontFamily:"monospace"}}>Limpiar</button>
                   )}
                 </div>
               </div>
@@ -5093,7 +5101,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           (!flotaRedirHasta || v.fecha <= flotaRedirHasta) &&
           (!flotaRedirTrans || v.transportadora === flotaRedirTrans) &&
           (!flotaRedirProducto || v.producto === flotaRedirProducto) &&
-          (!flotaRedirPlaca || (v.placa||"").toUpperCase().includes(flotaRedirPlaca.toUpperCase()))
+          (!flotaRedirPlaca || (v.placa||"").toUpperCase().includes(flotaRedirPlaca.toUpperCase())) &&
+          (!flotaRedirSedeActual || v.sede === flotaRedirSedeActual)
         );
         const inpStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:12,outline:"none",fontFamily:"system-ui,sans-serif"};
         const numStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"4px 8px",color:T.text,fontSize:12,outline:"none",width:60,textAlign:"center"};
@@ -5160,6 +5169,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div>
                 <Lbl>Placa</Lbl>
                 <input type="text" value={flotaRedirPlaca} onChange={e=>setFlotaRedirPlaca(e.target.value)} placeholder="Buscar..." style={{...inpStyle,width:90}}/>
+              </div>
+              <div>
+                <Lbl>Sede actual</Lbl>
+                <select value={flotaRedirSedeActual} onChange={e=>setFlotaRedirSedeActual(e.target.value)} style={inpStyle}>
+                  <option value="">Todas</option>
+                  {SEDES.map(s=><option key={s}>{s}</option>)}
+                </select>
               </div>
             </div>
             <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:14}}>
