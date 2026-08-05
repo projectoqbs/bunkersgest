@@ -1987,21 +1987,37 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const p2Cap   = p2Tanks.reduce((a,t)=>a+tkCap(t),0);
             const p2Nivel = p2Tanks.reduce((a,t)=>a+Number(t.nivel||0),0);
 
+            // clasificación por familia de producto
+            const isBlanco = p => { const u=(p||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL"); };
+            const isNegro  = p => !isBlanco(p);
+
             // carros en tránsito y en planta
-            const vTransito  = (viajes||[]).filter(v=>v.estado==="En Ruta");
-            const vEnPlanta  = (viajes||[]).filter(v=>v.estado==="En Planta");
+            const vTransito = (viajes||[]).filter(v=>v.estado==="En Ruta");
+            const vEnPlanta = (viajes||[]).filter(v=>v.estado==="En Planta");
 
             // viajes con galones y fecha estimada (para la tabla de proyección)
             const vEnRuta = vTransito.filter(v=>v.fecha_aprox_llegada && Number(v.gls_netos_guia)>0);
 
-            // galones: todo lo que viene (en tránsito + en planta, con gls registrados) va a Planta 2 por defecto
-            const glsTransito = vTransito.reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
-            const glsEnPlanta = vEnPlanta.reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
-            const totalEntrante = glsTransito + glsEnPlanta; // galones entrantes totales a Planta 2
+            // galones entrantes por familia
+            const allActivos = [...vTransito, ...vEnPlanta];
+            const glsEntrantesNegro  = allActivos.filter(v=>isNegro(v.producto)).reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
+            const glsEntrantesBlanco = allActivos.filter(v=>isBlanco(v.producto)).reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
+            const totalEntrante = glsEntrantesNegro + glsEntrantesBlanco;
 
-            // espacio disponible = libre en Planta 1 + Planta 2
-            const espacioDisp = Math.max(0, (p1Cap + p2Cap) - (p1Nivel + p2Nivel));
-            const espacioPorCargar = Math.max(0, espacioDisp - totalEntrante);
+            // capacidad por familia (P1 + P2 juntas)
+            const allTanks = [...p1Tanks, ...p2Tanks];
+            const tanksNegro  = allTanks.filter(t=>isNegro(t.producto));
+            const tanksBlanco = allTanks.filter(t=>isBlanco(t.producto));
+
+            const capNegro   = tanksNegro.reduce((a,t)=>a+tkCap(t),0);
+            const nivelNegro = tanksNegro.reduce((a,t)=>a+Number(t.nivel||0),0);
+            const capBlanco   = tanksBlanco.reduce((a,t)=>a+tkCap(t),0);
+            const nivelBlanco = tanksBlanco.reduce((a,t)=>a+Number(t.nivel||0),0);
+
+            const espacioDispNegro  = Math.max(0, capNegro  - nivelNegro);
+            const espacioDispBlanco = Math.max(0, capBlanco - nivelBlanco);
+            const espacioPorCargarNegro  = Math.max(0, espacioDispNegro  - glsEntrantesNegro);
+            const espacioPorCargarBlanco = Math.max(0, espacioDispBlanco - glsEntrantesBlanco);
 
             // agrupar entradas proyectadas por fecha y producto (solo en tránsito con fecha)
             const byFecha = {};
@@ -2017,17 +2033,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const prodColor = p => {
               const u = (p||"").toUpperCase();
               if(u.includes("VLSFO")) return "#0077CC";
-              if(u.includes("MGO"))   return "#00b4ff";
+              if(u.includes("MGO"))   return "#38bdf8";
               if(u.includes("PENDARE")) return "#f59e0b";
-              if(u.includes("DISEL") || u.includes("DIESEL")) return "#f59e0b";
+              if(u.includes("DISEL") || u.includes("DIESEL")) return "#38bdf8";
               if(u.includes("FRONTERA")) return "#22c55e";
               if(u.includes("CARRIZAL")) return "#a78bfa";
               return "#7c8fa6";
             };
 
-            // alertas: todo lo entrante se descarga en Planta 2
-            const p2Alert = (p2Nivel + totalEntrante) > p2Cap;
-            const p1Alert = false; // Planta 1 no recibe directamente
+            // alertas por familia
+            const alertNegro  = (nivelNegro  + glsEntrantesNegro)  > capNegro;
+            const alertBlanco = (nivelBlanco + glsEntrantesBlanco) > capBlanco;
+            const p2Alert = false; // se usa alertNegro/alertBlanco abajo
+            const p1Alert = false;
 
             // barra de capacidad
             const CapBar = ({ nivel, cap, incoming, label, alert }) => {
@@ -2085,12 +2103,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
 
               {/* Stats rápidas */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:10, margin:"16px 0" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, margin:"16px 0" }}>
                 <Stat label="Carros en Tránsito" value={vTransito.length} color={T.orange} sub="en camino a planta" />
                 <Stat label="Carros en Planta" value={vEnPlanta.length} color={T.navy} sub="pendientes descargue" />
-                <Stat label="Espacio Disponible" value={`${fmt(espacioDisp)} gls`} color={T.success} sub="Planta 1 + Planta 2" />
-                <Stat label="Galones Entrantes" value={`${fmt(totalEntrante)} gls`} color={T.orange} sub={`${vTransito.length+vEnPlanta.length} carros`} />
-                <Stat label="Espacio por Cargar" value={`${fmt(espacioPorCargar)} gls`} color={espacioPorCargar<=0?T.danger:T.success} sub={espacioPorCargar<=0?"⚠ Sin espacio":"disponible tras entrantes"} />
+                <Stat label="Esp. Disp. Negro" value={`${fmt(espacioDispNegro)} gls`} color={T.success} sub={`Cap: ${fmt(capNegro)} gls`} />
+                <Stat label="Esp. Disp. Blanco" value={`${fmt(espacioDispBlanco)} gls`} color="#38bdf8" sub={`Cap: ${fmt(capBlanco)} gls`} />
+                <Stat label="Entrantes Negro" value={`${fmt(glsEntrantesNegro)} gls`} color={T.orange} sub={`${allActivos.filter(v=>isNegro(v.producto)).length} carros`} />
+                <Stat label="Entrantes Blanco" value={`${fmt(glsEntrantesBlanco)} gls`} color="#38bdf8" sub={`${allActivos.filter(v=>isBlanco(v.producto)).length} carros`} />
+                <Stat label="Por Cargar Negro" value={`${fmt(espacioPorCargarNegro)} gls`} color={alertNegro?T.danger:T.success} sub={alertNegro?"⚠ Sin espacio":"tras entrantes negro"} />
+                <Stat label="Por Cargar Blanco" value={`${fmt(espacioPorCargarBlanco)} gls`} color={alertBlanco?T.danger:"#38bdf8"} sub={alertBlanco?"⚠ Sin espacio":"tras entrantes blanco"} />
               </div>
 
               {/* Capacidad por planta */}
@@ -2103,7 +2124,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
                     <Ship size={14}/> Planta 1 · Barcaza + TKT
                   </div>
-                  <CapBar nivel={p1Nivel} cap={p1Cap} incoming={0} label="" alert={false}/>
+                  {p1Tanks.filter(t=>isNegro(t.producto)).length>0 && <CapBar nivel={p1Tanks.filter(t=>isNegro(t.producto)).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p1Tanks.filter(t=>isNegro(t.producto)).reduce((a,t)=>a+tkCap(t),0)} incoming={0} label="⬛ Negro" alert={false}/>}
+                  {p1Tanks.filter(t=>isBlanco(t.producto)).length>0 && <CapBar nivel={p1Tanks.filter(t=>isBlanco(t.producto)).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p1Tanks.filter(t=>isBlanco(t.producto)).reduce((a,t)=>a+tkCap(t),0)} incoming={0} label="⬜ Blanco" alert={false}/>}
+                  {p1Tanks.filter(t=>!t.producto).length>0 && <CapBar nivel={p1Tanks.filter(t=>!t.producto).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p1Tanks.filter(t=>!t.producto).reduce((a,t)=>a+tkCap(t),0)} incoming={0} label="— Sin producto" alert={false}/>}
                   {/* Detalle por tanque */}
                   <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
                     {p1Tanks.map(t=>{
@@ -2128,7 +2151,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
                     <Factory size={14}/> Planta 2 · TK-111 a TK-117
                   </div>
-                  <CapBar nivel={p2Nivel} cap={p2Cap} incoming={totalEntrante} label="" alert={p2Alert}/>
+                  {p2Tanks.filter(t=>isNegro(t.producto)).length>0 && <CapBar nivel={p2Tanks.filter(t=>isNegro(t.producto)).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p2Tanks.filter(t=>isNegro(t.producto)).reduce((a,t)=>a+tkCap(t),0)} incoming={glsEntrantesNegro} label="⬛ Negro" alert={alertNegro}/>}
+                  {p2Tanks.filter(t=>isBlanco(t.producto)).length>0 && <CapBar nivel={p2Tanks.filter(t=>isBlanco(t.producto)).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p2Tanks.filter(t=>isBlanco(t.producto)).reduce((a,t)=>a+tkCap(t),0)} incoming={glsEntrantesBlanco} label="⬜ Blanco" alert={alertBlanco}/>}
+                  {p2Tanks.filter(t=>!t.producto).length>0 && <CapBar nivel={p2Tanks.filter(t=>!t.producto).reduce((a,t)=>a+Number(t.nivel||0),0)} cap={p2Tanks.filter(t=>!t.producto).reduce((a,t)=>a+tkCap(t),0)} incoming={0} label="— Sin producto" alert={false}/>}
                   <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
                     {p2Tanks.map(t=>{
                       const cap=tkCap(t); const niv=Number(t.nivel||0);
@@ -2202,12 +2227,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               )}
 
               {/* Alertas */}
-              {(p1Alert || p2Alert) && (
+              {(alertNegro || alertBlanco) && (
                 <div style={{marginTop:16,background:"#fff0f0",border:`1px solid ${T.danger}`,borderRadius:8,padding:"12px 16px",display:"flex",gap:10,alignItems:"flex-start"}}>
                   <AlertTriangle size={18} style={{color:T.danger,flexShrink:0,marginTop:1}}/>
                   <div>
                     <div style={{fontWeight:800,color:T.danger,fontSize:13,marginBottom:4}}>Alerta de Capacidad</div>
-                    {p2Alert && <div style={{fontSize:12,color:T.danger}}>Planta 2: el inventario actual ({fmt(p2Nivel)} gls) más los galones entrantes ({fmt(totalEntrante)} gls) = {fmt(p2Nivel+totalEntrante)} gls, supera la capacidad total de {fmt(p2Cap)} gls.</div>}
+                    {alertNegro  && <div style={{fontSize:12,color:T.danger,marginBottom:2}}>⬛ Producto Negro: inventario actual ({fmt(nivelNegro)} gls) + entrantes ({fmt(glsEntrantesNegro)} gls) = {fmt(nivelNegro+glsEntrantesNegro)} gls — supera capacidad disponible ({fmt(capNegro)} gls).</div>}
+                    {alertBlanco && <div style={{fontSize:12,color:T.danger}}>⬜ Producto Blanco: inventario actual ({fmt(nivelBlanco)} gls) + entrantes ({fmt(glsEntrantesBlanco)} gls) = {fmt(nivelBlanco+glsEntrantesBlanco)} gls — supera capacidad disponible ({fmt(capBlanco)} gls).</div>}
                   </div>
                 </div>
               )}
