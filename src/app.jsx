@@ -156,7 +156,7 @@ const ROLES = {
 
 const NAV_META = {
   dashboard:    { label:"Dashboard",    icon:"▦" },
-  viajes:       { label:"Logística",    icon:"🚛" },
+  viajes:       { label:"Listado Tránsito", icon:"🚛" },
   tiquetes:     { label:"Tiquetes MP",  icon:"🧪" },
   pbs:          { label:"PBS",          icon:"🔒" },
   cmt:          { label:"CMT",          icon:"📋" },
@@ -2006,7 +2006,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     : horasStandby < 16  ? T.orange
                     : T.danger;
                   return [
-                    <a onClick={()=>{setForm({...v});setModal("viaje");setTabs(prev=>prev.map(t=>t.id===activeTabId?{...t,_prevTitle:t.title,title:v.id}:t));}} style={{color:T.orange,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"monospace"}}>{v.id}</a>,
+                    <a onClick={()=>{setForm({...v});setModal("viaje");}} style={{color:T.orange,fontWeight:700,cursor:"pointer",textDecoration:"underline",fontFamily:"monospace"}}>{v.id}</a>,
                     <Badge label={v.sede||"MALAMBO"} color={v.sede==="SANTA MARTA"?T.muted:v.sede==="CARTAGENA"?T.danger:T.orange}/>,
                     v.fecha,
                     v.fecha_llegada||<span style={{color:T.muted,fontSize:10}}>—</span>,
@@ -5000,7 +5000,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       )}
 
       {modal==="viaje" && (
-        <Modal title={form.id ? `Editar Viaje ${form.id}` : "Registrar Nuevo Viaje"} onClose={()=>{setModal(null);setTabs(prev=>prev.map(t=>t._prevTitle?{...t,title:t._prevTitle,_prevTitle:undefined}:t));}} wide inline>
+        <Modal title={form.id ? `Editar Viaje ${form.id}` : "Registrar Nuevo Viaje"} onClose={()=>setModal(null)} wide inline>
           <Section title="Identificación del Viaje" color={T.orange}>
             <Grid cols={3}>
               <Sel label="Sede de Destino" value={form.sede||"MALAMBO"} onChange={f("sede")}>
