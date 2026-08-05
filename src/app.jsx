@@ -2211,7 +2211,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const prodsFam = [...new Set(vFiltrados.map(v=>v.producto||"Sin producto"))].sort();
                 const totalFam = vFiltrados.reduce((a,v)=>a+Number(v.gls_netos_guia),0);
               return vFiltrados.length === 0 ? (
-                <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes En Ruta con fecha estimada de llegada registrada.</div>
                 <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes en tránsito con fecha estimada para producto {dashFamilia}.</div>
               ) : (
                 <div style={{overflowX:"auto"}}>
