@@ -917,14 +917,22 @@ export default function App() {
       setTimeout(() => { // cede el hilo para que el spinner aparezca antes del procesamiento
 
       const wb = XLSX.read(e.target.result, { type:"array", cellDates:true });
-      const pestañas = wb.SheetNames.filter(n => n.toUpperCase().includes("FLOTA"));
-      if (!pestañas.length) return showToast("No se encontraron pestañas FLOTA en el archivo", false);
+      const KEYWORDS_FLOTA = ["PLACA","GUIA","GUÍA","TRANSPORTADORA","PRODUCTO","CONDUCTOR","FLETE","OPS"];
+      const pestañas = wb.SheetNames.filter(n => {
+        const u = n.toUpperCase();
+        // Acepta hojas FLOTA o de producto blanco (MGO, DIESEL, DISEL, BLANCO)
+        return u.includes("FLOTA") || u.includes("MGO") || u.includes("DIESEL") || u.includes("DISEL") || u.includes("BLANCO");
+      });
+      if (!pestañas.length) {
+        // Si no coincide ningún nombre, intentar con todas las hojas que tengan encabezados conocidos
+        pestañas.push(...wb.SheetNames);
+      }
 
       const MAPA = {
         "N° GUIA":"guia","NUMERO DE GUIA":"guia","GUIA":"guia","N GUIA":"guia",
         "TRANSPORTADORA":"transportadora","EMPRESA":"transportadora",
         "PLACA":"placa","PLACA ":"placa","VEHICULO":"placa",
-        "PRODUCTO":"producto","COMBUSTIBLE":"producto",
+        "PRODUCTO":"producto","COMBUSTIBLE":"producto","TIPO DE PRODUCTO":"producto",
         "FECHA DE CARGUE":"fecha","FECHA CARGUE":"fecha",
         "FECHA APROX. DE LLEGADA":"fecha_aprox_llegada","FECHA APROX DE LLEGADA":"fecha_aprox_llegada",
         "GLS NETOS GUIA":"gls_netos_guia","GLS NETOS":"gls_netos_guia",
@@ -934,6 +942,11 @@ export default function App() {
         "FLETE":"flete","BONO":"bono",
         "BARRILES NSV":"barriles_nsv","STAND BY":"standby",
         "VOLUMEN":"volumen_guia","GALONES":"volumen_guia",
+        // Columnas producto blanco
+        "OPS":"ops",
+        "PLANTA ORIGEN":"planta_origen","PLANTA DE ORIGEN":"planta_origen",
+        "BODEGA O TANQUE DESCARGUE":"bodega_tanque","BODEGA TANQUE":"bodega_tanque","TANQUE DESCARGUE":"bodega_tanque",
+        "FECHA DE DESCARGUE":"fecha_descargue","FECHA DESCARGUE":"fecha_descargue",
       };
 
       const todasFilas = [];
@@ -941,7 +954,7 @@ export default function App() {
         const ws = wb.Sheets[nombre];
         const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
         // Buscar fila de encabezados: la que contenga al menos 2 palabras clave conocidas
-        const KEYWORDS = ["PLACA","GUIA","GUÍA","TRANSPORTADORA","PRODUCTO","CONDUCTOR","FLETE"];
+        const KEYWORDS = ["PLACA","GUIA","GUÍA","TRANSPORTADORA","PRODUCTO","CONDUCTOR","FLETE","OPS","PLANTA ORIGEN"];
         let hdrIdx = raw.findIndex(r => {
           const cels = r.map(c=>String(c||"").trim().toUpperCase());
           return KEYWORDS.filter(k => cels.some(c=>c.includes(k))).length >= 2;
@@ -987,6 +1000,10 @@ export default function App() {
             bono: get("bono") ? Number(get("bono")) : 0,
             barriles_nsv: get("barriles_nsv") ? Number(get("barriles_nsv")) : 0,
             standby: get("standby") ? Number(get("standby")) : 0,
+            ops: get("ops"),
+            planta_origen: get("planta_origen"),
+            bodega_tanque: get("bodega_tanque"),
+            fecha_descargue: get("fecha_descargue") || null,
           });
         }
       });
@@ -1095,6 +1112,8 @@ export default function App() {
         flete:f.flete||0, bono:f.bono||0, barriles_nsv:f.barriles_nsv||0,
         standby:f.standby||0, estado:"En Ruta", creado_por:session.user.id,
         sede:perfil.sede||"MALAMBO", planta:perfil.planta||"PLANTA 1",
+        ops:f.ops||null, planta_origen:f.planta_origen||null,
+        bodega_tanque:f.bodega_tanque||null, fecha_descargue:f.fecha_descargue||null,
       }});
       if (error) { err++; if (err===1) { setSaving(false); setImportExcel(null); showToast(`Error: ${error}`, false); return; } } else ok++;
     }
@@ -1117,6 +1136,7 @@ export default function App() {
         gls_netos_guia:Number(form.gls_netos_guia||0), gls_recibidos:Number(form.gls_recibidos||0),
         fecha_llegada:form.fecha_llegada||null, fecha_aprox_llegada:form.fecha_aprox_llegada||null,
         fecha_descargue:form.fecha_descargue||null,
+        ops:form.ops||null, planta_origen:form.planta_origen||null, bodega_tanque:form.bodega_tanque||null,
         valor_standby:Number(form.valor_standby||0), observacion:form.observacion||null,
       }, filters:[{col:"id",val:form.id}] });
       setSaving(false);
@@ -5679,6 +5699,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
             </Grid>
           </Section>
+          {(()=>{ const u=(form.producto||"").toUpperCase(); return (u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL")); })() && (
+            <Section title="Datos Producto Blanco (MGO / Diesel)" color="#38bdf8">
+              <Grid cols={3}>
+                <Inp label="OPS (Orden de Cargue)" type="text" value={form.ops||""} onChange={f("ops")}/>
+                <Inp label="Planta Origen" type="text" value={form.planta_origen||""} onChange={f("planta_origen")}/>
+                <Inp label="Bodega / Tanque Descargue" type="text" value={form.bodega_tanque||""} onChange={f("bodega_tanque")}/>
+              </Grid>
+            </Section>
+          )}
           <Section title="Logística en Planta" color="#c084fc">
             <Grid cols={3}>
               <Inp label="Fecha Aprox. Llegada" type="date" value={form.fecha_aprox_llegada||""} onChange={f("fecha_aprox_llegada")}/>
