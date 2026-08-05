@@ -1966,10 +1966,100 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           style={{ flex:1, padding: modal ? 0 : 24, overflowY: modal ? "hidden" : "auto", background:T.bg }}>
 
           {/* DASHBOARD */}
-          {nav==="dashboard" && (
+          {nav==="dashboard" && (()=>{
+            // ── helpers ──────────────────────────────────────────────
+            const CAP_QBS002_DASH = {
+              "QBS002-1B":26903,"QBS002-1E":26903,
+              "QBS002-2B":47238,"QBS002-2E":47415,
+              "QBS002-3B":26874,"QBS002-3E":26874,
+              "QBS002-4B":47110,"QBS002-4E":47144,
+              "QBS002-5B":27194,"QBS002-5E":26935,
+            };
+            const tkCap = t => Number(t.capacidad) || CAP_QBS002_DASH[t.id] || 27000;
+            const isPlanta1 = id => id.startsWith("QBS002") || id === "TKT-1" || id === "TKT-2";
+            const isPlanta2 = id => id.startsWith("TK-");
+
+            const p1Tanks = tanques.filter(t => isPlanta1(t.id));
+            const p2Tanks = tanques.filter(t => isPlanta2(t.id));
+
+            const p1Cap   = p1Tanks.reduce((a,t)=>a+tkCap(t),0);
+            const p1Nivel = p1Tanks.reduce((a,t)=>a+Number(t.nivel||0),0);
+            const p2Cap   = p2Tanks.reduce((a,t)=>a+tkCap(t),0);
+            const p2Nivel = p2Tanks.reduce((a,t)=>a+Number(t.nivel||0),0);
+
+            // viajes en ruta con fecha estimada
+            const vEnRuta = (viajes||[]).filter(v=>v.estado==="En Ruta" && v.fecha_aprox_llegada && Number(v.gls_netos_guia)>0);
+
+            // agrupar por fecha y producto
+            const byFecha = {};
+            vEnRuta.forEach(v=>{
+              const key = v.fecha_aprox_llegada;
+              if(!byFecha[key]) byFecha[key] = {};
+              const prod = v.producto||"Sin producto";
+              byFecha[key][prod] = (byFecha[key][prod]||0) + Number(v.gls_netos_guia);
+            });
+            const fechas = Object.keys(byFecha).sort();
+
+            // totales entrantes por planta (aproximado: destino sede o todos)
+            const totalEntrante = vEnRuta.reduce((a,v)=>a+Number(v.gls_netos_guia),0);
+
+            // por producto para planta 2 (TK- tanks suelen ser tierra VLSFO/MGO)
+            const entranteP2 = vEnRuta.filter(v=>["VLSFO","MGO","PENDARE","DISEL"].some(p=>(v.producto||"").toUpperCase().includes(p)));
+            const totalEntranteP2 = entranteP2.reduce((a,v)=>a+Number(v.gls_netos_guia),0);
+
+            // colores producto
+            const prodColor = p => {
+              const u = (p||"").toUpperCase();
+              if(u.includes("VLSFO")) return "#0077CC";
+              if(u.includes("MGO"))   return "#00b4ff";
+              if(u.includes("PENDARE")) return "#f59e0b";
+              if(u.includes("DISEL") || u.includes("DIESEL")) return "#f59e0b";
+              return "#7c8fa6";
+            };
+
+            // alertas
+            const p2Alert = (p2Nivel + totalEntranteP2) > p2Cap;
+            const p1Alert = (p1Nivel + (totalEntrante - totalEntranteP2)) > p1Cap;
+
+            // barra de capacidad
+            const CapBar = ({ nivel, cap, incoming, label, alert }) => {
+              const pctAct = cap>0 ? Math.min(100, (nivel/cap)*100) : 0;
+              const pctIn  = cap>0 ? Math.min(100-pctAct, (incoming/cap)*100) : 0;
+              const libre  = Math.max(0, cap - nivel - incoming);
+              const pctColor = pctAct>80 ? T.danger : pctAct>50 ? T.success : T.orange;
+              return (
+                <div style={{marginBottom:6}}>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4}}>
+                    <span style={{fontWeight:700,color:T.navy}}>{label}</span>
+                    <span style={{color:alert?T.danger:T.muted,fontWeight:alert?800:400}}>
+                      {alert?"⚠ Capacidad excedida":""}
+                    </span>
+                  </div>
+                  <div style={{background:T.border,borderRadius:6,height:18,overflow:"hidden",position:"relative",display:"flex"}}>
+                    <div style={{height:"100%",width:`${pctAct}%`,background:pctColor,transition:"width 0.4s"}}/>
+                    <div style={{height:"100%",width:`${pctIn}%`,background:T.orange,opacity:0.7,transition:"width 0.4s"}}/>
+                  </div>
+                  <div style={{display:"flex",gap:16,fontSize:10,marginTop:4,flexWrap:"wrap"}}>
+                    <span style={{color:pctColor,fontWeight:700}}>Actual: {fmt(nivel)} gls ({Math.round(pctAct)}%)</span>
+                    {incoming>0 && <span style={{color:T.orange,fontWeight:700}}>+Entrantes: {fmt(incoming)} gls</span>}
+                    <span style={{color:T.muted}}>Libre: {fmt(libre)} gls</span>
+                    <span style={{color:T.muted}}>Cap: {fmt(cap)} gls</span>
+                  </div>
+                </div>
+              );
+            };
+
+            // productos únicos en las entradas
+            const allProds = [...new Set(vEnRuta.map(v=>v.producto||"Sin producto"))].sort();
+
+            return (
             <div>
+              {/* Cabecera */}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4,flexWrap:"wrap",gap:8}}>
-                <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Panel Operativo</div>
+                <div>
+                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Panel Operativo</div>
+                  <div style={{ fontSize:11, color:T.muted }}>QBS · {new Date().toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
+                </div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   {(sedeFiltro==="TODAS"||["administrador","gerencia"].includes(perfil.rol)) && (
                     <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)}
@@ -1985,42 +2075,138 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   )}
                 </div>
               </div>
-              <div style={{ fontSize:11, color:T.muted, marginBottom:22 }}>QBS · {new Date().toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:12, marginBottom:22 }}>
+
+              {/* Stats rápidas */}
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:10, margin:"16px 0" }}>
                 <Stat label="Carros en Ruta" value={enRuta} color={T.orange} sub="hacia planta" />
-                <Stat label="⏳ Tiquetes Pend." value={pendTiquetes} color={T.navy} sub="esperan laboratorio" />
-                <Stat label="PBS Pendientes" value={pendPBS} color={T.orange} sub="esperan operaciones" />
-                <Stat label="CMT Pendientes" value={pendCMT} color={T.success} sub="esperan coordinador" />
-                <Stat label="Stock VLSFO" value={`${fmt(tanques.filter(t=>t.producto==="VLSFO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.success} />
-                <Stat label="Stock MGO" value={`${fmt(tanques.filter(t=>t.producto==="MGO").reduce((a,t)=>a+t.nivel,0))} Gls`} color={T.navy} />
+                <Stat label="Tiquetes Pend." value={pendTiquetes} color={T.navy} sub="laboratorio" />
+                <Stat label="PBS Pendientes" value={pendPBS} color={T.orange} sub="operaciones" />
+                <Stat label="CMT Pendientes" value={pendCMT} color={T.success} sub="coordinador" />
+                <Stat label="Entrantes (gls)" value={fmt(totalEntrante)} color={T.orange} sub={`${vEnRuta.length} viajes en ruta`} />
               </div>
-              <div style={{ fontWeight:800, fontSize:14, color:T.navy, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${T.orange}22`, display:"flex", alignItems:"center", gap:6 }}><Cylinder size={15}/>Inventario de Tanques</div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:10 }}>
-                {tanques.map(t=>{
-                  const pct = Math.round((t.nivel/t.capacidad)*100);
-                  const barColor = pct > 80 ? T.danger : pct > 50 ? T.success : T.orange;
-                  return (
-                  <Card key={t.id} style={{ padding:"14px 16px" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                      <div>
-                        <div style={{ fontWeight:800, fontSize:13, color:T.navy }}>{t.id}</div>
-                        <div style={{ fontSize:10, color:T.muted }}>{t.producto}</div>
-                      </div>
-                      <Badge label={TIPO_LABEL[t.tipo]} color={TIPO_COLOR[t.tipo]} />
-                    </div>
-                    <div style={{ background:T.border, borderRadius:4, height:8, overflow:"hidden", marginBottom:6 }}>
-                      <div style={{ height:"100%", width:`${pct}%`, background:barColor, borderRadius:4, transition:"width 0.3s" }} />
-                    </div>
-                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:10 }}>
-                      <span style={{ color:T.muted }}>{fmt(t.nivel)} / {fmt(t.capacidad)} Gls</span>
-                      <span style={{ fontWeight:800, color:barColor }}>{pct}%</span>
-                    </div>
-                  </Card>
-                  );
-                })}
+
+              {/* Capacidad por planta */}
+              <div style={{ fontWeight:800, fontSize:14, color:T.navy, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${T.orange}22`, display:"flex", alignItems:"center", gap:6 }}>
+                <Cylinder size={15}/>Capacidad de Almacenamiento
               </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:22}}>
+                {/* Planta 1 */}
+                <Card style={{padding:"16px 18px"}}>
+                  <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
+                    <Ship size={14}/> Planta 1 · Barcaza + TKT
+                  </div>
+                  <CapBar nivel={p1Nivel} cap={p1Cap} incoming={totalEntrante-totalEntranteP2} label="" alert={p1Alert}/>
+                  {/* Detalle por tanque */}
+                  <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
+                    {p1Tanks.map(t=>{
+                      const cap=tkCap(t); const niv=Number(t.nivel||0);
+                      const pct=cap>0?Math.min(100,Math.round((niv/cap)*100)):0;
+                      const bc=pct>80?T.danger:pct>50?T.success:T.orange;
+                      return (
+                        <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:10}}>
+                          <span style={{width:80,fontWeight:700,color:T.navy,flexShrink:0}}>{t.id.replace("QBS002-","")}</span>
+                          <div style={{flex:1,background:T.border,borderRadius:3,height:6,overflow:"hidden"}}>
+                            <div style={{height:"100%",width:`${pct}%`,background:bc,transition:"width 0.4s"}}/>
+                          </div>
+                          <span style={{color:T.muted,width:80,textAlign:"right"}}>{fmt(niv)}/{fmt(cap)}</span>
+                          <span style={{color:prodColor(t.producto),fontWeight:700,width:60,textAlign:"right"}}>{t.producto||"—"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+                {/* Planta 2 */}
+                <Card style={{padding:"16px 18px"}}>
+                  <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
+                    <Factory size={14}/> Planta 2 · TK-111 a TK-117
+                  </div>
+                  <CapBar nivel={p2Nivel} cap={p2Cap} incoming={totalEntranteP2} label="" alert={p2Alert}/>
+                  <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
+                    {p2Tanks.map(t=>{
+                      const cap=tkCap(t); const niv=Number(t.nivel||0);
+                      const pct=cap>0?Math.min(100,Math.round((niv/cap)*100)):0;
+                      const bc=pct>80?T.danger:pct>50?T.success:T.orange;
+                      return (
+                        <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:10}}>
+                          <span style={{width:60,fontWeight:700,color:T.navy,flexShrink:0}}>{t.id}</span>
+                          <div style={{flex:1,background:T.border,borderRadius:3,height:6,overflow:"hidden"}}>
+                            <div style={{height:"100%",width:`${pct}%`,background:bc,transition:"width 0.4s"}}/>
+                          </div>
+                          <span style={{color:T.muted,width:80,textAlign:"right"}}>{fmt(niv)}/{fmt(cap)}</span>
+                          <span style={{color:prodColor(t.producto),fontWeight:700,width:60,textAlign:"right"}}>{t.producto||"—"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              </div>
+
+              {/* Entradas proyectadas por fecha */}
+              <div style={{ fontWeight:800, fontSize:14, color:T.navy, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${T.orange}22`, display:"flex", alignItems:"center", gap:6 }}>
+                <Truck size={15}/> Entradas Proyectadas por Fecha de Llegada
+              </div>
+              {vEnRuta.length === 0 ? (
+                <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes En Ruta con fecha estimada de llegada registrada.</div>
+              ) : (
+                <div style={{overflowX:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                    <thead>
+                      <tr style={{background:T.navy+"18"}}>
+                        <th style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:T.navy,borderRadius:"6px 0 0 0"}}>F. Llegada Est.</th>
+                        {allProds.map(p=>(
+                          <th key={p} style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:prodColor(p)}}>{p}</th>
+                        ))}
+                        <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:T.navy,borderRadius:"0 6px 0 0"}}>Total (gls)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fechas.map((f,i)=>{
+                        const row = byFecha[f];
+                        const total = Object.values(row).reduce((a,b)=>a+b,0);
+                        const esHoy = f === new Date().toISOString().slice(0,10);
+                        const esPasado = f < new Date().toISOString().slice(0,10);
+                        return (
+                          <tr key={f} style={{background:esHoy?"#fff8e1":i%2===0?T.bg:T.card,borderTop:`1px solid ${T.border}`}}>
+                            <td style={{padding:"6px 10px",fontWeight:esHoy?800:600,color:esHoy?T.orange:esPasado?T.muted:T.navy}}>
+                              {esPasado?"🔴 ":esHoy?"🟡 ":"🟢 "}{new Date(f+"T12:00:00").toLocaleDateString("es-CO",{weekday:"short",day:"2-digit",month:"short"})}
+                            </td>
+                            {allProds.map(p=>(
+                              <td key={p} style={{padding:"6px 10px",textAlign:"right",color:row[p]?prodColor(p):T.muted}}>
+                                {row[p]?fmt(row[p]):"—"}
+                              </td>
+                            ))}
+                            <td style={{padding:"6px 10px",textAlign:"right",fontWeight:800,color:T.navy}}>{fmt(total)}</td>
+                          </tr>
+                        );
+                      })}
+                      {/* Total row */}
+                      <tr style={{background:T.navy+"22",borderTop:`2px solid ${T.navy}44`}}>
+                        <td style={{padding:"7px 10px",fontWeight:800,color:T.navy}}>TOTAL ENTRANTE</td>
+                        {allProds.map(p=>{
+                          const tot = vEnRuta.filter(v=>(v.producto||"Sin producto")===p).reduce((a,v)=>a+Number(v.gls_netos_guia),0);
+                          return <td key={p} style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:prodColor(p)}}>{fmt(tot)}</td>;
+                        })}
+                        <td style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:T.navy}}>{fmt(totalEntrante)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Alertas */}
+              {(p1Alert || p2Alert) && (
+                <div style={{marginTop:16,background:"#fff0f0",border:`1px solid ${T.danger}`,borderRadius:8,padding:"12px 16px",display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <AlertTriangle size={18} style={{color:T.danger,flexShrink:0,marginTop:1}}/>
+                  <div>
+                    <div style={{fontWeight:800,color:T.danger,fontSize:13,marginBottom:4}}>Alerta de Capacidad</div>
+                    {p1Alert && <div style={{fontSize:12,color:T.danger}}>Planta 1: el inventario actual más las entradas proyectadas ({fmt(p1Nivel+totalEntrante-totalEntranteP2)} gls) supera la capacidad total ({fmt(p1Cap)} gls).</div>}
+                    {p2Alert && <div style={{fontSize:12,color:T.danger}}>Planta 2: el inventario actual más las entradas proyectadas ({fmt(p2Nivel+totalEntranteP2)} gls) supera la capacidad total ({fmt(p2Cap)} gls).</div>}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+            );
+          })()}
 
           {/* VIAJES */}
           {nav==="viajes" && (()=>{
