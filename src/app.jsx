@@ -2037,7 +2037,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </div>
                   <div style={{background:T.border,borderRadius:6,height:18,overflow:"hidden",position:"relative",display:"flex"}}>
                     <div style={{height:"100%",width:`${pctAct}%`,background:pctColor,transition:"width 0.4s"}}/>
-                    <div style={{height:"100%",width:`${pctIn}%`,background:T.orange,opacity:0.7,transition:"width 0.4s"}}/>
+                    <div style={{height:"100%",width:`${pctIn}%`,background:"#f59e0b",opacity:0.85,transition:"width 0.4s"}}/>
                   </div>
                   <div style={{display:"flex",gap:16,fontSize:10,marginTop:4,flexWrap:"wrap"}}>
                     <span style={{color:pctColor,fontWeight:700}}>Actual: {fmt(nivel)} gls ({Math.round(pctAct)}%)</span>
