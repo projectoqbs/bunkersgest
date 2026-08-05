@@ -467,6 +467,9 @@ export default function App() {
   const [flotaRedirDesde, setFlotaRedirDesde] = useState("");
   const [flotaRedirHasta, setFlotaRedirHasta] = useState("");
   const [flotaRedirSede, setFlotaRedirSede] = useState("MALAMBO");
+  const [flotaRedirTrans, setFlotaRedirTrans] = useState("");
+  const [flotaRedirProducto, setFlotaRedirProducto] = useState("");
+  const [flotaRedirPlaca, setFlotaRedirPlaca] = useState("");
   const [analisisNav, setAnalisisNav] = useState("");
   const [resFiltroTipo, setResFiltroTipo] = useState("");
   const [tiqBusqueda, setTiqBusqueda] = useState("");
@@ -1024,7 +1027,10 @@ export default function App() {
     const viajesToUpdate = (viajes||[]).filter(v =>
       v.estado === "En Ruta" &&
       (!flotaRedirDesde || v.fecha >= flotaRedirDesde) &&
-      (!flotaRedirHasta || v.fecha <= flotaRedirHasta)
+      (!flotaRedirHasta || v.fecha <= flotaRedirHasta) &&
+      (!flotaRedirTrans || v.transportadora === flotaRedirTrans) &&
+      (!flotaRedirProducto || v.producto === flotaRedirProducto) &&
+      (!flotaRedirPlaca || (v.placa||"").toUpperCase().includes(flotaRedirPlaca.toUpperCase()))
     );
     if (!viajesToUpdate.length) return showToast("No hay viajes en ese rango", false);
     setSaving(true);
@@ -5079,10 +5085,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           (!flotaFechaHasta || v.fecha <= flotaFechaHasta)
         );
         const viajesConDias = viajesFechas.filter(v => Number(flotaDiasProducto[v.producto]||0) > 0);
+        const transUnicos = [...new Set((viajes||[]).map(v=>v.transportadora).filter(Boolean))].sort();
+        const productosRedir = [...new Set((viajes||[]).map(v=>v.producto).filter(Boolean))].sort();
         const viajesRedir = (viajes||[]).filter(v =>
           v.estado==="En Ruta" &&
           (!flotaRedirDesde || v.fecha >= flotaRedirDesde) &&
-          (!flotaRedirHasta || v.fecha <= flotaRedirHasta)
+          (!flotaRedirHasta || v.fecha <= flotaRedirHasta) &&
+          (!flotaRedirTrans || v.transportadora === flotaRedirTrans) &&
+          (!flotaRedirProducto || v.producto === flotaRedirProducto) &&
+          (!flotaRedirPlaca || (v.placa||"").toUpperCase().includes(flotaRedirPlaca.toUpperCase()))
         );
         const inpStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:12,outline:"none",fontFamily:"system-ui,sans-serif"};
         const numStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"4px 8px",color:T.text,fontSize:12,outline:"none",width:60,textAlign:"center"};
@@ -5129,16 +5140,36 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{fontSize:12,color:T.muted,marginBottom:10}}>
               Selecciona viajes por período de cargue y asígnales una nueva sede destino. Útil cuando un lote cargado se redirige internamente a otra planta.
             </div>
-            <div style={{display:"flex",gap:12,alignItems:"flex-end",flexWrap:"wrap",marginBottom:14}}>
+            <div style={{display:"flex",gap:12,alignItems:"flex-end",flexWrap:"wrap",marginBottom:10}}>
               <div><Lbl>Fecha cargue desde</Lbl><input type="date" value={flotaRedirDesde} onChange={e=>setFlotaRedirDesde(e.target.value)} style={inpStyle}/></div>
               <div><Lbl>Fecha cargue hasta</Lbl><input type="date" value={flotaRedirHasta} onChange={e=>setFlotaRedirHasta(e.target.value)} style={inpStyle}/></div>
+              <div>
+                <Lbl>Transportadora</Lbl>
+                <select value={flotaRedirTrans} onChange={e=>setFlotaRedirTrans(e.target.value)} style={inpStyle}>
+                  <option value="">Todas</option>
+                  {transUnicos.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <Lbl>Producto</Lbl>
+                <select value={flotaRedirProducto} onChange={e=>setFlotaRedirProducto(e.target.value)} style={inpStyle}>
+                  <option value="">Todos</option>
+                  {productosRedir.map(p=><option key={p}>{p}</option>)}
+                </select>
+              </div>
+              <div>
+                <Lbl>Placa</Lbl>
+                <input type="text" value={flotaRedirPlaca} onChange={e=>setFlotaRedirPlaca(e.target.value)} placeholder="Buscar..." style={{...inpStyle,width:90}}/>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:14}}>
               <div>
                 <Lbl>Nueva sede destino</Lbl>
                 <select value={flotaRedirSede} onChange={e=>setFlotaRedirSede(e.target.value)} style={{...inpStyle,fontWeight:700}}>
                   {SEDES.map(s=><option key={s}>{s}</option>)}
                 </select>
               </div>
-              <div style={{fontSize:12,color:T.muted,paddingBottom:4}}>
+              <div style={{fontSize:12,color:T.muted,paddingTop:16}}>
                 <b style={{color:"#6366f1"}}>{viajesRedir.length}</b> viajes seleccionados
               </div>
             </div>
