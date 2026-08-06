@@ -176,20 +176,20 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   }
 
   const tots=(()=>{
-    let gNI=0,gNF=0,mI=0,mF=0;
+    let gNI=0,gNF=0,gBI=0,gBF=0,mI=0,mF=0;
     filasB.forEach(f=>{
       const ri=calcB(f,trimI,f.sIni,f.tIni,f.aIni);
       const rf=calcB(f,trimF,f.sFin,f.tFin,f.aFin);
-      if(ri){gNI+=ri.glsN||0;mI+=ri.mt||0;}
-      if(rf){gNF+=rf.glsN||0;mF+=rf.mt||0;}
+      if(ri){gNI+=ri.glsN||0;gBI+=ri.glsB||0;mI+=ri.mt||0;}
+      if(rf){gNF+=rf.glsN||0;gBF+=rf.glsB||0;mF+=rf.mt||0;}
     });
     filasT.forEach(f=>{
       const ri=calcT(f,f.sIni,f.tIni,f.aIni);
       const rf=calcT(f,f.sFin,f.tFin,f.aFin);
-      if(ri){gNI+=ri.glsN||0;mI+=ri.mt||0;}
-      if(rf){gNF+=rf.glsN||0;mF+=rf.mt||0;}
+      if(ri){gNI+=ri.glsN||0;gBI+=ri.glsB||0;mI+=ri.mt||0;}
+      if(rf){gNF+=rf.glsN||0;gBF+=rf.glsB||0;mF+=rf.mt||0;}
     });
-    return{gNI,gNF,gEnt:gNI-gNF,mI,mF,mEnt:mI-mF};
+    return{gNI,gNF,gBI,gBF,gEnt:gNI-gNF,gBEnt:gBI-gBF,mI,mF,mEnt:mI-mF};
   })();
 
   useEffect(()=>{if(tab==="historial")cargarHist();},[tab]);
@@ -485,6 +485,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
           {[
             {l:"GLS Netos Ini",v:fmtN(tots.gNI,0),c:"#93c5fd"},
             {l:"GLS Netos Fin",v:fmtN(tots.gNF,0),c:"#93c5fd"},
+            {l:"GLS Brutos Entregados",v:fmtN(tots.gBEnt,0),c:"#fcd34d",big:true},
             {l:"GLS Netos Entregados",v:fmtN(tots.gEnt,0),c:"#6ee7b7",big:true},
             {l:"MT Entregadas (cálculo)",v:fmtN(tots.mEnt,3),c:TH.orange,big:true},
           ].map(({l,v,c,big})=>(
