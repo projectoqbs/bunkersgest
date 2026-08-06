@@ -2075,7 +2075,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const key = v.fecha_aprox_llegada;
               if(!byFecha[key]) byFecha[key] = {};
               const prod = v.producto||"Sin producto";
-              byFecha[key][prod] = (byFecha[key][prod]||0) + Number(v.gls_netos_guia);
+              byFecha[key][prod] = (byFecha[key][prod]||0) + glsViaje(v);
             });
             const fechas = Object.keys(byFecha).sort();
 
