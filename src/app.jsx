@@ -6296,7 +6296,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         return (
           <Modal title={`Liquidación — ${liq.motonave||d.buque}`} onClose={()=>setModalLiqDetalle(null)} wide>
             <div style={{display:"flex",gap:32,flexWrap:"wrap",marginBottom:20,padding:"12px 16px",background:T.bg,borderRadius:8,border:`1px solid ${T.border}`}}>
-              {[["Buque",liq.motonave||d.buque],["IMO",liq.imo_numero||d.imo||"—"],["Producto",liq.producto||d.producto||"—"],["Fecha",liq.fecha||"—"],["Puerto",liq.puerto||d.destino||"—"],["Contrato",liq.contrato||d.contrato||"—"],["MT Firmadas",fmtN(liq.mt_firmadas,3)],["MT Entregadas",fmtN(liq.mt_entregadas,3)],["Gls Netos Entregados",fmtN(liq.gls_entregados,0)],["Factor",fmtN(liq.factor,2)],["BDN N°",liq.bdn_numero||"—"],["Operador",liq.operador||"—"]].map(([l,v])=>(
+              {[["Buque",liq.motonave||d.buque],["IMO",liq.imo_numero||d.imo||"—"],["Producto",liq.producto||d.producto||"—"],["Fecha",liq.fecha||"—"],["Puerto",liq.puerto||d.destino||"—"],["Contrato",liq.contrato||d.contrato||"—"],["MT Firmadas",fmtN(liq.mt_firmadas,3)],["MT Entregadas",fmtN(liq.mt_entregadas,3)],["Gls Brutos Entregados",fmtN(liq.gls_brutos_entregados,0)],["Gls Netos Entregados",fmtN(liq.gls_entregados,0)],["Gls Flowmeter",fmtN(liq.gls_flowmeter,0)],["Factor",fmtN(liq.factor,2)],["BDN N°",liq.bdn_numero||"—"],["Operador",liq.operador||"—"]].map(([l,v])=>(
                 <div key={l}><div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{l}</div><div style={{fontSize:13,fontWeight:700,color:T.navy}}>{v}</div></div>
               ))}
             </div>

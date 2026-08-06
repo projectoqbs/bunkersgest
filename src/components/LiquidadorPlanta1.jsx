@@ -210,6 +210,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
       filas_barcaza:JSON.stringify(filasB),filas_tkt:JSON.stringify(filasT),
       gls_netos_ini:Math.round(tots.gNI),gls_netos_fin:Math.round(tots.gNF),
       gls_entregados:Math.round(tots.gEnt),
+      gls_brutos_entregados:Math.round(tots.gBEnt),
       mt_entregadas:tots.mEnt?Number(tots.mEnt.toFixed(3)):null,
       usuario_id:session?.user?.id,
     };
