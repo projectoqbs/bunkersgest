@@ -521,14 +521,9 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                               background:isSelected?"#e8f4fd":undefined,
                               transition:"background 0.15s"}}>
                             {gls !== undefined ? (
-                              <div>
-                                <div style={{fontFamily:"monospace",fontWeight:700,color:TH.navy,fontSize:12}}>
-                                  {fmtN(gls,0)}
-                                </div>
-                                <div style={{marginTop:4,height:5,borderRadius:3,background:TH.border,overflow:"hidden"}}>
-                                  <div style={{width:`${pct}%`,height:"100%",background:TH.orange,borderRadius:3}}/>
-                                </div>
-                              </div>
+                              <span style={{fontFamily:"monospace",fontWeight:700,color:TH.navy,fontSize:12}}>
+                                {fmtN(gls,0)}
+                              </span>
                             ) : (
                               <span style={{color:TH.border,fontSize:13,fontWeight:300}}>—</span>
                             )}
