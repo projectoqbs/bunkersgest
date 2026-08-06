@@ -72,6 +72,4 @@ function fmtN(n,dec=2){
   return Number(n).toLocaleString("es-CO",{minimumFractionDigits:dec,maximumFractionDigits:dec});
 }
 
-  return <div style={{fontSize:10,color:TH.navy,textTransform:"uppercase",letterSpacing:1.2,marginBottom:4,fontWeight:700}}>{children}</div>;
-
 export { TB, TK, TRIM_VALS, TABLA13, M3_TO_GAL, TANQUES_BARCAZA, TANQUES_TKT, PRODUCTOS, interp, interpolarBarcaza, interpolarTKT, calcVCF, calcF13, pfn, pf, fmtN };
