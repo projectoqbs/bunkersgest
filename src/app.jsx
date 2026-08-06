@@ -2030,7 +2030,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const p2Nivel = p2Tanks.reduce((a,t)=>a+Number(t.nivel||0),0);
 
             // clasificación por familia usando configuración de tankFamilias (localStorage)
-            const isProdBlanco = p => { const u=(p||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL")||u==="DIESEL NACIONAL"; };
+            const isProdBlanco = p => { const u=(p||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL")||u==="NACIONAL"||u==="INTERNACIONAL"; };
             const isTankBlanco = t => tankFamilias[t.id] ? tankFamilias[t.id]==="blanco" : isProdBlanco(t.producto);
             const isTankNegro  = t => !isTankBlanco(t);
             const isBlanco = p => isProdBlanco(p);
