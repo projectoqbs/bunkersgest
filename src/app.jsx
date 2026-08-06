@@ -4274,7 +4274,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         const bg = i%2===0?T.card:T.bg;
                         return filas.map((p,j)=>(
                           <tr key={`${d.id}-${p.prod}`} style={{background:bg}}>
-                            <td style={{...tdS,fontWeight:700}}>{j===0?(d.buque||"—"):""}</td>
+                            <td style={{...tdS,fontWeight:700}}>{j===0?(
+                              <span
+                                onClick={async()=>{
+                                  const {data:liq}=await supabase.from("liquidaciones_qbs002").select("*").eq("motonave",d.buque).order("created_at",{ascending:false}).limit(1).maybeSingle();
+                                  if(liq) setModal({tipo:"liq_detalle",liq,despacho:d});
+                                  else showToast("No se encontró liquidación para este buque",false);
+                                }}
+                                style={{color:T.orange,cursor:"pointer",textDecoration:"underline",fontWeight:800}}
+                              >{d.buque||"—"}</span>
+                            ):""}</td>
                             <td style={{...tdS,fontFamily:"monospace",color:T.muted}}>{j===0?(d.imo||"—"):""}</td>
                             <td style={{...tdS}}>{p.prod}</td>
                             <td style={{...tdS,textAlign:"center",fontWeight:700}}>{p.mt>0?p.mt.toLocaleString():"—"}</td>
@@ -6278,6 +6287,56 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           </div>
         </Modal>
       )}
+
+      {modal?.tipo==="liq_detalle" && (()=>{
+        const {liq,despacho:d} = modal;
+        const fmtN=(v,dec=0)=>v!=null&&!isNaN(v)?Number(v).toLocaleString("es-CO",{minimumFractionDigits:dec,maximumFractionDigits:dec}):"—";
+        const filas=JSON.parse(liq.filas_barcaza||"[]").filter(f=>f.activo);
+        return (
+          <Modal title={`Liquidación — ${liq.motonave||d.buque}`} onClose={()=>setModal(null)} wide>
+            <div style={{display:"flex",gap:32,flexWrap:"wrap",marginBottom:20,padding:"12px 16px",background:T.bg,borderRadius:8,border:`1px solid ${T.border}`}}>
+              {[["Buque",liq.motonave||d.buque],["IMO",liq.imo_numero||d.imo||"—"],["Producto",liq.producto||d.producto||"—"],["Fecha",liq.fecha||"—"],["Puerto",liq.puerto||d.destino||"—"],["Contrato",liq.contrato||d.contrato||"—"],["MT Firmadas",fmtN(liq.mt_firmadas,3)],["MT Entregadas",fmtN(liq.mt_entregadas,3)],["Gls Netos Entregados",fmtN(liq.gls_entregados,0)],["Factor",fmtN(liq.factor,2)],["BDN N°",liq.bdn_numero||"—"],["Operador",liq.operador||"—"]].map(([l,v])=>(
+                <div key={l}><div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{l}</div><div style={{fontSize:13,fontWeight:700,color:T.navy}}>{v}</div></div>
+              ))}
+            </div>
+            {filas.length>0 && (
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                  <thead><tr style={{background:T.navy}}>
+                    {["Tanque","Sonda Ini","Temp Ini","API Ini","Sonda Fin","Temp Fin","API Fin","Gls.N Ini","Gls.N Fin","Gls Entregados"].map(h=>(
+                      <th key={h} style={{padding:"8px 10px",color:"#fff",fontWeight:700,textAlign:"center",whiteSpace:"nowrap"}}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>{(()=>{
+                    const cmt = cmts.find(c=>c.nombre_motonave===liq.motonave&&c.tipo_operacion==="ENTREGA A MOTONAVE");
+                    return filas.map((f,i)=>{
+                      const tanqueId=`QBS002-${f.tanque}`;
+                      const tr=(cmt?.tanques_recepcion||[]).find(r=>r.tanque===tanqueId);
+                      return(
+                        <tr key={i} style={{background:i%2===0?T.card:T.bg}}>
+                          <td style={{padding:"7px 10px",fontWeight:700,color:T.navy,textAlign:"center"}}>{tanqueId}</td>
+                          <td style={{padding:"7px 10px",textAlign:"center"}}>{f.sIni||"—"}</td>
+                          <td style={{padding:"7px 10px",textAlign:"center"}}>{f.tIni||"—"}</td>
+                          <td style={{padding:"7px 10px",textAlign:"center"}}>{f.aIni||"—"}</td>
+                          <td style={{padding:"7px 10px",textAlign:"center"}}>{f.sFin||"—"}</td>
+                          <td style={{padding:"7px 10px",textAlign:"center"}}>{f.tFin||"—"}</td>
+                          <td style={{padding:"7px 10px",textAlign:"center"}}>{f.aFin||"—"}</td>
+                          <td style={{padding:"7px 10px",textAlign:"center",color:T.orange,fontWeight:700}}>{tr?fmtN(tr.galonesInicial,0):"—"}</td>
+                          <td style={{padding:"7px 10px",textAlign:"center",color:T.success,fontWeight:700}}>{tr?fmtN(tr.galonesFinal,0):"—"}</td>
+                          <td style={{padding:"7px 10px",textAlign:"center",fontWeight:900,color:T.navy}}>{tr?fmtN((tr.galonesInicial||0)-(tr.galonesFinal||0),0):"—"}</td>
+                        </tr>
+                      );
+                    });
+                  })()}</tbody>
+                </table>
+              </div>
+            )}
+            <div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}>
+              <button onClick={()=>setModal(null)} style={{background:T.navy,color:"#fff",border:"none",borderRadius:8,padding:"10px 28px",fontWeight:700,cursor:"pointer"}}>Cerrar</button>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {modal==="cmt" && (
         <Modal title={form.id ? `Corregir CMT — ${form.numero_cmt}` : "Control de Movimiento de Tanques"} onClose={()=>setModal(null)} wide inline>

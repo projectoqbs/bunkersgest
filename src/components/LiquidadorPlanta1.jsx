@@ -262,8 +262,9 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
           galonesFinal:rf?Math.round(rf.glsN):0,
         };
       });
-      const tanquesAntes = tanquesRecepcion.map(t=>({tanque:t.tanque,sonda:t.sondaInicial,galones:t.galonesInicial}));
-      const tanquesDespues = tanquesRecepcion.map(t=>({tanque:t.tanque,producto:despachoCtx?.prod||registro.producto||"",sonda:t.sondaFinal,galones:t.galonesFinal}));
+      const prod = despachoCtx?.prod||registro.producto||"";
+      const tanquesAntes = tanquesRecepcion.map(t=>({tanque:t.tanque,sonda:t.sondaInicial,temp:t.tempInicial,api:t.apiInicial,galones:t.galonesInicial,producto:prod}));
+      const tanquesDespues = tanquesRecepcion.map(t=>({tanque:t.tanque,sonda:t.sondaFinal,temp:t.tempFinal,api:t.apiFinal,galones:t.galonesFinal,producto:prod}));
       const totalAntes = tanquesAntes.reduce((s,t)=>s+(Number(t.galones)||0),0);
       const totalDespues = tanquesDespues.reduce((s,t)=>s+(Number(t.galones)||0),0);
 
