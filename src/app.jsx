@@ -483,6 +483,7 @@ export default function App() {
   const [flotaElimPlaca, setFlotaElimPlaca] = useState("");
   const [flotaElimConfirm, setFlotaElimConfirm] = useState(false);
   const [flotaAccion, setFlotaAccion] = useState("");
+  const [despachoSeccion, setDespachoSeccion] = useState("buques");
   const [flotaEditCampo, setFlotaEditCampo] = useState("");
   const [flotaEditValor, setFlotaEditValor] = useState("");
   const [analisisNav, setAnalisisNav] = useState("");
@@ -4079,9 +4080,29 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {/* DESPACHO */}
           {nav==="despacho" && (
             <div>
+              {/* Cabecera + selector submenú */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+                <div>
+                  <div style={{fontWeight:800,fontSize:20,color:T.navy}}>Despacho</div>
+                  <div style={{fontSize:11,color:T.muted}}>Operaciones de despacho a buques</div>
+                </div>
+                <div style={{display:"flex",gap:0,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
+                  {[{k:"buques",label:"🚢 Listado Buques"}].map(({k,label})=>(
+                    <button key={k} onClick={()=>setDespachoSeccion(k)}
+                      style={{padding:"8px 22px",fontWeight:700,fontSize:12,cursor:"pointer",border:"none",outline:"none",
+                        background:despachoSeccion===k?T.navy:T.card,
+                        color:despachoSeccion===k?"#fff":T.muted,transition:"background 0.2s"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* LISTADO BUQUES */}
+              {despachoSeccion==="buques" && <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
-                  <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Despacho a Buques</div>
+                  <div style={{ fontWeight:800, fontSize:16, color:T.navy }}>Listado Buques</div>
                   <div style={{ fontSize:11, color:T.muted }}>Carga en barcaza → manguera al buque</div>
                 </div>
                 <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -4130,6 +4151,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </tbody>
               </table>
               </div>
+              </div>}
             </div>
           )}
 
