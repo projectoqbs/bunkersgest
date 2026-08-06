@@ -454,7 +454,8 @@ export default function App() {
   const [viajesFiltroEstado, setViajesFiltroEstado] = useState("");
   const [viajesFiltroProducto, setViajesFiltroProducto] = useState("");
   const [viajesFiltroTrans, setViajesFiltroTrans] = useState("");
-  const [dashFamilia, setDashFamilia] = useState("negro");
+  const [dashFamilia, setDashFamiliaRaw] = useState(()=>localStorage.getItem("dashFamilia")||"negro");
+  const setDashFamilia = v => { setDashFamiliaRaw(v); localStorage.setItem("dashFamilia",v); };
   const [tankFamilias, setTankFamilias] = useState(() => { try { return JSON.parse(localStorage.getItem("tankFamilias")||"{}"); } catch{ return {}; } });
   const [modalTankAdmin, setModalTankAdmin] = useState(false);
   const [viajesFiltroFechaD, setViajesFiltroFechaD] = useState("");
