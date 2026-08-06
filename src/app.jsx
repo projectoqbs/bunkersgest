@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
 import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
+import InventarioDiario from "./components/InventarioDiario";
 import { calcularGalonesP1, parseTankId } from "./utils/aforoP1";
 import LiquidadorPlanta2 from "./components/LiquidadorPlanta2";
 import { LayoutDashboard, Truck, FlaskConical, Settings2, ClipboardList, Cylinder, Ship, Search, Users, CalendarDays, Calculator, RefreshCw, Crown, BarChart2, Package, Lock, AlertTriangle, CheckCircle, X, Pencil, Trash2, Save, Fuel, Anchor, MapPin, ArrowDownToLine, Wrench, HardHat, Factory, Clock, CircleCheck, CirclePause, Timer, Beaker, ChevronRight, GaugeCircle, Droplets, Flame } from "lucide-react";
@@ -167,13 +168,14 @@ const NAV_META = {
   usuarios:      { label:"Usuarios",      icon:"👥" },
   programacion:  { label:"Programación",  icon:"📅" },
   liquidador:    { label:"Liquidador",    icon:"🔢" },
+  inventario_diario: { label:"Inventario Diario", icon:"📊" },
 };
 
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
-  operaciones: ["dashboard","pbs","trazabilidad","liquidador"],
-  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad","liquidador"],
+  operaciones: ["dashboard","pbs","trazabilidad","liquidador","inventario_diario"],
+  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad","liquidador","inventario_diario"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador: [
     "dashboard",
@@ -186,6 +188,7 @@ const NAV_ROL = {
     "programacion",
     "tanques",
     "liquidador",
+    "inventario_diario",
   ],
 };
 
@@ -1925,7 +1928,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
               despacho:     { icon:"🚢", label:"DESPACHO",      subs:[{id:"despacho",label:"Listado Buques"},{id:"despacho_entrega",label:"Entrega"},{id:"despacho_historial",label:"Historial"}] },
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
-              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"}] },
+              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"inventario_diario",label:"Inventario Diario"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
               liquidador:   { icon:"🔢", label:"LIQUIDADOR",    subs:[{id:"liquidador",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
               tanques:      { icon:"🛢", label:"TANQUES",        subs:[{id:"tanques",label:"Planta 2 (TK-111–117)"},{id:"tanques_p1",label:"Planta 1 — QBS002"}] },
@@ -7118,6 +7121,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 {/* LIQUIDADOR PLANTA 2 */}
 {nav==="liquidador_p2" && (
   <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading}/>
+)}
+
+{/* INVENTARIO DIARIO */}
+{nav==="inventario_diario" && (
+  <InventarioDiario supabase={supabase} session={session} perfil={perfil} showToast={showToast} tanques={tanques} dbCall={dbCall}/>
 )}
 
 {/* ═══ MODAL NUEVA OT ═══ */}
