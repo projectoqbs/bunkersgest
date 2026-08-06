@@ -114,11 +114,14 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   const [tanqueSeleccionado, setTanqueSeleccionado] = useState("");
 
   // Balance diario
-  const [balanceFecha, setBalanceFecha] = useState(new Date().toISOString().split("T")[0]);
-  const [balancePlanta, setBalancePlanta] = useState("P1");
-  const [balanceCmtsAll, setBalanceCmtsAll] = useState([]);
-  const [balanceInvsAll, setBalanceInvsAll] = useState([]);
-  const [loadingBalance, setLoadingBalance] = useState(false);
+  const [balancePlanta, setBalancePlanta]     = useState("P1");
+  const [balanceDesde,  setBalanceDesde]      = useState(()=>{ const d=new Date(); d.setDate(d.getDate()-6); return d.toISOString().split("T")[0]; });
+  const [balanceHasta,  setBalanceHasta]      = useState(()=>new Date().toISOString().split("T")[0]);
+  const [balanceInvsRango, setBalanceInvsRango] = useState([]);
+  const [balanceFechaDia,  setBalanceFechaDia]  = useState(()=>new Date().toISOString().split("T")[0]);
+  const [balanceCmtsDia,   setBalanceCmtsDia]   = useState([]);
+  const [loadingBalance,   setLoadingBalance]   = useState(false);
+  const [loadingDia,       setLoadingDia]       = useState(false);
 
   const trim = mkTrim(calados.popaIni, calados.proaIni);
 
@@ -130,20 +133,27 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     setLoadingHist(false);
   }, [dbCall]);
 
-  const loadBalance = useCallback(async (fecha) => {
+  const loadBalance = useCallback(async (desde, hasta) => {
     setLoadingBalance(true);
-    const [{ data: cmtsData }, { data: invsData }] = await Promise.all([
-      dbCall({ table:"cmts", op:"select", select:"*", filters:[{col:"fecha",val:fecha}], single:false }),
-      dbCall({ table:"inventarios_diarios", op:"select", select:"*", filters:[{col:"fecha",val:fecha}], single:false }),
-    ]);
-    setBalanceCmtsAll(cmtsData||[]);
-    setBalanceInvsAll(invsData||[]);
+    const { data } = await dbCall({
+      table:"inventarios_diarios", op:"select", select:"*",
+      filters:[{col:"fecha",op:"gte",val:desde},{col:"fecha",op:"lte",val:hasta}],
+      single:false
+    });
+    setBalanceInvsRango(data||[]);
     setLoadingBalance(false);
+  }, [dbCall]);
+
+  const loadCmtsDia = useCallback(async (fecha) => {
+    setLoadingDia(true);
+    const { data } = await dbCall({ table:"cmts", op:"select", select:"*", filters:[{col:"fecha",val:fecha}], single:false });
+    setBalanceCmtsDia(data||[]);
+    setLoadingDia(false);
   }, [dbCall]);
 
   useEffect(() => {
     if(activeTab==="historial"||activeTab==="analisis") loadHist();
-    if(activeTab==="balance") loadBalance(balanceFecha);
+    if(activeTab==="balance"){ loadBalance(balanceDesde, balanceHasta); loadCmtsDia(balanceFechaDia); }
   }, [activeTab, loadHist]);
 
   // ── Calc helpers ─────────────────────────────────────────────────────────────
@@ -392,172 +402,235 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
   // ── Balance Diario ───────────────────────────────────────────────────────────
   function renderBalance(){
-    if(loadingBalance) return <div style={{color:TH.muted,padding:32,textAlign:"center"}}>Cargando balance...</div>;
-
     const plantaLabel = balancePlanta==="P1" ? "PLANTA 1" : "PLANTA 2";
+    const tanquesPlanta = balancePlanta==="P1"
+      ? [...TANQUES_BARCAZA.map(t=>`QBS002-${t}`), ...TANQUES_TKT]
+      : TANQUES_P2;
 
-    // Filtrar por planta seleccionada
-    const balanceInvs = balanceInvsAll.filter(i => i.planta === plantaLabel);
-    const balanceCmts = balanceCmtsAll.filter(c => c.planta === plantaLabel);
+    // ── Matriz inventario físico día a día ──────────────────────────────────
+    const invsPlanta = balanceInvsRango.filter(i => i.planta === plantaLabel);
+    const fechas = [...new Set(invsPlanta.map(i=>i.fecha))].sort();
 
-    // Tomar el único inventario del día (el del inicio de turno)
-    const invInicial = balanceInvs.sort((a,b)=>a.created_at?.localeCompare(b.created_at||"")||0)[0] || null;
-    const totalInicial = invInicial ? (invInicial.tanques||[]).reduce((s,t)=>s+(Number(t.galones_calculados)||0),0) : null;
+    // matrix[tanque][fecha] = galones_calculados
+    const matrix = {};
+    for(const inv of invsPlanta){
+      for(const t of (inv.tanques||[])){
+        if(!matrix[t.tanque]) matrix[t.tanque] = {};
+        matrix[t.tanque][inv.fecha] = Number(t.galones_calculados)||0;
+      }
+    }
+    // máximo por tanque (para la barra proporcional)
+    const maxPorTanque = {};
+    for(const tq of tanquesPlanta){
+      maxPorTanque[tq] = Math.max(...fechas.map(f=>matrix[tq]?.[f]||0), 1);
+    }
 
-    // Clasificar CMTs por tipo_operacion
-    const movimientos = balanceCmts.map(c => {
+    // ── Balance del día seleccionado ────────────────────────────────────────
+    const cmtsPlanta  = balanceCmtsDia.filter(c => c.planta === plantaLabel);
+    const invDia      = invsPlanta.find(i => i.fecha === balanceFechaDia) || null;
+    const totalInicial= invDia ? (invDia.tanques||[]).reduce((s,t)=>s+(Number(t.galones_calculados)||0),0) : null;
+
+    const movimientos = cmtsPlanta.map(c => {
       const antes  = Number(c.total_antes||0);
       const despues= Number(c.total_despues||0);
       const movido = Number(c.total_movido||0);
       const tipo   = (c.tipo_operacion||"").toUpperCase();
       let esEntrada;
       if(tipo.includes("DESCARGUE")) esEntrada = true;
-      else if(tipo.includes("ENTREGA") || tipo.includes("PORTEO")) esEntrada = false;
+      else if(tipo.includes("ENTREGA")||tipo.includes("PORTEO")) esEntrada = false;
       else esEntrada = (despues - antes) >= 0;
-      return {
-        id: c.numero_cmt||c.id,
-        tipo: c.tipo_operacion||"—",
-        galones: movido,
-        esEntrada,
-        obs: c.nombre_motonave || (c.carros||[]).map(r=>r.placa).join(", ") || "",
-      };
-    }).filter(m => m.galones > 0);
+      return { id:c.numero_cmt||c.id, tipo:c.tipo_operacion||"—", galones:movido, esEntrada,
+               obs:c.nombre_motonave||(c.carros||[]).map(r=>r.placa).join(", ")||"" };
+    }).filter(m=>m.galones>0);
 
-    const totalEntradas = movimientos.filter(m=>m.esEntrada).reduce((s,m)=>s+m.galones, 0);
-    const totalSalidas  = movimientos.filter(m=>!m.esEntrada).reduce((s,m)=>s+m.galones, 0);
+    const totalEntradas = movimientos.filter(m=>m.esEntrada).reduce((s,m)=>s+m.galones,0);
+    const totalSalidas  = movimientos.filter(m=>!m.esEntrada).reduce((s,m)=>s+m.galones,0);
     const teorico = totalInicial !== null ? totalInicial + totalEntradas - totalSalidas : null;
 
-    const noData = totalInicial === null && movimientos.length === 0;
+    const fmtFecha = f => new Date(f+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"short"});
 
     return (
       <div>
-        {/* Selector fecha + planta */}
-        <div style={{display:"flex",gap:16,marginBottom:20,flexWrap:"wrap",alignItems:"flex-end"}}>
-          <div>
-            <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Fecha</div>
-            <input type="date" value={balanceFecha} onChange={e=>{setBalanceFecha(e.target.value); loadBalance(e.target.value);}}
-              style={{padding:"7px 12px",border:`1px solid ${TH.border}`,borderRadius:6,fontSize:13,color:TH.text,background:TH.card}}/>
-          </div>
+        {/* ── Controles ── */}
+        <div style={{display:"flex",gap:12,marginBottom:18,flexWrap:"wrap",alignItems:"flex-end"}}>
           <div style={{display:"flex",gap:0,borderRadius:8,overflow:"hidden",border:`1px solid ${TH.border}`}}>
             {[{k:"P1",l:"Planta 1"},{k:"P2",l:"Planta 2"}].map(({k,l})=>(
               <button key={k} onClick={()=>setBalancePlanta(k)}
                 style={{padding:"7px 20px",fontWeight:700,fontSize:12,cursor:"pointer",
-                  background:balancePlanta===k?TH.navy:TH.card, color:balancePlanta===k?"#fff":TH.muted, border:"none"}}>
+                  background:balancePlanta===k?TH.navy:TH.card,color:balancePlanta===k?"#fff":TH.muted,border:"none"}}>
                 {l}
               </button>
             ))}
           </div>
+          {[{lbl:"Desde",val:balanceDesde,set:setBalanceDesde},{lbl:"Hasta",val:balanceHasta,set:setBalanceHasta}].map(({lbl,val,set})=>(
+            <div key={lbl}>
+              <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{lbl}</div>
+              <input type="date" value={val}
+                onChange={e=>{ set(e.target.value); loadBalance(lbl==="Desde"?e.target.value:balanceDesde, lbl==="Hasta"?e.target.value:balanceHasta); }}
+                style={{padding:"7px 10px",border:`1px solid ${TH.border}`,borderRadius:6,fontSize:13,color:TH.text,background:TH.card}}/>
+            </div>
+          ))}
         </div>
 
-        {noData && (
-          <div style={{padding:"28px 0",textAlign:"center",color:TH.muted,fontSize:14}}>
-            No hay inventario ni CMTs registrados para {plantaLabel} el {new Date(balanceFecha+"T12:00:00").toLocaleDateString("es-CO")}
+        {/* ── Matriz inventario físico ── */}
+        {loadingBalance ? (
+          <div style={{color:TH.muted,padding:24,textAlign:"center"}}>Cargando inventarios...</div>
+        ) : fechas.length === 0 ? (
+          <div style={{padding:"24px 0",textAlign:"center",color:TH.muted,fontSize:14}}>
+            Sin inventarios físicos registrados para {plantaLabel} en el período seleccionado
+          </div>
+        ) : (
+          <div style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`,marginBottom:20}}>
+            <table style={{borderCollapse:"collapse",width:"100%",minWidth:300+fechas.length*110}}>
+              <thead>
+                <tr style={{background:TH.navy}}>
+                  <th style={{padding:"10px 16px",textAlign:"left",color:"#fff",fontSize:12,fontWeight:700,
+                    position:"sticky",left:0,background:TH.navy,zIndex:2,whiteSpace:"nowrap",minWidth:140}}>
+                    Tanque
+                  </th>
+                  {fechas.map(f=>(
+                    <th key={f} onClick={()=>{ setBalanceFechaDia(f); loadCmtsDia(f); }}
+                      style={{padding:"10px 14px",color:f===balanceFechaDia?"#FFD700":"#b8d4ee",fontSize:11,fontWeight:700,
+                        cursor:"pointer",minWidth:110,textAlign:"center",whiteSpace:"nowrap",
+                        background:f===balanceFechaDia?"#005299":TH.navy,
+                        borderLeft:`1px solid #ffffff22`,transition:"background 0.15s"}}>
+                      {fmtFecha(f)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {tanquesPlanta.map((tq,ri)=>{
+                  const hasAnyData = fechas.some(f=>matrix[tq]?.[f]!==undefined);
+                  return(
+                    <tr key={tq} style={{background:ri%2===0?TH.card:"#f4f7fb"}}>
+                      <td style={{padding:"10px 16px",fontWeight:700,color:TH.navy,fontSize:12,
+                        whiteSpace:"nowrap",position:"sticky",left:0,
+                        background:ri%2===0?TH.card:"#f4f7fb",zIndex:1,
+                        borderRight:`2px solid ${TH.border}`}}>
+                        {tq}
+                      </td>
+                      {fechas.map(f=>{
+                        const gls = matrix[tq]?.[f];
+                        const pct = gls ? Math.round((gls/maxPorTanque[tq])*100) : 0;
+                        const isSelected = f===balanceFechaDia;
+                        return(
+                          <td key={f} onClick={()=>{ setBalanceFechaDia(f); loadCmtsDia(f); }}
+                            style={{padding:"8px 14px",textAlign:"right",cursor:"pointer",
+                              borderLeft:`1px solid ${TH.border}`,
+                              background:isSelected?"#e8f4fd":undefined,
+                              transition:"background 0.15s"}}>
+                            {gls !== undefined ? (
+                              <div>
+                                <div style={{fontFamily:"monospace",fontWeight:700,color:TH.navy,fontSize:12}}>
+                                  {fmtN(gls,0)}
+                                </div>
+                                <div style={{marginTop:4,height:5,borderRadius:3,background:TH.border,overflow:"hidden"}}>
+                                  <div style={{width:`${pct}%`,height:"100%",background:TH.orange,borderRadius:3}}/>
+                                </div>
+                              </div>
+                            ) : (
+                              <span style={{color:TH.border,fontSize:13,fontWeight:300}}>—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+                {/* Fila total por fecha */}
+                <tr style={{background:"#eaf0f8",borderTop:`2px solid ${TH.navy}`}}>
+                  <td style={{padding:"10px 16px",fontWeight:900,color:TH.navy,fontSize:12,
+                    position:"sticky",left:0,background:"#eaf0f8",zIndex:1,
+                    borderRight:`2px solid ${TH.border}`}}>
+                    TOTAL
+                  </td>
+                  {fechas.map(f=>{
+                    const total = tanquesPlanta.reduce((s,tq)=>s+(matrix[tq]?.[f]||0),0);
+                    const isSelected = f===balanceFechaDia;
+                    return(
+                      <td key={f} style={{padding:"10px 14px",textAlign:"right",
+                        borderLeft:`1px solid ${TH.border}`,
+                        background:isSelected?"#d4eaf8":"#eaf0f8"}}>
+                        <span style={{fontFamily:"monospace",fontWeight:900,color:TH.navy,fontSize:13}}>
+                          {total > 0 ? fmtN(total,0) : "—"}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
           </div>
         )}
 
-        {!noData && (
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-
-            {/* ── INVENTARIO INICIAL ── */}
-            <div style={{background:TH.card,borderRadius:10,border:`2px solid ${TH.navy}`,overflow:"hidden"}}>
-              <div style={{background:TH.navy,padding:"10px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{color:"#fff",fontWeight:800,fontSize:13}}>📦 INVENTARIO INICIAL</div>
-                <div style={{color:"#aac8e8",fontSize:11}}>{invInicial ? `${invInicial.turno||""} · ${invInicial.operador||""}` : "Sin registro"}</div>
-              </div>
-              {invInicial ? (
-                <div style={{padding:"12px 18px"}}>
-                  <div style={{display:"flex",gap:24,flexWrap:"wrap",marginBottom:10}}>
-                    {(invInicial.tanques||[]).map(t=>(
-                      <div key={t.tanque} style={{fontSize:12,color:TH.muted}}>
-                        <span style={{fontWeight:700,color:TH.navy}}>{t.tanque}</span>: {fmtN(t.galones_calculados,0)} gls
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{fontWeight:900,fontSize:18,color:TH.navy}}>
-                    Total: {fmtN(totalInicial,0)} <span style={{fontSize:13,fontWeight:400}}>galones</span>
-                  </div>
-                </div>
-              ) : (
-                <div style={{padding:"12px 18px",color:TH.muted,fontSize:13}}>
-                  No se registró inventario físico para este día. Sin él no se puede calcular el teórico.
-                </div>
-              )}
+        {/* ── Balance del día seleccionado ── */}
+        <div style={{background:TH.card,borderRadius:10,border:`2px solid ${TH.navy}`,overflow:"hidden"}}>
+          <div style={{background:TH.navy,padding:"10px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{color:"#fff",fontWeight:800,fontSize:13}}>
+              ⚖ BALANCE — {fmtFecha(balanceFechaDia)}
             </div>
-
-            {/* ── ENTRADAS ── */}
-            {movimientos.filter(m=>m.esEntrada).length > 0 && (
-              <div style={{background:TH.card,borderRadius:10,border:`1px solid ${TH.border}`,overflow:"hidden"}}>
-                <div style={{background:`${TH.success}18`,borderBottom:`1px solid ${TH.border}`,padding:"10px 18px",display:"flex",justifyContent:"space-between"}}>
-                  <div style={{fontWeight:800,fontSize:13,color:TH.success}}>↓ ENTRADAS</div>
-                  <div style={{fontWeight:800,fontSize:13,color:TH.success}}>+{fmtN(totalEntradas,0)} gls</div>
-                </div>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-                  <tbody>
-                    {movimientos.filter(m=>m.esEntrada).map((m,i)=>(
-                      <tr key={i} style={{borderBottom:`1px solid ${TH.border}`}}>
-                        <td style={{padding:"8px 18px",fontFamily:"monospace",fontWeight:700,color:TH.navy,width:160}}>{m.id}</td>
-                        <td style={{padding:"8px 10px",color:TH.muted}}>{m.tipo}</td>
-                        <td style={{padding:"8px 10px",color:TH.muted,fontSize:11}}>{m.obs}</td>
-                        <td style={{padding:"8px 18px",textAlign:"right",fontWeight:700,color:TH.success,fontFamily:"monospace"}}>+{fmtN(m.galones,0)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* ── SALIDAS ── */}
-            {movimientos.filter(m=>!m.esEntrada).length > 0 && (
-              <div style={{background:TH.card,borderRadius:10,border:`1px solid ${TH.border}`,overflow:"hidden"}}>
-                <div style={{background:`${TH.danger}12`,borderBottom:`1px solid ${TH.border}`,padding:"10px 18px",display:"flex",justifyContent:"space-between"}}>
-                  <div style={{fontWeight:800,fontSize:13,color:TH.danger}}>↑ SALIDAS</div>
-                  <div style={{fontWeight:800,fontSize:13,color:TH.danger}}>-{fmtN(totalSalidas,0)} gls</div>
-                </div>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-                  <tbody>
-                    {movimientos.filter(m=>!m.esEntrada).map((m,i)=>(
-                      <tr key={i} style={{borderBottom:`1px solid ${TH.border}`}}>
-                        <td style={{padding:"8px 18px",fontFamily:"monospace",fontWeight:700,color:TH.navy,width:160}}>{m.id}</td>
-                        <td style={{padding:"8px 10px",color:TH.muted}}>{m.tipo}</td>
-                        <td style={{padding:"8px 10px",color:TH.muted,fontSize:11}}>{m.obs}</td>
-                        <td style={{padding:"8px 18px",textAlign:"right",fontWeight:700,color:TH.danger,fontFamily:"monospace"}}>-{fmtN(m.galones,0)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {movimientos.length === 0 && (
-              <div style={{padding:"14px 18px",background:`${TH.muted}10`,borderRadius:8,color:TH.muted,fontSize:13,textAlign:"center"}}>
-                Sin movimientos (CMTs) registrados para este día en {plantaLabel}
-              </div>
-            )}
-
-            {/* ── INVENTARIO TEÓRICO ACTUAL ── */}
-            <div style={{background:TH.card,borderRadius:10,border:`2px solid ${TH.orange}`,padding:"16px 20px"}}>
-              <div style={{fontWeight:800,fontSize:13,color:TH.orange,marginBottom:10}}>= INVENTARIO TEÓRICO ACTUAL</div>
-              <div style={{fontSize:13,color:TH.muted,marginBottom:8,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                <span style={{fontFamily:"monospace",color:TH.navy,fontWeight:700}}>{fmtN(totalInicial,0)}</span>
-                <span>+</span>
-                <span style={{fontFamily:"monospace",color:TH.success,fontWeight:700}}>{fmtN(totalEntradas,0)}</span>
-                <span>−</span>
-                <span style={{fontFamily:"monospace",color:TH.danger,fontWeight:700}}>{fmtN(totalSalidas,0)}</span>
-                <span>=</span>
-                <span style={{fontFamily:"monospace",color:TH.orange,fontWeight:900,fontSize:18}}>
-                  {teorico !== null ? fmtN(teorico,0) : "—"}
-                </span>
-                <span style={{fontSize:12,color:TH.muted}}>galones</span>
-              </div>
-              {totalInicial === null && (
-                <div style={{fontSize:12,color:TH.muted,marginTop:6}}>
-                  Registra el inventario físico del día para obtener el teórico.
-                </div>
-              )}
-            </div>
-
+            <div style={{color:"#aac8e8",fontSize:11}}>{plantaLabel}</div>
           </div>
-        )}
+          <div style={{padding:"14px 18px"}}>
+            {loadingDia ? (
+              <div style={{color:TH.muted,fontSize:13}}>Cargando movimientos...</div>
+            ) : (
+              <>
+                {/* Fórmula */}
+                <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:14,
+                  padding:"12px 16px",background:"#f4f7fb",borderRadius:8,fontSize:13}}>
+                  <span style={{fontFamily:"monospace",color:TH.navy,fontWeight:700}}>
+                    {totalInicial !== null ? fmtN(totalInicial,0) : "—"}
+                  </span>
+                  <span style={{color:TH.muted}}>Inicial</span>
+                  <span style={{color:TH.muted,fontSize:16}}>+</span>
+                  <span style={{fontFamily:"monospace",color:TH.success,fontWeight:700}}>{fmtN(totalEntradas,0)}</span>
+                  <span style={{color:TH.muted}}>Entradas</span>
+                  <span style={{color:TH.muted,fontSize:16}}>−</span>
+                  <span style={{fontFamily:"monospace",color:TH.danger,fontWeight:700}}>{fmtN(totalSalidas,0)}</span>
+                  <span style={{color:TH.muted}}>Salidas</span>
+                  <span style={{color:TH.muted,fontSize:16}}>=</span>
+                  <span style={{fontFamily:"monospace",color:TH.orange,fontWeight:900,fontSize:18}}>
+                    {teorico !== null ? fmtN(teorico,0) : "—"}
+                  </span>
+                  <span style={{color:TH.muted,fontSize:12}}>gls teórico</span>
+                </div>
+
+                {/* CMTs */}
+                {movimientos.length > 0 ? (
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                    <thead>
+                      <tr style={{background:"#f0f4f8"}}>
+                        <th style={{padding:"6px 12px",textAlign:"left",color:TH.navy,fontWeight:700}}>CMT</th>
+                        <th style={{padding:"6px 12px",textAlign:"left",color:TH.navy,fontWeight:700}}>Operación</th>
+                        <th style={{padding:"6px 12px",textAlign:"left",color:TH.navy,fontWeight:700}}>Referencia</th>
+                        <th style={{padding:"6px 12px",textAlign:"right",color:TH.navy,fontWeight:700}}>Galones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {movimientos.map((m,i)=>(
+                        <tr key={i} style={{borderTop:`1px solid ${TH.border}`}}>
+                          <td style={{padding:"7px 12px",fontFamily:"monospace",fontWeight:700,color:TH.navy}}>{m.id}</td>
+                          <td style={{padding:"7px 12px",color:TH.muted}}>{m.tipo}</td>
+                          <td style={{padding:"7px 12px",color:TH.muted,fontSize:11}}>{m.obs}</td>
+                          <td style={{padding:"7px 12px",textAlign:"right",fontWeight:700,
+                            color:m.esEntrada?TH.success:TH.danger,fontFamily:"monospace"}}>
+                            {m.esEntrada?"+":"-"}{fmtN(m.galones,0)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div style={{color:TH.muted,fontSize:13,textAlign:"center",padding:"8px 0"}}>
+                    Sin CMTs registrados para {plantaLabel} el {fmtFecha(balanceFechaDia)}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
     );
   }

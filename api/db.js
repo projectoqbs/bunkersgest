@@ -41,7 +41,13 @@ export default async function handler(req, res) {
       result = await qDel;
     } else if (op === "select") {
       let qSel = q.select(select);
-      for (const { col, val } of filters) qSel = qSel.eq(col, val);
+      for (const { col, op: fop = "eq", val } of filters) {
+        if      (fop === "gte") qSel = qSel.gte(col, val);
+        else if (fop === "lte") qSel = qSel.lte(col, val);
+        else if (fop === "gt")  qSel = qSel.gt(col, val);
+        else if (fop === "lt")  qSel = qSel.lt(col, val);
+        else                    qSel = qSel.eq(col, val);
+      }
       if (single) qSel = qSel.maybeSingle();
       result = await qSel;
     } else {
