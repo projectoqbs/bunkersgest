@@ -4281,7 +4281,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={{...tdS,color:T.muted}}>{j===0?(d.destino||d.puerto||"—"):""}</td>
                             <td style={{...tdS,color:T.muted}}>{j===0?(d.ciudad||"—"):""}</td>
                             <td style={{...tdS,color:T.muted}}>{j===0?(d.contrato||"—"):""}</td>
-                            <td style={{...tdS,textAlign:"center",color:T.muted}}>{j===0?(d.updated_at?new Date(d.updated_at).toLocaleDateString("es-CO"):"—"):""}</td>
+                            <td style={{...tdS,textAlign:"center",color:T.muted}}>{j===0?(d.fecha_entrega?new Date(d.fecha_entrega+"T12:00:00").toLocaleDateString("es-CO"):"—"):""}</td>
                             <td style={{...tdS,textAlign:"center"}}>{j===0&&<span style={{background:`${T.success}22`,color:T.success,padding:"2px 10px",borderRadius:10,fontWeight:700,fontSize:10}}>ENTREGADO</span>}</td>
                           </tr>
                         ));
