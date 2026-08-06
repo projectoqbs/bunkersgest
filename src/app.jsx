@@ -3376,7 +3376,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                       </div>
                                     </div>
                                   )}
-                                  {(["TRASIEGO DE PRODUCTO","ENTREGA A MOTONAVE"].includes(c.tipo_operacion||"")) && (c.tanques_recepcion||[]).length>0 && (
+                                  {(c.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && (c.tanques_recepcion||[]).length>0 && (
                                     <div style={{background:"#ffffff",borderRadius:8,padding:"12px 14px",border:`1px solid ${T.border}`,borderLeft:"3px solid #10b981",gridColumn:"1/-1"}}>
                                       <div style={{fontSize:10,color:"#10b981",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Tanque de Recepción</div>
                                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:8}}>
@@ -6424,7 +6424,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               }
             </div>
           </div>)}
-          {(["TRASIEGO DE PRODUCTO","ENTREGA A MOTONAVE"].includes(form.tipo_operacion||"")) && <div style={{marginBottom:18}}>
+          {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && <div style={{marginBottom:18}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.success}33`}}>
               <span style={{fontSize:11,fontWeight:700,color:T.success,letterSpacing:1,textTransform:"uppercase"}}>
                 {(form.tipo_operacion||"")==="ENTREGA A MOTONAVE" ? "Medidas de Tanques Barcaza" : "Tanque de Recepción"}
