@@ -6324,7 +6324,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             gls_flowmeter: n(ef.gls_flowmeter),
             factor:        n(ef.factor),
           };
-          // coordinador/operador se omiten del patch hasta que el schema cache de PostgREST se refresque
+          patch.coordinador = ef.coordinador;
+          patch.operador    = ef.operador;
           const { error } = await dbCall({ table:"liquidaciones_qbs002", op:"update", data:patch, filters:[{col:"id",val:liq.id}] });
           setLiqSaving(false);
           if(error){ showToast("Error al guardar: "+error,"error"); return; }
