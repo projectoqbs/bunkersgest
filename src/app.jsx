@@ -6833,9 +6833,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <Inp label="MT VLSO" type="number" placeholder="0" value={form.mt_vlso||""} onChange={f("mt_vlso")}/>
             <Inp label="MT HSFO" type="number" placeholder="0" value={form.mt_hsfo||""} onChange={f("mt_hsfo")}/>
             <Inp label="MT MGO" type="number" placeholder="0" value={form.mt_mgo||""} onChange={f("mt_mgo")}/>
-            <Inp label="Puerto" type="text" placeholder="SPSM / Cartagena / Palermo" value={form.destino||""} onChange={f("destino")}/>
+            <Inp label="Ciudad" type="text" placeholder="Barranquilla / Cartagena / Santa Marta" value={form.ciudad||perfil.sede||""} onChange={f("ciudad")}/>
+            <Inp label="Puerto de Entrega" type="text" placeholder="SPRB / SPSM / Palermo / ..." value={form.destino||""} onChange={f("destino")}/>
             <Inp label="Contrato" type="text" placeholder="N° Contrato" value={form.contrato||""} onChange={f("contrato")}/>
-            <Inp label="Ciudad / Sede" type="text" placeholder="Barranquilla / Santa Marta ..." value={form.ciudad||perfil.sede||""} onChange={f("ciudad")}/>
             <Sel label="Estado" value={form.estado||"PENDIENTE"} onChange={f("estado")}>
               {["PENDIENTE","EN OPERACIÓN","COMPLETADO","CANCELADO"].map(s=><option key={s}>{s}</option>)}
             </Sel>
