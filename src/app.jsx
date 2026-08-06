@@ -2017,7 +2017,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               "QBS002-4B":47110,"QBS002-4E":47144,
               "QBS002-5B":27194,"QBS002-5E":26935,
             };
-            const tkCap = t => Number(t.capacidad) || CAP_QBS002_DASH[t.id] || 27000;
+            const tkCap = t => Math.round((Number(t.capacidad) || CAP_QBS002_DASH[t.id] || 27000) * 0.9);
             const isPlanta1 = id => id.startsWith("QBS002") || id === "TKT-1" || id === "TKT-2";
             const isPlanta2 = id => id.startsWith("TK-");
 
