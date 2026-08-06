@@ -426,7 +426,12 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     }
 
     // ── Balance del día seleccionado ────────────────────────────────────────
-    const cmtsPlanta  = balanceCmtsDia.filter(c => c.planta === plantaLabel);
+    // CMTs P1 pueden tener planta="PLANTA 1" o "QBS002" o nombre de barcaza
+    const cmtsPlanta = balanceCmtsDia.filter(c =>
+      balancePlanta === "P1"
+        ? (c.planta === "PLANTA 1" || c.planta === "QBS002" || (c.planta||"").startsWith("QBS"))
+        : c.planta === "PLANTA 2"
+    );
     // Inventario inicial = el más reciente ANTES del día seleccionado
     const invsOrdenados = [...invsPlanta].sort((a,b)=>a.fecha.localeCompare(b.fecha));
     const invInicial  = [...invsOrdenados].reverse().find(i => i.fecha < balanceFechaDia)
