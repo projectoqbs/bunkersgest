@@ -481,11 +481,11 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           </div>
         ) : (
           <div style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`,marginBottom:20}}>
-            <table style={{borderCollapse:"collapse",width:"100%",minWidth:300+fechas.length*110}}>
+            <table style={{borderCollapse:"collapse",tableLayout:"auto"}}>
               <thead>
                 <tr style={{background:TH.navy}}>
                   <th style={{padding:"10px 16px",textAlign:"left",color:"#fff",fontSize:12,fontWeight:700,
-                    position:"sticky",left:0,background:TH.navy,zIndex:2,whiteSpace:"nowrap",minWidth:140}}>
+                    position:"sticky",left:0,background:TH.navy,zIndex:2,whiteSpace:"nowrap"}}>
                     Tanque
                   </th>
                   {fechas.map(f=>(
@@ -559,72 +559,109 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           </div>
         )}
 
-        {/* ── Balance del día seleccionado ── */}
-        <div style={{background:TH.card,borderRadius:10,border:`2px solid ${TH.navy}`,overflow:"hidden"}}>
-          <div style={{background:TH.navy,padding:"10px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{color:"#fff",fontWeight:800,fontSize:13}}>
-              ⚖ BALANCE — {fmtFecha(balanceFechaDia)}
+        {/* ── Factura de balance ── */}
+        <div style={{background:TH.card,borderRadius:10,border:`2px solid ${TH.navy}`,overflow:"hidden",maxWidth:560}}>
+          {/* Cabecera */}
+          <div style={{background:TH.navy,padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{color:"#fff",fontWeight:800,fontSize:13,letterSpacing:0.5}}>
+              BALANCE DIARIO
             </div>
-            <div style={{color:"#aac8e8",fontSize:11}}>{plantaLabel}</div>
+            <div style={{color:"#aac8e8",fontSize:12,fontWeight:600}}>
+              {fmtFecha(balanceFechaDia)} · {plantaLabel}
+            </div>
           </div>
-          <div style={{padding:"14px 18px"}}>
-            {loadingDia ? (
-              <div style={{color:TH.muted,fontSize:13}}>Cargando movimientos...</div>
-            ) : (
-              <>
-                {/* Fórmula */}
-                <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:14,
-                  padding:"12px 16px",background:"#f4f7fb",borderRadius:8,fontSize:13}}>
-                  <span style={{fontFamily:"monospace",color:TH.navy,fontWeight:700}}>
-                    {totalInicial !== null ? fmtN(totalInicial,0) : "—"}
-                  </span>
-                  <span style={{color:TH.muted}}>Inicial</span>
-                  <span style={{color:TH.muted,fontSize:16}}>+</span>
-                  <span style={{fontFamily:"monospace",color:TH.success,fontWeight:700}}>{fmtN(totalEntradas,0)}</span>
-                  <span style={{color:TH.muted}}>Entradas</span>
-                  <span style={{color:TH.muted,fontSize:16}}>−</span>
-                  <span style={{fontFamily:"monospace",color:TH.danger,fontWeight:700}}>{fmtN(totalSalidas,0)}</span>
-                  <span style={{color:TH.muted}}>Salidas</span>
-                  <span style={{color:TH.muted,fontSize:16}}>=</span>
-                  <span style={{fontFamily:"monospace",color:TH.orange,fontWeight:900,fontSize:18}}>
-                    {teorico !== null ? fmtN(teorico,0) : "—"}
-                  </span>
-                  <span style={{color:TH.muted,fontSize:12}}>gls teórico</span>
-                </div>
 
-                {/* CMTs */}
-                {movimientos.length > 0 ? (
-                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-                    <thead>
-                      <tr style={{background:"#f0f4f8"}}>
-                        <th style={{padding:"6px 12px",textAlign:"left",color:TH.navy,fontWeight:700}}>CMT</th>
-                        <th style={{padding:"6px 12px",textAlign:"left",color:TH.navy,fontWeight:700}}>Operación</th>
-                        <th style={{padding:"6px 12px",textAlign:"left",color:TH.navy,fontWeight:700}}>Referencia</th>
-                        <th style={{padding:"6px 12px",textAlign:"right",color:TH.navy,fontWeight:700}}>Galones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {movimientos.map((m,i)=>(
-                        <tr key={i} style={{borderTop:`1px solid ${TH.border}`}}>
-                          <td style={{padding:"7px 12px",fontFamily:"monospace",fontWeight:700,color:TH.navy}}>{m.id}</td>
-                          <td style={{padding:"7px 12px",color:TH.muted}}>{m.tipo}</td>
-                          <td style={{padding:"7px 12px",color:TH.muted,fontSize:11}}>{m.obs}</td>
-                          <td style={{padding:"7px 12px",textAlign:"right",fontWeight:700,
-                            color:m.esEntrada?TH.success:TH.danger,fontFamily:"monospace"}}>
-                            {m.esEntrada?"+":"-"}{fmtN(m.galones,0)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div style={{color:TH.muted,fontSize:13,textAlign:"center",padding:"8px 0"}}>
-                    Sin CMTs registrados para {plantaLabel} el {fmtFecha(balanceFechaDia)}
+          {loadingDia ? (
+            <div style={{color:TH.muted,fontSize:13,padding:"20px",textAlign:"center"}}>Cargando movimientos...</div>
+          ) : (
+            <div style={{fontFamily:"system-ui,sans-serif"}}>
+
+              {/* Inventario inicial */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                padding:"12px 20px",borderBottom:`1px solid ${TH.border}`}}>
+                <span style={{fontSize:12,color:TH.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>
+                  Inventario Inicial
+                </span>
+                <span style={{fontFamily:"monospace",fontWeight:700,color:TH.navy,fontSize:14}}>
+                  {totalInicial !== null ? fmtN(totalInicial,0) : "—"}
+                </span>
+              </div>
+
+              {/* Entradas */}
+              {movimientos.filter(m=>m.esEntrada).length > 0 && (
+                <div style={{borderBottom:`1px solid ${TH.border}`}}>
+                  <div style={{padding:"8px 20px 4px",fontSize:10,fontWeight:800,color:TH.success,
+                    textTransform:"uppercase",letterSpacing:1,background:`${TH.success}08`}}>
+                    ↓ Entradas
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                  {movimientos.filter(m=>m.esEntrada).map((m,i)=>(
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      padding:"7px 20px 7px 28px",borderTop:`1px solid ${TH.border}55`}}>
+                      <div>
+                        <span style={{fontFamily:"monospace",fontSize:11,fontWeight:700,color:TH.navy}}>{m.id}</span>
+                        {m.obs && <span style={{fontSize:11,color:TH.muted,marginLeft:8}}>{m.obs}</span>}
+                      </div>
+                      <span style={{fontFamily:"monospace",fontWeight:700,color:TH.success,fontSize:13}}>
+                        +{fmtN(m.galones,0)}
+                      </span>
+                    </div>
+                  ))}
+                  <div style={{display:"flex",justifyContent:"space-between",padding:"6px 20px",
+                    background:`${TH.success}10`}}>
+                    <span style={{fontSize:11,fontWeight:700,color:TH.success}}>Total entradas</span>
+                    <span style={{fontFamily:"monospace",fontWeight:900,color:TH.success,fontSize:13}}>+{fmtN(totalEntradas,0)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Salidas */}
+              {movimientos.filter(m=>!m.esEntrada).length > 0 && (
+                <div style={{borderBottom:`1px solid ${TH.border}`}}>
+                  <div style={{padding:"8px 20px 4px",fontSize:10,fontWeight:800,color:TH.danger,
+                    textTransform:"uppercase",letterSpacing:1,background:`${TH.danger}08`}}>
+                    ↑ Salidas
+                  </div>
+                  {movimientos.filter(m=>!m.esEntrada).map((m,i)=>(
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      padding:"7px 20px 7px 28px",borderTop:`1px solid ${TH.border}55`}}>
+                      <div>
+                        <span style={{fontFamily:"monospace",fontSize:11,fontWeight:700,color:TH.navy}}>{m.id}</span>
+                        {m.obs && <span style={{fontSize:11,color:TH.muted,marginLeft:8}}>{m.obs}</span>}
+                      </div>
+                      <span style={{fontFamily:"monospace",fontWeight:700,color:TH.danger,fontSize:13}}>
+                        -{fmtN(m.galones,0)}
+                      </span>
+                    </div>
+                  ))}
+                  <div style={{display:"flex",justifyContent:"space-between",padding:"6px 20px",
+                    background:`${TH.danger}08`}}>
+                    <span style={{fontSize:11,fontWeight:700,color:TH.danger}}>Total salidas</span>
+                    <span style={{fontFamily:"monospace",fontWeight:900,color:TH.danger,fontSize:13}}>-{fmtN(totalSalidas,0)}</span>
+                  </div>
+                </div>
+              )}
+
+              {movimientos.length === 0 && (
+                <div style={{padding:"12px 20px",color:TH.muted,fontSize:12,textAlign:"center",
+                  borderBottom:`1px solid ${TH.border}`}}>
+                  Sin CMTs registrados para este día
+                </div>
+              )}
+
+              {/* Total teórico */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                padding:"14px 20px",background:`${TH.navy}08`,borderTop:`2px solid ${TH.navy}`}}>
+                <span style={{fontSize:13,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:0.5}}>
+                  Inventario Teórico
+                </span>
+                <span style={{fontFamily:"monospace",fontWeight:900,color:TH.navy,fontSize:18}}>
+                  {teorico !== null ? fmtN(teorico,0) : "—"}
+                  <span style={{fontSize:12,fontWeight:400,marginLeft:6,color:TH.muted}}>gls</span>
+                </span>
+              </div>
+
+            </div>
+          )}
         </div>
       </div>
     );
