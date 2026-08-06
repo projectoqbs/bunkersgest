@@ -6329,6 +6329,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           const { error } = await dbCall({ table:"liquidaciones_qbs002", op:"update", data:patch, filters:[{col:"id",val:liq.id}] });
           if(error){ setLiqSaving(false); showToast("Error al guardar: "+error,"error"); return; }
           // Sincronizar fecha en despacho y CMT
+          console.log("DEBUG despacho:", d?.id, d?.buque, d?.fecha_entrega, "nueva fecha:", ef.fecha);
           if(ef.fecha && d?.id){
             const { error: errD } = await supabase.from("despachos").update({ fecha_entrega: ef.fecha }).eq("id", d.id);
             if(errD) showToast("Error actualizando fecha del despacho: "+errD.message, "error");
