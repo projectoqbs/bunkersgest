@@ -6549,7 +6549,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             {cmtDespues.map((row,i)=>{
               const tqInfo = tanques.find(t=>t.id===row.tanque);
-              const capMaxOp = tqInfo ? tqInfo.capacidad : null;
+              const capTotal = tqInfo ? tqInfo.capacidad : null;
+              const capMaxOp = capTotal !== null ? capTotal * 0.9 : null;
               const galonesIniciales = Number(cmtAntes[i]?.galones||0);
               const espacioDisponible = capMaxOp !== null ? Math.max(0, capMaxOp - galonesIniciales) : null;
               const galonesFinales = Number(row.galones||0);
@@ -6567,7 +6568,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div><Lbl>{row.temp&&row.api?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" value={row.galones} onChange={e=>{const n=[...cmtDespues];n[i].galones=e.target.value;setCmtDespues(n);}} style={{ width:"100%", background:"#ffffff", border:`1px solid ${excede?T.danger:T.border}`, borderRadius:6, padding:"8px 10px", color: excede?T.danger:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" }}/></div>
                 </div>
                 {espacioDisponible !== null && row.tanque && (()=>{
-                  const capTotal = capMaxOp / 0.9;
                   const pctActual = capTotal > 0 ? Math.round((galonesIniciales / capTotal) * 100) : 0;
                   const enAlerta = galonesIniciales >= capMaxOp;
                   return (
