@@ -127,6 +127,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   const [obs,setObs]=useState("");
   const [calados,setCalados]=useState({proaIni:"",proaFin:"",popaIni:"",popaFin:""});
   const [saving,setSaving]=useState(false);
+  const [mtFirmadas,setMtFirmadas]=useState("");
 
   const initB=()=>TANQUES_BARCAZA.map(t=>({tanque:t,producto:"VLSFO",activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
   const initT=()=>TANQUES_TKT.map(t=>({tanque:t,producto:"DIESEL",activo:false,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
@@ -193,10 +194,11 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   }
 
   async function guardar(){
-    if(!motonave.trim())return showToast("Ingresa el nombre de la motonave",false);
+    const nombreBuque=(despachoCtx?.buque||motonave).trim();
+    if(!nombreBuque)return showToast("Ingresa el nombre de la motonave",false);
     setSaving(true);
-    const{error}=await supabase.from("liquidaciones_planta1").insert({
-      motonave:motonave.trim(),fecha,operador,observaciones:obs,
+    const registro={
+      motonave:nombreBuque,fecha,operador,observaciones:obs,
       calados:JSON.stringify(calados),
       trim_ini:JSON.stringify(trimI),trim_fin:JSON.stringify(trimF),
       filas_barcaza:JSON.stringify(filasB),filas_tkt:JSON.stringify(filasT),
@@ -204,10 +206,26 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
       gls_entregados:Math.round(tots.gEnt),
       mt_entregadas:tots.mEnt?Number(tots.mEnt.toFixed(3)):null,
       usuario_id:session?.user?.id,
-    });
+    };
+    if(despachoCtx){
+      registro.despacho_id=despachoCtx.despachoId||null;
+      registro.producto=despachoCtx.prod||null;
+      registro.puerto=despachoCtx.puerto||null;
+      registro.contrato=despachoCtx.contrato||null;
+    }
+    const mf=parseFloat(String(mtFirmadas).replace(",","."));
+    if(!isNaN(mf)&&mf>0) registro.mt_firmadas=mf;
+
+    const{error}=await supabase.from("liquidaciones_planta1").insert(registro);
+    if(error){setSaving(false);showToast("Error: "+error.message,false);return;}
+
+    // Marcar despacho como ENTREGADO si viene de contexto de despacho
+    if(despachoCtx?.despachoId){
+      await supabase.from("despachos").update({estado:"ENTREGADO"}).eq("id",despachoCtx.despachoId);
+    }
+
     setSaving(false);
-    if(error){showToast("Error: "+error.message,false);return;}
-    showToast("Liquidacion guardada",true);
+    showToast("Entrega registrada ✔",true);
     setTab("historial");
   }
 
@@ -374,25 +392,32 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
           </div>
         </div>}
 
-        <div style={{background:TH.navy,borderRadius:6,padding:"8px 16px",marginBottom:8,display:"flex",flexWrap:"wrap",gap:"8px 24px",alignItems:"center"}}>
+        <div style={{background:TH.navy,borderRadius:6,padding:"10px 20px",marginBottom:8,display:"flex",flexWrap:"wrap",gap:"8px 32px",alignItems:"center"}}>
           {[
-            {l:"Gls Ini",v:fmtN(tots.gNI,0),c:"#93c5fd"},
-            {l:"Gls Fin",v:fmtN(tots.gNF,0),c:"#93c5fd"},
-            {l:"Gls Entregados",v:fmtN(tots.gEnt,0),c:"#6ee7b7",big:true},
-            {l:"MT Ini",v:fmtN(tots.mI,3),c:"#cbd5e1"},
-            {l:"MT Fin",v:fmtN(tots.mF,3),c:"#cbd5e1"},
-            {l:"MT Entregadas",v:fmtN(tots.mEnt,3),c:TH.orange,big:true},
-            {l:"Carros (÷277)",v:fmtN(tots.gEnt/277,1),c:"#c4b5fd"},
+            {l:"GLS Netos Ini",v:fmtN(tots.gNI,0),c:"#93c5fd"},
+            {l:"GLS Netos Fin",v:fmtN(tots.gNF,0),c:"#93c5fd"},
+            {l:"GLS Netos Entregados",v:fmtN(tots.gEnt,0),c:"#6ee7b7",big:true},
+            {l:"MT Entregadas (cálculo)",v:fmtN(tots.mEnt,3),c:TH.orange,big:true},
           ].map(({l,v,c,big})=>(
             <div key={l} style={{textAlign:"center"}}>
-              <div style={{fontSize:8,color:"rgba(255,255,255,0.5)",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{l}</div>
-              <div style={{fontSize:big?20:15,fontWeight:900,color:c}}>{v}</div>
+              <div style={{fontSize:9,color:"rgba(255,255,255,0.55)",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{l}</div>
+              <div style={{fontSize:big?22:16,fontWeight:900,color:c}}>{v}</div>
             </div>
           ))}
         </div>
 
-        <div style={{display:"flex",gap:12,justifyContent:"flex-end",marginBottom:12}}>
-          <AppBtn color={TH.muted} onClick={()=>{setFilasB(initB());setFilasT(initT());setMotonave("");setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""});setObs("");}}>Limpiar</AppBtn>
+        <div style={{display:"flex",gap:12,justifyContent:"flex-end",alignItems:"flex-end",marginBottom:12,flexWrap:"wrap"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <label style={{fontSize:11,fontWeight:700,color:TH.muted,textTransform:"uppercase",letterSpacing:0.8}}>MT Firmadas (documentos)</label>
+            <input
+              type="number" step="0.001" min="0"
+              value={mtFirmadas} onChange={e=>setMtFirmadas(e.target.value)}
+              placeholder={tots.mEnt?fmtN(tots.mEnt,3):"ej. 295.000"}
+              style={{padding:"9px 14px",borderRadius:6,border:`2px solid ${TH.orange}`,fontSize:14,fontWeight:700,color:TH.text,background:TH.card,width:180,outline:"none",textAlign:"right"}}
+            />
+          </div>
+          <AppBtn color={TH.muted} sm onClick={()=>{setFilasB(initB());setFilasT(initT());setMotonave("");setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""});setObs("");setMtFirmadas("");}}>Limpiar</AppBtn>
+          <AppBtn color={TH.success} disabled={saving} onClick={guardar}>{saving?"Guardando…":"✔ Entregar"}</AppBtn>
         </div>
       </>}
     </div>
