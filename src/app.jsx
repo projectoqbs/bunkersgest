@@ -1885,7 +1885,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {(()=>{
             const GRUPOS = {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
-              despacho:     { icon:"🚢", label:"DESPACHO",      subs:[{id:"despacho",label:"Listado Buques"},{id:"despacho_entrega",label:"Entrega"}] },
+              despacho:     { icon:"🚢", label:"DESPACHO",      subs:[{id:"despacho",label:"Listado Buques"},{id:"despacho_entrega",label:"Entrega"},{id:"despacho_historial",label:"Historial"}] },
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
               pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
@@ -4122,7 +4122,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   })}</tr>
                 </thead>
                 <tbody>
-                  {despachosFiltrados.map((d,i)=>{
+                  {despachosFiltrados.filter(d=>d.estado!=="ENTREGADO").map((d,i)=>{
                     const estadoColor = d.estado==="COMPLETADO"?T.success:d.estado==="EN OPERACIÓN"?T.orange:T.muted;
                     return (
                       <tr key={d.id} style={{background:i%2===0?T.bg:T.card,borderBottom:`1px solid ${T.border}`}}>
@@ -4145,7 +4145,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </tr>
                     );
                   })}
-                  {despachosFiltrados.length===0&&<tr><td colSpan={16} style={{padding:"28px",textAlign:"center",color:T.muted,fontSize:12}}>Sin despachos registrados</td></tr>}
+                  {despachosFiltrados.filter(d=>d.estado!=="ENTREGADO").length===0&&<tr><td colSpan={16} style={{padding:"28px",textAlign:"center",color:T.muted,fontSize:12}}>Sin despachos registrados</td></tr>}
                 </tbody>
               </table>
               </div>
@@ -4171,10 +4171,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {(despachosFiltrados||[]).length===0 && (
-                      <tr><td colSpan={6} style={{padding:28,textAlign:"center",color:T.muted,fontSize:12}}>Sin buques registrados</td></tr>
+                    {(despachosFiltrados||[]).filter(d=>d.estado!=="ENTREGADO").length===0 && (
+                      <tr><td colSpan={7} style={{padding:28,textAlign:"center",color:T.muted,fontSize:12}}>No hay entregas pendientes</td></tr>
                     )}
-                    {(despachosFiltrados||[]).flatMap((d,i)=>{
+                    {(despachosFiltrados||[]).filter(d=>d.estado!=="ENTREGADO").flatMap((d,i)=>{
                       const estadoColor = d.estado==="COMPLETADO"?T.success:d.estado==="EN OPERACIÓN"?T.orange:T.muted;
                       const filas = [
                         {prod:"VLSFO", mt:Number(d.mt_vlso||0)},
@@ -4208,6 +4208,53 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
             </div>
           )}
+
+          {/* DESPACHO — HISTORIAL */}
+          {nav==="despacho_historial" && (()=>{
+            const entregados = (despachosFiltrados||[]).filter(d=>d.estado==="ENTREGADO");
+            const thS = {padding:"10px 14px",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,background:T.bg,whiteSpace:"nowrap"};
+            const tdS = {padding:"10px 14px",fontSize:12,borderBottom:`1px solid ${T.border}`};
+            return (
+              <div>
+                <div style={{fontWeight:800,fontSize:20,color:T.navy,marginBottom:4}}>Historial de Entregas</div>
+                <div style={{fontSize:11,color:T.muted,marginBottom:20}}>Buques con entrega completada · <b style={{color:T.orange}}>{entregados.length}</b> registro(s)</div>
+                <div style={{overflowX:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                    <thead>
+                      <tr>{[["Buque","left"],["IMO","left"],["Producto","left"],["Cantidad (MT)","center"],["Puerto","left"],["Ciudad","left"],["Contrato","left"],["Fecha Entrega","center"],["Estado","center"]].map(([c,al])=>(
+                        <th key={c} style={{...thS,textAlign:al}}>{c}</th>
+                      ))}</tr>
+                    </thead>
+                    <tbody>
+                      {entregados.length===0 && <tr><td colSpan={9} style={{padding:28,textAlign:"center",color:T.muted,fontSize:12}}>Sin entregas completadas aún</td></tr>}
+                      {entregados.flatMap((d,i)=>{
+                        const filas=[
+                          {prod:"VLSFO",mt:Number(d.mt_vlso||0)},
+                          {prod:"HSFO", mt:Number(d.mt_hsfo||0)},
+                          {prod:"MGO",  mt:Number(d.mt_mgo||0)},
+                        ].filter(p=>p.mt>0);
+                        if(filas.length===0) filas.push({prod:"—",mt:0});
+                        const bg = i%2===0?T.card:T.bg;
+                        return filas.map((p,j)=>(
+                          <tr key={`${d.id}-${p.prod}`} style={{background:bg}}>
+                            <td style={{...tdS,fontWeight:700}}>{j===0?(d.buque||"—"):""}</td>
+                            <td style={{...tdS,fontFamily:"monospace",color:T.muted}}>{j===0?(d.imo||"—"):""}</td>
+                            <td style={{...tdS}}>{p.prod}</td>
+                            <td style={{...tdS,textAlign:"center",fontWeight:700}}>{p.mt>0?p.mt.toLocaleString():"—"}</td>
+                            <td style={{...tdS,color:T.muted}}>{j===0?(d.destino||d.puerto||"—"):""}</td>
+                            <td style={{...tdS,color:T.muted}}>{j===0?(d.ciudad||"—"):""}</td>
+                            <td style={{...tdS,color:T.muted}}>{j===0?(d.contrato||"—"):""}</td>
+                            <td style={{...tdS,textAlign:"center",color:T.muted}}>{j===0?(d.updated_at?new Date(d.updated_at).toLocaleDateString("es-CO"):"—"):""}</td>
+                            <td style={{...tdS,textAlign:"center"}}>{j===0&&<span style={{background:`${T.success}22`,color:T.success,padding:"2px 10px",borderRadius:10,fontWeight:700,fontSize:10}}>ENTREGADO</span>}</td>
+                          </tr>
+                        ));
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* TRAZABILIDAD */}
           {nav==="trazabilidad" && (()=>{
