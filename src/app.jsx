@@ -1705,7 +1705,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       producto: productoDerivado,
       volumen: vlso + hsfo + mgo,
       destino: form.destino||"", horas_op: Number(form.horas_op||0),
-      contrato: form.contrato||"", puerto: form.puerto||form.ciudad||perfil.sede||"MALAMBO",
+      contrato: form.contrato||"", ciudad: form.ciudad||perfil.sede||"MALAMBO",
       estado: form.estado||"PENDIENTE",
       operador: perfil.nombre, creado_por: session.user.id,
     };
@@ -4187,7 +4187,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{padding:"12px 16px",fontWeight:700,color:T.navy}}>{j===0?(d.buque||"—"):""}</td>
                           <td style={{padding:"12px 16px",fontWeight:600,color:T.text}}>{p.prod}</td>
                           <td style={{padding:"12px 16px",fontWeight:700,fontFamily:"monospace"}}><div style={{textAlign:"center"}}>{p.mt>0?p.mt.toLocaleString():"—"}</div></td>
-                          <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.puerto||d.ciudad||"—"):""}</td>
+                          <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.destino||d.puerto||"—"):""}</td>
                           <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.contrato||"—"):""}</td>
                           <td style={{padding:"12px 16px"}}>{j===0&&<span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span>}</td>
                           <td style={{padding:"12px 16px"}}>
@@ -4800,7 +4800,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     perfil={perfil}
                     showToast={showToast}
                     barcazaFiltro={barcazaSelec}
-                    despachoCtx={{ buque:despacho.buque, imo:despacho.imo||"", prod, mt, contrato:despacho.contrato, despachoId:despacho.id, puerto:despacho.ciudad||"" }}
+                    despachoCtx={{ buque:despacho.buque, imo:despacho.imo||"", prod, mt, contrato:despacho.contrato, despachoId:despacho.id, puerto:despacho.destino||despacho.puerto||"" }}
                   />
                 )}
               </div>
@@ -6835,7 +6835,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <Inp label="MT MGO" type="number" placeholder="0" value={form.mt_mgo||""} onChange={f("mt_mgo")}/>
             <Inp label="Puerto" type="text" placeholder="SPSM / Cartagena / Palermo" value={form.destino||""} onChange={f("destino")}/>
             <Inp label="Contrato" type="text" placeholder="N° Contrato" value={form.contrato||""} onChange={f("contrato")}/>
-            <Inp label="Puerto" type="text" placeholder="Barranquilla / Santa Marta ..." value={form.puerto||form.ciudad||perfil.sede||""} onChange={f("puerto")}/>
+            <Inp label="Ciudad / Sede" type="text" placeholder="Barranquilla / Santa Marta ..." value={form.ciudad||perfil.sede||""} onChange={f("ciudad")}/>
             <Sel label="Estado" value={form.estado||"PENDIENTE"} onChange={f("estado")}>
               {["PENDIENTE","EN OPERACIÓN","COMPLETADO","CANCELADO"].map(s=><option key={s}>{s}</option>)}
             </Sel>
