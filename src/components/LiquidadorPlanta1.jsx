@@ -237,7 +237,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
 
     // Marcar despacho como ENTREGADO si viene de contexto de despacho
     if(despachoCtx?.despachoId){
-      await supabase.from("despachos").update({estado:"ENTREGADO"}).eq("id",despachoCtx.despachoId);
+      await supabase.from("despachos").update({estado:"ENTREGADO", fecha_entrega: new Date().toISOString().split("T")[0]}).eq("id",despachoCtx.despachoId);
     }
 
     // Auto-generar CMT "ENTREGA A MOTONAVE"
