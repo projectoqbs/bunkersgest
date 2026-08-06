@@ -2845,7 +2845,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const tipo = t.tipo_analisis||"Tiquetes MP";
                   const ot = (ordenesTrabaio||[]).find(o=>o.id===t.ot_id || o.tiquete_id===t.id) || null;
                   const tanquesOT = ot ? [...new Set([ot.tanque_destino,...(ot.descargues||[]).map(d=>d.tanque),...(ot.trasiegos||[]).map(tr=>tr.destino)].filter(Boolean))] : [];
-                  const tanqueCell = tanquesOT.length ? <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{tanquesOT.join(", ")}</span> : <span style={{color:T.muted}}>—</span>;
+                  const tanqueLabel = t.tanque || (tanquesOT.length ? tanquesOT.join(", ") : null);
+                  const tanqueCell = tanqueLabel ? <span style={{fontFamily:"monospace",fontWeight:700,color:T.navy}}>{tanqueLabel}</span> : <span style={{color:T.muted}}>—</span>;
                   return [
                     <span style={{color:T.orange,fontFamily:"monospace",cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{setForm({...t});setModal("tiquete");}}>{t.id}</span>,
                     <Badge label={tipo} color={tipoColor[tipo]||T.orange}/>,
