@@ -482,6 +482,8 @@ export default function App() {
   const [flotaElimPlaca, setFlotaElimPlaca] = useState("");
   const [flotaElimConfirm, setFlotaElimConfirm] = useState(false);
   const [flotaAccion, setFlotaAccion] = useState("");
+  const [flotaEditCampo, setFlotaEditCampo] = useState("");
+  const [flotaEditValor, setFlotaEditValor] = useState("");
   const [analisisNav, setAnalisisNav] = useState("");
   const [resFiltroTipo, setResFiltroTipo] = useState("");
   const [tiqBusqueda, setTiqBusqueda] = useState("");
@@ -1076,6 +1078,20 @@ export default function App() {
     setSaving(false);
     await loadData();
     showToast(`Sede actualizada: ${ok} viajes → ${flotaRedirSede}${err>0?` · ${err} errores`:""}`, err===0);
+  }
+
+  async function modificarCampoFlota(viajesAModificar, campo, valor) {
+    if (!campo || !valor) return;
+    setSaving(true);
+    let ok = 0, err = 0;
+    for (const v of viajesAModificar) {
+      const {error} = await dbCall({ table:"viajes", op:"update", data:{ [campo]: valor }, filters:[{col:"id",val:v.id}] });
+      if (error) err++; else ok++;
+    }
+    setSaving(false);
+    setFlotaEditCampo(""); setFlotaEditValor("");
+    await loadData();
+    showToast(`Modificados: ${ok} viajes${err>0?` · ${err} errores`:""}`, err===0);
   }
 
   async function eliminarViajesFlota(viajesAEliminar) {
@@ -5460,7 +5476,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const ACCIONES_FLOTA = [
           { k:"fechas",    label:"Calcular Fechas Estimadas de Llegada", color:T.orange },
           { k:"redirigir", label:"Redirigir Sede de Destino",            color:"#6366f1" },
-          { k:"eliminar",  label:"Eliminar Registros",                   color:T.danger  },
+          { k:"eliminar",  label:"Editar / Eliminar Registros",           color:T.danger  },
         ];
         const accionActual = ACCIONES_FLOTA.find(a=>a.k===flotaAccion);
         return (
@@ -5596,9 +5612,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             );
             const hayFiltro = flotaElimDesde||flotaElimHasta||flotaElimTrans||flotaElimProducto||flotaElimPlaca;
             return (
-            <Section title="Eliminar Registros" color={T.danger}>
+            <Section title="Editar / Eliminar Registros" color={T.danger}>
               <div style={{fontSize:12,color:T.muted,marginBottom:10}}>
-                Selecciona los viajes a eliminar usando los filtros. Se requiere al menos un filtro para habilitar la eliminación.
+                Filtra los viajes y luego modifica un campo en masa o elimínalos. Se requiere al menos un filtro.
               </div>
               <div style={{display:"flex",gap:12,alignItems:"flex-end",flexWrap:"wrap",marginBottom:10}}>
                 <div><Lbl>Fecha cargue desde</Lbl><input type="date" value={flotaElimDesde} onChange={e=>setFlotaElimDesde(e.target.value)} style={inpStyle}/></div>
@@ -5639,6 +5655,56 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {viajesElim.length>60 && <div style={{color:T.muted,textAlign:"center",paddingTop:4}}>…y {viajesElim.length-60} más</div>}
                 </div>
               )}
+              {/* Modificar campo en masa */}
+              {viajesElim.length>0 && hayFiltro && (
+                <div style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:14,border:`1px solid ${T.border}`}}>
+                  <div style={{fontWeight:700,fontSize:12,color:T.navy,marginBottom:10}}>✏️ Modificar campo en los {viajesElim.length} viajes filtrados</div>
+                  <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
+                    <div>
+                      <Lbl>Campo a modificar</Lbl>
+                      <select value={flotaEditCampo} onChange={e=>{setFlotaEditCampo(e.target.value);setFlotaEditValor("");}}
+                        style={inpStyle}>
+                        <option value="">— Seleccionar —</option>
+                        <option value="producto">Producto</option>
+                        <option value="placa">Placa</option>
+                        <option value="transportadora">Transportadora</option>
+                        <option value="conductor">Conductor</option>
+                        <option value="sede">Sede de destino</option>
+                      </select>
+                    </div>
+                    {flotaEditCampo && (
+                      <div>
+                        <Lbl>Nuevo valor</Lbl>
+                        {flotaEditCampo==="producto" ? (
+                          <select value={flotaEditValor} onChange={e=>setFlotaEditValor(e.target.value)} style={inpStyle}>
+                            <option value="">— Seleccionar —</option>
+                            {[...MATERIAS_PRIMAS,"VLSFO","MGO","DIESEL NACIONAL","DIESEL INTERNACIONAL"].map(p=><option key={p}>{p}</option>)}
+                          </select>
+                        ) : flotaEditCampo==="sede" ? (
+                          <select value={flotaEditValor} onChange={e=>setFlotaEditValor(e.target.value)} style={inpStyle}>
+                            <option value="">— Seleccionar —</option>
+                            {SEDES.map(s=><option key={s}>{s}</option>)}
+                          </select>
+                        ) : flotaEditCampo==="transportadora" ? (
+                          <select value={flotaEditValor} onChange={e=>setFlotaEditValor(e.target.value)} style={inpStyle}>
+                            <option value="">— Seleccionar —</option>
+                            {transUnicos.map(t=><option key={t}>{t}</option>)}
+                          </select>
+                        ) : (
+                          <input type="text" value={flotaEditValor} onChange={e=>setFlotaEditValor(e.target.value)}
+                            placeholder={flotaEditCampo==="placa"?"Ej: ABC123":""}
+                            style={{...inpStyle,width:130,textTransform:"uppercase"}}/>
+                        )}
+                      </div>
+                    )}
+                    <Btn color={T.navy} disabled={!flotaEditCampo||!flotaEditValor||saving}
+                      onClick={()=>modificarCampoFlota(viajesElim, flotaEditCampo, flotaEditValor.toUpperCase())}>
+                      {saving?"Aplicando...":"Aplicar cambio"}
+                    </Btn>
+                  </div>
+                </div>
+              )}
+
               {!flotaElimConfirm ? (
                 <div style={{display:"flex",justifyContent:"flex-end"}}>
                   <Btn color={T.danger} disabled={!hayFiltro||viajesElim.length===0}
