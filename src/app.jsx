@@ -878,6 +878,43 @@ export default function App() {
     if (prog?.data) setProgramaciones(prog.data);
     if (form2?.data) setFormulaciones(form2.data);
     if (ot?.data) setOrdenesTrabajo(ot.data);
+    if (t.data && c.data) await reconciliarNivelesTanques(c.data, t.data);
+  }
+
+  async function reconciliarNivelesTanques(cmtsData, tanquesData) {
+    // Para cada tanque, determinar la última lectura registrada en CMTs
+    const ultimaLectura = {}; // tankId -> { galones, fecha }
+    const cmtsOrdenados = [...cmtsData].sort((a,b) =>
+      new Date(a.fecha||a.created_at||0) - new Date(b.fecha||b.created_at||0)
+    );
+    for (const cmt of cmtsOrdenados) {
+      const fecha = cmt.fecha || cmt.created_at;
+      for (const td of cmt.tanques_despues||[]) {
+        if (td.tanque && (td.galones || td.galones === 0))
+          ultimaLectura[td.tanque] = { galones: Number(td.galones), fecha };
+      }
+      for (const tr of cmt.tanques_recepcion||[]) {
+        if (tr.tanque && (tr.galonesFinal || tr.galonesFinal === 0))
+          ultimaLectura[tr.tanque] = { galones: Number(tr.galonesFinal), fecha };
+      }
+      for (const td of cmt.porteo_descarga_tanques||[]) {
+        if (td.tanque && (td.galonesFinal || td.galonesFinal === 0))
+          ultimaLectura[td.tanque] = { galones: Number(td.galonesFinal), fecha };
+      }
+      for (const tc of cmt.porteo_carga_tanques||[]) {
+        if (tc.tanque && (tc.galonesFinal || tc.galonesFinal === 0))
+          ultimaLectura[tc.tanque] = { galones: Number(tc.galonesFinal), fecha };
+      }
+    }
+    // Actualizar tanques cuyo nivel no coincide con la última lectura del CMT
+    for (const tanque of tanquesData) {
+      const lectura = ultimaLectura[tanque.id];
+      if (!lectura) continue;
+      if (Math.abs(Number(tanque.nivel||0) - lectura.galones) > 1) {
+        await dbCall({ table:"tanques", op:"update", data:{ nivel: lectura.galones }, filters:[{col:"id",val:tanque.id}] });
+        setTanques(prev => prev.map(t => t.id === tanque.id ? {...t, nivel: lectura.galones} : t));
+      }
+    }
   }
 
   // Carga enriquecida de perfiles con email de auth (solo para pantalla de usuarios)
