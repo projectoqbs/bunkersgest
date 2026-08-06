@@ -214,7 +214,6 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
       usuario_id:session?.user?.id,
     };
     if(despachoCtx){
-      registro.despacho_id=despachoCtx.despachoId||null;
       registro.producto=despachoCtx.prod||null;
       registro.puerto=despachoCtx.puerto||null;
       registro.contrato=despachoCtx.contrato||null;
@@ -222,7 +221,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
     const mf=parseFloat(String(mtFirmadas).replace(",","."));
     if(!isNaN(mf)&&mf>0){
       registro.mt_firmadas=mf;
-      const factor=tots.gEnt>0&&mf>0?Number((tots.gEnt/mf).toFixed(4)):null;
+      const factor=tots.gEnt>0&&mf>0?Number((tots.gEnt/mf).toFixed(2)):null;
       if(factor) registro.factor=factor;
     }
     if(imoNumero.trim()) registro.imo_numero=imoNumero.trim();
@@ -400,7 +399,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
                     background:!set?"#e8edf2":TH.card,outline:"none",fontFamily:"system-ui,sans-serif"}}/>
               </div>
             ))}
-            {(()=>{const mf=parseFloat(String(mtFirmadas).replace(",","."));const fac=tots.gEnt>0&&mf>0?fmtN(tots.gEnt/mf,4):"—";return(
+            {(()=>{const mf=parseFloat(String(mtFirmadas).replace(",","."));const fac=tots.gEnt>0&&mf>0?fmtN(tots.gEnt/mf,2):"—";return(
               <div style={{display:"flex",flexDirection:"column",gap:3}}>
                 <label style={{fontSize:9,fontWeight:700,color:TH.muted,textTransform:"uppercase",letterSpacing:0.8}}>Factor (Gls÷MT Firmadas)</label>
                 <input readOnly value={fac} style={{padding:"6px 10px",borderRadius:5,border:`1px solid ${TH.border}`,fontSize:12,fontWeight:700,color:TH.navy,background:"#e8edf2",outline:"none"}}/>
