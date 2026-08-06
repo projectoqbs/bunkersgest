@@ -2263,11 +2263,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const byFechaFam = {};
                 vFiltrados.forEach(v=>{
                   const key=v.fecha_aprox_llegada; if(!byFechaFam[key]) byFechaFam[key]={};
-                  const p=v.producto||"Sin producto"; byFechaFam[key][p]=(byFechaFam[key][p]||0)+Number(v.gls_netos_guia);
+                  const p=v.producto||"Sin producto"; byFechaFam[key][p]=(byFechaFam[key][p]||0)+glsViaje(v);
                 });
                 const fechasFam = Object.keys(byFechaFam).sort();
                 const prodsFam = [...new Set(vFiltrados.map(v=>v.producto||"Sin producto"))].sort();
-                const totalFam = vFiltrados.reduce((a,v)=>a+Number(v.gls_netos_guia),0);
+                const totalFam = vFiltrados.reduce((a,v)=>a+glsViaje(v),0);
               return vFiltrados.length === 0 ? (
                 <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes en tránsito con fecha estimada para producto {dashFamilia}.</div>
               ) : (
@@ -2305,7 +2305,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <tr style={{background:T.navy+"22",borderTop:`2px solid ${T.navy}44`}}>
                         <td style={{padding:"7px 10px",fontWeight:800,color:T.navy}}>TOTAL ENTRANTE</td>
                         {prodsFam.map(p=>{
-                          const tot = vFiltrados.filter(v=>(v.producto||"Sin producto")===p).reduce((a,v)=>a+Number(v.gls_netos_guia),0);
+                          const tot = vFiltrados.filter(v=>(v.producto||"Sin producto")===p).reduce((a,v)=>a+glsViaje(v),0);
                           return <td key={p} style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:prodColor(p)}}>{fmt(tot)}</td>;
                         })}
                         <td style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:T.navy}}>{fmt(totalFam)}</td>
