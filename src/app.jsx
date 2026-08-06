@@ -4144,9 +4144,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{fontWeight:800,fontSize:20,color:T.navy,marginBottom:4}}>Entrega</div>
               <div style={{fontSize:11,color:T.muted,marginBottom:20}}>Entrega de combustible al buque</div>
               <div style={{overflowX:"auto"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,tableLayout:"fixed"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,tableLayout:"fixed",minWidth:900}}>
                   <colgroup>
-                    <col style={{width:"22%"}}/><col style={{width:"14%"}}/><col style={{width:"13%"}}/><col style={{width:"14%"}}/><col style={{width:"13%"}}/><col style={{width:"12%"}}/><col style={{width:"12%"}}/>
+                    <col style={{width:"20%"}}/><col style={{width:"12%"}}/><col style={{width:"12%"}}/><col style={{width:"12%"}}/><col style={{width:"11%"}}/><col style={{width:"11%"}}/><col style={{width:"22%"}}/>
                   </colgroup>
                   <thead>
                     <tr style={{background:T.navy+"18"}}>
