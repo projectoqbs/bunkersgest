@@ -5420,7 +5420,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{fontSize:11,color:T.muted,marginBottom:16}}>Define si cada tanque almacena producto Negro o Blanco (MGO/Diesel). Esta configuración se guarda localmente.</div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {[...tanques].sort((a,b)=>a.id.localeCompare(b.id)).map(t=>{
-                const current = tankFamilias[t.id] || ((() => { const u=(t.producto||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL") ? "blanco" : "negro"; })());
+                const current = tankFamilias[t.id] || ((() => { const u=(t.producto||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL")||u==="NACIONAL"||u==="INTERNACIONAL" ? "blanco" : "negro"; })());
                 return (
                   <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:T.bg,borderRadius:8,border:`1px solid ${T.border}`}}>
                     <span style={{fontWeight:700,color:T.navy,width:90,flexShrink:0,fontSize:12}}>{t.id}</span>
@@ -5793,7 +5793,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
             </Grid>
           </Section>
-          {(()=>{ const u=(form.producto||"").toUpperCase(); return (u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL")); })() && (
+          {(()=>{ const u=(form.producto||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL")||u==="NACIONAL"||u==="INTERNACIONAL"; })() && (
             <Section title="Datos Producto Blanco (MGO / Diesel)" color="#38bdf8">
               <Grid cols={3}>
                 <Inp label="OPS (Orden de Cargue)" type="text" value={form.ops||""} onChange={f("ops")}/>
