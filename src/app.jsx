@@ -6354,6 +6354,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 )}
               </div>
             )}
+            {(form.tipo_operacion||"")==="ENTREGA A MOTONAVE" && (
+              <div style={{minWidth:220,flexShrink:0}}>
+                <Sel label="Buque / Motonave" value={form.nombre_motonave||""} onChange={e=>{
+                  const val=e.target.value;
+                  const d=despachos.find(d=>d.buque===val&&d.estado!=="ENTREGADO");
+                  setForm(prev=>({...prev,nombre_motonave:val,imo_motonave:d?.imo||prev.imo_motonave||""}));
+                }}>
+                  <option value="">Seleccionar buque...</option>
+                  {[...new Set(despachos.filter(d=>d.estado!=="ENTREGADO"&&d.buque).map(d=>d.buque))].map(b=><option key={b} value={b}>{b}</option>)}
+                </Sel>
+              </div>
+            )}
           </div>
           {(form.tipo_operacion||"")!=="PORTEO" && (<div style={{marginBottom:18}}>
             <div style={{display:"flex",alignItems:"center",marginBottom:10,paddingBottom:6,borderBottom:`1px solid ${T.orange}33`}}>
@@ -6658,11 +6670,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Btn sm outline color={T.muted} onClick={()=>setCmtCarros([...cmtCarros,{placa:"",guia:"",tiquete:"",pbs_id:"",hora_inicio:"",hora_final:"",peso_ingreso:"",peso_salida:"",peso_neto:""}])}>+ Agregar Carro</Btn>
               <span style={{fontSize:11,color:T.muted}}>{cmtCarros.length} carro(s)</span>
             </div>
-            {form.tipo_operacion==="Entrega a motonave" && (
-              <div style={{marginTop:14}}>
-                <Inp label="Nombre Motonave" type="text" value={form.nombre_motonave||""} onChange={f("nombre_motonave")}/>
-              </div>
-            )}
           </Section></> }
           {(form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO" && (
             <Section title="Permiso de Bombeo Seguro" color="#fb923c">
