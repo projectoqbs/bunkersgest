@@ -4142,8 +4142,53 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {nav==="despacho_entrega" && (
             <div>
               <div style={{fontWeight:800,fontSize:20,color:T.navy,marginBottom:4}}>Entrega</div>
-              <div style={{fontSize:11,color:T.muted,marginBottom:24}}>Entrega de combustible al buque</div>
-              <div style={{color:T.muted,fontSize:13,padding:"40px 0",textAlign:"center"}}>Sección en construcción</div>
+              <div style={{fontSize:11,color:T.muted,marginBottom:20}}>Entrega de combustible al buque</div>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                  <thead>
+                    <tr style={{background:T.navy+"18"}}>
+                      {[["Buque",200],["Producto",160],["Cantidad (MT)",130],["Puerto",120],["Estado",110],["",160]].map(([c,w])=>(
+                        <th key={c} style={{padding:"9px 12px",textAlign:c==="Cantidad (MT)"?"right":"left",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,minWidth:w}}>{c}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(despachosFiltrados||[]).length===0 && (
+                      <tr><td colSpan={6} style={{padding:28,textAlign:"center",color:T.muted,fontSize:12}}>Sin buques registrados</td></tr>
+                    )}
+                    {(despachosFiltrados||[]).map((d,i)=>{
+                      const vlso=Number(d.mt_vlso||0), hsfo=Number(d.mt_hsfo||0), mgo=Number(d.mt_mgo||0);
+                      const prods=[];
+                      if(vlso>0) prods.push(`VLSFO: ${vlso.toLocaleString()} MT`);
+                      if(hsfo>0) prods.push(`HSFO: ${hsfo.toLocaleString()} MT`);
+                      if(mgo>0)  prods.push(`MGO: ${mgo.toLocaleString()} MT`);
+                      const totalMT = vlso+hsfo+mgo;
+                      const estadoColor = d.estado==="COMPLETADO"?T.success:d.estado==="EN OPERACIÓN"?T.orange:T.muted;
+                      return (
+                        <tr key={d.id} style={{borderBottom:`1px solid ${T.border}`,background:i%2===0?T.bg:T.card}}>
+                          <td style={{padding:"10px 12px",fontWeight:700,color:T.navy}}>{d.buque||"—"}</td>
+                          <td style={{padding:"10px 12px",color:T.text,fontSize:11}}>{prods.length>0?prods.join(" · "):"—"}</td>
+                          <td style={{padding:"10px 12px",textAlign:"right",fontWeight:700,fontFamily:"monospace"}}>{totalMT>0?totalMT.toLocaleString():"—"}</td>
+                          <td style={{padding:"10px 12px",color:T.muted}}>{d.puerto||d.ciudad||"—"}</td>
+                          <td style={{padding:"10px 12px"}}>
+                            <span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span>
+                          </td>
+                          <td style={{padding:"8px 12px"}}>
+                            <button onClick={()=>{ setForm({...d}); setModal("liquidacion_despacho"); }}
+                              style={{padding:"6px 14px",fontWeight:700,fontSize:11,cursor:"pointer",borderRadius:6,
+                                border:`1px solid #c084fc`,background:"#c084fc22",color:"#c084fc",
+                                whiteSpace:"nowrap",transition:"background 0.15s"}}
+                              onMouseOver={e=>e.currentTarget.style.background="#c084fc44"}
+                              onMouseOut={e=>e.currentTarget.style.background="#c084fc22"}>
+                              📄 Generar Liquidación
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
