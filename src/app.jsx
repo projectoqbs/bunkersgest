@@ -4150,7 +4150,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </colgroup>
                   <thead>
                     <tr style={{background:T.navy+"18"}}>
-                      {[["Buque","left"],["Producto","left"],["Cantidad (MT)","right"],["Puerto","left"],["Contrato","left"],["Estado","left"],["","left"]].map(([c,al])=>(
+                      {[["Buque","left"],["Producto","left"],["Cantidad (MT)","center"],["Puerto","left"],["Contrato","left"],["Estado","left"],["","left"]].map(([c,al])=>(
                         <th key={c} style={{padding:"12px 16px",textAlign:al,fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`}}>{c}</th>
                       ))}
                     </tr>
@@ -4171,7 +4171,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <tr key={`${d.id}-${p.prod}`} style={{borderBottom:`1px solid ${T.border}`,background:i%2===0?T.bg:T.card}}>
                           <td style={{padding:"12px 16px",fontWeight:700,color:T.navy}}>{j===0?(d.buque||"—"):""}</td>
                           <td style={{padding:"12px 16px",fontWeight:600,color:T.text}}>{p.prod}</td>
-                          <td style={{padding:"12px 16px",textAlign:"right",fontWeight:700,fontFamily:"monospace"}}>{p.mt>0?p.mt.toLocaleString():"—"}</td>
+                          <td style={{padding:"12px 16px",textAlign:"center",fontWeight:700,fontFamily:"monospace"}}>{p.mt>0?p.mt.toLocaleString():"—"}</td>
                           <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.puerto||d.ciudad||"—"):""}</td>
                           <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.contrato||"—"):""}</td>
                           <td style={{padding:"12px 16px"}}>{j===0&&<span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span>}</td>
