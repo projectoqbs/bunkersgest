@@ -6254,7 +6254,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (
               <div>
-                <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>Planta</div>
+                <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{(form.tipo_operacion||"")==="ENTREGA A MOTONAVE"?"Barcaza":"Planta"}</div>
                 <div style={{fontSize:12,fontWeight:700,color:T.navy}}>{form.planta||<span style={{color:T.muted,fontWeight:400}}>Por seleccionar</span>}</div>
               </div>
             )}
@@ -6302,11 +6302,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && (
               <div style={{width:160,flexShrink:0}}>
-                <Sel label="Planta" value={form.planta||""} onChange={e=>{setForm(prev=>({...prev,planta:e.target.value}));}}>
-                  <option value="">Seleccionar...</option>
-                  <option value="PLANTA 1">PLANTA 1</option>
-                  <option value="PLANTA 2">PLANTA 2</option>
-                </Sel>
+                {(form.tipo_operacion||"")==="ENTREGA A MOTONAVE" ? (
+                  <Sel label="Barcaza" value={form.planta||""} onChange={e=>{setForm(prev=>({...prev,planta:e.target.value}));}}>
+                    <option value="">Seleccionar...</option>
+                    <option value="QBS002">QBS002</option>
+                    <option value="TANQUES TIERRA">TANQUES TIERRA</option>
+                  </Sel>
+                ) : (
+                  <Sel label="Planta" value={form.planta||""} onChange={e=>{setForm(prev=>({...prev,planta:e.target.value}));}}>
+                    <option value="">Seleccionar...</option>
+                    <option value="PLANTA 1">PLANTA 1</option>
+                    <option value="PLANTA 2">PLANTA 2</option>
+                  </Sel>
+                )}
               </div>
             )}
           </div>
@@ -6318,8 +6326,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
               const cmtPlantaRaw = form.planta || "";
               const esTrasiegoInterplanta = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
+              const esEntregaMot = (form.tipo_operacion||"")==="ENTREGA A MOTONAVE";
               const tankEnPlanta = (t, p) => {
                 if (!p || esTrasiegoInterplanta) return true;
+                if (esEntregaMot) {
+                  if (p==="QBS002") return t.id.startsWith("QBS002-");
+                  if (p==="TANQUES TIERRA") return t.id.startsWith("TKT-");
+                  return t.id.startsWith("QBS002-")||t.id.startsWith("TKT-");
+                }
                 if (p==="PLANTA 1") return t.id.startsWith("QBS002-") || t.id.startsWith("TKT-");
                 if (p==="PLANTA 2") return t.id.startsWith("TK-");
                 return true;
@@ -6332,6 +6346,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const rowD = cmtDespues[i]||{};
                 const tqDispRow = (p) => {
                   if (!p) return tanques.filter(t=>t.id.startsWith("TK-")||t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"));
+                  if (esEntregaMot) {
+                    if (p==="QBS002") return tanques.filter(t=>t.id.startsWith("QBS002-"));
+                    if (p==="TANQUES TIERRA") return tanques.filter(t=>t.id.startsWith("TKT-"));
+                    return tanques.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"));
+                  }
                   if (p==="PLANTA 1") return tanques.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"));
                   if (p==="PLANTA 2") return tanques.filter(t=>t.id.startsWith("TK-"));
                   return tanques;
