@@ -2037,19 +2037,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const isBlanco = p => isProdBlanco(p);
             const isNegro  = p => !isBlanco(p);
 
+            // galones por viaje: blanco usa 10 500 gls como fallback si no tiene gls_netos_guia
+            const GLS_BLANCO_CARRO = 10500;
+            const glsViaje = v => isBlanco(v.producto)
+              ? (Number(v.gls_netos_guia)||GLS_BLANCO_CARRO)
+              : Number(v.gls_netos_guia||0);
+
             // carros en tránsito y en planta
             const vTransito = (viajes||[]).filter(v=>v.estado==="En Ruta");
             const vEnPlanta = (viajes||[]).filter(v=>v.estado==="En Planta");
 
             // viajes con galones y fecha estimada (para la tabla de proyección)
             const vEnRuta = vTransito.filter(v=>v.fecha_aprox_llegada && glsViaje(v)>0);
-
-            // galones entrantes por familia
-            // blanco fallback: si gls_netos_guia = 0, estimar 10 500 gls por carro (1 carro cisterna típico de MGO/Diesel)
-            const GLS_BLANCO_CARRO = 10500;
-            const glsViaje = v => isBlanco(v.producto)
-              ? (Number(v.gls_netos_guia)||GLS_BLANCO_CARRO)
-              : Number(v.gls_netos_guia||0);
             const allActivos = [...vTransito, ...vEnPlanta];
             const glsEntrantesNegro  = allActivos.filter(v=>isNegro(v.producto)).reduce((a,v)=>a+glsViaje(v),0);
             const glsEntrantesBlanco = allActivos.filter(v=>isBlanco(v.producto)).reduce((a,v)=>a+glsViaje(v),0);
