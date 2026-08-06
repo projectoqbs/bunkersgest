@@ -561,6 +561,7 @@ export default function App() {
   const nav = activeTab?.type === 'nav' ? activeTab.section : '';
   const modal = activeTab?.type === 'form' ? activeTab.formType : null;
   const isFormulacionTab = activeTab?.type === 'formulacion';
+  const isLiqDespachoTab = activeTab?.type === 'liquidacion_despacho';
 
   // ── TAB HELPER FUNCTIONS ──
   function captureFormState() {
@@ -751,6 +752,17 @@ export default function App() {
       : { tanque:"TK-116", producto:"VLSFO", fecha:today(), estado:"PLANEADA" };
     tabStateCache.current[id] = { formulacionForm: initForm, formulacionMps: initMps };
     setTabs(prev => [...prev, { id, type:'formulacion', title, icon:'🧪', closeable:true }]);
+    setActiveTabId(id);
+  }
+
+  // Abre pestaña de liquidación de despacho (una por buque+producto)
+  function openLiquidacionDespachoTab(despacho, prod, mt) {
+    const id = `liq-despacho-${despacho.id}-${prod}`;
+    const existing = tabs.find(t => t.id === id);
+    if (existing) { setActiveTabId(id); return; }
+    const title = `${despacho.buque} · ${mt} MT · ${prod}`;
+    tabStateCache.current[id] = { barcaza: "" };
+    setTabs(prev => [...prev, { id, type:'liquidacion_despacho', title, icon:'🚢', closeable:true, despacho, prod, mt }]);
     setActiveTabId(id);
   }
 
@@ -4177,12 +4189,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.contrato||"—"):""}</td>
                           <td style={{padding:"12px 16px"}}>{j===0&&<span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span>}</td>
                           <td style={{padding:"12px 16px"}}>
-                            <button onClick={()=>{ setForm({...d, _prod:p.prod, _mt:p.mt}); setModal("liquidacion_despacho"); }}
-                              style={{padding:"6px 14px",fontWeight:700,fontSize:11,cursor:"pointer",borderRadius:6,
-                                border:`1px solid #c084fc`,background:"#c084fc22",color:"#c084fc",
-                                whiteSpace:"nowrap",transition:"background 0.15s"}}
-                              onMouseOver={e=>e.currentTarget.style.background="#c084fc44"}
-                              onMouseOut={e=>e.currentTarget.style.background="#c084fc22"}>
+                            <button onClick={()=>openLiquidacionDespachoTab(d, p.prod, p.mt)}
+                              style={{padding:"7px 16px",fontWeight:700,fontSize:11,cursor:"pointer",borderRadius:6,
+                                border:`1px solid ${T.primary}`,background:T.primary,color:"#fff",
+                                whiteSpace:"nowrap",transition:"opacity 0.15s"}}
+                              onMouseOver={e=>e.currentTarget.style.opacity="0.85"}
+                              onMouseOut={e=>e.currentTarget.style.opacity="1"}>
                               📄 Generar Liquidación
                             </button>
                           </td>
@@ -4734,6 +4746,64 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </Card>
             </div>
           )}
+
+          {/* ── LIQUIDACIÓN DESPACHO ── */}
+          {isLiqDespachoTab && (()=>{
+            const tab = activeTab;
+            const { despacho, prod, mt } = tab;
+            const cache = tabStateCache.current[tab.id] || {};
+            const barcazaSelec = cache.barcaza || "";
+            const setBarcaza = v => {
+              tabStateCache.current[tab.id] = { ...cache, barcaza: v };
+              setTabs(prev => [...prev]); // fuerza re-render
+            };
+            // Barcazas disponibles: prefijos únicos de tanques de Planta 1
+            const isP1 = id => id.startsWith("QBS002") || id.startsWith("TKT");
+            const p1Tanks = (tanques||[]).filter(t=>isP1(t.id));
+            const barcazas = [...new Set(p1Tanks.map(t => t.id.startsWith("QBS002") ? "QBS002" : "TANQUES TIERRA"))];
+
+            return (
+              <div>
+                {/* Cabecera */}
+                <div style={{marginBottom:20}}>
+                  <div style={{fontWeight:800,fontSize:20,color:T.navy}}>Liquidación de Despacho</div>
+                  <div style={{fontSize:12,color:T.muted,marginTop:2}}>
+                    <span style={{fontWeight:700,color:T.navy}}>{despacho.buque}</span>
+                    {" · "}<span style={{color:T.primary,fontWeight:700}}>{prod}</span>
+                    {" · "}<span style={{fontWeight:700}}>{mt.toLocaleString()} MT</span>
+                    {" · Puerto: "}{despacho.puerto||despacho.ciudad||"—"}
+                    {despacho.contrato ? ` · Contrato: ${despacho.contrato}` : ""}
+                  </div>
+                </div>
+
+                {/* Selector barcaza */}
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24,padding:"14px 18px",background:T.card,borderRadius:10,border:`1px solid ${T.border}`,width:"fit-content"}}>
+                  <span style={{fontWeight:700,fontSize:13,color:T.navy}}>Seleccionar Barcaza:</span>
+                  <select value={barcazaSelec} onChange={e=>setBarcaza(e.target.value)}
+                    style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 14px",color:barcazaSelec?T.text:T.muted,fontSize:13,fontWeight:barcazaSelec?700:400,outline:"none",cursor:"pointer",minWidth:200}}>
+                    <option value="">— Seleccionar barcaza —</option>
+                    {barcazas.map(b=><option key={b} value={b}>{b==="QBS002"?"Barcaza QBS002":"Tanques Tierra (TKT-1 / TKT-2)"}</option>)}
+                  </select>
+                </div>
+
+                {/* Liquidador según barcaza */}
+                {!barcazaSelec && (
+                  <div style={{color:T.muted,fontSize:13,padding:"40px 0",textAlign:"center"}}>Selecciona una barcaza para iniciar la liquidación</div>
+                )}
+                {barcazaSelec && (
+                  <LiquidadorPlanta1
+                    key={barcazaSelec}
+                    supabase={supabase}
+                    session={session}
+                    perfil={perfil}
+                    showToast={showToast}
+                    barcazaFiltro={barcazaSelec}
+                    despachoCtx={{ buque:despacho.buque, prod, mt, contrato:despacho.contrato }}
+                  />
+                )}
+              </div>
+            );
+          })()}
 
           {isFormulacionTab && (()=>{
             const COL_W = 130; // ancho fijo columna MP (equivale a ~7 cols visibles)
