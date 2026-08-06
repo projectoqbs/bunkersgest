@@ -2044,9 +2044,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const vEnRuta = vTransito.filter(v=>v.fecha_aprox_llegada && Number(v.gls_netos_guia)>0);
 
             // galones entrantes por familia
+            // blanco fallback: si gls_netos_guia = 0, estimar 10 500 gls por carro (1 carro cisterna típico de MGO/Diesel)
+            const GLS_BLANCO_CARRO = 10500;
+            const glsViaje = v => isBlanco(v.producto)
+              ? (Number(v.gls_netos_guia)||GLS_BLANCO_CARRO)
+              : Number(v.gls_netos_guia||0);
             const allActivos = [...vTransito, ...vEnPlanta];
-            const glsEntrantesNegro  = allActivos.filter(v=>isNegro(v.producto)).reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
-            const glsEntrantesBlanco = allActivos.filter(v=>isBlanco(v.producto)).reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
+            const glsEntrantesNegro  = allActivos.filter(v=>isNegro(v.producto)).reduce((a,v)=>a+glsViaje(v),0);
+            const glsEntrantesBlanco = allActivos.filter(v=>isBlanco(v.producto)).reduce((a,v)=>a+glsViaje(v),0);
             const totalEntrante = glsEntrantesNegro + glsEntrantesBlanco;
 
             // capacidad por familia (P1 + P2 juntas)
@@ -2182,8 +2187,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const acColor  = esNegro ? T.navy : "#38bdf8";
                 return (
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, marginBottom:16 }}>
-                    <Stat label="Carros en Tránsito" value={vTransito.length} color={T.orange} sub="en camino a planta" />
-                    <Stat label="Carros en Planta"   value={vEnPlanta.length} color={T.navy}  sub="pendientes descargue" />
+                    <Stat label="Carros en Tránsito" value={vTransito.filter(v=>esNegro?isNegro(v.producto):isBlanco(v.producto)).length} color={T.orange} sub="en camino a planta" />
+                    <Stat label="Carros en Planta"   value={vEnPlanta.filter(v=>esNegro?isNegro(v.producto):isBlanco(v.producto)).length} color={T.navy}  sub="pendientes descargue" />
                     <Stat label="Capacidad Total"    value={`${fmt(cap)} gls`}    color={acColor} sub={`${esNegro?"negro":"blanco"} P1+P2`} />
                     <Stat label="Inventario Actual"  value={`${fmt(nivel)} gls`}  color={acColor} sub={`${Math.round(cap>0?(nivel/cap)*100:0)}% lleno`} />
                     <Stat label="Espacio Disponible" value={`${fmt(espDisp)} gls`} color={T.success} sub="libre ahora" />
