@@ -427,8 +427,12 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
     // ── Balance del día seleccionado ────────────────────────────────────────
     const cmtsPlanta  = balanceCmtsDia.filter(c => c.planta === plantaLabel);
-    const invDia      = invsPlanta.find(i => i.fecha === balanceFechaDia) || null;
-    const totalInicial= invDia ? (invDia.tanques||[]).reduce((s,t)=>s+(Number(t.galones_calculados)||0),0) : null;
+    // Inventario inicial = el más reciente ANTES del día seleccionado
+    const invsOrdenados = [...invsPlanta].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+    const invInicial  = [...invsOrdenados].reverse().find(i => i.fecha < balanceFechaDia)
+                        || invsOrdenados[0]
+                        || null;
+    const totalInicial= invInicial ? (invInicial.tanques||[]).reduce((s,t)=>s+(Number(t.galones_calculados)||0),0) : null;
 
     const movimientos = cmtsPlanta.map(c => {
       const antes  = Number(c.total_antes||0);
