@@ -985,7 +985,7 @@ export default function App() {
           const placa = get("placa").toUpperCase();
           const transportadora = get("transportadora").toUpperCase();
           const prodRaw = get("producto").toUpperCase();
-          const producto = prodRaw === "NACIONAL" ? "DIESEL NACIONAL" : prodRaw;
+          const producto = prodRaw === "NACIONAL" ? "DIESEL NACIONAL" : prodRaw === "INTERNACIONAL" ? "DIESEL INTERNACIONAL" : prodRaw;
           if (!placa && !transportadora) continue;
           todasFilas.push({
             _pestaña: nombre,
@@ -5670,6 +5670,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <option value="VLSFO">VLSFO</option>
                 <option value="MGO">MGO</option>
                 <option value="DIESEL NACIONAL">DIESEL NACIONAL</option>
+                <option value="DIESEL INTERNACIONAL">DIESEL INTERNACIONAL</option>
               </Sel>
               <Sel label="Transportadora" value={form.transportadora||""} onChange={f("transportadora")}>
                 <option value="">Seleccionar...</option>
