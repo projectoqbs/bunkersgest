@@ -1,4 +1,4 @@
-// InventarioDiario.jsx
+﻿// InventarioDiario.jsx
 import { useState, useEffect, useCallback } from 'react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -122,6 +122,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   const [balanceCmtsDia,   setBalanceCmtsDia]   = useState([]);
   const [loadingBalance,   setLoadingBalance]   = useState(false);
   const [loadingDia,       setLoadingDia]       = useState(false);
+  const [balanceExpandido, setBalanceExpandido] = useState({entradas:true, salidas:true});
 
   const trim = mkTrim(calados.popaIni, calados.proaIni);
 
@@ -426,7 +427,6 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     }
 
     // ── Balance del día seleccionado ────────────────────────────────────────
-    console.log("CMTs del día:", balanceCmtsDia.map(c=>({id:c.numero_cmt,planta:c.planta,tipo:c.tipo_operacion,movido:c.total_movido,antes:c.total_antes,despues:c.total_despues})));
     // CMTs P1 pueden tener planta="PLANTA 1" o "QBS002" o nombre de barcaza
     const cmtsPlanta = balanceCmtsDia.filter(c =>
       balancePlanta === "P1"
@@ -600,54 +600,62 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
               {/* Entradas */}
               {movimientos.filter(m=>m.esEntrada).length > 0 && (
                 <div style={{borderBottom:`1px solid ${TH.border}`}}>
-                  <div style={{padding:"8px 20px 4px",fontSize:10,fontWeight:800,color:TH.success,
-                    textTransform:"uppercase",letterSpacing:1,background:`${TH.success}08`}}>
-                    ↓ Entradas
+                  <div onClick={()=>setBalanceExpandido(p=>({...p,entradas:!p.entradas}))}
+                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      padding:"8px 20px",cursor:"pointer",userSelect:"none",
+                      background:`${TH.success}08`}}>
+                    <span style={{fontSize:10,fontWeight:800,color:TH.success,textTransform:"uppercase",letterSpacing:1}}>
+                      ↓ Entradas
+                    </span>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontFamily:"monospace",fontWeight:900,color:TH.success,fontSize:13}}>
+                        +{fmtN(totalEntradas,0)}
+                      </span>
+                      <span style={{color:TH.success,fontSize:11,fontWeight:700}}>
+                        {balanceExpandido.entradas ? "▲" : "▼"}
+                      </span>
+                    </div>
                   </div>
-                  {movimientos.filter(m=>m.esEntrada).map((m,i)=>(
+                  {balanceExpandido.entradas && movimientos.filter(m=>m.esEntrada).map((m,i)=>(
                     <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                      padding:"7px 20px 7px 28px",borderTop:`1px solid ${TH.border}55`}}>
-                      <div>
-                        <span style={{fontFamily:"monospace",fontSize:11,fontWeight:700,color:TH.navy}}>{m.id}</span>
-                        {m.obs && <span style={{fontSize:11,color:TH.muted,marginLeft:8}}>{m.obs}</span>}
-                      </div>
+                      padding:"7px 20px 7px 32px",borderTop:`1px solid ${TH.border}55`}}>
+                      <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:TH.navy}}>{m.id}</span>
                       <span style={{fontFamily:"monospace",fontWeight:700,color:TH.success,fontSize:13}}>
                         +{fmtN(m.galones,0)}
                       </span>
                     </div>
                   ))}
-                  <div style={{display:"flex",justifyContent:"space-between",padding:"6px 20px",
-                    background:`${TH.success}10`}}>
-                    <span style={{fontSize:11,fontWeight:700,color:TH.success}}>Total entradas</span>
-                    <span style={{fontFamily:"monospace",fontWeight:900,color:TH.success,fontSize:13}}>+{fmtN(totalEntradas,0)}</span>
-                  </div>
                 </div>
               )}
 
               {/* Salidas */}
               {movimientos.filter(m=>!m.esEntrada).length > 0 && (
                 <div style={{borderBottom:`1px solid ${TH.border}`}}>
-                  <div style={{padding:"8px 20px 4px",fontSize:10,fontWeight:800,color:TH.danger,
-                    textTransform:"uppercase",letterSpacing:1,background:`${TH.danger}08`}}>
-                    ↑ Salidas
+                  <div onClick={()=>setBalanceExpandido(p=>({...p,salidas:!p.salidas}))}
+                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      padding:"8px 20px",cursor:"pointer",userSelect:"none",
+                      background:`${TH.danger}08`}}>
+                    <span style={{fontSize:10,fontWeight:800,color:TH.danger,textTransform:"uppercase",letterSpacing:1}}>
+                      ↑ Salidas
+                    </span>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontFamily:"monospace",fontWeight:900,color:TH.danger,fontSize:13}}>
+                        -{fmtN(totalSalidas,0)}
+                      </span>
+                      <span style={{color:TH.danger,fontSize:11,fontWeight:700}}>
+                        {balanceExpandido.salidas ? "▲" : "▼"}
+                      </span>
+                    </div>
                   </div>
-                  {movimientos.filter(m=>!m.esEntrada).map((m,i)=>(
+                  {balanceExpandido.salidas && movimientos.filter(m=>!m.esEntrada).map((m,i)=>(
                     <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                      padding:"7px 20px 7px 28px",borderTop:`1px solid ${TH.border}55`}}>
-                      <div>
-                        <span style={{fontFamily:"monospace",fontSize:11,fontWeight:700,color:TH.navy}}>{m.id}</span>
-                        {m.obs && <span style={{fontSize:11,color:TH.muted,marginLeft:8}}>{m.obs}</span>}
-                      </div>
+                      padding:"7px 20px 7px 32px",borderTop:`1px solid ${TH.border}55`}}>
+                      <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:TH.navy}}>{m.id}</span>
                       <span style={{fontFamily:"monospace",fontWeight:700,color:TH.danger,fontSize:13}}>
                         -{fmtN(m.galones,0)}
                       </span>
                     </div>
                   ))}
-                  <div style={{display:"flex",justifyContent:"space-between",padding:"6px 20px",
-                    background:`${TH.danger}08`}}>
-                    <span style={{fontSize:11,fontWeight:700,color:TH.danger}}>Total salidas</span>
-                    <span style={{fontFamily:"monospace",fontWeight:900,color:TH.danger,fontSize:13}}>-{fmtN(totalSalidas,0)}</span>
-                  </div>
                 </div>
               )}
 
