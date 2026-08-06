@@ -5265,6 +5265,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const totalDesc = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>s+glsDescargadosCarro(carro),0),0);
         const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
         const estadoColor = e=>e==="ANALIZADA"?T.success:e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
+        const estadoLabel = e=>e==="ANALIZADA"?"COMPLETADA":e;
 
         const actualizarOT = async(patch) => {
           await dbCall({ table:"ordenes_trabajo", op:"update", data:{...patch,updated_at:new Date().toISOString()}, filters:[{col:"id",val:ot.id}] });
