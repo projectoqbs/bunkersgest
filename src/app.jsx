@@ -6308,17 +6308,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
         const saveLiq = async () => {
           setLiqSaving(true);
+          const n = (v) => v !== "" ? Number(v) : null;
           const patch = {
+            motonave:      ef.motonave,
+            imo_numero:    ef.imo_numero,
+            producto:      ef.producto,
+            fecha:         ef.fecha,
+            puerto:        ef.puerto,
             bdn_numero:    ef.bdn_numero,
-            factor:        ef.factor        !== "" ? Number(ef.factor)        : null,
-            gls_flowmeter: ef.gls_flowmeter !== "" ? Number(ef.gls_flowmeter) : null,
-            mt_firmadas:   ef.mt_firmadas   !== "" ? Number(ef.mt_firmadas)   : null,
-            mt_entregadas: ef.mt_entregadas !== "" ? Number(ef.mt_entregadas) : null,
-            gls_entregados:ef.gls_entregados!== "" ? Number(ef.gls_entregados): null,
-            gls_brutos_entregados: ef.gls_brutos_entregados !== "" ? Number(ef.gls_brutos_entregados) : null,
+            contrato:      ef.contrato,
+            mt_firmadas:   n(ef.mt_firmadas),
+            mt_entregadas: n(ef.mt_entregadas),
+            gls_brutos_entregados: n(ef.gls_brutos_entregados),
+            gls_entregados: n(ef.gls_entregados),
+            gls_flowmeter: n(ef.gls_flowmeter),
+            factor:        n(ef.factor),
             coordinador:   ef.coordinador,
             operador:      ef.operador,
-            contrato:      ef.contrato,
           };
           const { error } = await dbCall({ table:"liquidaciones_qbs002", op:"update", data:patch, filters:[{col:"id",val:liq.id}] });
           setLiqSaving(false);
@@ -6331,6 +6337,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
         // Campos editables
         const EDIT_FIELDS = [
+          {k:"motonave",         l:"Buque",                 type:"text"},
+          {k:"imo_numero",       l:"IMO",                   type:"text"},
+          {k:"producto",         l:"Producto",              type:"text"},
+          {k:"fecha",            l:"Fecha",                 type:"date"},
+          {k:"puerto",           l:"Puerto",                type:"text"},
           {k:"bdn_numero",       l:"BDN N°",               type:"text"},
           {k:"contrato",         l:"Contrato",              type:"text"},
           {k:"mt_firmadas",      l:"MT Firmadas",           type:"number"},
@@ -6358,13 +6369,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{fontSize:11,fontWeight:800,color:T.warn||"#f59e0b",marginBottom:12,textTransform:"uppercase",letterSpacing:1}}>
                   ✏ Modo edición — Administrador
                 </div>
-                {/* Campos no editables */}
-                <div style={{display:"flex",gap:24,flexWrap:"wrap",marginBottom:14,padding:"8px 12px",background:T.bg,borderRadius:6}}>
-                  {[["Buque",liq.motonave||d.buque],["IMO",liq.imo_numero||d.imo||"—"],["Producto",liq.producto||d.producto||"—"],["Fecha",liq.fecha||"—"],["Puerto",liq.puerto||d.destino||"—"]].map(([l,v])=>(
-                    <div key={l}><div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{l}</div><div style={{fontSize:12,fontWeight:700,color:T.muted}}>{v}</div></div>
-                  ))}
-                </div>
-                {/* Campos editables */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
                   {EDIT_FIELDS.map(({k,l,type})=>(
                     <div key={k}>
@@ -6415,6 +6419,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div>
                 {isAdmin && !liqEditMode && (
                   <button onClick={()=>{ setLiqEditForm({
+                    motonave: liq.motonave||d.buque||"",
+                    imo_numero: liq.imo_numero||d.imo||"",
+                    producto: liq.producto||d.producto||"",
+                    fecha: liq.fecha||"",
+                    puerto: liq.puerto||d.destino||"",
                     bdn_numero: liq.bdn_numero||"",
                     contrato: liq.contrato||"",
                     mt_firmadas: liq.mt_firmadas??"",
