@@ -117,7 +117,7 @@ function TInp({value,onChange,disabled,navRow,navCol,navSet}){
   );
 }
 
-export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
+export default function LiquidadorPlanta1({supabase,session,perfil,showToast,barcazaFiltro,despachoCtx}){
   const [tab,setTab]=useState("nuevo");
   const [historial,setHistorial]=useState([]);
   const [loadingHist,setLoadingHist]=useState(false);
@@ -342,7 +342,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
           </div>
         </div>
 
-        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+        {(!barcazaFiltro || barcazaFiltro==="QBS002") && <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
           <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🛢️ Barcaza QBS-002 — Sonda CM (ullage)</div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
@@ -356,9 +356,9 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
               <tbody>{filasB.map((f,i)=>FilaB({f,idx:i}))}</tbody>
             </table>
           </div>
-        </div>
+        </div>}
 
-        <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+        {(!barcazaFiltro || barcazaFiltro==="TANQUES TIERRA") && <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
           <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🏗️ Tanques Tierra — TKT-1 y TKT-2 — Sonda MM (innage)</div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
@@ -372,7 +372,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast}){
               <tbody>{filasT.map((f,i)=>FilaT({f,idx:i}))}</tbody>
             </table>
           </div>
-        </div>
+        </div>}
 
         <div style={{background:TH.navy,borderRadius:6,padding:"8px 16px",marginBottom:8,display:"flex",flexWrap:"wrap",gap:"8px 24px",alignItems:"center"}}>
           {[
