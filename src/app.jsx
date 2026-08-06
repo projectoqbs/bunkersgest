@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
@@ -1931,7 +1931,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
               despacho:     { icon:"🚢", label:"DESPACHO",      subs:[{id:"despacho",label:"Listado Buques"},{id:"despacho_entrega",label:"Entrega"},{id:"despacho_historial",label:"Historial"}] },
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
-              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"inventario_diario",label:"Inventario Diario"}] },
+              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA","ANALIZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"inventario_diario",label:"Inventario Diario"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
               liquidador:   { icon:"🔢", label:"LIQUIDADOR",    subs:[{id:"liquidador",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
               tanques:      { icon:"🛢", label:"TANQUES",        subs:[{id:"tanques",label:"Planta 2 (TK-111–117)"},{id:"tanques_p1",label:"Planta 1 — QBS002"}] },
@@ -4694,8 +4694,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
           {nav==="programacion" && (()=>{
             const estadoColor = e => e==="ANALIZADA"?T.success:e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
-            const activas = (ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado));
-            const cerradas = (ordenesTrabaio||[]).filter(o=>["COMPLETADA","RECHAZADA"].includes(o.estado));
+            const estadoLabel = e => e==="ANALIZADA"?"COMPLETADA":e;
+            const activas = (ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA","ANALIZADA"].includes(o.estado));
+            const cerradas = (ordenesTrabaio||[]).filter(o=>["COMPLETADA","RECHAZADA","ANALIZADA"].includes(o.estado));
             return (
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
@@ -4727,7 +4728,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10 }}>
                             <div style={{ display:"flex",gap:12,alignItems:"center" }}>
                               <div style={{ fontWeight:800,fontSize:16,color:T.navy }}>{ot.numero_ot}</div>
-                              <Badge label={ot.estado} color={estadoColor(ot.estado)}/>
+                              <Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/>
                               <span style={{ fontSize:12,color:T.muted }}>{fo?.producto||""} · {ot.tanque_destino}</span>
                               {ot.tiquete_id && (
                                 <span style={{fontSize:11,background:`${T.success}18`,border:`1px solid ${T.success}44`,borderRadius:6,padding:"2px 8px",cursor:"pointer",color:T.success,fontFamily:"monospace",fontWeight:700}} onClick={()=>{const tq=tiquetes.find(x=>x.id===ot.tiquete_id);if(tq){setForm({...tq});setModal("tiquete");}}}>🧪 {ot.tiquete_id}</span>
@@ -4787,7 +4788,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <td style={{ padding:"10px 14px",fontWeight:700,color:T.navy }}>{ot.numero_ot}</td>
                               <td style={{ padding:"10px 14px",color:T.text }}>{ot.tanque_destino}</td>
                               <td style={{ padding:"10px 14px",color:T.muted }}>{fo?.producto||"—"} {fo?.fecha?`(${fo.fecha})`:""}</td>
-                              <td style={{ padding:"10px 14px" }}><Badge label={ot.estado} color={estadoColor(ot.estado)}/></td>
+                              <td style={{ padding:"10px 14px" }}><Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/></td>
                               <td style={{ padding:"10px 14px",color:T.muted,fontSize:11 }}>{(ot.created_at||"").slice(0,10)}</td>
                               <td style={{ padding:"10px 14px" }}>{ot.tiquete_id ? <span style={{color:T.success,fontFamily:"monospace",fontWeight:700,cursor:"pointer",textDecoration:"underline"}} onClick={()=>{const tq=tiquetes.find(x=>x.id===ot.tiquete_id);if(tq){setForm({...tq});setModal("tiquete");}}}>{ot.tiquete_id}</span> : <span style={{color:T.muted,fontSize:11}}>Sin análisis</span>}</td>
                               <td style={{ padding:"10px 14px" }}><button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id}]); setActiveTabId(id); }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Ver →</button></td>
@@ -5278,7 +5279,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ fontWeight:800,fontSize:22,color:T.navy }}>{ot.numero_ot}</div>
                 <div style={{ fontSize:12,color:T.muted,marginTop:2 }}>{fo?.producto||""} · {ot.tanque_destino} · {(ot.created_at||"").slice(0,10)}</div>
               </div>
-              <Badge label={ot.estado} color={estadoColor(ot.estado)}/>
+              <Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/>
             </div>
 
             {/* PASO 1: TRASIEGOS */}
@@ -7176,7 +7177,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       )}
 
 {modalVinculacionOT.mostrar && (()=>{
-  const otsDisponibles = (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA" && !(cmts||[]).some(c=>c.ot_id===o.id));
+  const otsDisponibles = (ordenesTrabaio||[]).filter(o=>(o.estado==="COMPLETADA"||o.estado==="ANALIZADA") && !(cmts||[]).some(c=>c.ot_id===o.id));
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center"}}>
       <div style={{background:T.card,borderRadius:12,padding:28,width:440,maxWidth:"95vw",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
