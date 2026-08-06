@@ -125,6 +125,12 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   const [fecha,setFecha]=useState(new Date().toISOString().split("T")[0]);
   const [operador,setOperador]=useState("");
   const [obs,setObs]=useState("");
+  const [imoNumero,setImoNumero]=useState("");
+  const [terminal,setTerminal]=useState(despachoCtx?.puerto||"");
+  const [autoComisorio,setAutoComisorio]=useState("");
+  const [bdnNumero,setBdnNumero]=useState("");
+  const [glsFlowmeter,setGlsFlowmeter]=useState("");
+  const [docNumero,setDocNumero]=useState("");
   const [calados,setCalados]=useState({proaIni:"",proaFin:"",popaIni:"",popaFin:""});
   const [saving,setSaving]=useState(false);
   const [mtFirmadas,setMtFirmadas]=useState("");
@@ -214,7 +220,18 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
       registro.contrato=despachoCtx.contrato||null;
     }
     const mf=parseFloat(String(mtFirmadas).replace(",","."));
-    if(!isNaN(mf)&&mf>0) registro.mt_firmadas=mf;
+    if(!isNaN(mf)&&mf>0){
+      registro.mt_firmadas=mf;
+      const factor=tots.gEnt>0&&mf>0?Number((tots.gEnt/mf).toFixed(4)):null;
+      if(factor) registro.factor=factor;
+    }
+    if(imoNumero.trim()) registro.imo_numero=imoNumero.trim();
+    if(terminal.trim()) registro.terminal=terminal.trim();
+    if(autoComisorio.trim()) registro.auto_comisorio=autoComisorio.trim();
+    if(bdnNumero.trim()) registro.bdn_numero=bdnNumero.trim();
+    if(docNumero.trim()) registro.doc_numero=docNumero.trim();
+    const gf=parseFloat(String(glsFlowmeter).replace(",","."));
+    if(!isNaN(gf)&&gf>0) registro.gls_flowmeter=gf;
 
     const{error}=await supabase.from("liquidaciones_planta1").insert(registro);
     if(error){setSaving(false);showToast("Error: "+error.message,false);return;}
@@ -320,6 +337,35 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
 
       {tab==="nuevo"&&<>
 
+        {/* Datos del BDN */}
+        <div style={{background:TH.card,border:"1px solid "+TH.border,borderLeft:`3px solid ${TH.orange}`,borderRadius:6,padding:"10px 14px",marginBottom:8}}>
+          <div style={{fontSize:10,fontWeight:800,color:TH.orange,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📄 Datos del BDN</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:"6px 12px"}}>
+            {[
+              {label:"Motonave",value:despachoCtx?.buque||motonave,set:despachoCtx?null:setMotonave,placeholder:"Nombre buque"},
+              {label:"Numero IMO",value:imoNumero,set:setImoNumero,placeholder:"ej. 9243382"},
+              {label:"Terminal de Entrega",value:terminal,set:setTerminal,placeholder:"ej. PALERMO"},
+              {label:"Auto Comisorio N°",value:autoComisorio,set:setAutoComisorio,placeholder:""},
+              {label:"BDN N°",value:bdnNumero,set:setBdnNumero,placeholder:"ej. 2881-26"},
+              {label:"Documento N°",value:docNumero,set:setDocNumero,placeholder:"N° factura"},
+              {label:"Gls Flowmeter",value:glsFlowmeter,set:setGlsFlowmeter,placeholder:"0",type:"number"},
+            ].map(({label,value,set,placeholder,type})=>(
+              <div key={label} style={{display:"flex",flexDirection:"column",gap:3}}>
+                <label style={{fontSize:9,fontWeight:700,color:TH.muted,textTransform:"uppercase",letterSpacing:0.8}}>{label}</label>
+                <input type={type||"text"} value={value} readOnly={!set} onChange={set?e=>set(e.target.value):undefined} placeholder={placeholder}
+                  style={{padding:"6px 10px",borderRadius:5,border:`1px solid ${TH.border}`,fontSize:12,color:TH.text,
+                    background:!set?"#e8edf2":TH.card,outline:"none",fontFamily:"system-ui,sans-serif"}}/>
+              </div>
+            ))}
+            {(()=>{const mf=parseFloat(String(mtFirmadas).replace(",","."));const fac=tots.gEnt>0&&mf>0?fmtN(tots.gEnt/mf,4):"—";return(
+              <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                <label style={{fontSize:9,fontWeight:700,color:TH.muted,textTransform:"uppercase",letterSpacing:0.8}}>Factor (Gls÷MT Firmadas)</label>
+                <input readOnly value={fac} style={{padding:"6px 10px",borderRadius:5,border:`1px solid ${TH.border}`,fontSize:12,fontWeight:700,color:TH.navy,background:"#e8edf2",outline:"none"}}/>
+              </div>
+            );})()}
+          </div>
+        </div>
+
         {/* Calados dividido en Inicial y Final */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
           {/* INICIAL */}
@@ -416,7 +462,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
               style={{padding:"9px 14px",borderRadius:6,border:`2px solid ${TH.orange}`,fontSize:14,fontWeight:700,color:TH.text,background:TH.card,width:180,outline:"none",textAlign:"right"}}
             />
           </div>
-          <AppBtn color={TH.muted} sm onClick={()=>{setFilasB(initB());setFilasT(initT());setMotonave("");setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""});setObs("");setMtFirmadas("");}}>Limpiar</AppBtn>
+          <AppBtn color={TH.muted} sm onClick={()=>{setFilasB(initB());setFilasT(initT());setMotonave("");setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""});setObs("");setMtFirmadas("");setImoNumero("");setTerminal(despachoCtx?.puerto||"");setAutoComisorio("");setBdnNumero("");setGlsFlowmeter("");setDocNumero("");}}>Limpiar</AppBtn>
           <AppBtn color={TH.success} disabled={saving} onClick={guardar}>{saving?"Guardando…":"✔ Entregar"}</AppBtn>
         </div>
       </>}
