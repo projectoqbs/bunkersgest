@@ -6428,16 +6428,31 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <select value={rec.plantaFiltro||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],plantaFiltro:e.target.value,tanque:""};setCmtRecepcion(n);}}
-                        style={{background:T.navy,color:"#fff",border:"none",borderRadius:6,padding:"5px 10px",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none"}}>
-                        <option value="">Planta...</option>
-                        <option value="PLANTA 1">PLANTA 1</option>
-                        <option value="PLANTA 2">PLANTA 2</option>
-                      </select>
+                      {(form.tipo_operacion||"")==="ENTREGA A MOTONAVE" ? (
+                        <select value={rec.plantaFiltro||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],plantaFiltro:e.target.value,tanque:""};setCmtRecepcion(n);}}
+                          style={{background:T.navy,color:"#fff",border:"none",borderRadius:6,padding:"5px 10px",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none"}}>
+                          <option value="">Barcaza...</option>
+                          <option value="QBS002">QBS002</option>
+                          <option value="TANQUES TIERRA">TANQUES TIERRA</option>
+                        </select>
+                      ) : (
+                        <select value={rec.plantaFiltro||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],plantaFiltro:e.target.value,tanque:""};setCmtRecepcion(n);}}
+                          style={{background:T.navy,color:"#fff",border:"none",borderRadius:6,padding:"5px 10px",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none"}}>
+                          <option value="">Planta...</option>
+                          <option value="PLANTA 1">PLANTA 1</option>
+                          <option value="PLANTA 2">PLANTA 2</option>
+                        </select>
+                      )}
                       <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
                       <select value={rec.tanque} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tanque:e.target.value};setCmtRecepcion(n);}} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none"}}>
                         <option value="">—</option>{(()=>{
                           const p=rec.plantaFiltro||"";
+                          const esEntrega=(form.tipo_operacion||"")==="ENTREGA A MOTONAVE";
+                          if(esEntrega){
+                            if(p==="QBS002") return tanques.filter(t=>t.id.startsWith("QBS002-"));
+                            if(p==="TANQUES TIERRA") return tanques.filter(t=>t.id.startsWith("TKT-"));
+                            return tanques.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"));
+                          }
                           if(p==="PLANTA 1") return tanques.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"));
                           if(p==="PLANTA 2") return tanques.filter(t=>t.id.startsWith("TK-"));
                           return tanques.filter(t=>t.id.startsWith("TK-")||t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"));
