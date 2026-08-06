@@ -481,6 +481,7 @@ export default function App() {
   const [flotaElimProducto, setFlotaElimProducto] = useState("");
   const [flotaElimPlaca, setFlotaElimPlaca] = useState("");
   const [flotaElimConfirm, setFlotaElimConfirm] = useState(false);
+  const [flotaAccion, setFlotaAccion] = useState("");
   const [analisisNav, setAnalisisNav] = useState("");
   const [resFiltroTipo, setResFiltroTipo] = useState("");
   const [tiqBusqueda, setTiqBusqueda] = useState("");
@@ -5456,10 +5457,33 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         );
         const inpStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:12,outline:"none",fontFamily:"system-ui,sans-serif"};
         const numStyle = {background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"4px 8px",color:T.text,fontSize:12,outline:"none",width:60,textAlign:"center"};
+        const ACCIONES_FLOTA = [
+          { k:"fechas",    label:"Calcular Fechas Estimadas de Llegada", color:T.orange },
+          { k:"redirigir", label:"Redirigir Sede de Destino",            color:"#6366f1" },
+          { k:"eliminar",  label:"Eliminar Registros",                   color:T.danger  },
+        ];
+        const accionActual = ACCIONES_FLOTA.find(a=>a.k===flotaAccion);
         return (
-        <Modal title="⚙ Administrar Flota" onClose={()=>setModalFlota(false)} wide>
+        <Modal title="⚙ Administrar Flota" onClose={()=>{ setModalFlota(false); setFlotaAccion(""); }} wide>
+          {/* Selector de acción */}
+          <div style={{marginBottom:20}}>
+            <Lbl>Selecciona la operación a realizar</Lbl>
+            <select value={flotaAccion} onChange={e=>{ setFlotaAccion(e.target.value); setFlotaElimConfirm(false); }}
+              style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"10px 14px",
+                color:flotaAccion?accionActual?.color:T.muted,fontSize:13,fontWeight:flotaAccion?700:400,outline:"none",cursor:"pointer"}}>
+              <option value="">— Seleccionar operación —</option>
+              {ACCIONES_FLOTA.map(a=><option key={a.k} value={a.k}>{a.label}</option>)}
+            </select>
+          </div>
+
+          {flotaAccion==="" && (
+            <div style={{textAlign:"center",padding:"32px 0",color:T.muted,fontSize:13}}>
+              Selecciona una operación arriba para continuar.
+            </div>
+          )}
+
           {/* SECCIÓN 1: Calcular fechas estimadas */}
-          <Section title="Calcular Fechas Estimadas de Llegada" color={T.orange}>
+          {flotaAccion==="fechas" && <Section title="Calcular Fechas Estimadas de Llegada" color={T.orange}>
             <div style={{fontSize:12,color:T.muted,marginBottom:10}}>
               Selecciona el período de cargue y configura los días de viaje por producto. Se actualizará la fecha estimada de llegada de todos los viajes "En Ruta" en ese rango.
             </div>
@@ -5492,10 +5516,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {saving?"Aplicando...": `Aplicar a ${viajesConDias.length} viajes`}
               </Btn>
             </div>
-          </Section>
+          </Section>}
 
           {/* SECCIÓN 2: Redirigir sede */}
-          <Section title="Redirigir Sede de Destino" color="#6366f1">
+          {flotaAccion==="redirigir" && <Section title="Redirigir Sede de Destino" color="#6366f1">
             <div style={{fontSize:12,color:T.muted,marginBottom:10}}>
               Selecciona viajes por período de cargue y asígnales una nueva sede destino. Útil cuando un lote cargado se redirige internamente a otra planta.
             </div>
@@ -5559,10 +5583,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {saving?"Aplicando...":`Redirigir ${viajesRedir.length} viajes → ${flotaRedirSede}`}
               </Btn>
             </div>
-          </Section>
+          </Section>}
 
           {/* SECCIÓN 3: Eliminar registros */}
-          {(()=>{
+          {flotaAccion==="eliminar" && (()=>{
             const viajesElim = (viajes||[]).filter(v =>
               (!flotaElimDesde || v.fecha >= flotaElimDesde) &&
               (!flotaElimHasta || v.fecha <= flotaElimHasta) &&
