@@ -426,7 +426,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                   <td style={{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,
                     color:!di?TH.muted:isOk?TH.success:di.diff<0?TH.danger:TH.warn}}>
                     {di?(di.diff>0?"+":"")+fmtN(di.diff,0):"—"}
-                    {di?.pct!==null&&<span style={{fontSize:10,marginLeft:4}}>({(di.pct>0?"+":"")+di.pct.toFixed(1)}%)</span>}
+                    {di!=null&&di.pct!=null&&<span style={{fontSize:10,marginLeft:4}}>({(di.pct>0?"+":"")+di.pct.toFixed(1)}%)</span>}
                   </td>
                   <td style={{padding:"6px 10px",textAlign:"center",borderBottom:`1px solid ${TH.border}`}}>
                     {!di?<span style={{color:TH.muted,fontSize:10}}>—</span>
@@ -479,7 +479,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                 <td style={{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,
                   color:!di?TH.muted:isOk?TH.success:di.diff<0?TH.danger:TH.warn}}>
                   {di?(di.diff>0?"+":"")+fmtN(di.diff,0):"—"}
-                  {di?.pct!==null&&<span style={{fontSize:10,marginLeft:4}}>({(di.pct>0?"+":"")+di.pct.toFixed(1)}%)</span>}
+                  {di!=null&&di.pct!=null&&<span style={{fontSize:10,marginLeft:4}}>({(di.pct>0?"+":"")+di.pct.toFixed(1)}%)</span>}
                 </td>
                 <td style={{padding:"6px 10px",textAlign:"center",borderBottom:`1px solid ${TH.border}`}}>
                   {!di?<span style={{color:TH.muted,fontSize:10}}>—</span>
