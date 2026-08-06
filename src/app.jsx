@@ -468,6 +468,9 @@ export default function App() {
   const [importFechaDesde, setImportFechaDesde] = useState("");
   const [modalFlota, setModalFlota] = useState(false);
   const [modalLiqDetalle, setModalLiqDetalle] = useState(null); // {liq, despacho}
+  const [liqEditMode, setLiqEditMode] = useState(false);
+  const [liqEditForm, setLiqEditForm] = useState({});
+  const [liqSaving, setLiqSaving] = useState(false);
   const [flotaDiasProducto, setFlotaDiasProducto] = useState(()=>{
     try { return JSON.parse(localStorage.getItem("flota_dias_producto")||"{}"); } catch{ return {}; }
   });
@@ -6296,13 +6299,84 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const {liq,despacho:d} = modalLiqDetalle;
         const fmtN=(v,dec=0)=>v!=null&&!isNaN(v)?Number(v).toLocaleString("es-CO",{minimumFractionDigits:dec,maximumFractionDigits:dec}):"—";
         const filas=JSON.parse(liq.filas_barcaza||"[]").filter(f=>f.activo);
+        const isAdmin = perfil?.rol==="administrador";
+        const ef = liqEditForm;
+        const setEf = (k,v) => setLiqEditForm(p=>({...p,[k]:v}));
+
+        const inpStyle = {padding:"5px 8px",border:`1px solid ${T.border}`,borderRadius:5,fontSize:12,
+          color:T.text,background:"#fff",width:"100%",fontFamily:"monospace",fontWeight:700};
+
+        const saveLiq = async () => {
+          setLiqSaving(true);
+          const patch = {
+            bdn_numero:    ef.bdn_numero,
+            factor:        ef.factor        !== "" ? Number(ef.factor)        : null,
+            gls_flowmeter: ef.gls_flowmeter !== "" ? Number(ef.gls_flowmeter) : null,
+            mt_firmadas:   ef.mt_firmadas   !== "" ? Number(ef.mt_firmadas)   : null,
+            mt_entregadas: ef.mt_entregadas !== "" ? Number(ef.mt_entregadas) : null,
+            gls_entregados:ef.gls_entregados!== "" ? Number(ef.gls_entregados): null,
+            gls_brutos_entregados: ef.gls_brutos_entregados !== "" ? Number(ef.gls_brutos_entregados) : null,
+            coordinador:   ef.coordinador,
+            operador:      ef.operador,
+            contrato:      ef.contrato,
+          };
+          const { error } = await dbCall({ table:"liquidaciones_qbs002", op:"update", data:patch, filters:[{col:"id",val:liq.id}] });
+          setLiqSaving(false);
+          if(error){ showToast("Error al guardar: "+error,"error"); return; }
+          showToast("Liquidación actualizada","success");
+          // Actualizar el objeto liq en el modal
+          setModalLiqDetalle(prev=>({...prev, liq:{...prev.liq,...patch}}));
+          setLiqEditMode(false);
+        };
+
+        // Campos editables
+        const EDIT_FIELDS = [
+          {k:"bdn_numero",       l:"BDN N°",               type:"text"},
+          {k:"contrato",         l:"Contrato",              type:"text"},
+          {k:"mt_firmadas",      l:"MT Firmadas",           type:"number"},
+          {k:"mt_entregadas",    l:"MT Entregadas",         type:"number"},
+          {k:"gls_brutos_entregados", l:"Gls Brutos",      type:"number"},
+          {k:"gls_entregados",   l:"Gls Netos Entregados",  type:"number"},
+          {k:"gls_flowmeter",    l:"Gls Flowmeter",         type:"number"},
+          {k:"factor",           l:"Factor",                type:"number"},
+          {k:"coordinador",      l:"Coordinador",           type:"text"},
+          {k:"operador",         l:"Operador",              type:"text"},
+        ];
+
         return (
-          <Modal title={`Liquidación — ${liq.motonave||d.buque}`} onClose={()=>setModalLiqDetalle(null)} wide>
-            <div style={{display:"flex",gap:32,flexWrap:"wrap",marginBottom:20,padding:"12px 16px",background:T.bg,borderRadius:8,border:`1px solid ${T.border}`}}>
-              {[["Buque",liq.motonave||d.buque],["IMO",liq.imo_numero||d.imo||"—"],["Producto",liq.producto||d.producto||"—"],["Fecha",liq.fecha||"—"],["Puerto",liq.puerto||d.destino||"—"],["Contrato",liq.contrato||d.contrato||"—"],["MT Firmadas",fmtN(liq.mt_firmadas,3)],["MT Entregadas",fmtN(liq.mt_entregadas,3)],["Gls Brutos Entregados",fmtN(liq.gls_brutos_entregados,0)],["Gls Netos Entregados",fmtN(liq.gls_entregados,0)],["Gls Flowmeter",fmtN(liq.gls_flowmeter,0)],["Factor",fmtN(liq.factor,2)],["BDN N°",liq.bdn_numero||"—"],["Coordinador",liq.coordinador||"—"],["Operador",liq.operador||"—"]].map(([l,v])=>(
-                <div key={l}><div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{l}</div><div style={{fontSize:13,fontWeight:700,color:T.navy}}>{v}</div></div>
-              ))}
-            </div>
+          <Modal title={`Liquidación — ${liq.motonave||d.buque}`} onClose={()=>{ setModalLiqDetalle(null); setLiqEditMode(false); }} wide>
+
+            {/* ── Campos de cabecera ── */}
+            {!liqEditMode ? (
+              <div style={{display:"flex",gap:32,flexWrap:"wrap",marginBottom:20,padding:"12px 16px",background:T.bg,borderRadius:8,border:`1px solid ${T.border}`}}>
+                {[["Buque",liq.motonave||d.buque],["IMO",liq.imo_numero||d.imo||"—"],["Producto",liq.producto||d.producto||"—"],["Fecha",liq.fecha||"—"],["Puerto",liq.puerto||d.destino||"—"],["Contrato",liq.contrato||d.contrato||"—"],["MT Firmadas",fmtN(liq.mt_firmadas,3)],["MT Entregadas",fmtN(liq.mt_entregadas,3)],["Gls Brutos Entregados",fmtN(liq.gls_brutos_entregados,0)],["Gls Netos Entregados",fmtN(liq.gls_entregados,0)],["Gls Flowmeter",fmtN(liq.gls_flowmeter,0)],["Factor",fmtN(liq.factor,2)],["BDN N°",liq.bdn_numero||"—"],["Coordinador",liq.coordinador||"—"],["Operador",liq.operador||"—"]].map(([l,v])=>(
+                  <div key={l}><div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{l}</div><div style={{fontSize:13,fontWeight:700,color:T.navy}}>{v}</div></div>
+                ))}
+              </div>
+            ) : (
+              <div style={{marginBottom:20,padding:"16px",background:"#fffbeb",borderRadius:8,border:`2px solid ${T.warn||"#f59e0b"}`}}>
+                <div style={{fontSize:11,fontWeight:800,color:T.warn||"#f59e0b",marginBottom:12,textTransform:"uppercase",letterSpacing:1}}>
+                  ✏ Modo edición — Administrador
+                </div>
+                {/* Campos no editables */}
+                <div style={{display:"flex",gap:24,flexWrap:"wrap",marginBottom:14,padding:"8px 12px",background:T.bg,borderRadius:6}}>
+                  {[["Buque",liq.motonave||d.buque],["IMO",liq.imo_numero||d.imo||"—"],["Producto",liq.producto||d.producto||"—"],["Fecha",liq.fecha||"—"],["Puerto",liq.puerto||d.destino||"—"]].map(([l,v])=>(
+                    <div key={l}><div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{l}</div><div style={{fontSize:12,fontWeight:700,color:T.muted}}>{v}</div></div>
+                  ))}
+                </div>
+                {/* Campos editables */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
+                  {EDIT_FIELDS.map(({k,l,type})=>(
+                    <div key={k}>
+                      <div style={{fontSize:9,color:T.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{l}</div>
+                      <input type={type} value={ef[k]??""} onChange={e=>setEf(k,e.target.value)} style={inpStyle}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Tabla de tanques ── */}
             {filas.length>0 && (
               <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
@@ -6335,8 +6409,49 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </table>
               </div>
             )}
-            <div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}>
-              <button onClick={()=>setModalLiqDetalle(null)} style={{background:T.navy,color:"#fff",border:"none",borderRadius:8,padding:"10px 28px",fontWeight:700,cursor:"pointer"}}>Cerrar</button>
+
+            {/* ── Botones ── */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:16}}>
+              <div>
+                {isAdmin && !liqEditMode && (
+                  <button onClick={()=>{ setLiqEditForm({
+                    bdn_numero: liq.bdn_numero||"",
+                    contrato: liq.contrato||"",
+                    mt_firmadas: liq.mt_firmadas??"",
+                    mt_entregadas: liq.mt_entregadas??"",
+                    gls_brutos_entregados: liq.gls_brutos_entregados??"",
+                    gls_entregados: liq.gls_entregados??"",
+                    gls_flowmeter: liq.gls_flowmeter??"",
+                    factor: liq.factor??"",
+                    coordinador: liq.coordinador||"",
+                    operador: liq.operador||"",
+                  }); setLiqEditMode(true); }}
+                    style={{background:"#f59e0b",color:"#fff",border:"none",borderRadius:8,
+                      padding:"9px 22px",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                    ✏ Editar
+                  </button>
+                )}
+                {liqEditMode && (
+                  <button onClick={()=>setLiqEditMode(false)}
+                    style={{background:T.bg,color:T.muted,border:`1px solid ${T.border}`,borderRadius:8,
+                      padding:"9px 22px",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                    Cancelar
+                  </button>
+                )}
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                {liqEditMode && (
+                  <button onClick={saveLiq} disabled={liqSaving}
+                    style={{background:T.success,color:"#fff",border:"none",borderRadius:8,
+                      padding:"9px 28px",fontWeight:700,fontSize:13,cursor:liqSaving?"not-allowed":"pointer",opacity:liqSaving?0.6:1}}>
+                    {liqSaving?"Guardando...":"Guardar cambios"}
+                  </button>
+                )}
+                <button onClick={()=>{ setModalLiqDetalle(null); setLiqEditMode(false); }}
+                  style={{background:T.navy,color:"#fff",border:"none",borderRadius:8,padding:"9px 28px",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                  Cerrar
+                </button>
+              </div>
             </div>
           </Modal>
         );
