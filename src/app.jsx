@@ -2041,7 +2041,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const vEnPlanta = (viajes||[]).filter(v=>v.estado==="En Planta");
 
             // viajes con galones y fecha estimada (para la tabla de proyección)
-            const vEnRuta = vTransito.filter(v=>v.fecha_aprox_llegada && Number(v.gls_netos_guia)>0);
+            const vEnRuta = vTransito.filter(v=>v.fecha_aprox_llegada && glsViaje(v)>0);
 
             // galones entrantes por familia
             // blanco fallback: si gls_netos_guia = 0, estimar 10 500 gls por carro (1 carro cisterna típico de MGO/Diesel)
