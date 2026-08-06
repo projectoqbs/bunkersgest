@@ -1872,6 +1872,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {(()=>{
             const GRUPOS = {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
+              despacho:     { icon:"🚢", label:"DESPACHO",      subs:[{id:"despacho",label:"Listado Buques"},{id:"despacho_entrega",label:"Entrega"}] },
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
               pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
@@ -4081,7 +4082,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {nav==="despacho" && (
             <div>
               {/* LISTADO BUQUES */}
-              {despachoSeccion==="buques" && <div>
+              {true && <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
                 <div>
                   <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Listado Buques</div>
@@ -4134,6 +4135,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </table>
               </div>
               </div>}
+            </div>
+          )}
+
+          {/* DESPACHO — ENTREGA */}
+          {nav==="despacho_entrega" && (
+            <div>
+              <div style={{fontWeight:800,fontSize:20,color:T.navy,marginBottom:4}}>Entrega</div>
+              <div style={{fontSize:11,color:T.muted,marginBottom:24}}>Entrega de combustible al buque</div>
+              <div style={{color:T.muted,fontSize:13,padding:"40px 0",textAlign:"center"}}>Sección en construcción</div>
             </div>
           )}
 
