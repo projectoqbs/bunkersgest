@@ -131,6 +131,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   const [bdnNumero,setBdnNumero]=useState("");
   const [glsFlowmeter,setGlsFlowmeter]=useState("");
   const [docNumero,setDocNumero]=useState("");
+  const [coordinador,setCoordinador]=useState("");
   const [calados,setCalados]=useState({proaIni:"",proaFin:"",popaIni:"",popaFin:""});
   const [saving,setSaving]=useState(false);
   const [mtFirmadas,setMtFirmadas]=useState("");
@@ -230,6 +231,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
     if(autoComisorio.trim()) registro.auto_comisorio=autoComisorio.trim();
     if(bdnNumero.trim()) registro.bdn_numero=bdnNumero.trim();
     if(docNumero.trim()) registro.doc_numero=docNumero.trim();
+    if(coordinador.trim()) registro.coordinador=coordinador.trim();
     const gf=parseFloat(String(glsFlowmeter).replace(",","."));
     if(!isNaN(gf)&&gf>0) registro.gls_flowmeter=gf;
 
@@ -393,6 +395,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
               {label:"BDN N°",value:bdnNumero,set:setBdnNumero,placeholder:"ej. 2881-26"},
               {label:"Documento N°",value:docNumero,set:setDocNumero,placeholder:"N° factura"},
               {label:"Gls Flowmeter",value:glsFlowmeter,set:setGlsFlowmeter,placeholder:"0",type:"number"},
+              {label:"Coordinador",value:coordinador,set:setCoordinador,placeholder:"Nombre del coordinador"},
             ].map(({label,value,set,placeholder,type})=>(
               <div key={label} style={{display:"flex",flexDirection:"column",gap:3}}>
                 <label style={{fontSize:9,fontWeight:700,color:TH.muted,textTransform:"uppercase",letterSpacing:0.8}}>{label}</label>
@@ -507,7 +510,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
               style={{padding:"9px 14px",borderRadius:6,border:`2px solid ${TH.orange}`,fontSize:14,fontWeight:700,color:TH.text,background:TH.card,width:180,outline:"none",textAlign:"right"}}
             />
           </div>
-          <AppBtn color={TH.muted} sm onClick={()=>{setFilasB(initB());setFilasT(initT());setMotonave("");setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""});setObs("");setMtFirmadas("");setImoNumero("");setTerminal(despachoCtx?.puerto||"");setAutoComisorio("");setBdnNumero("");setGlsFlowmeter("");setDocNumero("");}}>Limpiar</AppBtn>
+          <AppBtn color={TH.muted} sm onClick={()=>{setFilasB(initB());setFilasT(initT());setMotonave("");setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""});setObs("");setMtFirmadas("");setImoNumero("");setTerminal(despachoCtx?.puerto||"");setAutoComisorio("");setBdnNumero("");setGlsFlowmeter("");setDocNumero("");setCoordinador("");}}>Limpiar</AppBtn>
           <AppBtn color={TH.success} disabled={saving} onClick={guardar}>{saving?"Guardando…":"✔ Entregar"}</AppBtn>
         </div>
       </>}
