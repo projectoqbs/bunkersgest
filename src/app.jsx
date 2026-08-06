@@ -984,7 +984,8 @@ export default function App() {
           };
           const placa = get("placa").toUpperCase();
           const transportadora = get("transportadora").toUpperCase();
-          const producto = get("producto").toUpperCase();
+          const prodRaw = get("producto").toUpperCase();
+          const producto = prodRaw === "NACIONAL" ? "DIESEL NACIONAL" : prodRaw;
           if (!placa && !transportadora) continue;
           todasFilas.push({
             _pestaña: nombre,
@@ -2012,7 +2013,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const p2Nivel = p2Tanks.reduce((a,t)=>a+Number(t.nivel||0),0);
 
             // clasificación por familia usando configuración de tankFamilias (localStorage)
-            const isProdBlanco = p => { const u=(p||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL"); };
+            const isProdBlanco = p => { const u=(p||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL")||u==="DIESEL NACIONAL"; };
             const isTankBlanco = t => tankFamilias[t.id] ? tankFamilias[t.id]==="blanco" : isProdBlanco(t.producto);
             const isTankNegro  = t => !isTankBlanco(t);
             const isBlanco = p => isProdBlanco(p);
@@ -5668,6 +5669,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {MATERIAS_PRIMAS.map(p=><option key={p}>{p}</option>)}
                 <option value="VLSFO">VLSFO</option>
                 <option value="MGO">MGO</option>
+                <option value="DIESEL NACIONAL">DIESEL NACIONAL</option>
               </Sel>
               <Sel label="Transportadora" value={form.transportadora||""} onChange={f("transportadora")}>
                 <option value="">Seleccionar...</option>
