@@ -4191,7 +4191,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{padding:"12px 16px"}}>
                             <button onClick={()=>openLiquidacionDespachoTab(d, p.prod, p.mt)}
                               style={{padding:"7px 16px",fontWeight:700,fontSize:11,cursor:"pointer",borderRadius:6,
-                                border:`1px solid ${T.primary}`,background:T.primary,color:"#fff",
+                                border:"1px solid #0077CC",background:"#0077CC",color:"#fff",
                                 whiteSpace:"nowrap",transition:"opacity 0.15s"}}
                               onMouseOver={e=>e.currentTarget.style.opacity="0.85"}
                               onMouseOut={e=>e.currentTarget.style.opacity="1"}>
