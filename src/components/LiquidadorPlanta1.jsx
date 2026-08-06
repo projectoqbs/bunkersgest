@@ -343,8 +343,8 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:"6px 12px"}}>
             {[
               {label:"Motonave",value:despachoCtx?.buque||motonave,set:despachoCtx?null:setMotonave,placeholder:"Nombre buque"},
-              {label:"Numero IMO",value:imoNumero,set:setImoNumero,placeholder:"ej. 9243382"},
-              {label:"Terminal de Entrega",value:terminal,set:setTerminal,placeholder:"ej. PALERMO"},
+              {label:"Numero IMO",value:imoNumero,set:despachoCtx?.imo?null:setImoNumero,placeholder:"ej. 9243382"},
+              {label:"Terminal de Entrega (Puerto)",value:terminal,set:despachoCtx?.puerto?null:setTerminal,placeholder:"ej. PALERMO"},
               {label:"Auto Comisorio N°",value:autoComisorio,set:setAutoComisorio,placeholder:""},
               {label:"BDN N°",value:bdnNumero,set:setBdnNumero,placeholder:"ej. 2881-26"},
               {label:"Documento N°",value:docNumero,set:setDocNumero,placeholder:"N° factura"},
