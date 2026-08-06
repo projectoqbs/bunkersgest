@@ -4187,7 +4187,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{padding:"12px 16px",fontWeight:700,color:T.navy}}>{j===0?(d.buque||"—"):""}</td>
                           <td style={{padding:"12px 16px",fontWeight:600,color:T.text}}>{p.prod}</td>
                           <td style={{padding:"12px 16px",fontWeight:700,fontFamily:"monospace"}}><div style={{textAlign:"center"}}>{p.mt>0?p.mt.toLocaleString():"—"}</div></td>
-                          <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.puerto||"—"):""}</td>
+                          <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.puerto||d.ciudad||"—"):""}</td>
                           <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.contrato||"—"):""}</td>
                           <td style={{padding:"12px 16px"}}>{j===0&&<span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span>}</td>
                           <td style={{padding:"12px 16px"}}>
