@@ -195,7 +195,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   useEffect(()=>{if(tab==="historial")cargarHist();},[tab]);
   async function cargarHist(){
     setLoadingHist(true);
-    const{data}=await supabase.from("liquidaciones_planta1").select("*").order("created_at",{ascending:false}).limit(50);
+    const{data}=await supabase.from("liquidaciones_qbs002").select("*").order("created_at",{ascending:false}).limit(50);
     setHistorial(data||[]);setLoadingHist(false);
   }
 
@@ -233,7 +233,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
     const gf=parseFloat(String(glsFlowmeter).replace(",","."));
     if(!isNaN(gf)&&gf>0) registro.gls_flowmeter=gf;
 
-    const{error}=await supabase.from("liquidaciones_planta1").insert(registro);
+    const{error}=await supabase.from("liquidaciones_qbs002").insert(registro);
     if(error){setSaving(false);showToast("Error: "+error.message,false);return;}
 
     // Marcar despacho como ENTREGADO si viene de contexto de despacho
