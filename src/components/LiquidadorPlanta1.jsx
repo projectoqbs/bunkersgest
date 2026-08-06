@@ -241,8 +241,51 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
       await supabase.from("despachos").update({estado:"ENTREGADO"}).eq("id",despachoCtx.despachoId);
     }
 
+    // Auto-generar CMT "ENTREGA A MOTONAVE"
+    try {
+      const sede = perfil?.sede || "MALAMBO";
+      const planta = "PLANTA 1";
+      const prefijos = {"MALAMBO-PLANTA 1":"MAL1","MALAMBO-PLANTA 2":"MAL2","SANTA MARTA":"STM","CARTAGENA":"CTG"};
+      const prefijo = prefijos[`${sede}-${planta}`] || "MAL1";
+      const {data:cmtsFrescos} = await supabase.from("cmts").select("numero_cmt").order("created_at",{ascending:false});
+      const existentes = (cmtsFrescos||[]).filter(c=>(c.numero_cmt||"").startsWith(`CMT-${prefijo}-`));
+      const numeroCmt = `CMT-${prefijo}-${String(existentes.length+1).padStart(5,"0")}`;
+
+      // Construir tanques_recepcion desde filasB activas
+      const tanquesRecepcion = filasB.filter(f=>f.activo&&f.sIni).map(f=>{
+        const ri=calcB(f,trimI,f.sIni,f.tIni,f.aIni);
+        const rf=calcB(f,trimF,f.sFin,f.tFin,f.aFin);
+        return {
+          tanque:`QBS002-${f.tanque}`,
+          sondaInicial:f.sIni, tempInicial:f.tIni, apiInicial:f.aIni,
+          galonesInicial:ri?Math.round(ri.glsN):0,
+          sondaFinal:f.sFin, tempFinal:f.tFin, apiFinal:f.aFin,
+          galonesFinal:rf?Math.round(rf.glsN):0,
+        };
+      });
+      const tanquesAntes = tanquesRecepcion.map(t=>({tanque:t.tanque,sonda:t.sondaInicial,galones:t.galonesInicial}));
+      const tanquesDespues = tanquesRecepcion.map(t=>({tanque:t.tanque,producto:despachoCtx?.prod||registro.producto||"",sonda:t.sondaFinal,galones:t.galonesFinal}));
+      const totalAntes = tanquesAntes.reduce((s,t)=>s+(Number(t.galones)||0),0);
+      const totalDespues = tanquesDespues.reduce((s,t)=>s+(Number(t.galones)||0),0);
+
+      await supabase.from("cmts").insert({
+        id:numeroCmt, numero_cmt:numeroCmt,
+        fecha, sede, planta,
+        tipo_operacion:"ENTREGA A MOTONAVE",
+        nombre_motonave:nombreBuque,
+        producto:despachoCtx?.prod||registro.producto||"",
+        tanques_antes:tanquesAntes,
+        tanques_despues:tanquesDespues,
+        tanques_recepcion:tanquesRecepcion,
+        total_antes:totalAntes, total_despues:totalDespues,
+        total_movido:Math.round(tots.gEnt),
+        operador:perfil?.nombre||operador||"",
+        creado_por:session?.user?.id,
+      });
+    } catch(e){ /* CMT auto-generado falla silenciosamente */ }
+
     setSaving(false);
-    showToast("Entrega registrada ✔",true);
+    showToast("Entrega registrada ✔ — CMT generado automáticamente",true);
     setTab("historial");
   }
 
