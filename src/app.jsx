@@ -6328,15 +6328,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           patch.operador    = ef.operador;
           const { error } = await dbCall({ table:"liquidaciones_qbs002", op:"update", data:patch, filters:[{col:"id",val:liq.id}] });
           if(error){ setLiqSaving(false); showToast("Error al guardar: "+error,"error"); return; }
-          // Si cambió la fecha, actualizar también fecha_entrega en despachos y fecha en el CMT asociado
-          if(ef.fecha && ef.fecha !== liq.fecha){
-            if(d?.id){
+          // Sincronizar fecha en despacho y CMT si la fecha cambió respecto a lo que tienen actualmente
+          if(ef.fecha){
+            if(d?.id && ef.fecha !== d.fecha_entrega){
               await dbCall({ table:"despachos", op:"update", data:{fecha_entrega:ef.fecha}, filters:[{col:"id",val:d.id}] });
               setDespachos(prev=>prev.map(x=>x.id===d.id?{...x,fecha_entrega:ef.fecha}:x));
             }
-            // Actualizar el CMT de entrega a motonave vinculado a este buque
-            const cmtAsoc = cmts.find(c=>c.nombre_motonave===(liq.motonave||d?.buque) && c.tipo_operacion==="ENTREGA A MOTONAVE");
-            if(cmtAsoc){
+            const cmtAsoc = cmts.find(c=>c.nombre_motonave===(ef.motonave||liq.motonave||d?.buque) && c.tipo_operacion==="ENTREGA A MOTONAVE");
+            if(cmtAsoc && ef.fecha !== cmtAsoc.fecha){
               await dbCall({ table:"cmts", op:"update", data:{fecha:ef.fecha}, filters:[{col:"id",val:cmtAsoc.id}] });
               setCmts(prev=>prev.map(c=>c.id===cmtAsoc.id?{...c,fecha:ef.fecha}:c));
             }
