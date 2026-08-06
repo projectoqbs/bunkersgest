@@ -1,8 +1,12 @@
 // InventarioDiario.jsx
 import { useState, useEffect, useCallback } from 'react';
 import {
-  TB, TK, TRIM_VALS, M3_TO_GAL, TANQUES_BARCAZA, TANQUES_TKT,
-  interp, interpolarBarcaza, interpolarTKT, calcVCF, calcF13, pfn, fmtN
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Legend, ReferenceLine, Cell
+} from 'recharts';
+import {
+  TB, TK, M3_TO_GAL, TANQUES_BARCAZA, TANQUES_TKT,
+  interpolarBarcaza, interpolarTKT, calcVCF, calcF13, pfn, fmtN
 } from '../utils/calibracion.js';
 
 const TH = {
@@ -12,10 +16,16 @@ const TH = {
 };
 
 const TANQUES_P2 = ["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
-const TOLERANCIA_PCT = 0.5; // 0.5% diferencia se considera normal
+const TOLERANCIA_PCT = 0.5;
+
+// Paleta de colores para las líneas/barras por tanque
+const COLORES_TANQUE = [
+  "#0077CC","#00B894","#f59e0b","#D63031","#6C5CE7","#00cec9",
+  "#e17055","#a29bfe","#55efc4","#fdcb6e","#74b9ff","#fd79a8",
+];
 
 function Btn({children, onClick, color, sm, disabled}){
-  const bg = color || TH.orange;
+  const bg = color||TH.orange;
   return <button onClick={onClick} disabled={disabled} style={{background:bg,color:"#fff",border:"2px solid "+bg,borderRadius:6,padding:sm?"5px 14px":"9px 22px",fontWeight:700,fontSize:sm?11:13,cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,whiteSpace:"nowrap",fontFamily:"system-ui,sans-serif"}}>{children}</button>;
 }
 
@@ -29,256 +39,400 @@ function NumInput({value, onChange, placeholder="0", disabled}){
   );
 }
 
-// ─── calc P1 barcaza ────────────────────────────────────────────────────────
-function calcBarcaza(tanqueKey, sonda, temp, api, trim){
-  const tabla = TB[tanqueKey];
-  if(!tabla) return null;
-  const sv = pfn(sonda), tv = pfn(temp), av = pfn(api);
-  if(isNaN(sv)) return null;
-  const m3 = interpolarBarcaza(tabla, sv, trim.val, trim.dir);
-  if(m3 === null) return null;
-  const glsB = m3 * M3_TO_GAL;
-  const vcf = (!isNaN(tv)&&!isNaN(av)) ? calcVCF(av, tv) : null;
-  const glsN = vcf ? glsB * vcf : glsB;
-  return { glsB: Math.round(glsB), glsN: Math.round(glsN) };
-}
-
-// ─── calc P1 TKT ─────────────────────────────────────────────────────────────
-function calcTKT(tanqueKey, sonda, temp, api){
-  const tabla = TK[tanqueKey];
-  if(!tabla) return null;
-  const sv = pfn(sonda), tv = pfn(temp), av = pfn(api);
-  if(isNaN(sv)) return null;
-  const glsB = interpolarTKT(tabla, sv) * M3_TO_GAL;
-  const vcf = (!isNaN(tv)&&!isNaN(av)) ? calcVCF(av, tv) : null;
-  const glsN = vcf ? glsB * vcf : glsB;
-  return { glsB: Math.round(glsB), glsN: Math.round(glsN) };
-}
-
 function mkTrim(popa, proa){
-  const po = pfn(popa)||0, pr = pfn(proa)||0;
-  const val = Math.abs(po - pr);
-  const dir = po > pr ? "POPA" : pr > po ? "PROA" : "CERO";
-  return { val, dir };
+  const po=pfn(popa)||0, pr=pfn(proa)||0;
+  const val=Math.abs(po-pr);
+  const dir=po>pr?"POPA":pr>po?"PROA":"CERO";
+  return{val,dir};
+}
+
+function calcBarcaza(tanqueKey, sonda, temp, api, trim){
+  const tabla=TB[tanqueKey]; if(!tabla) return null;
+  const sv=pfn(sonda),tv=pfn(temp),av=pfn(api);
+  if(isNaN(sv)) return null;
+  const m3=interpolarBarcaza(tabla,sv,trim.val,trim.dir);
+  if(m3===null) return null;
+  const glsB=m3*M3_TO_GAL;
+  const vcf=(!isNaN(tv)&&!isNaN(av))?calcVCF(av,tv):null;
+  return{glsB:Math.round(glsB),glsN:Math.round(vcf?glsB*vcf:glsB)};
+}
+
+function calcTKT(tanqueKey, sonda, temp, api){
+  const tabla=TK[tanqueKey]; if(!tabla) return null;
+  const sv=pfn(sonda),tv=pfn(temp),av=pfn(api);
+  if(isNaN(sv)) return null;
+  const glsB=interpolarTKT(tabla,sv)*M3_TO_GAL;
+  const vcf=(!isNaN(tv)&&!isNaN(av))?calcVCF(av,tv):null;
+  return{glsB:Math.round(glsB),glsN:Math.round(vcf?glsB*vcf:glsB)};
 }
 
 function initFilasP1(){
-  const barcaza = TANQUES_BARCAZA.map(t => ({
-    id: `QBS002-${t}`, label: `QBS002-${t}`, tipo:"barcaza", tanqueKey:t,
-    sonda:"", temp:"", api:"", activo:true,
-  }));
-  const tkt = TANQUES_TKT.map(t => ({
-    id: t, label: t, tipo:"tkt", tanqueKey:t,
-    sonda:"", temp:"", api:"", activo:true,
-  }));
-  return [...barcaza, ...tkt];
+  return [
+    ...TANQUES_BARCAZA.map(t=>({id:`QBS002-${t}`,label:`QBS002-${t}`,tipo:"barcaza",tanqueKey:t,sonda:"",temp:"",api:"",activo:true})),
+    ...TANQUES_TKT.map(t=>({id:t,label:t,tipo:"tkt",tanqueKey:t,sonda:"",temp:"",api:"",activo:true})),
+  ];
+}
+function initFilasP2(){
+  return TANQUES_P2.map(t=>({id:t,label:t,tipo:"tierra",galones:"",temp:"",api:"",activo:true}));
 }
 
-function initFilasP2(){
-  return TANQUES_P2.map(t => ({
-    id: t, label: t, tipo:"tierra",
-    galones:"", temp:"", api:"", activo:true,
-  }));
+// ── Tooltip personalizado ─────────────────────────────────────────────────────
+function TooltipGals({ active, payload, label }){
+  if(!active||!payload?.length) return null;
+  return (
+    <div style={{background:TH.card,border:`1px solid ${TH.border}`,borderRadius:8,padding:"10px 14px",boxShadow:"0 4px 16px rgba(0,0,0,0.12)",fontSize:12}}>
+      <div style={{fontWeight:700,color:TH.navy,marginBottom:6}}>{label}</div>
+      {payload.map((p,i)=>(
+        <div key={i} style={{color:p.color,fontWeight:600,marginBottom:2}}>
+          {p.name}: {fmtN(p.value,0)} gls
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function InventarioDiario({ supabase, session, perfil, showToast, tanques, dbCall }){
   const [planta, setPlanta] = useState("P1");
   const [activeTab, setActiveTab] = useState("nuevo");
 
-  // Formulario P1
+  // Formulario
   const [filasP1, setFilasP1] = useState(initFilasP1);
+  const [filasP2, setFilasP2] = useState(initFilasP2);
   const [calados, setCalados] = useState({proaIni:"", popaIni:""});
   const [turno, setTurno] = useState("DIURNO");
   const [operador, setOperador] = useState(perfil?.nombre||"");
   const [obs, setObs] = useState("");
   const [fechaReg, setFechaReg] = useState(new Date().toISOString().split("T")[0]);
-
-  // Formulario P2
-  const [filasP2, setFilasP2] = useState(initFilasP2);
-
   const [saving, setSaving] = useState(false);
+
+  // Datos
   const [historial, setHistorial] = useState([]);
   const [loadingHist, setLoadingHist] = useState(false);
 
+  // Análisis
+  const [analisisPlanta, setAnalisisPlanta] = useState("P1");
+  const [tanqueSeleccionado, setTanqueSeleccionado] = useState("");
+
   const trim = mkTrim(calados.popaIni, calados.proaIni);
 
-  // Carga historial
   const loadHist = useCallback(async () => {
     setLoadingHist(true);
     const { data } = await dbCall({ table:"inventarios_diarios", op:"select", select:"*", filters:[], single:false });
-    setHistorial((data||[]).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)));
+    const sorted = (data||[]).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+    setHistorial(sorted);
     setLoadingHist(false);
   }, [dbCall]);
 
-  useEffect(() => { if(activeTab==="historial") loadHist(); }, [activeTab, loadHist]);
+  useEffect(() => {
+    if(activeTab==="historial"||activeTab==="analisis") loadHist();
+  }, [activeTab, loadHist]);
 
-  // ── Helpers de cálculo ──────────────────────────────────────────────────────
-  function calcFila(fila){
-    if(fila.tipo==="barcaza") return calcBarcaza(fila.tanqueKey, fila.sonda, fila.temp, fila.api, trim);
-    if(fila.tipo==="tkt")     return calcTKT(fila.tanqueKey, fila.sonda, fila.temp, fila.api);
+  // ── Calc helpers ─────────────────────────────────────────────────────────────
+  function calcFila(f){
+    if(f.tipo==="barcaza") return calcBarcaza(f.tanqueKey,f.sonda,f.temp,f.api,trim);
+    if(f.tipo==="tkt")     return calcTKT(f.tanqueKey,f.sonda,f.temp,f.api);
     return null;
   }
-
-  function nivelSistema(tanqueId){
-    const t = tanques?.find(t=>t.id===tanqueId);
-    return t ? Number(t.nivel||0) : null;
+  function nivelSistema(id){ const t=tanques?.find(t=>t.id===id); return t?Number(t.nivel||0):null; }
+  function difInfo(glsCalc, id){
+    const sys=nivelSistema(id);
+    if(sys===null||glsCalc===null) return null;
+    const diff=glsCalc-sys;
+    const pct=sys>0?(diff/sys)*100:null;
+    return{diff,pct};
   }
 
-  function diferencia(galCalculados, tanqueId){
-    const sys = nivelSistema(tanqueId);
-    if(sys === null || galCalculados === null) return null;
-    return galCalculados - sys;
-  }
-
-  // ── Guardar inventario ──────────────────────────────────────────────────────
+  // ── Guardar ──────────────────────────────────────────────────────────────────
   async function guardar(){
     setSaving(true);
-    try {
-      const sede = perfil?.sede || "MALAMBO";
+    try{
+      const sede=perfil?.sede||"MALAMBO";
+      const filas=planta==="P1"?filasP1.filter(f=>f.activo):filasP2.filter(f=>f.activo);
+      const plantaLabel=planta==="P1"?"PLANTA 1":"PLANTA 2";
 
-      let filas, plantaLabel;
-      if(planta==="P1"){
-        filas = filasP1.filter(f=>f.activo);
-        plantaLabel = "PLANTA 1";
-      } else {
-        filas = filasP2.filter(f=>f.activo);
-        plantaLabel = "PLANTA 2";
-      }
-
-      const tanquesReg = filas.map(f => {
-        let glsCalc = null;
-        if(planta==="P1"){
-          const res = calcFila(f);
-          glsCalc = res ? res.glsN : null;
-        } else {
-          const v = pfn(f.galones);
-          glsCalc = isNaN(v) ? null : Math.round(v);
-        }
-        const sys = nivelSistema(f.id);
-        const diff = (glsCalc!==null && sys!==null) ? glsCalc - sys : null;
-        const pct  = (diff!==null && sys>0) ? (diff/sys)*100 : null;
-        return {
-          tanque: f.id,
-          sonda: f.sonda||"",
-          temperatura: f.temp||"",
-          api: f.api||"",
-          galones_calculados: glsCalc,
-          galones_sistema: sys,
-          diferencia: diff,
-          pct_diferencia: pct !== null ? +pct.toFixed(2) : null,
-        };
+      const tanquesReg=filas.map(f=>{
+        let glsCalc=null;
+        if(planta==="P1"){ const r=calcFila(f); glsCalc=r?r.glsN:null; }
+        else{ const v=pfn(f.galones); glsCalc=isNaN(v)?null:Math.round(v); }
+        const sys=nivelSistema(f.id);
+        const diff=(glsCalc!==null&&sys!==null)?glsCalc-sys:null;
+        const pct=(diff!==null&&sys>0)?(diff/sys)*100:null;
+        return{tanque:f.id,sonda:f.sonda||"",temperatura:f.temp||"",api:f.api||"",galones_calculados:glsCalc,galones_sistema:sys,diferencia:diff,pct_diferencia:pct!==null?+pct.toFixed(2):null};
       });
 
-      // Número secuencial
-      const { data: prevs } = await dbCall({ table:"inventarios_diarios", op:"select", select:"id", filters:[], single:false });
-      const prefix = `INV-${planta==="P1"?"P1":"P2"}`;
-      const existentes = (prevs||[]).filter(r=>(r.id||"").startsWith(prefix));
-      const numero = `${prefix}-${String(existentes.length+1).padStart(4,"0")}`;
+      const{data:prevs}=await dbCall({table:"inventarios_diarios",op:"select",select:"id",filters:[],single:false});
+      const prefix=`INV-${planta==="P1"?"P1":"P2"}`;
+      const numero=`${prefix}-${String(((prevs||[]).filter(r=>(r.id||"").startsWith(prefix)).length)+1).padStart(4,"0")}`;
 
-      await dbCall({ table:"inventarios_diarios", op:"insert", data:{
-        id: numero,
-        numero,
-        fecha: fechaReg,
-        planta: plantaLabel,
-        sede,
-        turno,
-        operador: operador||perfil?.nombre||"",
-        tanques: tanquesReg,
-        observaciones: obs,
-        calados_proa: planta==="P1" ? (calados.proaIni||null) : null,
-        calados_popa: planta==="P1" ? (calados.popaIni||null) : null,
-        creado_por: session?.user?.id,
+      await dbCall({table:"inventarios_diarios",op:"insert",data:{
+        id:numero,numero,fecha:fechaReg,planta:plantaLabel,sede,turno,
+        operador:operador||perfil?.nombre||"",tanques:tanquesReg,observaciones:obs,
+        calados_proa:planta==="P1"?(calados.proaIni||null):null,
+        calados_popa:planta==="P1"?(calados.popaIni||null):null,
+        creado_por:session?.user?.id,
       }});
 
-      showToast(`Inventario ${numero} guardado`, true);
-      // Reset
-      if(planta==="P1") setFilasP1(initFilasP1());
-      else setFilasP2(initFilasP2());
+      showToast(`Inventario ${numero} guardado`,true);
+      if(planta==="P1") setFilasP1(initFilasP1()); else setFilasP2(initFilasP2());
       setObs("");
       setActiveTab("historial");
-    } catch(e){
-      showToast("Error al guardar inventario: " + e.message, false);
-    } finally {
-      setSaving(false);
-    }
+    }catch(e){ showToast("Error: "+e.message,false); }
+    finally{ setSaving(false); }
   }
 
-  // ── Render tabla P1 ─────────────────────────────────────────────────────────
+  // ── Datos para análisis ───────────────────────────────────────────────────────
+  function datosPlanta(p){
+    const label = p==="P1"?"PLANTA 1":"PLANTA 2";
+    const registros = historial.filter(h=>h.planta===label);
+    // Agrupar por fecha (un punto por fecha, promedio si hay dos turnos)
+    const porFecha = {};
+    for(const reg of registros){
+      const f = reg.fecha;
+      if(!porFecha[f]) porFecha[f]={fecha:f,tanques:{}};
+      for(const t of reg.tanques||[]){
+        if(t.galones_calculados!==null){
+          if(!porFecha[f].tanques[t.tanque]) porFecha[f].tanques[t.tanque]=[];
+          porFecha[f].tanques[t.tanque].push(t.galones_calculados);
+        }
+      }
+    }
+    return Object.values(porFecha).sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(d=>{
+      const row={fecha: new Date(d.fecha+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"2-digit"})};
+      let total=0;
+      for(const[tk,vals] of Object.entries(d.tanques)){
+        const avg=Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);
+        row[tk]=avg;
+        total+=avg;
+      }
+      row["__total"]=total;
+      return row;
+    });
+  }
+
+  function datosTanque(tanqueId){
+    const registros=historial.filter(h=>(h.tanques||[]).some(t=>t.tanque===tanqueId));
+    return registros.map(reg=>{
+      const t=reg.tanques.find(t=>t.tanque===tanqueId);
+      const fDiff=t?.pct_diferencia??null;
+      return{
+        fecha: new Date(reg.fecha+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"2-digit"}),
+        fechaFull: reg.fecha,
+        turno: reg.turno||"",
+        galones: t?.galones_calculados??null,
+        sistema: t?.galones_sistema??null,
+        diferencia: t?.diferencia??null,
+        pct: fDiff,
+        novedad: fDiff!==null&&Math.abs(fDiff)>TOLERANCIA_PCT,
+      };
+    }).sort((a,b)=>a.fechaFull.localeCompare(b.fechaFull));
+  }
+
+  function listaTanques(p){
+    const label=p==="P1"?"PLANTA 1":"PLANTA 2";
+    const set=new Set();
+    historial.filter(h=>h.planta===label).forEach(h=>(h.tanques||[]).forEach(t=>set.add(t.tanque)));
+    return [...set].sort();
+  }
+
+  // ── Vista Análisis ────────────────────────────────────────────────────────────
+  function renderAnalisis(){
+    if(loadingHist) return <div style={{color:TH.muted,padding:32,textAlign:"center"}}>Cargando datos...</div>;
+    const label=analisisPlanta==="P1"?"PLANTA 1":"PLANTA 2";
+    const registrosPlanta=historial.filter(h=>h.planta===label);
+    if(registrosPlanta.length===0) return(
+      <div style={{color:TH.muted,padding:32,textAlign:"center",fontSize:14}}>
+        No hay inventarios registrados para {label}
+      </div>
+    );
+
+    const datos=datosPlanta(analisisPlanta);
+    const tanquesLista=listaTanques(analisisPlanta);
+    const tqSelec=tanqueSeleccionado||tanquesLista[0]||"";
+    const datosTq=tqSelec?datosTanque(tqSelec):[];
+
+    return(
+      <div style={{display:"flex",flexDirection:"column",gap:24}}>
+
+        {/* Selector planta */}
+        <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+          <div style={{fontWeight:800,fontSize:14,color:TH.navy}}>Planta:</div>
+          {["P1","P2"].map(p=>(
+            <button key={p} onClick={()=>{ setAnalisisPlanta(p); setTanqueSeleccionado(""); }}
+              style={{padding:"6px 18px",borderRadius:6,fontWeight:700,fontSize:12,cursor:"pointer",
+                background:analisisPlanta===p?TH.navy:"transparent",
+                color:analisisPlanta===p?"#fff":TH.muted,
+                border:`2px solid ${analisisPlanta===p?TH.navy:TH.border}`}}>
+              {p==="P1"?"Planta 1 — QBS002":"Planta 2 — TK-111/117"}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Gráfica 1: Total planta por día ── */}
+        <div style={{background:TH.card,borderRadius:10,border:`1px solid ${TH.border}`,padding:20,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+          <div style={{fontWeight:800,fontSize:14,color:TH.navy,marginBottom:4}}>📊 Volumen total — {label}</div>
+          <div style={{fontSize:11,color:TH.muted,marginBottom:16}}>Suma de galones en todos los tanques por fecha</div>
+          {datos.length<2
+            ? <div style={{color:TH.muted,fontSize:13,padding:"20px 0"}}>Se necesitan al menos 2 registros para mostrar la gráfica</div>
+            : <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={datos} margin={{top:5,right:20,left:0,bottom:5}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={TH.border}/>
+                  <XAxis dataKey="fecha" tick={{fontSize:11,fill:TH.muted}}/>
+                  <YAxis tick={{fontSize:10,fill:TH.muted}} tickFormatter={v=>fmtN(v/1000,0)+"k"} width={50}/>
+                  <Tooltip content={<TooltipGals/>}/>
+                  <Line type="monotone" dataKey="__total" name="Total" stroke={TH.orange} strokeWidth={2.5} dot={{r:4,fill:TH.orange}} activeDot={{r:6}}/>
+                </LineChart>
+              </ResponsiveContainer>
+          }
+        </div>
+
+        {/* ── Gráfica 2: Todos los tanques apilados ── */}
+        {datos.length>=2 && (
+          <div style={{background:TH.card,borderRadius:10,border:`1px solid ${TH.border}`,padding:20,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+            <div style={{fontWeight:800,fontSize:14,color:TH.navy,marginBottom:4}}>🛢 Distribución por tanque</div>
+            <div style={{fontSize:11,color:TH.muted,marginBottom:16}}>Galones por tanque — barras apiladas</div>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={datos} margin={{top:5,right:20,left:0,bottom:5}}>
+                <CartesianGrid strokeDasharray="3 3" stroke={TH.border}/>
+                <XAxis dataKey="fecha" tick={{fontSize:11,fill:TH.muted}}/>
+                <YAxis tick={{fontSize:10,fill:TH.muted}} tickFormatter={v=>fmtN(v/1000,0)+"k"} width={50}/>
+                <Tooltip content={<TooltipGals/>}/>
+                <Legend iconSize={10} wrapperStyle={{fontSize:11}}/>
+                {tanquesLista.map((tk,i)=>(
+                  <Bar key={tk} dataKey={tk} name={tk} stackId="a" fill={COLORES_TANQUE[i%COLORES_TANQUE.length]}/>
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* ── Gráfica 3: Tanque individual ── */}
+        <div style={{background:TH.card,borderRadius:10,border:`1px solid ${TH.border}`,padding:20,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16,flexWrap:"wrap"}}>
+            <div style={{fontWeight:800,fontSize:14,color:TH.navy}}>📈 Evolución por tanque</div>
+            <select value={tqSelec} onChange={e=>{setTanqueSeleccionado(e.target.value);}}
+              style={{padding:"6px 12px",borderRadius:6,border:`1px solid ${TH.border}`,fontSize:13,color:TH.text,background:TH.card,fontWeight:600}}>
+              {tanquesLista.map(t=><option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          {datosTq.length<2
+            ? <div style={{color:TH.muted,fontSize:13,padding:"20px 0"}}>Se necesitan al menos 2 registros de este tanque</div>
+            : <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={datosTq} margin={{top:5,right:20,left:0,bottom:5}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={TH.border}/>
+                    <XAxis dataKey="fecha" tick={{fontSize:11,fill:TH.muted}}/>
+                    <YAxis tick={{fontSize:10,fill:TH.muted}} tickFormatter={v=>fmtN(v/1000,1)+"k"} width={52}/>
+                    <Tooltip content={({active,payload,label})=>{
+                      if(!active||!payload?.length) return null;
+                      const d=payload[0]?.payload;
+                      return(
+                        <div style={{background:TH.card,border:`1px solid ${TH.border}`,borderRadius:8,padding:"10px 14px",fontSize:12,boxShadow:"0 4px 16px rgba(0,0,0,0.12)"}}>
+                          <div style={{fontWeight:700,color:TH.navy,marginBottom:6}}>{label} {d?.turno}</div>
+                          <div style={{color:TH.orange,fontWeight:600}}>Físico: {fmtN(d?.galones,0)} gls</div>
+                          <div style={{color:TH.muted}}>Sistema: {fmtN(d?.sistema,0)} gls</div>
+                          {d?.diferencia!==null&&<div style={{color:d?.diferencia<0?TH.danger:TH.warn,fontWeight:700}}>
+                            Diferencia: {d?.diferencia>0?"+":""}{fmtN(d?.diferencia,0)} gls ({d?.pct>0?"+":""}{(d?.pct||0).toFixed(1)}%)
+                          </div>}
+                        </div>
+                      );
+                    }}/>
+                    <Line type="monotone" dataKey="galones" name="Físico" stroke={TH.orange} strokeWidth={2.5} dot={(props)=>{
+                      const{cx,cy,payload}=props;
+                      if(payload.novedad) return <circle key={`dot-${cx}`} cx={cx} cy={cy} r={6} fill={TH.danger} stroke="#fff" strokeWidth={2}/>;
+                      return <circle key={`dot-${cx}`} cx={cx} cy={cy} r={4} fill={TH.orange} stroke="#fff" strokeWidth={1.5}/>;
+                    }} activeDot={{r:6}}/>
+                    <Line type="monotone" dataKey="sistema" name="Sistema" stroke={TH.muted} strokeWidth={1.5} strokeDasharray="4 2" dot={false}/>
+                  </LineChart>
+                </ResponsiveContainer>
+
+                {/* Tabla de novedades del tanque */}
+                {datosTq.some(d=>d.novedad) && (
+                  <div style={{marginTop:16}}>
+                    <div style={{fontSize:11,fontWeight:800,color:TH.danger,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>
+                      ⚠ Novedades detectadas en {tqSelec}
+                    </div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                      {datosTq.filter(d=>d.novedad).map((d,i)=>(
+                        <div key={i} style={{padding:"5px 12px",borderRadius:6,fontSize:12,fontWeight:700,
+                          background:d.diferencia<0?`${TH.danger}15`:`${TH.warn}15`,
+                          border:`1px solid ${d.diferencia<0?TH.danger:TH.warn}`,
+                          color:d.diferencia<0?TH.danger:TH.warn}}>
+                          {d.fecha} {d.turno}: {d.diferencia>0?"+":""}{fmtN(d.diferencia,0)} gls ({d.diferencia<0?"FALTANTE":"SOBRANTE"})
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+          }
+        </div>
+      </div>
+    );
+  }
+
+  // ── Tabla P1 ─────────────────────────────────────────────────────────────────
   function renderTablaP1(){
-    return (
+    return(
       <div style={{overflowX:"auto"}}>
-        {/* Calados */}
         <div style={{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}}>
-          <div style={{minWidth:160}}>
-            <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Calado Proa (m)</div>
-            <NumInput value={calados.proaIni} onChange={e=>setCalados(p=>({...p,proaIni:e.target.value}))} placeholder="0.00"/>
-          </div>
-          <div style={{minWidth:160}}>
-            <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Calado Popa (m)</div>
-            <NumInput value={calados.popaIni} onChange={e=>setCalados(p=>({...p,popaIni:e.target.value}))} placeholder="0.00"/>
-          </div>
+          {[{label:"Calado Proa (m)",key:"proaIni"},{label:"Calado Popa (m)",key:"popaIni"}].map(({label,key})=>(
+            <div key={key} style={{minWidth:160}}>
+              <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{label}</div>
+              <NumInput value={calados[key]} onChange={e=>setCalados(p=>({...p,[key]:e.target.value}))} placeholder="0.00"/>
+            </div>
+          ))}
           <div style={{minWidth:160,display:"flex",alignItems:"flex-end"}}>
             <div style={{padding:"5px 12px",background:`${TH.navy}15`,borderRadius:6,fontSize:12,fontWeight:700,color:TH.navy}}>
               Trim: {trim.val.toFixed(2)} m {trim.dir}
             </div>
           </div>
         </div>
-
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
           <thead>
             <tr style={{background:TH.navy,color:"#fff"}}>
-              <th style={{padding:"8px 10px",textAlign:"left",fontWeight:700}}>Tanque</th>
-              <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>Sonda (mm)</th>
-              <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>Temp °C</th>
-              <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>API</th>
-              <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>Gls Calculados</th>
-              <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>Gls Sistema</th>
-              <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>Diferencia</th>
-              <th style={{padding:"8px 10px",textAlign:"center",fontWeight:700}}>Estado</th>
+              {["Tanque","Sonda (mm)","Temp °C","API","Gls Calculados","Gls Sistema","Diferencia","Estado"].map(h=>(
+                <th key={h} style={{padding:"8px 10px",textAlign:h==="Tanque"?"left":"right",fontWeight:700,whiteSpace:"nowrap"}}>
+                  {h==="Estado"?<span style={{textAlign:"center",display:"block"}}>{h}</span>:h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {filasP1.map((f, i) => {
-              const res = calcFila(f);
-              const glsCalc = res ? res.glsN : null;
-              const sys = nivelSistema(f.id);
-              const diff = diferencia(glsCalc, f.id);
-              const pct = (diff!==null && sys>0) ? (diff/sys)*100 : null;
-              const isOver = diff !== null && diff > 0;
-              const isMissing = diff !== null && diff < 0;
-              const isOk = diff !== null && Math.abs(pct||0) <= TOLERANCIA_PCT;
-              const rowBg = i%2===0 ? TH.card : "#f8fafc";
-              return (
+            {filasP1.map((f,i)=>{
+              const res=calcFila(f);
+              const glsCalc=res?res.glsN:null;
+              const sys=nivelSistema(f.id);
+              const di=difInfo(glsCalc,f.id);
+              const isOk=di&&Math.abs(di.pct||0)<=TOLERANCIA_PCT;
+              const rowBg=i%2===0?TH.card:"#f8fafc";
+              return(
                 <tr key={f.id} style={{background:rowBg}}>
                   <td style={{padding:"6px 10px",fontWeight:700,color:TH.navy,borderBottom:`1px solid ${TH.border}`}}>
                     {f.label}
-                    {f.tipo==="tkt" && <span style={{fontSize:9,color:TH.muted,marginLeft:6}}>TIERRA</span>}
+                    {f.tipo==="tkt"&&<span style={{fontSize:9,color:TH.muted,marginLeft:6}}>TIERRA</span>}
                   </td>
-                  <td style={{padding:"4px 6px",borderBottom:`1px solid ${TH.border}`,width:90}}>
-                    <NumInput value={f.sonda} onChange={e=>{const v=e.target.value;setFilasP1(p=>p.map((r,j)=>j===i?{...r,sonda:v}:r));}}/>
-                  </td>
-                  <td style={{padding:"4px 6px",borderBottom:`1px solid ${TH.border}`,width:80}}>
-                    <NumInput value={f.temp} onChange={e=>{const v=e.target.value;setFilasP1(p=>p.map((r,j)=>j===i?{...r,temp:v}:r));}}/>
-                  </td>
-                  <td style={{padding:"4px 6px",borderBottom:`1px solid ${TH.border}`,width:70}}>
-                    <NumInput value={f.api} onChange={e=>{const v=e.target.value;setFilasP1(p=>p.map((r,j)=>j===i?{...r,api:v}:r));}}/>
-                  </td>
+                  {["sonda","temp","api"].map(k=>(
+                    <td key={k} style={{padding:"4px 6px",borderBottom:`1px solid ${TH.border}`,width:80}}>
+                      <NumInput value={f[k]} onChange={e=>{const v=e.target.value;setFilasP1(p=>p.map((r,j)=>j===i?{...r,[k]:v}:r));}}/>
+                    </td>
+                  ))}
                   <td style={{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,color:glsCalc!==null?TH.navy:TH.muted}}>
-                    {glsCalc !== null ? fmtN(glsCalc,0) : "—"}
+                    {glsCalc!==null?fmtN(glsCalc,0):"—"}
                   </td>
                   <td style={{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>
-                    {sys !== null ? fmtN(sys,0) : "—"}
+                    {sys!==null?fmtN(sys,0):"—"}
                   </td>
                   <td style={{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,
-                    color: diff===null?TH.muted : isOk?TH.success : isMissing?TH.danger:TH.warn}}>
-                    {diff !== null ? (diff>0?"+":"")+fmtN(diff,0) : "—"}
-                    {pct !== null && <span style={{fontSize:10,marginLeft:4}}>({(pct>0?"+":"")+pct.toFixed(1)}%)</span>}
+                    color:!di?TH.muted:isOk?TH.success:di.diff<0?TH.danger:TH.warn}}>
+                    {di?(di.diff>0?"+":"")+fmtN(di.diff,0):"—"}
+                    {di?.pct!==null&&<span style={{fontSize:10,marginLeft:4}}>({(di.pct>0?"+":"")+di.pct.toFixed(1)}%)</span>}
                   </td>
                   <td style={{padding:"6px 10px",textAlign:"center",borderBottom:`1px solid ${TH.border}`}}>
-                    {diff === null ? <span style={{color:TH.muted,fontSize:10}}>—</span>
-                     : isOk ? <span style={{color:TH.success,fontWeight:700,fontSize:11}}>✓ OK</span>
-                     : isMissing ? <span style={{color:TH.danger,fontWeight:700,fontSize:11}}>⚠ FALTANTE</span>
-                     : <span style={{color:TH.warn,fontWeight:700,fontSize:11}}>↑ SOBRANTE</span>}
+                    {!di?<span style={{color:TH.muted,fontSize:10}}>—</span>
+                     :isOk?<span style={{color:TH.success,fontWeight:700,fontSize:11}}>✓ OK</span>
+                     :di.diff<0?<span style={{color:TH.danger,fontWeight:700,fontSize:11}}>⚠ FALTANTE</span>
+                     :<span style={{color:TH.warn,fontWeight:700,fontSize:11}}>↑ SOBRANTE</span>}
                   </td>
                 </tr>
               );
@@ -289,55 +443,49 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     );
   }
 
-  // ── Render tabla P2 ─────────────────────────────────────────────────────────
+  // ── Tabla P2 ─────────────────────────────────────────────────────────────────
   function renderTablaP2(){
-    return (
+    return(
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
         <thead>
           <tr style={{background:TH.navy,color:"#fff"}}>
-            <th style={{padding:"8px 10px",textAlign:"left",fontWeight:700}}>Tanque</th>
-            <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>Galones Medidos</th>
-            <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>Temp °C</th>
-            <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>API</th>
-            <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>Gls Sistema</th>
-            <th style={{padding:"8px 10px",textAlign:"right",fontWeight:700}}>Diferencia</th>
-            <th style={{padding:"8px 10px",textAlign:"center",fontWeight:700}}>Estado</th>
+            {["Tanque","Galones Medidos","Temp °C","API","Gls Sistema","Diferencia","Estado"].map(h=>(
+              <th key={h} style={{padding:"8px 10px",textAlign:h==="Tanque"?"left":"right",fontWeight:700}}>{h}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {filasP2.map((f, i) => {
-            const glsCalc = (() => { const v=pfn(f.galones); return isNaN(v)?null:Math.round(v); })();
-            const sys = nivelSistema(f.id);
-            const diff = (glsCalc!==null && sys!==null) ? glsCalc - sys : null;
-            const pct = (diff!==null && sys>0) ? (diff/sys)*100 : null;
-            const isOk = diff !== null && Math.abs(pct||0) <= TOLERANCIA_PCT;
-            const isMissing = diff !== null && diff < 0;
-            const rowBg = i%2===0 ? TH.card : "#f8fafc";
-            return (
+          {filasP2.map((f,i)=>{
+            const v=pfn(f.galones);
+            const glsCalc=isNaN(v)?null:Math.round(v);
+            const sys=nivelSistema(f.id);
+            const di=difInfo(glsCalc,f.id);
+            const isOk=di&&Math.abs(di.pct||0)<=TOLERANCIA_PCT;
+            const rowBg=i%2===0?TH.card:"#f8fafc";
+            return(
               <tr key={f.id} style={{background:rowBg}}>
                 <td style={{padding:"6px 10px",fontWeight:700,color:TH.navy,borderBottom:`1px solid ${TH.border}`}}>{f.label}</td>
                 <td style={{padding:"4px 6px",borderBottom:`1px solid ${TH.border}`,width:130}}>
                   <NumInput value={f.galones} onChange={e=>{const v=e.target.value;setFilasP2(p=>p.map((r,j)=>j===i?{...r,galones:v}:r));}}/>
                 </td>
-                <td style={{padding:"4px 6px",borderBottom:`1px solid ${TH.border}`,width:80}}>
-                  <NumInput value={f.temp} onChange={e=>{const v=e.target.value;setFilasP2(p=>p.map((r,j)=>j===i?{...r,temp:v}:r));}}/>
-                </td>
-                <td style={{padding:"4px 6px",borderBottom:`1px solid ${TH.border}`,width:70}}>
-                  <NumInput value={f.api} onChange={e=>{const v=e.target.value;setFilasP2(p=>p.map((r,j)=>j===i?{...r,api:v}:r));}}/>
-                </td>
+                {["temp","api"].map(k=>(
+                  <td key={k} style={{padding:"4px 6px",borderBottom:`1px solid ${TH.border}`,width:80}}>
+                    <NumInput value={f[k]} onChange={e=>{const v=e.target.value;setFilasP2(p=>p.map((r,j)=>j===i?{...r,[k]:v}:r));}}/>
+                  </td>
+                ))}
                 <td style={{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>
-                  {sys !== null ? fmtN(sys,0) : "—"}
+                  {sys!==null?fmtN(sys,0):"—"}
                 </td>
                 <td style={{padding:"6px 10px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,
-                  color: diff===null?TH.muted : isOk?TH.success : isMissing?TH.danger:TH.warn}}>
-                  {diff !== null ? (diff>0?"+":"")+fmtN(diff,0) : "—"}
-                  {pct !== null && <span style={{fontSize:10,marginLeft:4}}>({(pct>0?"+":"")+pct.toFixed(1)}%)</span>}
+                  color:!di?TH.muted:isOk?TH.success:di.diff<0?TH.danger:TH.warn}}>
+                  {di?(di.diff>0?"+":"")+fmtN(di.diff,0):"—"}
+                  {di?.pct!==null&&<span style={{fontSize:10,marginLeft:4}}>({(di.pct>0?"+":"")+di.pct.toFixed(1)}%)</span>}
                 </td>
                 <td style={{padding:"6px 10px",textAlign:"center",borderBottom:`1px solid ${TH.border}`}}>
-                  {diff === null ? <span style={{color:TH.muted,fontSize:10}}>—</span>
-                   : isOk ? <span style={{color:TH.success,fontWeight:700,fontSize:11}}>✓ OK</span>
-                   : isMissing ? <span style={{color:TH.danger,fontWeight:700,fontSize:11}}>⚠ FALTANTE</span>
-                   : <span style={{color:TH.warn,fontWeight:700,fontSize:11}}>↑ SOBRANTE</span>}
+                  {!di?<span style={{color:TH.muted,fontSize:10}}>—</span>
+                   :isOk?<span style={{color:TH.success,fontWeight:700,fontSize:11}}>✓ OK</span>
+                   :di.diff<0?<span style={{color:TH.danger,fontWeight:700,fontSize:11}}>⚠ FALTANTE</span>
+                   :<span style={{color:TH.warn,fontWeight:700,fontSize:11}}>↑ SOBRANTE</span>}
                 </td>
               </tr>
             );
@@ -347,43 +495,32 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     );
   }
 
-  // ── Resumen de novedades ─────────────────────────────────────────────────────
+  // ── Resumen novedades ─────────────────────────────────────────────────────────
   function renderResumen(){
-    const filas = planta==="P1" ? filasP1 : filasP2;
-    const rows = filas.map(f => {
-      let glsCalc = null;
-      if(planta==="P1"){
-        const res = calcFila(f);
-        glsCalc = res ? res.glsN : null;
-      } else {
-        const v = pfn(f.galones);
-        glsCalc = isNaN(v) ? null : Math.round(v);
-      }
-      const sys = nivelSistema(f.id);
-      const diff = (glsCalc!==null&&sys!==null) ? glsCalc-sys : null;
-      const pct = (diff!==null&&sys>0) ? (diff/sys)*100 : null;
-      return { id:f.id, diff, pct };
-    }).filter(r => r.diff !== null && Math.abs(r.pct||0) > TOLERANCIA_PCT);
+    const filas=planta==="P1"?filasP1:filasP2;
+    const novedades=filas.map(f=>{
+      let glsCalc=null;
+      if(planta==="P1"){const r=calcFila(f);glsCalc=r?r.glsN:null;}
+      else{const v=pfn(f.galones);glsCalc=isNaN(v)?null:Math.round(v);}
+      const di=difInfo(glsCalc,f.id);
+      return{id:f.id,di};
+    }).filter(r=>r.di&&Math.abs(r.di.pct||0)>TOLERANCIA_PCT);
 
-    if(rows.length === 0) return (
-      <div style={{padding:"10px 16px",background:`${TH.success}18`,borderRadius:8,border:`1px solid ${TH.success}`,color:TH.success,fontWeight:700,fontSize:13,marginBottom:16}}>
+    if(novedades.length===0) return(
+      <div style={{padding:"10px 16px",background:`${TH.success}15`,borderRadius:8,border:`1px solid ${TH.success}`,color:TH.success,fontWeight:700,fontSize:13,marginBottom:16}}>
         ✓ Todos los tanques dentro del margen de tolerancia (±{TOLERANCIA_PCT}%)
       </div>
     );
-
-    return (
+    return(
       <div style={{marginBottom:16}}>
-        <div style={{fontWeight:800,fontSize:12,color:TH.danger,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>
-          ⚠ Novedades detectadas
-        </div>
+        <div style={{fontWeight:800,fontSize:12,color:TH.danger,marginBottom:8,textTransform:"uppercase",letterSpacing:1}}>⚠ Novedades detectadas</div>
         <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-          {rows.map(r => (
-            <div key={r.id} style={{padding:"6px 14px",borderRadius:6,fontWeight:700,fontSize:12,
-              background: r.diff<0 ? `${TH.danger}18` : `${TH.warn}18`,
-              border:`1px solid ${r.diff<0?TH.danger:TH.warn}`,
-              color: r.diff<0?TH.danger:TH.warn}}>
-              {r.id}: {r.diff>0?"+":""}{fmtN(r.diff,0)} gls ({(r.pct>0?"+":"")+r.pct.toFixed(1)}%)
-              {r.diff<0?" FALTANTE":" SOBRANTE"}
+          {novedades.map(({id,di})=>(
+            <div key={id} style={{padding:"6px 14px",borderRadius:6,fontWeight:700,fontSize:12,
+              background:di.diff<0?`${TH.danger}15`:`${TH.warn}15`,
+              border:`1px solid ${di.diff<0?TH.danger:TH.warn}`,
+              color:di.diff<0?TH.danger:TH.warn}}>
+              {id}: {di.diff>0?"+":""}{fmtN(di.diff,0)} gls ({(di.pct>0?"+":"")+di.pct.toFixed(1)}%) {di.diff<0?"FALTANTE":"SOBRANTE"}
             </div>
           ))}
         </div>
@@ -391,44 +528,34 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     );
   }
 
-  // ── Historial ───────────────────────────────────────────────────────────────
+  // ── Historial ─────────────────────────────────────────────────────────────────
   function renderHistorial(){
-    if(loadingHist) return <div style={{color:TH.muted,padding:24}}>Cargando...</div>;
-    if(historial.length===0) return <div style={{color:TH.muted,padding:24}}>Sin registros</div>;
-    return (
+    const histDesc=[...historial].sort((a,b)=>new Date(b.created_at||b.fecha)-new Date(a.created_at||a.fecha));
+    if(loadingHist) return <div style={{color:TH.muted,padding:32,textAlign:"center"}}>Cargando...</div>;
+    if(histDesc.length===0) return <div style={{color:TH.muted,padding:32,textAlign:"center"}}>Sin registros</div>;
+    return(
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
           <thead>
             <tr style={{background:TH.navy,color:"#fff"}}>
-              <th style={{padding:"8px 10px",textAlign:"left"}}>N°</th>
-              <th style={{padding:"8px 10px",textAlign:"left"}}>Fecha</th>
-              <th style={{padding:"8px 10px",textAlign:"left"}}>Planta</th>
-              <th style={{padding:"8px 10px",textAlign:"left"}}>Turno</th>
-              <th style={{padding:"8px 10px",textAlign:"left"}}>Operador</th>
-              <th style={{padding:"8px 10px",textAlign:"center"}}>Tanques</th>
-              <th style={{padding:"8px 10px",textAlign:"center"}}>Novedades</th>
+              {["N°","Fecha","Planta","Turno","Operador","Tanques","Novedades"].map(h=>(
+                <th key={h} style={{padding:"8px 10px",textAlign:["Tanques","Novedades"].includes(h)?"center":"left",fontWeight:700}}>{h}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {historial.map((inv, i) => {
-              const novedades = (inv.tanques||[]).filter(t =>
-                t.diferencia !== null && t.galones_sistema > 0 &&
-                Math.abs((t.pct_diferencia||0)) > TOLERANCIA_PCT
-              );
-              return (
+            {histDesc.map((inv,i)=>{
+              const nov=(inv.tanques||[]).filter(t=>t.diferencia!==null&&t.galones_sistema>0&&Math.abs(t.pct_diferencia||0)>TOLERANCIA_PCT);
+              return(
                 <tr key={inv.id} style={{background:i%2===0?TH.card:"#f8fafc"}}>
                   <td style={{padding:"8px 10px",fontFamily:"monospace",fontWeight:700,color:TH.navy,borderBottom:`1px solid ${TH.border}`}}>{inv.numero||inv.id}</td>
-                  <td style={{padding:"8px 10px",borderBottom:`1px solid ${TH.border}`}}>
-                    {inv.fecha ? new Date(inv.fecha+"T12:00:00").toLocaleDateString("es-CO") : "—"}
-                  </td>
+                  <td style={{padding:"8px 10px",borderBottom:`1px solid ${TH.border}`}}>{inv.fecha?new Date(inv.fecha+"T12:00:00").toLocaleDateString("es-CO"):"—"}</td>
                   <td style={{padding:"8px 10px",borderBottom:`1px solid ${TH.border}`}}>{inv.planta}</td>
                   <td style={{padding:"8px 10px",borderBottom:`1px solid ${TH.border}`}}>{inv.turno||"—"}</td>
                   <td style={{padding:"8px 10px",borderBottom:`1px solid ${TH.border}`}}>{inv.operador||"—"}</td>
                   <td style={{padding:"8px 10px",textAlign:"center",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>{(inv.tanques||[]).length}</td>
                   <td style={{padding:"8px 10px",textAlign:"center",borderBottom:`1px solid ${TH.border}`}}>
-                    {novedades.length===0
-                      ? <span style={{color:TH.success,fontWeight:700}}>✓ OK</span>
-                      : <span style={{color:TH.danger,fontWeight:700}}>⚠ {novedades.length}</span>}
+                    {nov.length===0?<span style={{color:TH.success,fontWeight:700}}>✓ OK</span>:<span style={{color:TH.danger,fontWeight:700}}>⚠ {nov.length}</span>}
                   </td>
                 </tr>
               );
@@ -439,36 +566,39 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     );
   }
 
-  // ── Main render ─────────────────────────────────────────────────────────────
-  return (
+  // ── Main ──────────────────────────────────────────────────────────────────────
+  const TABS=[{k:"nuevo",l:"Nuevo Inventario"},{k:"historial",l:"Historial"},{k:"analisis",l:"📊 Análisis"}];
+
+  return(
     <div style={{padding:"20px 24px",maxWidth:1200,margin:"0 auto"}}>
-      {/* Header */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12}}>
         <div>
           <div style={{fontSize:20,fontWeight:900,color:TH.navy}}>📋 Inventario Diario de Tanques</div>
           <div style={{fontSize:12,color:TH.muted,marginTop:2}}>Registro de medidas físicas al inicio de turno</div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          {["nuevo","historial"].map(t => (
-            <button key={t} onClick={()=>setActiveTab(t)} style={{
+          {TABS.map(({k,l})=>(
+            <button key={k} onClick={()=>setActiveTab(k)} style={{
               padding:"7px 18px",borderRadius:6,fontWeight:700,fontSize:12,cursor:"pointer",
-              background: activeTab===t ? TH.orange : "transparent",
-              color: activeTab===t ? "#fff" : TH.muted,
-              border: `2px solid ${activeTab===t ? TH.orange : TH.border}`,
-            }}>{t==="nuevo" ? "Nuevo Inventario" : "Historial"}</button>
+              background:activeTab===k?TH.orange:"transparent",
+              color:activeTab===k?"#fff":TH.muted,
+              border:`2px solid ${activeTab===k?TH.orange:TH.border}`,
+            }}>{l}</button>
           ))}
         </div>
       </div>
 
-      {activeTab === "historial" ? renderHistorial() : (
+      {activeTab==="historial" && renderHistorial()}
+      {activeTab==="analisis" && renderAnalisis()}
+      {activeTab==="nuevo" && (
         <>
           {/* Selector planta */}
           <div style={{display:"flex",gap:0,marginBottom:20,borderRadius:8,overflow:"hidden",border:`1px solid ${TH.border}`,width:"fit-content"}}>
-            {[{k:"P1",l:"Planta 1 — Barcaza QBS002"},{k:"P2",l:"Planta 2 — TK-111 a TK-117"}].map(({k,l}) => (
+            {[{k:"P1",l:"Planta 1 — Barcaza QBS002"},{k:"P2",l:"Planta 2 — TK-111 a TK-117"}].map(({k,l})=>(
               <button key={k} onClick={()=>setPlanta(k)} style={{
                 padding:"10px 24px",fontWeight:700,fontSize:13,cursor:"pointer",
-                background: planta===k ? TH.navy : TH.card,
-                color: planta===k ? "#fff" : TH.muted,
+                background:planta===k?TH.navy:TH.card,
+                color:planta===k?"#fff":TH.muted,
                 border:"none",transition:"background 0.15s",
               }}>{l}</button>
             ))}
@@ -476,12 +606,12 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
           {/* Campos comunes */}
           <div style={{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}}>
-            <div style={{minWidth:160}}>
+            <div>
               <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Fecha</div>
               <input type="date" value={fechaReg} onChange={e=>setFechaReg(e.target.value)}
                 style={{padding:"6px 10px",border:`1px solid ${TH.border}`,borderRadius:6,fontSize:13,color:TH.text,background:TH.card}}/>
             </div>
-            <div style={{minWidth:130}}>
+            <div>
               <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Turno</div>
               <select value={turno} onChange={e=>setTurno(e.target.value)}
                 style={{padding:"6px 10px",border:`1px solid ${TH.border}`,borderRadius:6,fontSize:13,color:TH.text,background:TH.card}}>
@@ -496,24 +626,19 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             </div>
           </div>
 
-          {/* Card con la tabla */}
           <div style={{background:TH.card,borderRadius:10,border:`1px solid ${TH.border}`,padding:20,marginBottom:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
-            {planta==="P1" ? renderTablaP1() : renderTablaP2()}
+            {planta==="P1"?renderTablaP1():renderTablaP2()}
           </div>
 
-          {/* Resumen novedades */}
           {renderResumen()}
 
-          {/* Observaciones */}
           <div style={{marginBottom:16}}>
             <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Observaciones</div>
             <textarea value={obs} onChange={e=>setObs(e.target.value)} rows={2}
               style={{width:"100%",boxSizing:"border-box",padding:"8px 10px",border:`1px solid ${TH.border}`,borderRadius:6,fontSize:13,color:TH.text,background:TH.card,resize:"vertical"}}/>
           </div>
 
-          <Btn onClick={guardar} disabled={saving}>
-            {saving ? "Guardando..." : "💾 Guardar Inventario"}
-          </Btn>
+          <Btn onClick={guardar} disabled={saving}>{saving?"Guardando...":"💾 Guardar Inventario"}</Btn>
         </>
       )}
     </div>
