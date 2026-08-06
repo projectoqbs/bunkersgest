@@ -4102,9 +4102,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                 <thead>
-                  <tr>{[["ID",90],["Fecha Reg.",90],["MN",140],["ETA",90],["ETD",90],["Agencia",110],["MT VLSO",80],["MT HSFO",80],["MT MGO",80],["Puerto",110],["Horas Op.",80],["Contrato",100],["IMO",100],["Bandera",90],["Ciudad",100],["Estado",100]].map(([c,w])=>(
-                    <th key={c} style={{padding:"12px 16px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,minWidth:w}}>{c}</th>
-                  ))}</tr>
+                  <tr>{[["ID",90],["Fecha Reg.",90],["MN",140],["ETA",90],["ETD",90],["Agencia",110],["MT VLSO",80],["MT HSFO",80],["MT MGO",80],["Puerto",110],["Horas Op.",80],["Contrato",100],["IMO",100],["Bandera",90],["Ciudad",100],["Estado",100]].map(([c,w])=>{
+                    const isNum = ["MT VLSO","MT HSFO","MT MGO","Horas Op."].includes(c);
+                    return <th key={c} style={{padding:"12px 16px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:isNum?"center":"left",background:T.bg,minWidth:w}}>{c}</th>;
+                  })}</tr>
                 </thead>
                 <tbody>
                   {despachosFiltrados.map((d,i)=>{
@@ -4117,11 +4118,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.eta||"—"}</td>
                         <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.etd||"—"}</td>
                         <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.agencia||"—"}</td>
-                        <td style={{padding:"12px 16px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_vlso>0?Number(d.mt_vlso).toLocaleString():"—"}</td>
-                        <td style={{padding:"12px 16px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_hsfo>0?Number(d.mt_hsfo).toLocaleString():"—"}</td>
-                        <td style={{padding:"12px 16px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_mgo>0?Number(d.mt_mgo).toLocaleString():"—"}</td>
+                        <td style={{padding:"12px 16px",textAlign:"center",whiteSpace:"nowrap"}}>{d.mt_vlso>0?Number(d.mt_vlso).toLocaleString():"—"}</td>
+                        <td style={{padding:"12px 16px",textAlign:"center",whiteSpace:"nowrap"}}>{d.mt_hsfo>0?Number(d.mt_hsfo).toLocaleString():"—"}</td>
+                        <td style={{padding:"12px 16px",textAlign:"center",whiteSpace:"nowrap"}}>{d.mt_mgo>0?Number(d.mt_mgo).toLocaleString():"—"}</td>
                         <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.destino||d.puerto||"—"}</td>
-                        <td style={{padding:"12px 16px",textAlign:"right",whiteSpace:"nowrap"}}>{d.horas_op>0?d.horas_op:"—"}</td>
+                        <td style={{padding:"12px 16px",textAlign:"center",whiteSpace:"nowrap"}}>{d.horas_op>0?d.horas_op:"—"}</td>
                         <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.contrato||"—"}</td>
                         <td style={{padding:"12px 16px",fontFamily:"monospace",whiteSpace:"nowrap"}}>{d.imo||"—"}</td>
                         <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.bandera||"—"}</td>
