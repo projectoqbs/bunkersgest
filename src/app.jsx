@@ -4103,7 +4103,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                 <thead>
                   <tr>{[["ID",90],["Fecha Reg.",90],["MN",140],["ETA",90],["ETD",90],["Agencia",110],["MT VLSO",80],["MT HSFO",80],["MT MGO",80],["Puerto",110],["Horas Op.",80],["Contrato",100],["IMO",100],["Bandera",90],["Ciudad",100],["Estado",100]].map(([c,w])=>(
-                    <th key={c} style={{padding:"10px 14px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,minWidth:w}}>{c}</th>
+                    <th key={c} style={{padding:"12px 16px",fontSize:9,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,minWidth:w}}>{c}</th>
                   ))}</tr>
                 </thead>
                 <tbody>
@@ -4111,22 +4111,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const estadoColor = d.estado==="COMPLETADO"?T.success:d.estado==="EN OPERACIÓN"?T.orange:T.muted;
                     return (
                       <tr key={d.id} style={{background:i%2===0?T.bg:T.card,borderBottom:`1px solid ${T.border}`}}>
-                        <td style={{padding:"10px 14px",fontFamily:"monospace",fontWeight:700,whiteSpace:"nowrap"}}><span onClick={()=>{setForm({...d});setModal("despacho");}} style={{color:T.primary,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>{d.id}</span></td>
-                        <td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{d.fecha}</td>
-                        <td style={{padding:"10px 14px",fontWeight:700,whiteSpace:"nowrap"}}>{d.buque}</td>
-                        <td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{d.eta||"—"}</td>
-                        <td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{d.etd||"—"}</td>
-                        <td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{d.agencia||"—"}</td>
-                        <td style={{padding:"10px 14px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_vlso>0?Number(d.mt_vlso).toLocaleString():"—"}</td>
-                        <td style={{padding:"10px 14px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_hsfo>0?Number(d.mt_hsfo).toLocaleString():"—"}</td>
-                        <td style={{padding:"10px 14px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_mgo>0?Number(d.mt_mgo).toLocaleString():"—"}</td>
-                        <td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{d.destino||d.puerto||"—"}</td>
-                        <td style={{padding:"10px 14px",textAlign:"right",whiteSpace:"nowrap"}}>{d.horas_op>0?d.horas_op:"—"}</td>
-                        <td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{d.contrato||"—"}</td>
-                        <td style={{padding:"10px 14px",fontFamily:"monospace",whiteSpace:"nowrap"}}>{d.imo||"—"}</td>
-                        <td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{d.bandera||"—"}</td>
-                        <td style={{padding:"10px 14px",whiteSpace:"nowrap"}}>{d.ciudad||"—"}</td>
-                        <td style={{padding:"10px 14px",whiteSpace:"nowrap"}}><span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span></td>
+                        <td style={{padding:"12px 16px",fontFamily:"monospace",fontWeight:700,whiteSpace:"nowrap"}}><span onClick={()=>{setForm({...d});setModal("despacho");}} style={{color:T.primary,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>{d.id}</span></td>
+                        <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.fecha}</td>
+                        <td style={{padding:"12px 16px",fontWeight:700,whiteSpace:"nowrap"}}>{d.buque}</td>
+                        <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.eta||"—"}</td>
+                        <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.etd||"—"}</td>
+                        <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.agencia||"—"}</td>
+                        <td style={{padding:"12px 16px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_vlso>0?Number(d.mt_vlso).toLocaleString():"—"}</td>
+                        <td style={{padding:"12px 16px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_hsfo>0?Number(d.mt_hsfo).toLocaleString():"—"}</td>
+                        <td style={{padding:"12px 16px",textAlign:"right",whiteSpace:"nowrap"}}>{d.mt_mgo>0?Number(d.mt_mgo).toLocaleString():"—"}</td>
+                        <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.destino||d.puerto||"—"}</td>
+                        <td style={{padding:"12px 16px",textAlign:"right",whiteSpace:"nowrap"}}>{d.horas_op>0?d.horas_op:"—"}</td>
+                        <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.contrato||"—"}</td>
+                        <td style={{padding:"12px 16px",fontFamily:"monospace",whiteSpace:"nowrap"}}>{d.imo||"—"}</td>
+                        <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.bandera||"—"}</td>
+                        <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}>{d.ciudad||"—"}</td>
+                        <td style={{padding:"12px 16px",whiteSpace:"nowrap"}}><span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span></td>
                       </tr>
                     );
                   })}
@@ -4144,11 +4144,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{fontWeight:800,fontSize:20,color:T.navy,marginBottom:4}}>Entrega</div>
               <div style={{fontSize:11,color:T.muted,marginBottom:20}}>Entrega de combustible al buque</div>
               <div style={{overflowX:"auto"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,tableLayout:"fixed"}}>
+                  <colgroup>
+                    <col style={{width:"22%"}}/><col style={{width:"14%"}}/><col style={{width:"13%"}}/><col style={{width:"14%"}}/><col style={{width:"13%"}}/><col style={{width:"12%"}}/><col style={{width:"12%"}}/>
+                  </colgroup>
                   <thead>
                     <tr style={{background:T.navy+"18"}}>
-                      {[["Buque",200],["Producto",160],["Cantidad (MT)",130],["Puerto",120],["Contrato",120],["Estado",110],["",160]].map(([c,w])=>(
-                        <th key={c} style={{padding:"10px 14px",textAlign:c==="Cantidad (MT)"?"right":"left",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,minWidth:w}}>{c}</th>
+                      {[["Buque","left"],["Producto","left"],["Cantidad (MT)","right"],["Puerto","left"],["Contrato","left"],["Estado","left"],["","left"]].map(([c,al])=>(
+                        <th key={c} style={{padding:"12px 16px",textAlign:al,fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`}}>{c}</th>
                       ))}
                     </tr>
                   </thead>
@@ -4166,13 +4169,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       if(filas.length===0) filas.push({prod:"—", mt:0});
                       return filas.map((p,j)=>(
                         <tr key={`${d.id}-${p.prod}`} style={{borderBottom:`1px solid ${T.border}`,background:i%2===0?T.bg:T.card}}>
-                          <td style={{padding:"10px 14px",fontWeight:700,color:T.navy}}>{j===0?(d.buque||"—"):""}</td>
-                          <td style={{padding:"10px 14px",fontWeight:600,color:T.text}}>{p.prod}</td>
-                          <td style={{padding:"10px 14px",textAlign:"right",fontWeight:700,fontFamily:"monospace"}}>{p.mt>0?p.mt.toLocaleString():"—"}</td>
-                          <td style={{padding:"10px 14px",color:T.muted}}>{j===0?(d.puerto||d.ciudad||"—"):""}</td>
-                          <td style={{padding:"10px 14px",color:T.muted}}>{j===0?(d.contrato||"—"):""}</td>
-                          <td style={{padding:"10px 14px"}}>{j===0&&<span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span>}</td>
-                          <td style={{padding:"10px 14px"}}>
+                          <td style={{padding:"12px 16px",fontWeight:700,color:T.navy}}>{j===0?(d.buque||"—"):""}</td>
+                          <td style={{padding:"12px 16px",fontWeight:600,color:T.text}}>{p.prod}</td>
+                          <td style={{padding:"12px 16px",textAlign:"right",fontWeight:700,fontFamily:"monospace"}}>{p.mt>0?p.mt.toLocaleString():"—"}</td>
+                          <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.puerto||d.ciudad||"—"):""}</td>
+                          <td style={{padding:"12px 16px",color:T.muted}}>{j===0?(d.contrato||"—"):""}</td>
+                          <td style={{padding:"12px 16px"}}>{j===0&&<span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span>}</td>
+                          <td style={{padding:"12px 16px"}}>
                             <button onClick={()=>{ setForm({...d, _prod:p.prod, _mt:p.mt}); setModal("liquidacion_despacho"); }}
                               style={{padding:"6px 14px",fontWeight:700,fontSize:11,cursor:"pointer",borderRadius:6,
                                 border:`1px solid #c084fc`,background:"#c084fc22",color:"#c084fc",
