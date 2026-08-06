@@ -435,7 +435,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     );
     // Inventario inicial = el más reciente ANTES del día seleccionado
     const invsOrdenados = [...invsPlanta].sort((a,b)=>a.fecha.localeCompare(b.fecha));
-    const invInicial  = [...invsOrdenados].reverse().find(i => i.fecha < balanceFechaDia)
+    const invInicial  = [...invsOrdenados].reverse().find(i => i.fecha <= balanceFechaDia)
                         || invsOrdenados[0]
                         || null;
     const totalInicial= invInicial ? (invInicial.tanques||[]).reduce((s,t)=>s+(Number(t.galones_calculados)||0),0) : null;
