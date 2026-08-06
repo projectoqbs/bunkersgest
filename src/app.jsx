@@ -4800,7 +4800,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     perfil={perfil}
                     showToast={showToast}
                     barcazaFiltro={barcazaSelec}
-                    despachoCtx={{ buque:despacho.buque, prod, mt, contrato:despacho.contrato, despachoId:despacho.id, puerto:despacho.puerto||despacho.ciudad||"" }}
+                    despachoCtx={{ buque:despacho.buque, imo:despacho.imo||"", prod, mt, contrato:despacho.contrato, despachoId:despacho.id, puerto:despacho.ciudad||"" }}
                   />
                 )}
               </div>

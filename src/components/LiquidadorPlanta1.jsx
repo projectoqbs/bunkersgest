@@ -125,7 +125,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   const [fecha,setFecha]=useState(new Date().toISOString().split("T")[0]);
   const [operador,setOperador]=useState("");
   const [obs,setObs]=useState("");
-  const [imoNumero,setImoNumero]=useState("");
+  const [imoNumero,setImoNumero]=useState(despachoCtx?.imo||"");
   const [terminal,setTerminal]=useState(despachoCtx?.puerto||"");
   const [autoComisorio,setAutoComisorio]=useState("");
   const [bdnNumero,setBdnNumero]=useState("");
