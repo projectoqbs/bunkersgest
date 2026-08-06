@@ -426,6 +426,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     }
 
     // ── Balance del día seleccionado ────────────────────────────────────────
+    console.log("CMTs del día:", balanceCmtsDia.map(c=>({id:c.numero_cmt,planta:c.planta,tipo:c.tipo_operacion,movido:c.total_movido,antes:c.total_antes,despues:c.total_despues})));
     // CMTs P1 pueden tener planta="PLANTA 1" o "QBS002" o nombre de barcaza
     const cmtsPlanta = balanceCmtsDia.filter(c =>
       balancePlanta === "P1"
