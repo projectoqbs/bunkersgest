@@ -1222,6 +1222,7 @@ const aprueba = esVLSFO
       tsa:Number(form.tsa||0),
       observaciones:form.observaciones||null,
       tipo_analisis:form.tipo_analisis||"Tiquetes MP",
+      tanque:form.tanque||null,
       ot_id:form.ot_id||null,
       autoriza:aprueba,
       autoriza_nombre:perfil.nombre,
@@ -5977,6 +5978,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <Grid cols={esMP?2:3}>
               <Inp label="Proveedor / Campo Origen" type="text" value={form.proveedor||""} onChange={f("proveedor")} readOnly={soloVista}/>
               <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloVista||soloLab}/>
+              {!esMP && (()=>{
+                const tanquesOpts = tipoA==="Planta 1"
+                  ? ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E"]
+                  : tipoA==="Planta 2"
+                  ? ["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"]
+                  : ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","TKT-1","TKT-2","TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
+                return (
+                  <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                    <label style={{fontSize:12,fontWeight:600,color:T.muted}}>Tanque</label>
+                    <select value={form.tanque||""} disabled={soloVista} onChange={e=>setForm(p=>({...p,tanque:e.target.value||null}))}
+                      style={{padding:"6px 10px",borderRadius:6,border:`1px solid ${T.border}`,fontSize:14,background:T.card,color:T.text}}>
+                      <option value="">— Seleccionar tanque —</option>
+                      {tanquesOpts.map(t=><option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                );
+              })()}
               {esMP && <Inp label="Placa" type="text" value={form.placa||""} onChange={fPlaca("placa")} maxLength={6} placeholder="ABC123" readOnly={soloVista||soloLab}/>}
               {esMP && <Inp label="Cédula Conductor" type="text" value={form.cedula||""} onChange={f("cedula")} readOnly={soloVista}/>}
               {esMP && <Inp label="Nombre Conductor" type="text" value={form.nombre_conductor||""} onChange={f("nombre_conductor")} readOnly={soloVista}/>}
