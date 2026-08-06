@@ -117,7 +117,7 @@ function TInp({value,onChange,disabled,navRow,navCol,navSet}){
   );
 }
 
-export default function LiquidadorPlanta1({supabase,session,perfil,showToast,barcazaFiltro,despachoCtx}){
+export default function LiquidadorPlanta1({supabase,session,perfil,showToast,barcazaFiltro,despachoCtx,dbCall}){
   const [tab,setTab]=useState("nuevo");
   const [historial,setHistorial]=useState([]);
   const [loadingHist,setLoadingHist]=useState(false);
@@ -232,7 +232,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
     const gf=parseFloat(String(glsFlowmeter).replace(",","."));
     if(!isNaN(gf)&&gf>0) registro.gls_flowmeter=gf;
 
-    const{error}=await supabase.from("liquidaciones_qbs002").insert(registro);
+    const{error}=await dbCall({table:"liquidaciones_qbs002",op:"insert",data:registro});
     if(error){setSaving(false);showToast("Error: "+error.message,false);return;}
 
     // Marcar despacho como ENTREGADO si viene de contexto de despacho

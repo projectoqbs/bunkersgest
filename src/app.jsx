@@ -4883,6 +4883,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     session={session}
                     perfil={perfil}
                     showToast={showToast}
+                    dbCall={dbCall}
                     barcazaFiltro={barcazaSelec}
                     despachoCtx={{ buque:despacho.buque, imo:despacho.imo||"", prod, mt, contrato:despacho.contrato, despachoId:despacho.id, puerto:despacho.destino||despacho.puerto||"" }}
                   />
@@ -7050,6 +7051,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     session={session}
     perfil={perfil}
     showToast={showToast}
+    dbCall={dbCall}
   />
 )}
 
