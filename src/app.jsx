@@ -6327,11 +6327,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           patch.coordinador = ef.coordinador;
           patch.operador    = ef.operador;
           const { error } = await dbCall({ table:"liquidaciones_qbs002", op:"update", data:patch, filters:[{col:"id",val:liq.id}] });
+          if(error){ setLiqSaving(false); showToast("Error al guardar: "+error,"error"); return; }
+          // Si cambió la fecha, actualizar también fecha_entrega en despachos
+          if(ef.fecha && ef.fecha !== liq.fecha && d?.id){
+            await dbCall({ table:"despachos", op:"update", data:{fecha_entrega:ef.fecha}, filters:[{col:"id",val:d.id}] });
+            setDespachos(prev=>prev.map(x=>x.id===d.id?{...x,fecha_entrega:ef.fecha}:x));
+          }
           setLiqSaving(false);
-          if(error){ showToast("Error al guardar: "+error,"error"); return; }
           showToast("Liquidación actualizada","success");
-          // Actualizar el objeto liq en el modal
-          setModalLiqDetalle(prev=>({...prev, liq:{...prev.liq,...patch}}));
+          setModalLiqDetalle(prev=>({...prev, liq:{...prev.liq,...patch}, despacho:{...prev.despacho, fecha_entrega:ef.fecha||prev.despacho.fecha_entrega}}));
           setLiqEditMode(false);
         };
 
