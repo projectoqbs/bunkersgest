@@ -6328,14 +6328,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           patch.operador    = ef.operador;
           const { error } = await dbCall({ table:"liquidaciones_qbs002", op:"update", data:patch, filters:[{col:"id",val:liq.id}] });
           if(error){ setLiqSaving(false); showToast("Error al guardar: "+error,"error"); return; }
-          // Sincronizar fecha en despacho y CMT si la fecha cambió respecto a lo que tienen actualmente
+          // Sincronizar fecha en despacho y CMT
+          if(ef.fecha && d?.id){
+            const { error: errD } = await supabase.from("despachos").update({ fecha_entrega: ef.fecha }).eq("id", d.id);
+            if(errD) showToast("Error actualizando fecha del despacho: "+errD.message, "error");
+            else setDespachos(prev=>prev.map(x=>x.id===d.id?{...x,fecha_entrega:ef.fecha}:x));
+          }
           if(ef.fecha){
-            if(d?.id && ef.fecha !== d.fecha_entrega){
-              await dbCall({ table:"despachos", op:"update", data:{fecha_entrega:ef.fecha}, filters:[{col:"id",val:d.id}] });
-              setDespachos(prev=>prev.map(x=>x.id===d.id?{...x,fecha_entrega:ef.fecha}:x));
-            }
             const cmtAsoc = cmts.find(c=>c.nombre_motonave===(ef.motonave||liq.motonave||d?.buque) && c.tipo_operacion==="ENTREGA A MOTONAVE");
-            if(cmtAsoc && ef.fecha !== cmtAsoc.fecha){
+            if(cmtAsoc){
               await dbCall({ table:"cmts", op:"update", data:{fecha:ef.fecha}, filters:[{col:"id",val:cmtAsoc.id}] });
               setCmts(prev=>prev.map(c=>c.id===cmtAsoc.id?{...c,fecha:ef.fecha}:c));
             }
