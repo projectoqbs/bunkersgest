@@ -464,6 +464,7 @@ export default function App() {
   const [importLoading, setImportLoading] = useState(false);
   const [importFechaDesde, setImportFechaDesde] = useState("");
   const [modalFlota, setModalFlota] = useState(false);
+  const [modalLiqDetalle, setModalLiqDetalle] = useState(null); // {liq, despacho}
   const [flotaDiasProducto, setFlotaDiasProducto] = useState(()=>{
     try { return JSON.parse(localStorage.getItem("flota_dias_producto")||"{}"); } catch{ return {}; }
   });
@@ -4278,7 +4279,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <span
                                 onClick={async()=>{
                                   const {data:liq}=await supabase.from("liquidaciones_qbs002").select("*").eq("motonave",d.buque).order("created_at",{ascending:false}).limit(1).maybeSingle();
-                                  if(liq) setModal({tipo:"liq_detalle",liq,despacho:d});
+                                  if(liq) setModalLiqDetalle({liq,despacho:d});
                                   else showToast("No se encontró liquidación para este buque",false);
                                 }}
                                 style={{color:T.orange,cursor:"pointer",textDecoration:"underline",fontWeight:800}}
@@ -6288,12 +6289,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </Modal>
       )}
 
-      {modal?.tipo==="liq_detalle" && (()=>{
-        const {liq,despacho:d} = modal;
+      {modalLiqDetalle && (()=>{
+        const {liq,despacho:d} = modalLiqDetalle;
         const fmtN=(v,dec=0)=>v!=null&&!isNaN(v)?Number(v).toLocaleString("es-CO",{minimumFractionDigits:dec,maximumFractionDigits:dec}):"—";
         const filas=JSON.parse(liq.filas_barcaza||"[]").filter(f=>f.activo);
         return (
-          <Modal title={`Liquidación — ${liq.motonave||d.buque}`} onClose={()=>setModal(null)} wide>
+          <Modal title={`Liquidación — ${liq.motonave||d.buque}`} onClose={()=>setModalLiqDetalle(null)} wide>
             <div style={{display:"flex",gap:32,flexWrap:"wrap",marginBottom:20,padding:"12px 16px",background:T.bg,borderRadius:8,border:`1px solid ${T.border}`}}>
               {[["Buque",liq.motonave||d.buque],["IMO",liq.imo_numero||d.imo||"—"],["Producto",liq.producto||d.producto||"—"],["Fecha",liq.fecha||"—"],["Puerto",liq.puerto||d.destino||"—"],["Contrato",liq.contrato||d.contrato||"—"],["MT Firmadas",fmtN(liq.mt_firmadas,3)],["MT Entregadas",fmtN(liq.mt_entregadas,3)],["Gls Netos Entregados",fmtN(liq.gls_entregados,0)],["Factor",fmtN(liq.factor,2)],["BDN N°",liq.bdn_numero||"—"],["Operador",liq.operador||"—"]].map(([l,v])=>(
                 <div key={l}><div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{l}</div><div style={{fontSize:13,fontWeight:700,color:T.navy}}>{v}</div></div>
@@ -6332,7 +6333,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
             )}
             <div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}>
-              <button onClick={()=>setModal(null)} style={{background:T.navy,color:"#fff",border:"none",borderRadius:8,padding:"10px 28px",fontWeight:700,cursor:"pointer"}}>Cerrar</button>
+              <button onClick={()=>setModalLiqDetalle(null)} style={{background:T.navy,color:"#fff",border:"none",borderRadius:8,padding:"10px 28px",fontWeight:700,cursor:"pointer"}}>Cerrar</button>
             </div>
           </Modal>
         );
