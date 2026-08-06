@@ -4147,7 +4147,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                   <thead>
                     <tr style={{background:T.navy+"18"}}>
-                      {[["Buque",200],["Producto",160],["Cantidad (MT)",130],["Puerto",120],["Estado",110],["",160]].map(([c,w])=>(
+                      {[["Buque",200],["Producto",160],["Cantidad (MT)",130],["Puerto",120],["Contrato",120],["Estado",110],["",160]].map(([c,w])=>(
                         <th key={c} style={{padding:"9px 12px",textAlign:c==="Cantidad (MT)"?"right":"left",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,minWidth:w}}>{c}</th>
                       ))}
                     </tr>
@@ -4170,6 +4170,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <td style={{padding:"10px 12px",fontWeight:600,color:T.text}}>{p.prod}</td>
                           <td style={{padding:"10px 12px",textAlign:"right",fontWeight:700,fontFamily:"monospace"}}>{p.mt>0?p.mt.toLocaleString():"—"}</td>
                           <td style={{padding:"10px 12px",color:T.muted}}>{j===0?(d.puerto||d.ciudad||"—"):""}</td>
+                          <td style={{padding:"10px 12px",color:T.muted}}>{j===0?(d.contrato||"—"):""}</td>
                           <td style={{padding:"10px 12px"}}>{j===0&&<span style={{background:`${estadoColor}22`,color:estadoColor,padding:"2px 8px",borderRadius:10,fontWeight:700,fontSize:10}}>{d.estado||"PENDIENTE"}</span>}</td>
                           <td style={{padding:"8px 12px"}}>
                             <button onClick={()=>{ setForm({...d, _prod:p.prod, _mt:p.mt}); setModal("liquidacion_despacho"); }}
