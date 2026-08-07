@@ -5332,13 +5332,38 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <button onClick={()=>{
                     const sede=ot.sede||perfil?.sede||"MALAMBO", planta=ot.planta||perfil?.planta||"PLANTA 1";
                     const tanquesOT=[...new Set([ot.tanque_destino,...(tras||[]).map(t=>t.origen),...(tras||[]).map(t=>t.destino)].filter(Boolean))];
-                    setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),tanques_ot:tanquesOT});
-                    setCmtProducto(fo?.producto||"");
-                    setCmtAntes([{tanque:tras[0]?.origen||"",sonda:"",galones:""}]);
-                    setCmtDespues([{tanque:tras[0]?.destino||"",producto:fo?.producto||"",sonda:"",galones:""}]);
+                    const esPorteo = (ot.tipo_operacion||"").toLowerCase()==="porteo";
+                    if (esPorteo) {
+                      setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"PORTEO",sede,planta,fecha:today(),tanques_ot:tanquesOT});
+                      setCmtPorteoCargaPlanta("PLANTA 2");
+                      setCmtPorteoCarga(tras.map(t=>({tanque:t.origen||"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""})));
+                      setCmtPorteoDescargaPlanta("PLANTA 1");
+                      setCmtPorteoDescarga(tras.map(t=>({tanque:t.destino||"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""})));
+                    } else {
+                      setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),tanques_ot:tanquesOT});
+                      setCmtProducto(fo?.producto||"");
+                      setCmtAntes([{tanque:tras[0]?.origen||"",sonda:"",galones:""}]);
+                      setCmtDespues([{tanque:tras[0]?.destino||"",producto:fo?.producto||"",sonda:"",galones:""}]);
+                    }
                     setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
                     setNav("cmt"); setModal("cmt");
                   }} style={{ background:T.orange,border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
+                  {/* Vincular CMT existente */}
+                  {(()=>{
+                    const cmtsSinOT = (cmts||[]).filter(c=>!c.ot_id && (c.tipo_operacion==="PORTEO"||c.tipo_operacion==="TRASIEGO DE PRODUCTO"));
+                    if(!cmtsSinOT.length) return null;
+                    return (
+                      <select onChange={async e=>{
+                        if(!e.target.value) return;
+                        await dbCall({table:"cmts",op:"update",data:{ot_id:ot.id,ot_numero:ot.numero_ot},filters:[{col:"id",val:e.target.value}]});
+                        await loadData(); showToast("CMT vinculado a "+ot.numero_ot);
+                        e.target.value="";
+                      }} style={{padding:"6px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12,cursor:"pointer"}}>
+                        <option value="">Vincular CMT existente…</option>
+                        {cmtsSinOT.map(c=><option key={c.id} value={c.id}>{c.numero_cmt} · {c.tipo_operacion} · {c.fecha}</option>)}
+                      </select>
+                    );
+                  })()}
                 </div>
               )}
             </Card>
