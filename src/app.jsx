@@ -5418,7 +5418,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   }} style={{ background:T.orange,border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
                   {/* Vincular CMT existente */}
                   {(()=>{
-                    const cmtsSinOT = (cmts||[]).filter(c=>!c.ot_id && (c.tipo_operacion==="PORTEO"||c.tipo_operacion==="TRASIEGO DE PRODUCTO"));
+                    const cmtsSinOT = (cmts||[]).filter(c=>!c.ot_id).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,20);
                     if(!cmtsSinOT.length) return null;
                     return (
                       <select onChange={async e=>{
