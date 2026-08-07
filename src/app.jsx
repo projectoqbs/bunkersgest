@@ -5336,12 +5336,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               )}
               {tras.length>0 && (
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
-                  {cmtsDeEstaOT.map(c=>(
+                  {cmtsDeEstaOT.map(c=>{
+                    const glsPorteo = c.tipo_operacion==="PORTEO"
+                      ? (c.porteo_descarga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0)
+                        || (c.porteo_carga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0)
+                      : 0;
+                    const gls = c.tipo_operacion==="PORTEO" ? (glsPorteo||Number(c.total_movido||0)) : Number(c.total_movido||0);
+                    return (
                     <span key={c.id} style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
                       onClick={()=>abrirCmt(c)}>
-                      📋 {c.numero_cmt}{c.tipo_operacion==="PORTEO"?" · Porteo":""} — {fmt(Number(c.total_movido||0))} gls
+                      📋 {c.numero_cmt}{c.tipo_operacion==="PORTEO"?" · Porteo":""} — {fmt(gls)} gls
                     </span>
-                  ))}
+                    );
+                  })}
                   <button onClick={()=>{
                     const sede=ot.sede||perfil?.sede||"MALAMBO", planta=ot.planta||perfil?.planta||"PLANTA 1";
                     const tanquesOT=[...new Set([ot.tanque_destino,...(tras||[]).map(t=>t.origen),...(tras||[]).map(t=>t.destino)].filter(Boolean))];
