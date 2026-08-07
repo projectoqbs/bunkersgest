@@ -4704,7 +4704,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Órdenes de Trabajo</div>
                   <div style={{ fontSize:11, color:T.muted }}>{perfil?.rol==="operaciones" ? "Órdenes asignadas para ejecución" : "Trasiegos · Descargues · Recirculación"}</div>
                 </div>
-                {perfil?.rol!=="operaciones" && <Btn color={T.orange} onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",formulacionId:"",recircHoras:4})}>+ Nueva Orden</Btn>}
+                {perfil?.rol!=="operaciones" && <Btn color={T.orange} onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",tipoOp:"directo",formulacionId:"",recircHoras:4})}>+ Nueva Orden</Btn>}
               </div>
 
               {/* Órdenes activas */}
@@ -7295,7 +7295,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     const estadoInicial = trasiegos.length>0 ? "TRASIEGOS" : "DESCARGANDO";
     const payload = {
       numero_ot: numeroOt,
-      formulacion_id: m.formulacionId,
+      formulacion_id: m.formulacionId||null,
+      tipo_operacion: m.tipoOp||"directo",
       tanque_destino: fo?.tanque || (trasiegos.length>0 ? trasiegos.map(t=>t.destino).join(",") : ""),
       estado: estadoInicial,
       trasiegos,
@@ -7335,7 +7336,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         {/* PASO 1 */}
         {m.step===1 && (
           <div>
-            <div style={{ fontWeight:700,fontSize:13,color:T.text,marginBottom:14 }}>¿Necesitas abrir espacio (trasiegos)?</div>
+            {/* Tipo de operación */}
+            <div style={{ fontWeight:700,fontSize:13,color:T.text,marginBottom:10 }}>Tipo de operación</div>
+            <div style={{ display:"flex",gap:10,marginBottom:20 }}>
+              {[{v:"directo",lbl:"Descargue directo",desc:"Carros cisterna → tanque"},{v:"porteo",lbl:"Porteo inter-planta",desc:"Planta 2 → Planta 1 por carros"}].map(({v,lbl,desc})=>(
+                <button key={v} onClick={()=>setM({tipoOp:v})}
+                  style={{ flex:1,padding:"10px 12px",borderRadius:8,border:`2px solid ${m.tipoOp===v?T.navy:T.border}`,
+                    background:m.tipoOp===v?`${T.navy}12`:"transparent",
+                    color:m.tipoOp===v?T.navy:T.muted,fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"left" }}>
+                  <div>{lbl}</div>
+                  <div style={{ fontSize:10,fontWeight:400,marginTop:2,opacity:0.7 }}>{desc}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{ fontWeight:700,fontSize:13,color:T.text,marginBottom:14 }}>¿Necesitas trasiegos previos?</div>
             <div style={{ display:"flex",gap:10,marginBottom:18 }}>
               {["si","no"].map(v=>(
                 <button key={v} onClick={()=>setM({necesitaTrasiego:v})} style={{ flex:1,padding:"10px",borderRadius:8,border:`2px solid ${m.necesitaTrasiego===v?T.orange:T.border}`,background:m.necesitaTrasiego===v?`${T.orange}18`:"transparent",color:m.necesitaTrasiego===v?T.orange:T.muted,fontWeight:700,fontSize:13,cursor:"pointer",textTransform:"uppercase" }}>{v==="si"?"Sí":"No"}</button>
@@ -7396,7 +7410,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
             )}
             <div style={{ display:"flex",justifyContent:"flex-end" }}>
-              <button onClick={()=>setM({step:2})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13 }}>Siguiente: Descargues →</button>
+              <button onClick={()=>setM({step: m.tipoOp==="porteo" ? 3 : 2})}
+                style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13 }}>
+                {m.tipoOp==="porteo" ? "Siguiente: Recirculación →" : "Siguiente: Descargues →"}
+              </button>
             </div>
           </div>
         )}
@@ -7464,7 +7481,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             )}
             <div style={{ display:"flex",justifyContent:"space-between" }}>
               <button onClick={()=>setM({step:1})} style={{ background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13 }}>← Atrás</button>
-              <button onClick={()=>{ if(!m.formulacionId) return showToast("Selecciona una formulación",false); setM({step:3}); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13 }}>Siguiente: Recirculación →</button>
+              <button onClick={()=>setM({step:3})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13 }}>Siguiente: Recirculación →</button>
             </div>
           </div>
         )}
