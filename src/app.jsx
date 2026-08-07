@@ -1532,8 +1532,8 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     const totalAntes = cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0);
     const totalDespues = cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0);
     const totalMovido = tipoOp==="PORTEO"
-      ? cmtPorteoCarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0)
-        || cmtPorteoDescarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0)
+      ? cmtPorteoDescarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0)
+        || cmtPorteoCarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0)
       : totalDespues - totalAntes;
     if (!form.id && tipoOp !== "TRASIEGO DE PRODUCTO" && tipoOp !== "PORTEO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
 
