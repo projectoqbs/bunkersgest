@@ -5323,10 +5323,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               )}
               {tras.length>0 && (
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
-                  {cmtsDeEstaOT.filter(c=>c.tipo_operacion==="TRASIEGO DE PRODUCTO").map(c=>(
+                  {cmtsDeEstaOT.map(c=>(
                     <span key={c.id} style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
                       onClick={()=>abrirCmt(c)}>
-                      📋 {c.numero_cmt} — {fmt(Number(c.total_movido||0))} gls
+                      📋 {c.numero_cmt}{c.tipo_operacion==="PORTEO"?" · Porteo":""} — {fmt(Number(c.total_movido||0))} gls
                     </span>
                   ))}
                   <button onClick={()=>{
