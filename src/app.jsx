@@ -7277,7 +7277,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const TANQUES_LIST = (tanques||[]).map(t=>t.id);
 
   const crearOT = async()=>{
-    if(!m.formulacionId) return showToast("Selecciona una formulación",false);
+    const trasiegos = m.necesitaTrasiego==="si" ? (m.trasiegos||[]).filter(t=>t.origen&&t.destino&&t.galones).map(t=>({...t,completado:false})) : [];
+    if(!m.formulacionId && trasiegos.length===0) return showToast("Selecciona una formulación o agrega al menos un trasiego",false);
     setOtSaving(true);
     // Generar número OT
     const countRes = await supabase.from("ordenes_trabajo").select("id",{count:"exact",head:true});
@@ -7291,12 +7292,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       galones_descargado: 0,
       estado: "pendiente",
     })).filter(d=>d.galones_planeado>0);
-    const trasiegos = m.necesitaTrasiego==="si" ? (m.trasiegos||[]).filter(t=>t.origen&&t.destino&&t.galones).map(t=>({...t,completado:false})) : [];
     const estadoInicial = trasiegos.length>0 ? "TRASIEGOS" : "DESCARGANDO";
     const payload = {
       numero_ot: numeroOt,
       formulacion_id: m.formulacionId,
-      tanque_destino: fo?.tanque||"",
+      tanque_destino: fo?.tanque || (trasiegos.length>0 ? trasiegos.map(t=>t.destino).join(",") : ""),
       estado: estadoInicial,
       trasiegos,
       descargues,
@@ -7407,7 +7407,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div style={{ fontWeight:700,fontSize:13,color:T.text,marginBottom:12 }}>Selecciona la formulación</div>
             <select value={m.formulacionId} onChange={e=>setM({formulacionId:e.target.value})} style={{ width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:13,marginBottom:16,outline:"none" }}>
               <option value="">— Seleccionar formulación —</option>
-              {formulaciones.filter(f=>f.estado==="PLANEADA"||!f.estado).map(f=><option key={f.id} value={f.id}>{f.fecha} · {f.tanque} · {f.producto} ({fmt(Number(f.total_galones||0))} gls)</option>)}
+              {formulaciones.filter(f=>(f.estado==="PLANEADA"||!f.estado) && !(ordenesTrabaio||[]).some(o=>o.formulacion_id===f.id)).map(f=><option key={f.id} value={f.id}>{f.fecha} · {f.tanque} · {f.producto} ({fmt(Number(f.total_galones||0))} gls)</option>)}
             </select>
             {fo && (
               <div style={{ background:T.bg,borderRadius:10,padding:14,border:`1px solid ${T.border}`,marginBottom:16 }}>
