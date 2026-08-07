@@ -5400,7 +5400,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <button onClick={()=>{
                     const sede=ot.sede||perfil?.sede||"MALAMBO", planta=ot.planta||perfil?.planta||"PLANTA 1";
                     const tanquesOT=[...new Set([ot.tanque_destino,...(tras||[]).map(t=>t.origen),...(tras||[]).map(t=>t.destino)].filter(Boolean))];
-                    const esPorteo = (ot.tipo_operacion||"").toLowerCase()==="porteo";
+                    const esPorteo = (ot.tipo_operacion||"").toLowerCase()==="porteo" || cmtsDeEstaOT.some(c=>c.tipo_operacion==="PORTEO");
                     if (esPorteo) {
                       setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"PORTEO",sede,planta,fecha:today(),tanques_ot:tanquesOT});
                       setCmtPorteoCargaPlanta("PLANTA 2");
