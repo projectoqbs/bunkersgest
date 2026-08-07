@@ -1531,7 +1531,10 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
 
     const totalAntes = cmtAntes.reduce((a,t)=>a+Number(t.galones||0),0);
     const totalDespues = cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0);
-    const totalMovido = totalDespues - totalAntes;
+    const totalMovido = tipoOp==="PORTEO"
+      ? cmtPorteoCarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0)
+        || cmtPorteoDescarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0)
+      : totalDespues - totalAntes;
     if (!form.id && tipoOp !== "TRASIEGO DE PRODUCTO" && tipoOp !== "PORTEO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
 
     // Calcular y persistir galones_bascula en carros de TODOS los tipos antes de guardar
@@ -1716,6 +1719,16 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       if (error) return showToast("Error: "+error.message,false);
       await loadData();
       if (form.ot_id) {
+        // Si es CMT de porteo, avanzar OT a RECIRCULANDO y marcar trasiegos completados
+        if (tipoOp==="PORTEO") {
+          const otVinc = (ordenesTrabaio||[]).find(o=>o.id===form.ot_id);
+          if (otVinc && otVinc.estado==="TRASIEGOS") {
+            const trasCompletados = (otVinc.trasiegos||[]).map(t=>({...t,completado:true,fecha:new Date().toISOString()}));
+            await dbCall({ table:"ordenes_trabajo", op:"update",
+              data:{trasiegos:trasCompletados, estado:"RECIRCULANDO", fecha_inicio_recirculacion:new Date().toISOString(), updated_at:new Date().toISOString()},
+              filters:[{col:"id",val:form.ot_id}] });
+          }
+        }
         // Vino desde OT → cerrar directo
         setModal(null); setForm({});
         setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
