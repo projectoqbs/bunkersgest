@@ -1534,7 +1534,6 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     const totalDespues = cmtDespues.reduce((a,t)=>a+Number(t.galones||0),0);
     const totalMovido = tipoOp==="PORTEO"
       ? cmtPorteoDescarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0)
-        || cmtPorteoCarga.reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0)
       : totalDespues - totalAntes;
     if (!form.id && tipoOp !== "TRASIEGO DE PRODUCTO" && tipoOp !== "PORTEO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
 
@@ -5390,9 +5389,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {cmtsDeEstaOT.map(c=>{
                     const glsPorteo = c.tipo_operacion==="PORTEO"
                       ? (c.porteo_descarga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0)
-                        || (c.porteo_carga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0)
                       : 0;
-                    const gls = c.tipo_operacion==="PORTEO" ? (glsPorteo||Number(c.total_movido||0)) : Number(c.total_movido||0);
+                    const gls = c.tipo_operacion==="PORTEO" ? glsPorteo : Number(c.total_movido||0);
                     return (
                     <span key={c.id} style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
                       onClick={()=>abrirCmt(c)}>
