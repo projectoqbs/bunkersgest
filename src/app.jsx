@@ -6889,7 +6889,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             // helper: API corregido y factor tabla13 por tanque
             const getLabInfo = (tanqueId) => {
               if (!tanqueId) return {api:"",factor:"",fuente:""};
-              // 1. Tiquete de análisis de planta vinculado a OT del tanque (más confiable)
+              // 1. Tiquete de análisis directamente para este tanque (Planta 2, Planta 1, etc.)
+              const tiqDirecto = [...(tiquetes||[])]
+                .filter(t=>t.tanque===tanqueId && t.tipo_analisis && t.tipo_analisis!=="Tiquetes MP" && t.api_corregido)
+                .sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+              if (tiqDirecto) return {api: tiqDirecto.api_corregido, factor: tiqDirecto.factor_tabla13||tabla13Factor(tiqDirecto.api_corregido)||"", fuente:"lab"};
+              // 2. Tiquete de análisis de planta vinculado a OT del tanque
               const ots = [...(ordenesTrabaio||[])].filter(o=>o.tanque_destino===tanqueId && o.tiquete_id).sort((a,b)=>new Date(b.updated_at||b.created_at||0)-new Date(a.updated_at||a.created_at||0));
               for (const ot of ots) {
                 const tiq = (tiquetes||[]).find(t=>t.id===ot.tiquete_id && t.tipo_analisis && t.tipo_analisis!=="Tiquetes MP");
