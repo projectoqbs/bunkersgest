@@ -7346,7 +7346,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 {(m.trasiegos||[]).map((tr,i)=>{
                   const tqOrigen  = tr.origen  ? tanques.find(t=>t.id===tr.origen)  : null;
                   const tqDestino = tr.destino ? tanques.find(t=>t.id===tr.destino) : null;
-                  const espacioDisp = tqDestino ? Math.max(0, (tqDestino.capacidad||0) - (tqDestino.nivel||0)) : null;
+                  const yaComprometidoOrigen = tr.origen ? m.trasiegos.slice(0,i).filter(t=>t.origen===tr.origen).reduce((s,t)=>s+Number(t.galones||0),0) : 0;
+                  const disponibleOrigen = tqOrigen ? Math.max(0, (tqOrigen.nivel||0) - yaComprometidoOrigen) : null;
+                  const yaComprometidoDestino = tr.destino ? m.trasiegos.slice(0,i).filter(t=>t.destino===tr.destino).reduce((s,t)=>s+Number(t.galones||0),0) : 0;
+                  const espacioDisp = tqDestino ? Math.max(0, (tqDestino.capacidad||0) - (tqDestino.nivel||0) - yaComprometidoDestino) : null;
                   return (
                   <div key={i} style={{ marginBottom:10,padding:12,background:T.bg,borderRadius:8,border:`1px solid ${T.border}` }}>
                     <div style={{ display:"grid",gridTemplateColumns:"1fr auto 1fr auto",gap:8,alignItems:"end" }}>
@@ -7374,7 +7377,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{ display:"grid",gridTemplateColumns:"1fr auto 1fr auto",gap:8,marginTop:6 }}>
                         <div style={{ fontSize:11,color:T.navy,fontWeight:700,paddingLeft:2 }}>
                           {tqOrigen
-                            ? <span>📦 Disponible: <span style={{ color:T.success }}>{fmt(Math.round(tqOrigen.nivel||0))} gls</span>{tqOrigen.producto ? <span style={{ color:T.muted,fontWeight:400 }}> · {tqOrigen.producto}</span> : ""}</span>
+                            ? <span>📦 Disponible: <span style={{ color: disponibleOrigen < (tqOrigen.nivel||0) ? T.orange : T.success }}>{fmt(Math.round(disponibleOrigen))} gls</span>{tqOrigen.producto ? <span style={{ color:T.muted,fontWeight:400 }}> · {tqOrigen.producto}</span> : ""}</span>
                             : null}
                         </div>
                         <div/>
