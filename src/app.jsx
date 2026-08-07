@@ -5418,7 +5418,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       setCmtDespues([{tanque:tras[0]?.destino||"",producto:fo?.producto||"",sonda:"",galones:""}]);
                     }
                     setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
-                    setNav("cmt"); setModal("cmt");
+                    setModal("cmt");
                   }} style={{ background:T.orange,border:"none",color:"#071422",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>+ Crear CMT</button>
                   {/* Vincular CMT existente */}
                   {(()=>{
