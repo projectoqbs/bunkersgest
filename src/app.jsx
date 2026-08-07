@@ -1719,16 +1719,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       if (error) return showToast("Error: "+error.message,false);
       await loadData();
       if (form.ot_id) {
-        // Si es CMT de porteo, avanzar OT a RECIRCULANDO y marcar trasiegos completados
-        if (tipoOp==="PORTEO") {
-          const otVinc = (ordenesTrabaio||[]).find(o=>o.id===form.ot_id);
-          if (otVinc && otVinc.estado==="TRASIEGOS") {
-            const trasCompletados = (otVinc.trasiegos||[]).map(t=>({...t,completado:true,fecha:new Date().toISOString()}));
-            await dbCall({ table:"ordenes_trabajo", op:"update",
-              data:{trasiegos:trasCompletados, estado:"RECIRCULANDO", fecha_inicio_recirculacion:new Date().toISOString(), updated_at:new Date().toISOString()},
-              filters:[{col:"id",val:form.ot_id}] });
-          }
-        }
+        // CMT de porteo: no auto-marcar trasiegos; el usuario avanza la OT desde el detalle
         // Vino desde OT → cerrar directo
         setModal(null); setForm({});
         setCmtAntes([{tanque:"",sonda:"",galones:""}]); setCmtProducto("");
@@ -5303,37 +5294,94 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
               {tras.length===0 ? (
                 <div style={{ color:T.muted,fontSize:12 }}>Sin trasiegos requeridos</div>
-              ) : (
-                <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                  <thead><tr style={{ borderBottom:`1px solid ${T.border}` }}>
-                    {["Origen","Galones","Destino","Estado",""].map(h=><th key={h} style={{ padding:"6px 10px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:10,textTransform:"uppercase" }}>{h}</th>)}
-                  </tr></thead>
-                  <tbody>
-                    {tras.map((t,i)=>(
-                      <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
-                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{t.origen}</td>
-                        <td style={{ padding:"8px 10px",color:T.success,fontWeight:700 }}>{fmt(Number(t.galones||0))}</td>
-                        <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{t.destino}</td>
-                        <td style={{ padding:"8px 10px" }}><span style={{ fontSize:10,fontWeight:700,color:t.completado?T.success:T.orange }}>{t.completado?"✅ Completado":"⏳ Pendiente"}</span></td>
-                        <td style={{ padding:"8px 10px" }}>
-                          {!t.completado && ot.estado==="TRASIEGOS" && (
-                            <button onClick={async()=>{
-                              const nuevo = tras.map((tr,j)=>j===i?{...tr,completado:true,fecha:new Date().toISOString()}:tr);
-                              const todosOk = nuevo.every(tr=>tr.completado);
-                              await actualizarOT({trasiegos:nuevo,...(todosOk?{estado:"DESCARGANDO",fecha_inicio_descargue:new Date().toISOString()}:{})});
-                            }} style={{ background:`${T.success}22`,border:`1px solid ${T.success}55`,color:T.success,borderRadius:5,padding:"3px 10px",cursor:"pointer",fontSize:11,fontWeight:700 }}>Marcar ✅</button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {ot.estado==="TRASIEGOS" && (tras.length===0 || tras.every(t=>t.completado)) && (
-                <div style={{ marginTop:10 }}>
-                  <button onClick={()=>actualizarOT({estado:"DESCARGANDO",fecha_inicio_descargue:new Date().toISOString()})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Iniciar Descargues →</button>
-                </div>
-              )}
+              ) : (()=>{
+                const esPorteo = (ot.tipo_operacion||"").toLowerCase()==="porteo";
+                // Calcular galones recibidos por tanque destino desde CMTs de porteo vinculados
+                const recibidoPorDestino = {};
+                if (esPorteo) {
+                  cmtsDeEstaOT.forEach(c=>{
+                    if (c.tipo_operacion==="PORTEO") {
+                      (c.porteo_descarga_tanques||[]).forEach(r=>{
+                        if (r.tanque) recibidoPorDestino[r.tanque]=(recibidoPorDestino[r.tanque]||0)+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0));
+                      });
+                    }
+                  });
+                }
+                const todosPorteoCompletos = esPorteo && tras.every(t=>(recibidoPorDestino[t.destino]||0)>=Number(t.galones||0));
+                return (
+                  <>
+                    {esPorteo ? (
+                      <>
+                        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:8,paddingBottom:8,borderBottom:`1px solid ${T.border}`,fontSize:10,fontWeight:600,color:T.muted,marginBottom:6 }}>
+                          <div>DESTINO</div>
+                          <div style={{ textAlign:"right" }}>PLANEADO</div>
+                          <div style={{ textAlign:"right" }}>RECIBIDO</div>
+                          <div style={{ textAlign:"right",color:"#ef4444" }}>PENDIENTE</div>
+                          <div style={{ textAlign:"right" }}>%</div>
+                        </div>
+                        {tras.map((t,i)=>{
+                          const planeado=Number(t.galones||0);
+                          const recibido=recibidoPorDestino[t.destino]||0;
+                          const pendiente=Math.max(0,planeado-recibido);
+                          const pctT=planeado>0?Math.min(100,Math.round(recibido/planeado*100)):0;
+                          const completo=recibido>=planeado&&planeado>0;
+                          return (
+                            <div key={i} style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:8,padding:"8px 0",borderBottom:`1px solid ${T.border}`,fontSize:12,alignItems:"center" }}>
+                              <div style={{ fontWeight:700,color:T.text }}>{t.destino}</div>
+                              <div style={{ textAlign:"right",fontWeight:700,color:T.text }}>{fmt(planeado)}</div>
+                              <div style={{ textAlign:"right",fontWeight:700,color:recibido>0?T.success:T.muted }}>{fmt(recibido)}</div>
+                              <div style={{ textAlign:"right",fontWeight:700,color:pendiente>0?"#ef4444":T.success }}>{fmt(pendiente)}</div>
+                              <div style={{ textAlign:"right" }}><span style={{ fontSize:11,fontWeight:700,color:completo?T.success:T.orange }}>{completo?"✅":pctT+"%"}</span></div>
+                            </div>
+                          );
+                        })}
+                        {ot.estado==="TRASIEGOS" && todosPorteoCompletos && (
+                          <div style={{ marginTop:10 }}>
+                            <button onClick={()=>actualizarOT({estado:"RECIRCULANDO",fecha_inicio_recirculacion:new Date().toISOString()})} style={{ background:T.success,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Avanzar a Recirculación →</button>
+                          </div>
+                        )}
+                        {ot.estado==="TRASIEGOS" && !todosPorteoCompletos && (
+                          <div style={{ marginTop:10 }}>
+                            <button onClick={()=>actualizarOT({estado:"RECIRCULANDO",fecha_inicio_recirculacion:new Date().toISOString()})} style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Avanzar a Recirculación (manual) →</button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                          <thead><tr style={{ borderBottom:`1px solid ${T.border}` }}>
+                            {["Origen","Galones","Destino","Estado",""].map(h=><th key={h} style={{ padding:"6px 10px",textAlign:"left",color:T.muted,fontWeight:600,fontSize:10,textTransform:"uppercase" }}>{h}</th>)}
+                          </tr></thead>
+                          <tbody>
+                            {tras.map((t,i)=>(
+                              <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
+                                <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{t.origen}</td>
+                                <td style={{ padding:"8px 10px",color:T.success,fontWeight:700 }}>{fmt(Number(t.galones||0))}</td>
+                                <td style={{ padding:"8px 10px",fontWeight:700,color:T.text }}>{t.destino}</td>
+                                <td style={{ padding:"8px 10px" }}><span style={{ fontSize:10,fontWeight:700,color:t.completado?T.success:T.orange }}>{t.completado?"✅ Completado":"⏳ Pendiente"}</span></td>
+                                <td style={{ padding:"8px 10px" }}>
+                                  {!t.completado && ot.estado==="TRASIEGOS" && (
+                                    <button onClick={async()=>{
+                                      const nuevo=tras.map((tr,j)=>j===i?{...tr,completado:true,fecha:new Date().toISOString()}:tr);
+                                      const todosOk=nuevo.every(tr=>tr.completado);
+                                      await actualizarOT({trasiegos:nuevo,...(todosOk?{estado:"DESCARGANDO",fecha_inicio_descargue:new Date().toISOString()}:{})});
+                                    }} style={{ background:`${T.success}22`,border:`1px solid ${T.success}55`,color:T.success,borderRadius:5,padding:"3px 10px",cursor:"pointer",fontSize:11,fontWeight:700 }}>Marcar ✅</button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {ot.estado==="TRASIEGOS" && (tras.length===0||tras.every(t=>t.completado)) && (
+                          <div style={{ marginTop:10 }}>
+                            <button onClick={()=>actualizarOT({estado:"DESCARGANDO",fecha_inicio_descargue:new Date().toISOString()})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"7px 18px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Iniciar Descargues →</button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
               {tras.length>0 && (
                 <div style={{ marginTop:12,paddingTop:10,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
                   {cmtsDeEstaOT.map(c=>{
