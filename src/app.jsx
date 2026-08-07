@@ -382,6 +382,7 @@ export default function App() {
   const [activeTabId, setActiveTabId] = useState('tab-dashboard');
   const tabStateCache = useRef({});
   const cmtCarrosRef = useRef(null);
+  const otContextRef = useRef({ot_id:null, ot_numero:null});
 
   // Data
   const [tanques, setTanques] = useState([]);
@@ -1688,7 +1689,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       const id = `${numeroCmt}`;
       const {error} = await dbCall({ table:"cmts", op:"insert", data:{
         id, numero_cmt:numeroCmt, pbs_id:pbsIdValidado,
-        ot_id:form.ot_id||null, ot_numero:form.ot_numero||null,
+        ot_id:form.ot_id||otContextRef.current.ot_id||null, ot_numero:form.ot_numero||otContextRef.current.ot_numero||null,
         tiquete_entrada:form.tiquete_entrada||null, fecha:form.fecha||today(),
         producto:cmtProducto,
         tipo_operacion:form.tipo_operacion, tanques_antes:cmtAntes,
@@ -1718,7 +1719,9 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
       await loadData();
-      if (form.ot_id) {
+      const otIdUsado = form.ot_id || otContextRef.current.ot_id;
+      otContextRef.current = {ot_id:null, ot_numero:null};
+      if (otIdUsado) {
         // CMT de porteo: no auto-marcar trasiegos; el usuario avanza la OT desde el detalle
         // Vino desde OT → cerrar directo
         setModal(null); setForm({});
@@ -1730,7 +1733,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         setCmtPorteoCarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
         setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
         setCmtPorteoCarros([{placa:"",transportadora:"",hora_inicio_cargue:"",hora_final_cargue:"",numero_pbs:"",galones_contador:"",peso_ingreso:"",peso_salida:"",galones_bascula:""}]);
-        showToast(`CMT${numeroCmt} vinculado a ${form.ot_numero}`);
+        showToast(`CMT${numeroCmt} vinculado a ${form.ot_numero||otContextRef.current?.ot_numero||"OT"}`);
       } else {
         // CMT autónomo → preguntar si vincular a OT
         setModal(null);
@@ -5401,6 +5404,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const sede=ot.sede||perfil?.sede||"MALAMBO", planta=ot.planta||perfil?.planta||"PLANTA 1";
                     const tanquesOT=[...new Set([ot.tanque_destino,...(tras||[]).map(t=>t.origen),...(tras||[]).map(t=>t.destino)].filter(Boolean))];
                     const esPorteo = (ot.tipo_operacion||"").toLowerCase()==="porteo" || cmtsDeEstaOT.some(c=>c.tipo_operacion==="PORTEO");
+                    otContextRef.current = {ot_id:ot.id, ot_numero:ot.numero_ot};
                     if (esPorteo) {
                       setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"PORTEO",sede,planta,fecha:today(),tanques_ot:tanquesOT});
                       setCmtPorteoCargaPlanta("PLANTA 2");
