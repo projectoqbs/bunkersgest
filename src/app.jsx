@@ -5295,7 +5295,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {tras.length===0 ? (
                 <div style={{ color:T.muted,fontSize:12 }}>Sin trasiegos requeridos</div>
               ) : (()=>{
-                const esPorteo = (ot.tipo_operacion||"").toLowerCase()==="porteo";
+                const esPorteo = (ot.tipo_operacion||"").toLowerCase()==="porteo" || cmtsDeEstaOT.some(c=>c.tipo_operacion==="PORTEO");
                 // Calcular galones recibidos por tanque destino desde CMTs de porteo vinculados
                 const recibidoPorDestino = {};
                 if (esPorteo) {
