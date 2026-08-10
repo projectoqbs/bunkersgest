@@ -654,7 +654,10 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             if(t.tanque) invFinalPorTanque[t.tanque]=Number(t.galones_calculados||0);
           }
 
-          // Movimientos ACUMULADOS de TODO el rango (balanceCmtsRango)
+          // Movimientos ACUMULADOS desde "desde" hasta el día ANTERIOR a "hasta".
+          // Los CMTs del día "hasta" se excluyen porque el físico se tomó al INICIO
+          // de ese día, antes de cualquier operación — así teórico y registrado
+          // comparan el mismo momento (inicio del día "hasta").
           const movsPorTanque = {};
           const addMov = (tq,gls,esEntrada)=>{
             if(!tq||gls<=0) return;
@@ -662,7 +665,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             if(esEntrada) movsPorTanque[tq].entradas+=gls;
             else          movsPorTanque[tq].salidas+=gls;
           };
-          for(const c of balanceCmtsRango){
+          for(const c of balanceCmtsRango.filter(c=>c.fecha < balanceHasta)){
             // tanques_antes / tanques_despues: tanques origen (salida) o destino (entrada en descargue)
             (c.tanques_antes||[]).forEach((ta,i)=>{
               const td=(c.tanques_despues||[])[i];
