@@ -2530,6 +2530,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 return true;
               })
               .sort((a,b) => {
+                // Primero por fecha de llegada (más viejos primero), luego por turno asignado
+                const fa = a.fecha_llegada||"9999", fb = b.fecha_llegada||"9999";
+                if (fa !== fb) return fa < fb ? -1 : 1;
                 if (a.turno_planta && b.turno_planta) return a.turno_planta - b.turno_planta;
                 if (a.turno_planta) return -1;
                 if (b.turno_planta) return 1;
@@ -2585,17 +2588,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     )}
                     {enPlanta.map((v,idx)=>{
                       const llegó = !!v.fecha_llegada;
-                      const turno = v.turno_planta||null;
+                      const turno = idx + 1;
                       return (
                         <tr key={v.id} style={{borderTop:`1px solid ${T.border}`,background:idx%2===0?T.card:"#eef2f7",transition:"background 0.12s"}}
                           onMouseEnter={e=>e.currentTarget.style.background="#dde6f0"}
                           onMouseLeave={e=>e.currentTarget.style.background=idx%2===0?T.card:"#eef2f7"}>
-                          {/* Número de turno */}
+                          {/* Número de turno (posición en cola, calculado dinámicamente) */}
                           <td style={{padding:"12px 14px"}}>
-                            {turno
-                              ? <div style={{width:28,height:28,borderRadius:"50%",background:turno===1?`${T.success}22`:`${T.orange}22`,border:`2px solid ${turno===1?T.success:T.orange}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,color:turno===1?T.success:T.orange}}>{turno}</div>
-                              : <div style={{width:28,height:28,borderRadius:"50%",background:`${T.orange}22`,border:`2px solid ${T.orange}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:T.orange}}>—</div>
-                            }
+                            <div style={{width:28,height:28,borderRadius:"50%",background:turno===1?`${T.success}22`:`${T.orange}22`,border:`2px solid ${turno===1?T.success:T.orange}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,color:turno===1?T.success:T.orange}}>{turno}</div>
                           </td>
                           {/* Fecha llegada */}
                           <td style={{padding:"12px 14px"}}>
@@ -7693,9 +7693,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         if(!form.viaje_id){showToast("Selecciona un carro primero",false);return;}
         setSaving(true);
         const viajeTarget = enRuta.find(v=>v.id===form.viaje_id);
-        // Calcular siguiente turno del día: máximo turno_planta de hoy + 1
-        const fechaHoy = form.fecha_llegada || today();
-        const {data:turnos} = await supabase.from("viajes").select("turno_planta").eq("fecha_llegada", fechaHoy).not("turno_planta","is",null);
+        // Turno global: máximo turno_planta entre todos los carros activos (En Planta) + 1
+        const {data:turnos} = await supabase.from("viajes").select("turno_planta").eq("estado","En Planta").not("turno_planta","is",null);
         const maxTurno = turnos&&turnos.length>0 ? Math.max(...turnos.map(t=>t.turno_planta||0)) : 0;
         const {error} = await dbCall({ table:"viajes", op:"update", data:{
           fecha_llegada: form.fecha_llegada,
