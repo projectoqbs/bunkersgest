@@ -381,6 +381,8 @@ export default function App() {
   ]);
   const [activeTabId, setActiveTabId] = useState('tab-dashboard');
   const tabStateCache = useRef({});
+  const scrollPosCache = useRef({});
+  const mainContentRef = useRef(null);
   const cmtCarrosRef = useRef(null);
   const otContextRef = useRef({ot_id:null, ot_numero:null});
 
@@ -630,6 +632,13 @@ export default function App() {
 
   function switchToTab(tabId) {
     if (tabId === activeTabId) return;
+    // Guardar scroll actual antes de salir
+    if (mainContentRef.current) {
+      scrollPosCache.current[activeTabId] = {
+        top:  mainContentRef.current.scrollTop,
+        left: mainContentRef.current.scrollLeft,
+      };
+    }
     if (activeTab?.type === 'form') {
       tabStateCache.current[activeTabId] = captureFormState();
     }
@@ -642,6 +651,19 @@ export default function App() {
     }
     // formulacion tabs carry their own state in tabStateCache — no extra restore needed
   }
+
+  // Restaurar scroll al volver a una pestaña
+  useEffect(() => {
+    const el = mainContentRef.current;
+    if (!el) return;
+    const saved = scrollPosCache.current[activeTabId];
+    if (!saved) return;
+    // requestAnimationFrame asegura que el contenido ya se renderizó antes de restaurar
+    requestAnimationFrame(() => {
+      el.scrollTop  = saved.top;
+      el.scrollLeft = saved.left;
+    });
+  }, [activeTabId]);
 
   // Auto-sync: keep tabStateCache fresh whenever form state changes while a form tab is active.
   // This ensures state is never lost regardless of how navigation happens.
@@ -2073,6 +2095,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           animate={{ opacity:1, y:0 }}
           exit={{ opacity:0, y:-8 }}
           transition={{ duration:0.2, ease:[0.23,1,0.32,1] }}
+          ref={mainContentRef}
           style={{ flex:1, padding: modal ? 0 : 24, overflowY: modal ? "hidden" : "auto", background:T.bg }}>
 
           {/* DASHBOARD */}
