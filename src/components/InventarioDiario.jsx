@@ -143,7 +143,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       dbCall({ table:"inventarios_diarios", op:"select", select:"*", filters:[], single:false }),
       dbCall({ table:"cmts", op:"select",
         select:"numero_cmt,fecha,tipo_operacion,planta,total_movido,tanques_antes,tanques_despues,tanques_recepcion,porteo_carga_tanques,porteo_descarga_tanques",
-        filters:[{col:"fecha",op:"gte",val:desde},{col:"fecha",op:"lte",val:hasta}], single:false }),
+        filters:[], single:false }),
     ]);
     setBalanceInvsRango(invRes.data||[]);
     setBalanceCmtsRango(cmtRes.data||[]);
@@ -437,11 +437,19 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     }
 
     // 4. Reconstruir nivel teórico día a día
-    // Nivel inicial = último inventario físico ANTES del rango (o primero disponible)
+    // Nivel inicial = último inventario físico + últimos CMTs ANTES del rango
     const invAnteRango = [...todosInvsPlanta].reverse().find(i=>i.fecha<balanceDesde);
-    const nivelActual = {}; // tankId → último nivel conocido
+    const nivelActual = {};
     if(invAnteRango){
       for(const t of (invAnteRango.tanques||[])) if(t.tanque) nivelActual[t.tanque]=Number(t.galones_calculados||0);
+    }
+    // Aplicar CMTs antes del rango (cronológico) para tanques sin inventario físico previo
+    const setSnapN=(tq,v)=>{ if(tq&&v!=null&&v!=="") nivelActual[tq]=Number(v); };
+    for(const c of [...balanceCmtsRango].filter(c=>c.fecha&&c.fecha<balanceDesde).sort((a,b)=>a.fecha.localeCompare(b.fecha))){
+      for(const td of (c.tanques_despues||[]))         setSnapN(td.tanque, td.galones);
+      for(const tr of (c.tanques_recepcion||[]))       setSnapN(tr.tanque, tr.galonesFinal);
+      for(const tp of (c.porteo_descarga_tanques||[])) setSnapN(tp.tanque, tp.galonesFinal);
+      for(const tc of (c.porteo_carga_tanques||[]))    setSnapN(tc.tanque, tc.galonesFinal);
     }
 
     // matrix[tanque][fecha] = { gls, fuente: "fisico" | "teorico" }
@@ -677,7 +685,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             if(esEntrada) movsPorTanque[tq].entradas+=gls;
             else          movsPorTanque[tq].salidas+=gls;
           };
-          for(const c of balanceCmtsRango.filter(c=>c.fecha < balanceHasta)){
+          for(const c of balanceCmtsRango.filter(c=>c.fecha>=balanceDesde && c.fecha<balanceHasta)){
             // tanques_antes / tanques_despues: tanques origen (salida) o destino (entrada en descargue)
             (c.tanques_antes||[]).forEach((ta,i)=>{
               const td=(c.tanques_despues||[])[i];
