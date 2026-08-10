@@ -6118,9 +6118,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Gls Recibidos" type="number" value={form.gls_recibidos||""} onChange={f("gls_recibidos")}/>
               <div>
                 <Lbl>Gls Faltantes</Lbl>
-                <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:Number(form.gls_netos_guia||0)-Number(form.gls_recibidos||0)>0?T.danger:T.success,fontWeight:700}}>
-                  {fmt(Math.max(0, Number(form.gls_netos_guia||0)-Number(form.gls_recibidos||0)))} Gls
-                </div>
+                {(()=>{
+                  const faltante = form.gls_recibidos ? Math.max(0, Number(form.gls_netos_guia||0)-Number(form.gls_recibidos||0)) : 0;
+                  return <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 10px",fontSize:12,fontFamily:"monospace",color:faltante>0?T.danger:T.success,fontWeight:700}}>{fmt(faltante)} Gls</div>;
+                })()}
               </div>
               <Inp label="Flete ($ x Gal)" type="number" value={form.flete||""} onChange={f("flete")}/>
               <Inp label="Bono ($)" type="number" value={form.bono||""} onChange={f("bono")}/>
