@@ -452,20 +452,25 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     };
 
     for(const fecha of allFechasRango){
-      // Aplicar snapshots de CMTs de este día
       const snap = snapPorFecha[fecha]||{};
-      Object.assign(nivelActual, snap);
 
       // ¿Hay inventario físico registrado este día?
       const invFisico = todosInvsPlanta.find(i=>i.fecha===fecha);
       if(invFisico){
+        // Primero aplicar CMTs del día (pueden ser anteriores al físico)
+        Object.assign(nivelActual, snap);
+        // Luego el físico sobreescribe nivelActual (para la celda de la matrix)
         for(const t of (invFisico.tanques||[])){
           if(!t.tanque) continue;
           nivelActual[t.tanque]=Number(t.galones_calculados||0);
           setMatriz(t.tanque, fecha, Number(t.galones_calculados||0), "fisico");
         }
+        // Re-aplicar CMTs encima del físico: si hubo CMTs DESPUÉS del inventario físico
+        // (ej. porteo recibido tras la medición), el carry-forward debe reflejarlos
+        Object.assign(nivelActual, snap);
       } else {
-        // No hay físico: guardar nivel teórico para tanques de esta planta
+        // Sin físico: aplicar CMTs y guardar nivel teórico
+        Object.assign(nivelActual, snap);
         for(const tq of tanquesPlanta){
           if(nivelActual[tq]!=null) setMatriz(tq, fecha, nivelActual[tq], "teorico");
         }
