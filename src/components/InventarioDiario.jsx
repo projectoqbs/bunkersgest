@@ -621,118 +621,173 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           </div>
         )}
 
-        {/* ── Factura de balance ── */}
-        <div style={{background:TH.card,borderRadius:10,border:`2px solid ${TH.navy}`,overflow:"hidden",maxWidth:560}}>
-          {/* Cabecera */}
-          <div style={{background:TH.navy,padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{color:"#fff",fontWeight:800,fontSize:13,letterSpacing:0.5}}>
-              BALANCE DIARIO
-            </div>
-            <div style={{color:"#aac8e8",fontSize:12,fontWeight:600}}>
-              {fmtFecha(balanceFechaDia)} · {plantaLabel}
-            </div>
-          </div>
+        {/* ── Balance por tanque ── */}
+        {(()=>{
+          // Inventario inicial por tanque = registro más reciente ANTES del día seleccionado
+          const invAntes = [...invsOrdenados].reverse().find(i=>i.fecha < balanceFechaDia) || null;
+          // Inventario registrado EN el día seleccionado (si existe)
+          const invDelDia = invsOrdenados.find(i=>i.fecha===balanceFechaDia) || null;
 
-          {loadingDia ? (
-            <div style={{color:TH.muted,fontSize:13,padding:"20px",textAlign:"center"}}>Cargando movimientos...</div>
-          ) : (
-            <div style={{fontFamily:"system-ui,sans-serif"}}>
+          const invInicialPorTanque = {};
+          for(const t of (invAntes?.tanques||[])) if(t.tanque) invInicialPorTanque[t.tanque]=Number(t.galones_calculados||0);
 
-              {/* Inventario inicial */}
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                padding:"12px 20px",borderBottom:`1px solid ${TH.border}`}}>
-                <span style={{fontSize:12,color:TH.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>
-                  Inventario Inicial
-                </span>
-                <span style={{fontFamily:"monospace",fontWeight:700,color:TH.navy,fontSize:14}}>
-                  {totalInicial !== null ? fmtN(totalInicial,0) : "—"}
-                </span>
+          const invFinalPorTanque = {};
+          for(const t of (invDelDia?.tanques||[])) if(t.tanque) invFinalPorTanque[t.tanque]=Number(t.galones_calculados||0);
+
+          // Extraer movimientos por tanque desde TODOS los CMTs del día
+          const movsPorTanque = {};
+          const addMov = (tq,gls,esEntrada)=>{
+            if(!tq||gls<=0) return;
+            if(!movsPorTanque[tq]) movsPorTanque[tq]={entradas:0,salidas:0};
+            if(esEntrada) movsPorTanque[tq].entradas+=gls;
+            else          movsPorTanque[tq].salidas+=gls;
+          };
+          for(const c of balanceCmtsDia){
+            // tanques_antes / tanques_despues: tanques origen (salida) o destino (entrada en descargue)
+            (c.tanques_antes||[]).forEach((ta,i)=>{
+              const td=(c.tanques_despues||[])[i];
+              if(!ta.tanque) return;
+              const delta=Number(ta.galones||0)-Number(td?.galones||0);
+              if(delta>0) addMov(ta.tanque,delta,false);    // salida
+              else if(delta<0) addMov(ta.tanque,-delta,true); // entrada
+            });
+            // tanques_recepcion: tanque destino (entrada)
+            (c.tanques_recepcion||[]).forEach(tr=>{
+              if(!tr.tanque) return;
+              const delta=Number(tr.galonesFinal||0)-Number(tr.galonesInicial||0);
+              if(delta>0) addMov(tr.tanque,delta,true);
+            });
+            // porteo: carga=salida, descarga=entrada
+            (c.porteo_carga_tanques||[]).forEach(tc=>{
+              if(!tc.tanque) return;
+              const delta=Number(tc.galonesInicial||0)-Number(tc.galonesFinal||0);
+              if(delta>0) addMov(tc.tanque,delta,false);
+            });
+            (c.porteo_descarga_tanques||[]).forEach(td=>{
+              if(!td.tanque) return;
+              const delta=Number(td.galonesFinal||0)-Number(td.galonesInicial||0);
+              if(delta>0) addMov(td.tanque,delta,true);
+            });
+          }
+
+          // Tanques a mostrar: los de la planta seleccionada que tienen datos
+          const todosLosIds = [...new Set([
+            ...Object.keys(movsPorTanque),
+            ...Object.keys(invInicialPorTanque),
+            ...Object.keys(invFinalPorTanque),
+          ])].filter(tq=>{
+            if(balancePlanta==="P1") return tq.startsWith("QBS002-")||tq.startsWith("TKT-");
+            return tq.startsWith("TK-");
+          }).sort();
+
+          if(todosLosIds.length===0 && !loadingDia) return (
+            <div style={{padding:"24px 0",textAlign:"center",color:TH.muted,fontSize:13}}>
+              Sin datos de inventario ni CMTs para este día en {plantaLabel}
+            </div>
+          );
+
+          const filas = todosLosIds.map(tq=>{
+            const inv0=invInicialPorTanque[tq]??null;
+            const invF=invFinalPorTanque[tq]??null;
+            const {entradas=0,salidas=0}=movsPorTanque[tq]||{};
+            const teorico=inv0!==null ? inv0+entradas-salidas : null;
+            const variacion=(teorico!==null&&invF!==null) ? invF-teorico : null;
+            return {tq,inv0,entradas,salidas,teorico,invF,variacion};
+          });
+
+          const totInv0=filas.reduce((s,r)=>s+(r.inv0??0),0);
+          const totE=filas.reduce((s,r)=>s+r.entradas,0);
+          const totS=filas.reduce((s,r)=>s+r.salidas,0);
+          const hasTeorico=filas.some(r=>r.teorico!==null);
+          const totTeo=hasTeorico?filas.reduce((s,r)=>s+(r.teorico??0),0):null;
+          const hasInvF=filas.some(r=>r.invF!==null);
+          const totInvF=hasInvF?filas.reduce((s,r)=>s+(r.invF??0),0):null;
+          const totVar=(totTeo!==null&&totInvF!==null)?totInvF-totTeo:null;
+
+          const colH={padding:"9px 12px",fontSize:9,fontWeight:700,letterSpacing:1.2,textTransform:"uppercase",color:"#aac8e8",whiteSpace:"nowrap",textAlign:"right",borderLeft:"1px solid #ffffff18"};
+          const colHl={...colH,textAlign:"left",borderLeft:"none"};
+          const cell={padding:"9px 12px",fontSize:12,fontFamily:"monospace",textAlign:"right",borderBottom:`1px solid ${TH.border}`,borderLeft:`1px solid ${TH.border}`,whiteSpace:"nowrap"};
+          const cellL={...cell,textAlign:"left",fontWeight:700,color:TH.navy,borderLeft:"none",fontFamily:"system-ui,sans-serif"};
+
+          const fmtVar=(v)=>{
+            if(v===null) return <span style={{color:TH.muted}}>—</span>;
+            const pct=Math.abs(v)>0&&totTeo?((Math.abs(v)/totTeo)*100).toFixed(2):"0.00";
+            const col=v<0?TH.danger:v>0?TH.success:TH.muted;
+            return <span style={{color:col,fontWeight:700}}>{v>0?"+":""}{fmtN(v,0)} <span style={{fontSize:10,fontWeight:400}}>({pct}%)</span></span>;
+          };
+
+          return (
+            <div>
+              <div style={{fontWeight:800,fontSize:13,color:TH.navy,marginBottom:12,letterSpacing:0.3}}>
+                BALANCE POR TANQUE · {fmtFecha(balanceFechaDia)} · {plantaLabel}
               </div>
-
-              {/* Entradas */}
-              {movimientos.filter(m=>m.esEntrada).length > 0 && (
-                <div style={{borderBottom:`1px solid ${TH.border}`}}>
-                  <div onClick={()=>setBalanceExpandido(p=>({...p,entradas:!p.entradas}))}
-                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                      padding:"8px 20px",cursor:"pointer",userSelect:"none",
-                      background:`${TH.success}08`}}>
-                    <span style={{fontSize:10,fontWeight:800,color:TH.success,textTransform:"uppercase",letterSpacing:1}}>
-                      ↓ Entradas
-                    </span>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <span style={{fontFamily:"monospace",fontWeight:900,color:TH.success,fontSize:13}}>
-                        +{fmtN(totalEntradas,0)}
-                      </span>
-                      <span style={{color:TH.success,fontSize:11,fontWeight:700}}>
-                        {balanceExpandido.entradas ? "▲" : "▼"}
-                      </span>
-                    </div>
-                  </div>
-                  {balanceExpandido.entradas && movimientos.filter(m=>m.esEntrada).map((m,i)=>(
-                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                      padding:"7px 20px 7px 32px",borderTop:`1px solid ${TH.border}55`}}>
-                      <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:TH.navy}}>{m.id}</span>
-                      <span style={{fontFamily:"monospace",fontWeight:700,color:TH.success,fontSize:13}}>
-                        +{fmtN(m.galones,0)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Salidas */}
-              {movimientos.filter(m=>!m.esEntrada).length > 0 && (
-                <div style={{borderBottom:`1px solid ${TH.border}`}}>
-                  <div onClick={()=>setBalanceExpandido(p=>({...p,salidas:!p.salidas}))}
-                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                      padding:"8px 20px",cursor:"pointer",userSelect:"none",
-                      background:`${TH.danger}08`}}>
-                    <span style={{fontSize:10,fontWeight:800,color:TH.danger,textTransform:"uppercase",letterSpacing:1}}>
-                      ↑ Salidas
-                    </span>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <span style={{fontFamily:"monospace",fontWeight:900,color:TH.danger,fontSize:13}}>
-                        -{fmtN(totalSalidas,0)}
-                      </span>
-                      <span style={{color:TH.danger,fontSize:11,fontWeight:700}}>
-                        {balanceExpandido.salidas ? "▲" : "▼"}
-                      </span>
-                    </div>
-                  </div>
-                  {balanceExpandido.salidas && movimientos.filter(m=>!m.esEntrada).map((m,i)=>(
-                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                      padding:"7px 20px 7px 32px",borderTop:`1px solid ${TH.border}55`}}>
-                      <span style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:TH.navy}}>{m.id}</span>
-                      <span style={{fontFamily:"monospace",fontWeight:700,color:TH.danger,fontSize:13}}>
-                        -{fmtN(m.galones,0)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {movimientos.length === 0 && (
-                <div style={{padding:"12px 20px",color:TH.muted,fontSize:12,textAlign:"center",
-                  borderBottom:`1px solid ${TH.border}`}}>
-                  Sin CMTs registrados para este día
-                </div>
-              )}
-
-              {/* Total teórico */}
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-                padding:"14px 20px",background:`${TH.navy}08`,borderTop:`2px solid ${TH.navy}`}}>
-                <span style={{fontSize:13,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:0.5}}>
-                  Inventario Teórico
-                </span>
-                <span style={{fontFamily:"monospace",fontWeight:900,color:TH.navy,fontSize:18}}>
-                  {teorico !== null ? fmtN(teorico,0) : "—"}
-                  <span style={{fontSize:12,fontWeight:400,marginLeft:6,color:TH.muted}}>gls</span>
-                </span>
+              {loadingDia ? (
+                <div style={{color:TH.muted,padding:20,textAlign:"center"}}>Cargando movimientos...</div>
+              ) : (
+              <div style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`}}>
+                <table style={{borderCollapse:"collapse",width:"100%",fontSize:12}}>
+                  <thead>
+                    <tr style={{background:TH.navy}}>
+                      <th style={{...colHl,minWidth:110}}>Tanque</th>
+                      <th style={colH}>Inv. Inicial</th>
+                      <th style={{...colH,color:"#7fffd4"}}>+ Entradas</th>
+                      <th style={{...colH,color:"#ffaaaa"}}>− Salidas</th>
+                      <th style={colH}>Teórico</th>
+                      <th style={{...colH,color:"#ffe082"}}>Registrado</th>
+                      <th style={{...colH,minWidth:120}}>Variación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filas.map((r,i)=>{
+                      const varCol=r.variacion===null?TH.muted:r.variacion<0?TH.danger:r.variacion>0?TH.success:TH.muted;
+                      const pct=r.variacion!==null&&r.teorico?((Math.abs(r.variacion)/r.teorico)*100).toFixed(2):"0.00";
+                      return(
+                        <tr key={r.tq} style={{background:i%2===0?TH.card:"#f4f7fb"}}>
+                          <td style={{...cellL,background:i%2===0?TH.card:"#f4f7fb"}}>{r.tq}</td>
+                          <td style={cell}>{r.inv0!==null?fmtN(r.inv0,0):<span style={{color:TH.muted}}>—</span>}</td>
+                          <td style={{...cell,color:r.entradas>0?TH.success:TH.muted,fontWeight:r.entradas>0?700:400}}>
+                            {r.entradas>0?`+${fmtN(r.entradas,0)}`:"—"}
+                          </td>
+                          <td style={{...cell,color:r.salidas>0?TH.danger:TH.muted,fontWeight:r.salidas>0?700:400}}>
+                            {r.salidas>0?`−${fmtN(r.salidas,0)}`:"—"}
+                          </td>
+                          <td style={{...cell,fontWeight:700,color:TH.navy}}>{r.teorico!==null?fmtN(r.teorico,0):<span style={{color:TH.muted}}>—</span>}</td>
+                          <td style={{...cell,color:r.invF!==null?TH.navy:TH.muted}}>{r.invF!==null?fmtN(r.invF,0):"—"}</td>
+                          <td style={{...cell,color:varCol,fontWeight:r.variacion!==null?700:400}}>
+                            {r.variacion!==null
+                              ?<span>{r.variacion>0?"+":""}{fmtN(r.variacion,0)} <span style={{fontSize:10,fontWeight:400}}>({pct}%)</span></span>
+                              :<span style={{color:TH.muted}}>—</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {/* Fila total */}
+                    <tr style={{background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>
+                      <td style={{...cellL,background:"#e8f0f8",fontWeight:900,fontSize:12,color:TH.navy,borderTop:`2px solid ${TH.navy}`}}>TOTAL</td>
+                      <td style={{...cell,fontWeight:900,color:TH.navy,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{fmtN(totInv0,0)}</td>
+                      <td style={{...cell,fontWeight:900,color:totE>0?TH.success:TH.muted,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totE>0?`+${fmtN(totE,0)}`:"—"}</td>
+                      <td style={{...cell,fontWeight:900,color:totS>0?TH.danger:TH.muted,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totS>0?`−${fmtN(totS,0)}`:"—"}</td>
+                      <td style={{...cell,fontWeight:900,color:TH.navy,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totTeo!==null?fmtN(totTeo,0):"—"}</td>
+                      <td style={{...cell,fontWeight:900,color:TH.navy,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totInvF!==null?fmtN(totInvF,0):"—"}</td>
+                      <td style={{...cell,fontWeight:900,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`,
+                        color:totVar===null?TH.muted:totVar<0?TH.danger:totVar>0?TH.success:TH.muted}}>
+                        {totVar!==null
+                          ?<span>{totVar>0?"+":""}{fmtN(totVar,0)} {totTeo?<span style={{fontSize:10,fontWeight:400}}>({((Math.abs(totVar)/totTeo)*100).toFixed(2)}%)</span>:null}</span>
+                          :"—"}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-
+              )}
+              {!invAntes && !invDelDia && (
+                <div style={{marginTop:10,fontSize:11,color:TH.muted,textAlign:"center"}}>
+                  Sin inventario físico registrado — registra un inventario para ver la variación real
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })()}
       </div>
     );
   }
