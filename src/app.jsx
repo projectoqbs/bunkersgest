@@ -7693,8 +7693,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         if(!form.viaje_id){showToast("Selecciona un carro primero",false);return;}
         setSaving(true);
         const viajeTarget = enRuta.find(v=>v.id===form.viaje_id);
-        // Calcular siguiente turno: máximo turno_planta actual + 1
-        const {data:turnos} = await supabase.from("viajes").select("turno_planta").not("turno_planta","is",null);
+        // Calcular siguiente turno del día: máximo turno_planta de hoy + 1
+        const fechaHoy = form.fecha_llegada || today();
+        const {data:turnos} = await supabase.from("viajes").select("turno_planta").eq("fecha_llegada", fechaHoy).not("turno_planta","is",null);
         const maxTurno = turnos&&turnos.length>0 ? Math.max(...turnos.map(t=>t.turno_planta||0)) : 0;
         const {error} = await dbCall({ table:"viajes", op:"update", data:{
           fecha_llegada: form.fecha_llegada,
