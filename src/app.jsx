@@ -1219,7 +1219,9 @@ export default function App() {
       }, filters:[{col:"id",val:form.id}] });
       setSaving(false);
       if (error) return showToast("Error: "+error, false);
-      await loadData(); closeTab(activeTabId); setForm({});
+      await loadData();
+      if (modal) { setModal(null); } else { closeTab(activeTabId); }
+      setForm({});
       showToast(`Viaje ${form.id} actualizado`);
     } else {
       const id = genId("VJ", viajes);
