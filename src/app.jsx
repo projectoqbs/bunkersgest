@@ -5318,12 +5318,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
               <div style={{ display:"flex",alignItems:"center",gap:10 }}>
                 <Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/>
-                {perfil?.rol!=="operaciones" && (
-                  <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})}
-                    style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>
-                    ✏️ Editar OT
-                  </button>
-                )}
+                <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})}
+                  style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>
+                  ✏️ Editar OT
+                </button>
               </div>
             </div>
 
