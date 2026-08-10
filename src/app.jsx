@@ -2470,7 +2470,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Table
                 cols={["ID","Sede","F. Cargue","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Gls Recib.","Faltantes","Stand By","Estado",""]}
                 rows={viajesFinal.map(v=>{
-                  const faltantes = Math.max(0, Number(v.gls_netos_guia||v.volumen_guia||0) - Number(v.gls_recibidos||0));
+                  const faltantes = v.gls_recibidos>0 ? Math.max(0, Number(v.gls_netos_guia||v.volumen_guia||0) - Number(v.gls_recibidos||0)) : 0;
                   // Stand by en horas desde llegada. Verde <8h, Amarillo 8-16h, Rojo 16-24h, luego días.
                   const sbFinalizado = !!(v.fecha_llegada && v.fecha_descargue);
                   const horasStandby = v.fecha_llegada
@@ -2496,7 +2496,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     v.producto, v.transportadora, v.placa, v.guia,
                     fmt(v.gls_netos_guia||v.volumen_guia||0),
                     v.gls_recibidos>0?<span style={{color:T.success,fontWeight:700}}>{fmt(v.gls_recibidos)}</span>:<span style={{color:T.muted,fontSize:10}}>—</span>,
-                    faltantes>0?<span style={{color:T.danger,fontWeight:700}}>{fmt(faltantes)}</span>:<span style={{color:T.success}}>OK</span>,
+                    faltantes>0?<span style={{color:T.danger,fontWeight:700}}>{fmt(faltantes)}</span>:v.gls_recibidos>0?<span style={{color:T.success}}>OK</span>:<span style={{color:T.muted}}>0</span>,
                     sbLabel !== null
                       ? <span style={{display:"inline-flex",alignItems:"center",gap:4}}>
                           <Badge label={sbLabel} color={sbColor}/>
