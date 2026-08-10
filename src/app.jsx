@@ -7499,7 +7499,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const yaComprometidoOrigen = tr.origen ? m.trasiegos.slice(0,i).filter(t=>t.origen===tr.origen).reduce((s,t)=>s+Number(t.galones||0),0) : 0;
                   const disponibleOrigen = tqOrigen ? Math.max(0, (tqOrigen.nivel||0) - yaComprometidoOrigen) : null;
                   const yaComprometidoDestino = tr.destino ? m.trasiegos.slice(0,i).filter(t=>t.destino===tr.destino).reduce((s,t)=>s+Number(t.galones||0),0) : 0;
-                  const espacioDisp = tqDestino ? Math.max(0, (tqDestino.capacidad||0) - (tqDestino.nivel||0) - yaComprometidoDestino) : null;
+                  const espacioDisp = tqDestino ? Math.max(0, Math.round((tqDestino.capacidad||0) * 0.9) - (tqDestino.nivel||0) - yaComprometidoDestino) : null;
                   return (
                   <div key={i} style={{ marginBottom:10,padding:12,background:T.bg,borderRadius:8,border:`1px solid ${T.border}` }}>
                     <div style={{ display:"grid",gridTemplateColumns:"1fr auto 1fr auto",gap:8,alignItems:"end" }}>
@@ -7533,7 +7533,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <div/>
                         <div style={{ fontSize:11,color:T.navy,fontWeight:700,paddingLeft:2 }}>
                           {tqDestino
-                            ? <span>🏷️ Espacio libre: <span style={{ color: espacioDisp > 0 ? T.orange : T.danger }}>{fmt(Math.round(espacioDisp))} gls</span></span>
+                            ? <span>🏷️ Espacio libre (90%): <span style={{ color: espacioDisp > 0 ? T.orange : T.danger }}>{fmt(Math.round(espacioDisp))} gls</span></span>
                             : null}
                         </div>
                         <div/>
