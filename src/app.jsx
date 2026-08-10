@@ -7645,14 +7645,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           ).slice(0,8);
           if(!matches.length) return <div style={{position:"absolute",top:"100%",left:0,right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:"0 0 8px 8px",padding:"10px 14px",fontSize:12,color:T.muted,zIndex:50}}>Sin resultados</div>;
           return (
-            <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#0d1f30",border:"1px solid #ffffff14",borderTop:"none",borderRadius:"0 0 10px 10px",zIndex:50,overflow:"hidden",boxShadow:"0 8px 24px #000c"}}>
+            <div style={{position:"absolute",top:"100%",left:0,right:0,background:T.card,border:`1px solid ${T.border}`,borderTop:"none",borderRadius:"0 0 10px 10px",zIndex:50,overflow:"hidden",boxShadow:"0 8px 24px #0002"}}>
               {matches.map(v=>(
                 <div key={v.id} onClick={()=>setForm(p=>({...p,viaje_id:v.id,_busqueda:undefined}))}
-                  style={{padding:"10px 14px",cursor:"pointer",display:"grid",gridTemplateColumns:"auto 1fr auto",gap:"0 12px",alignItems:"center",borderBottom:"1px solid #ffffff08",transition:"background 0.1s"}}
-                  onMouseEnter={e=>e.currentTarget.style.background="#ffffff0d"}
+                  style={{padding:"10px 14px",cursor:"pointer",display:"grid",gridTemplateColumns:"auto 1fr auto",gap:"0 12px",alignItems:"center",borderBottom:`1px solid ${T.border}`,transition:"background 0.1s"}}
+                  onMouseEnter={e=>e.currentTarget.style.background=T.bg}
                   onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                   <span style={{background:`${T.orange}18`,border:`1px solid ${T.orange}44`,borderRadius:6,padding:"3px 9px",color:T.orange,fontWeight:700,fontSize:12,letterSpacing:1}}>{v.placa}</span>
-                  <span style={{color:"#c8dce8",fontSize:12}}>{v.producto}</span>
+                  <span style={{color:T.text,fontSize:12}}>{v.producto}</span>
                   <span style={{color:T.muted,fontSize:11}}>{v.fecha}</span>
                 </div>
               ))}
@@ -7661,13 +7661,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         })()}
       </div>
       {selViaje && (
-        <div style={{background:"#0d1f30",borderRadius:10,padding:"12px 16px",marginBottom:14,fontSize:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+        <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 16px",marginBottom:14,fontSize:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
           <div><span style={{color:T.muted}}>Placa: </span><b style={{color:T.orange}}>{selViaje.placa}</b></div>
-          <div><span style={{color:T.muted}}>Producto: </span>{selViaje.producto}</div>
-          <div><span style={{color:T.muted}}>Transportadora: </span>{selViaje.transportadora}</div>
-          <div><span style={{color:T.muted}}>F. Cargue: </span>{selViaje.fecha}</div>
-          <div><span style={{color:T.muted}}>Guía: </span>{selViaje.guia||"—"}</div>
-          <div><span style={{color:T.muted}}>Conductor: </span>{selViaje.conductor||"—"}</div>
+          <div><span style={{color:T.muted}}>Producto: </span><span style={{color:T.text}}>{selViaje.producto}</span></div>
+          <div><span style={{color:T.muted}}>Transportadora: </span><span style={{color:T.text}}>{selViaje.transportadora}</span></div>
+          <div><span style={{color:T.muted}}>F. Cargue: </span><span style={{color:T.text}}>{selViaje.fecha}</span></div>
+          <div><span style={{color:T.muted}}>Guía: </span><span style={{color:T.text}}>{selViaje.guia||"—"}</span></div>
+          <div><span style={{color:T.muted}}>Conductor: </span><span style={{color:T.text}}>{selViaje.conductor||"—"}</span></div>
         </div>
       )}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
