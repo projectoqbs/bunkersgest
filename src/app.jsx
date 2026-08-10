@@ -6,6 +6,7 @@ import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
 import InventarioDiario from "./components/InventarioDiario";
 import { calcularGalonesP1, parseTankId } from "./utils/aforoP1";
 import LiquidadorPlanta2 from "./components/LiquidadorPlanta2";
+import { initScrollRestore } from "./utils/scrollRestore";
 import { LayoutDashboard, Truck, FlaskConical, Settings2, ClipboardList, Cylinder, Ship, Search, Users, CalendarDays, Calculator, RefreshCw, Crown, BarChart2, Package, Lock, AlertTriangle, CheckCircle, X, Pencil, Trash2, Save, Fuel, Anchor, MapPin, ArrowDownToLine, Wrench, HardHat, Factory, Clock, CircleCheck, CirclePause, Timer, Beaker, ChevronRight, GaugeCircle, Droplets, Flame } from "lucide-react";
 
 const ICON_MAP = {
@@ -455,6 +456,9 @@ export default function App() {
     document.addEventListener("fullscreenchange", handler);
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
+
+  // Inicializar sistema global de restauración de scroll (data-scroll-key)
+  React.useEffect(() => initScrollRestore(), []);
   const [otExpandidos, setOtExpandidos] = useState({});
   const toggleOtExpandir = (productoBase) => setOtExpandidos(prev => ({ ...prev, [productoBase]: !prev[productoBase] }));
   const [viajesFiltroEstado, setViajesFiltroEstado] = useState("");
@@ -2361,7 +2365,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               return vFiltrados.length === 0 ? (
                 <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes en tránsito con fecha estimada para producto {dashFamilia}.</div>
               ) : (
-                <div style={{overflowX:"auto"}}>
+                <div data-scroll-key="viajes-prog-llegadas" style={{overflowX:"auto"}}>
                   <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                     <thead>
                       <tr style={{background:T.navy+"18"}}>
@@ -2489,7 +2493,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   )}
                 </div>
               </div>
-              <div style={{flex:1,overflow:"auto",borderRadius:12,border:"1px solid #ffffff0a"}}>
+              <div data-scroll-key="viajes-tabla" style={{flex:1,overflow:"auto",borderRadius:12,border:"1px solid #ffffff0a"}}>
               <Table
                 cols={["ID","Sede","F. Cargue","F. Llegada","Producto","Transportadora","Placa","Guía","Gls Guía","Gls Recib.","Faltantes","Stand By","Estado",""]}
                 rows={viajesFinal.map(v=>{
@@ -2596,7 +2600,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
 
               {/* Tabla */}
-              <div style={{flex:1,overflow:"auto",borderRadius:8,border:`1px solid ${T.border}`,background:T.card,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
+              <div data-scroll-key="listado-planta-tabla" style={{flex:1,overflow:"auto",borderRadius:8,border:`1px solid ${T.border}`,background:T.card,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                   <thead>
                     <tr style={{background:T.bg,position:"sticky",top:0,zIndex:2}}>
@@ -3249,7 +3253,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     return (
                       <div>
                         <div style={{fontSize:11,color:T.muted,marginBottom:8}}>{todosCarros.length} carro(s) encontrados</div>
-                        <div style={{overflow:"auto",maxHeight:"calc(100vh - 280px)",borderRadius:8,border:`1px solid ${T.border}`}}>
+                        <div data-scroll-key="trazabilidad-carros" style={{overflow:"auto",maxHeight:"calc(100vh - 280px)",borderRadius:8,border:`1px solid ${T.border}`}}>
                         <table style={{width:"100%",borderCollapse:"collapse",background:T.card}}>
                           <thead>
                             <tr style={{background:T.bg}}>
@@ -3293,7 +3297,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         </div>
                       </div>
                     );
-                  })() : <div style={{overflow:"auto",maxHeight:"calc(100vh - 280px)",borderRadius:8,border:`1px solid ${T.border}`}}>
+                  })() : <div data-scroll-key="cmt-lista" style={{overflow:"auto",maxHeight:"calc(100vh - 280px)",borderRadius:8,border:`1px solid ${T.border}`}}>
                     <table style={{width:"100%",borderCollapse:"collapse",background:T.card}}>
                       <thead>
                         <tr style={{background:T.bg}}>
@@ -4188,7 +4192,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   {puedeCrear("despachos") && <Btn color="#c084fc" onClick={()=>{setForm({fecha:today(),sede:sedeFiltro==="TODAS"?"MALAMBO":sedeFiltro});setModal("despacho");}}>+ Nuevo Despacho</Btn>}
                 </div>
               </div>
-              <div style={{overflowX:"auto"}}>
+              <div data-scroll-key="despacho-tabla" style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                 <thead>
                   <tr>{[["ID",90],["Fecha Reg.",90],["MN",140],["ETA",90],["ETD",90],["Agencia",110],["MT VLSO",80],["MT HSFO",80],["MT MGO",80],["Puerto",110],["Horas Op.",80],["Contrato",100],["IMO",100],["Bandera",90],["Ciudad",100],["Estado",100]].map(([c,w])=>{
@@ -4233,7 +4237,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             <div>
               <div style={{fontWeight:800,fontSize:20,color:T.navy,marginBottom:4}}>Entrega</div>
               <div style={{fontSize:11,color:T.muted,marginBottom:20}}>Entrega de combustible al buque</div>
-              <div style={{overflowX:"auto"}}>
+              <div data-scroll-key="despacho-entrega-tabla" style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,tableLayout:"fixed",minWidth:900}}>
                   <colgroup>
                     <col style={{width:"20%"}}/><col style={{width:"12%"}}/><col style={{width:"12%"}}/><col style={{width:"12%"}}/><col style={{width:"11%"}}/><col style={{width:"11%"}}/><col style={{width:"22%"}}/>
@@ -4293,7 +4297,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div>
                 <div style={{fontWeight:800,fontSize:20,color:T.navy,marginBottom:4}}>Historial de Entregas</div>
                 <div style={{fontSize:11,color:T.muted,marginBottom:20}}>Buques con entrega completada · <b style={{color:T.orange}}>{entregados.length}</b> registro(s)</div>
-                <div style={{overflowX:"auto"}}>
+                <div data-scroll-key="despacho-historial-tabla" style={{overflowX:"auto"}}>
                   <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                     <thead>
                       <tr>{[["Buque","left"],["IMO","left"],["Producto","left"],["Cantidad (MT)","center"],["Puerto","left"],["Ciudad","left"],["Contrato","left"],["Fecha Entrega","center"],["Estado","center"]].map(([c,al])=>(
@@ -4497,7 +4501,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const C = trazColsDesc;
                   const colCount = C.size;
                   return (
-                  <div style={{overflow:"auto",maxHeight:"calc(100vh - 310px)",borderRadius:10,border:`1px solid ${T.border}`}}>
+                  <div data-scroll-key="trazabilidad-descargue" style={{overflow:"auto",maxHeight:"calc(100vh - 310px)",borderRadius:10,border:`1px solid ${T.border}`}}>
                     <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:400}}>
                       <thead><tr>
                         {C.has("placa")          && <th style={thStyle}>Placa</th>}
@@ -4570,7 +4574,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const glsCarga = t => Math.abs(Number(t.galonesInicial||0) - Number(t.galonesFinal||0));
                   const glsDesc  = t => Math.abs(Number(t.galonesFinal||0) - Number(t.galonesInicial||0));
                   return (
-                  <div style={{overflow:"auto",maxHeight:"calc(100vh - 310px)",borderRadius:10,border:`1px solid ${T.border}`}}>
+                  <div data-scroll-key="trazabilidad-porteo" style={{overflow:"auto",maxHeight:"calc(100vh - 310px)",borderRadius:10,border:`1px solid ${T.border}`}}>
                     <table style={{width:"100%",borderCollapse:"collapse",background:T.card,minWidth:400}}>
                       <thead><tr>
                         {C.has("placa")          && <th style={thStyle}>Placa</th>}
@@ -4845,7 +4849,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <Btn color={T.orange} onClick={()=>openFormulacionTab(null)}>+ Nueva Formulación</Btn>
               </div>
               <Card>
-                <div style={{ overflowX:"auto" }}>
+                <div data-scroll-key="formulaciones-lista" style={{ overflowX:"auto" }}>
                   <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
                     <thead>
                       <tr style={{ borderBottom:`2px solid ${T.border}` }}>
@@ -5165,7 +5169,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
               {/* Matriz */}
               <Card style={{ marginBottom:16, padding:0, overflow:"hidden" }}>
-                <div style={{ overflowX:"auto" }}>
+                <div data-scroll-key="formulaciones-matriz" style={{ overflowX:"auto" }}>
                   <table style={{ borderCollapse:"collapse", fontSize:12, tableLayout:"fixed", width:`${120 + COL_W*Math.max(fMps.length,7) + COL_W}px` }}>
                     <colgroup>
                       <col style={{ width:120 }}/>
@@ -5729,7 +5733,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 </>);
               })()}
             </div>
-            <div style={{overflowY:"auto",flex:1}}>
+            <div data-scroll-key="viajes-import" style={{overflowY:"auto",flex:1}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                 <thead>
                   <tr>{["Estado","Pestaña","Placa","Transportadora","Producto","Guía","Fecha","Gls Guía","Conductor"].map(c=>(
@@ -6518,7 +6522,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             {/* ── Tabla de tanques ── */}
             {filas.length>0 && (
-              <div style={{overflowX:"auto"}}>
+              <div data-scroll-key="tanques-tabla" style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                   <thead><tr style={{background:T.navy}}>
                     {["Tanque","Sonda Ini","Temp Ini","API Ini","Sonda Fin","Temp Fin","API Fin","Gls.N Ini","Gls.N Fin","Gls Entregados"].map(h=>(

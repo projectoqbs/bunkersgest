@@ -542,7 +542,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
               Teórico (calculado desde CMTs)
             </span>
           </div>
-          <div style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`,marginBottom:20}}>
+          <div data-scroll-key="inventario-matriz" style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`,marginBottom:20}}>
             <table style={{borderCollapse:"collapse",tableLayout:"auto"}}>
               <thead>
                 <tr style={{background:TH.navy}}>
@@ -773,7 +773,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                 BALANCE POR TANQUE · {fmtFecha(balanceDesde)} → {fmtFecha(balanceHasta)} · {plantaLabel}
               </div>
               {(
-              <div style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`}}>
+              <div data-scroll-key="inventario-balance-tabla" style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`}}>
                 <table style={{borderCollapse:"collapse",width:"100%",fontSize:12}}>
                   <thead>
                     <tr style={{background:TH.navy}}>
@@ -844,7 +844,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   // ── Tabla P1 ─────────────────────────────────────────────────────────────────
   function renderTablaP1(){
     return(
-      <div style={{overflowX:"auto"}}>
+      <div data-scroll-key="inventario-p1-tabla" style={{overflowX:"auto"}}>
         <div style={{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}}>
           {[{label:"Calado Proa (m)",key:"proaIni"},{label:"Calado Popa (m)",key:"popaIni"}].map(({label,key})=>(
             <div key={key} style={{minWidth:160}}>
@@ -1004,7 +1004,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     if(loadingHist) return <div style={{color:TH.muted,padding:32,textAlign:"center"}}>Cargando...</div>;
     if(histDesc.length===0) return <div style={{color:TH.muted,padding:32,textAlign:"center"}}>Sin registros</div>;
     return(
-      <div style={{overflowX:"auto"}}>
+      <div data-scroll-key="inventario-historial" style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
           <thead>
             <tr style={{background:TH.navy,color:"#fff"}}>
