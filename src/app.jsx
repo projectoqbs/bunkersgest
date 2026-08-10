@@ -7706,6 +7706,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         if(error){showToast("Error: "+error,false);return;}
         await loadData();
         setModal(null); setForm({});
+        setNav("listado_planta");
         showToast(`✅ ${viajeTarget?.placa} · Turno #${maxTurno+1}`,true);
       }}>{saving?"Registrando...":"Registrar en Planta"}</Btn>
     </Modal>
