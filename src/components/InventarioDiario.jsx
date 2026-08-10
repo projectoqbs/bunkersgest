@@ -427,12 +427,17 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     }
 
     // ── Balance del día seleccionado ────────────────────────────────────────
-    // CMTs P1 pueden tener planta="PLANTA 1" o "QBS002" o nombre de barcaza
-    const cmtsPlanta = balanceCmtsDia.filter(c =>
-      balancePlanta === "P1"
-        ? (c.planta === "PLANTA 1" || c.planta === "QBS002" || (c.planta||"").startsWith("QBS"))
-        : c.planta === "PLANTA 2"
-    );
+    const isP1 = (planta) => planta === "PLANTA 1" || planta === "QBS002" || (planta||"").startsWith("QBS");
+    // CMTs normales: filtrar por c.planta. CMTs porteo: incluir si tienen carga o descarga en esta planta.
+    const cmtsPlanta = balanceCmtsDia.filter(c => {
+      const tipo = (c.tipo_operacion||"").toUpperCase();
+      if (tipo === "PORTEO") {
+        return balancePlanta === "P1"
+          ? isP1(c.porteo_descarga_planta) || isP1(c.porteo_carga_planta)
+          : c.porteo_descarga_planta === "PLANTA 2" || c.porteo_carga_planta === "PLANTA 2";
+      }
+      return balancePlanta === "P1" ? isP1(c.planta) : c.planta === "PLANTA 2";
+    });
     // Inventario inicial = el más reciente ANTES del día seleccionado
     const invsOrdenados = [...invsPlanta].sort((a,b)=>a.fecha.localeCompare(b.fecha));
     const invInicial  = [...invsOrdenados].reverse().find(i => i.fecha <= balanceFechaDia)
@@ -444,18 +449,27 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       const antes  = Number(c.total_antes||0);
       const despues= Number(c.total_despues||0);
       const tipo   = (c.tipo_operacion||"").toUpperCase();
-      // Para porteo los galones se calculan desde porteo_descarga_tanques (planta destino) o porteo_carga_tanques (planta origen)
       let movido;
       if (tipo === "PORTEO") {
-        const descarga = (c.porteo_descarga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
-        const carga    = (c.porteo_carga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0);
-        movido = Math.max(descarga, carga);
+        // Planta destino (descarga): producto entra → usar porteo_descarga_tanques
+        // Planta origen (carga): producto sale → usar porteo_carga_tanques
+        const esDestinoP1 = isP1(c.porteo_descarga_planta);
+        const esOrigenP1  = isP1(c.porteo_carga_planta);
+        if (balancePlanta === "P1" ? esDestinoP1 : c.porteo_descarga_planta === "PLANTA 2") {
+          movido = (c.porteo_descarga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
+        } else {
+          movido = (c.porteo_carga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0);
+        }
       } else {
         movido = Number(c.total_movido||0);
       }
       let esEntrada;
-      if(tipo.includes("DESCARGUE")) esEntrada = true;
-      else if(tipo.includes("ENTREGA")||tipo.includes("PORTEO")) esEntrada = false;
+      if (tipo === "PORTEO") {
+        // En planta destino (descarga) es entrada; en planta origen (carga) es salida
+        const esDestino = balancePlanta === "P1" ? isP1(c.porteo_descarga_planta) : c.porteo_descarga_planta === "PLANTA 2";
+        esEntrada = esDestino;
+      } else if(tipo.includes("DESCARGUE")) esEntrada = true;
+      else if(tipo.includes("ENTREGA")) esEntrada = false;
       else esEntrada = (despues - antes) >= 0;
       return { id:c.numero_cmt||c.id, tipo:c.tipo_operacion||"—", galones:movido, esEntrada,
                obs:c.nombre_motonave||(c.carros||[]).map(r=>r.placa).join(", ")||"" };
