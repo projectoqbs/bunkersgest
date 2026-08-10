@@ -5433,16 +5433,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const esPorteo = (ot.tipo_operacion||"").toLowerCase()==="porteo" || cmtsDeEstaOT.some(c=>c.tipo_operacion==="PORTEO");
                     otContextRef.current = {ot_id:ot.id, ot_numero:ot.numero_ot};
                     if (esPorteo) {
-                      setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"PORTEO",sede,planta,fecha:today(),tanques_ot:tanquesOT});
-                      setCmtPorteoCargaPlanta("PLANTA 2");
-                      setCmtPorteoCarga(tras.map(t=>({tanque:t.origen||"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""})));
-                      setCmtPorteoDescargaPlanta("PLANTA 1");
-                      setCmtPorteoDescarga(tras.map(t=>({tanque:t.destino||"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""})));
+                      setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"PORTEO",sede,fecha:today(),tanques_ot:tanquesOT});
+                      setCmtPorteoCargaPlanta("");
+                      setCmtPorteoCarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
+                      setCmtPorteoDescargaPlanta("");
+                      setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
                     } else {
-                      setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),tanques_ot:tanquesOT});
+                      setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,fecha:today(),tanques_ot:tanquesOT});
                       setCmtProducto(fo?.producto||"");
-                      setCmtAntes([{tanque:tras[0]?.origen||"",sonda:"",galones:""}]);
-                      setCmtDespues([{tanque:tras[0]?.destino||"",producto:fo?.producto||"",sonda:"",galones:""}]);
+                      setCmtAntes([{tanque:"",sonda:"",galones:""}]);
+                      setCmtDespues([{tanque:"",producto:fo?.producto||"",sonda:"",galones:""}]);
                     }
                     setCmtCarros([{placa:"",guia:"",tiquete:"",pbs_id:""}]);
                     setModal("cmt");
@@ -6665,7 +6665,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 );
               })()}
             </div>
-            {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && (
+            {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && (form.tipo_operacion||"")!=="PORTEO" && (
               <div style={{width:160,flexShrink:0}}>
                 {(form.tipo_operacion||"")==="ENTREGA A MOTONAVE" ? (
                   <Sel label="Barcaza" value={form.planta||""} onChange={e=>{setForm(prev=>({...prev,planta:e.target.value}));}}>
