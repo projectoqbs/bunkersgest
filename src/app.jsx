@@ -424,6 +424,7 @@ export default function App() {
   const [afoP2, setAfoP2] = useState({});
   const [afoP2Loading, setAfoP2Loading] = useState(false);
   const [otModal, setOtModal] = useState(null); // null | {step:1|2|3, trasiegos, formulacionId, recircHoras}
+  const [otEditando, setOtEditando] = useState(null); // {otId, trasiegos:[...]} cuando el coordinador edita una OT
   const [recircDates, setRecircDates] = useState({}); // {[otId]: {inicio, fin}}
   const [otSaving, setOtSaving] = useState(false);
   const [progTab, setProgTab] = useState("programaciones"); // "programaciones" | "formulaciones"
@@ -5315,7 +5316,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ fontWeight:800,fontSize:22,color:T.navy }}>{ot.numero_ot}</div>
                 <div style={{ fontSize:12,color:T.muted,marginTop:2 }}>{fo?.producto||""} · {ot.tanque_destino} · {(ot.created_at||"").slice(0,10)}</div>
               </div>
-              <Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/>
+              <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+                <Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/>
+                {perfil?.rol!=="operaciones" && (
+                  <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})}
+                    style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>
+                    ✏️ Editar OT
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* PASO 1: TRASIEGOS */}
@@ -7402,6 +7411,90 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 {nav==="inventario_diario" && (
   <InventarioDiario supabase={supabase} session={session} perfil={perfil} showToast={showToast} tanques={tanques} dbCall={dbCall}/>
 )}
+
+{/* ═══ MODAL EDITAR OT ═══ */}
+{otEditando && (()=>{
+  const ed = otEditando;
+  const setEd = patch => setOtEditando(p=>({...p,...patch}));
+  const TANQUES_LIST = (tanques||[]).map(t=>t.id);
+  const guardar = async () => {
+    const otActual = (ordenesTrabaio||[]).find(o=>o.id===ed.otId);
+    if(!otActual) return;
+    await dbCall({ table:"ordenes_trabajo", op:"update", data:{ trasiegos: ed.trasiegos, updated_at: new Date().toISOString() }, filters:[{col:"id",val:ed.otId}] });
+    await loadData();
+    setOtEditando(null);
+    showToast("OT actualizada");
+  };
+  return (
+    <div style={{ position:"fixed",inset:0,background:"#00000088",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center" }} onClick={()=>setOtEditando(null)}>
+      <div style={{ background:T.card,borderRadius:12,padding:28,width:560,maxWidth:"95vw",maxHeight:"85vh",overflowY:"auto" }} onClick={e=>e.stopPropagation()}>
+        <div style={{ fontWeight:800,fontSize:17,color:T.navy,marginBottom:16 }}>Editar OT · Trasiegos</div>
+
+        {/* Filas editables */}
+        {ed.trasiegos.length === 0 && (
+          <div style={{ color:T.muted,fontSize:13,marginBottom:12 }}>Sin trasiegos. Agrega uno abajo.</div>
+        )}
+        {ed.trasiegos.map((tr,i)=>{
+          const tqDestino = tr.destino ? tanques.find(t=>t.id===tr.destino) : null;
+          const espacioDisp = tqDestino ? Math.max(0, Math.round((tqDestino.capacidad||0)*0.9) - (tqDestino.nivel||0)) : null;
+          return (
+            <div key={i} style={{ marginBottom:10,padding:12,background:T.bg,borderRadius:8,border:`1px solid ${T.border}` }}>
+              <div style={{ display:"grid",gridTemplateColumns:"1fr auto 1fr auto",gap:8,alignItems:"end" }}>
+                <div>
+                  <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>ORIGEN</div>
+                  <select value={tr.origen} onChange={e=>{const n=[...ed.trasiegos];n[i]={...n[i],origen:e.target.value};setEd({trasiegos:n});}}
+                    style={{ width:"100%",padding:"7px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12 }}>
+                    <option value="">Seleccionar...</option>
+                    {TANQUES_LIST.map(t=><option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>GALONES</div>
+                  <input type="number" value={tr.galones} onChange={e=>{const n=[...ed.trasiegos];n[i]={...n[i],galones:e.target.value};setEd({trasiegos:n});}}
+                    placeholder="0" style={{ width:90,padding:"7px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12,outline:"none" }}/>
+                </div>
+                <div>
+                  <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>DESTINO</div>
+                  <select value={tr.destino} onChange={e=>{const n=[...ed.trasiegos];n[i]={...n[i],destino:e.target.value};setEd({trasiegos:n});}}
+                    style={{ width:"100%",padding:"7px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12 }}>
+                    <option value="">Seleccionar...</option>
+                    {TANQUES_LIST.filter(t=>t!==tr.origen).map(t=><option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <button onClick={()=>setEd({trasiegos:ed.trasiegos.filter((_,j)=>j!==i)})}
+                  style={{ background:"#ef444418",border:"1px solid #ef444455",color:"#ef4444",borderRadius:6,padding:"7px 10px",cursor:"pointer",fontWeight:700,fontSize:12,alignSelf:"flex-end" }}>✕</button>
+              </div>
+              {tqDestino && (
+                <div style={{ fontSize:11,color:T.navy,fontWeight:700,paddingLeft:2,marginTop:6 }}>
+                  🏷️ Espacio libre (90%): <span style={{ color: espacioDisp > 0 ? T.orange : T.danger }}>{fmt(espacioDisp)} gls</span>
+                  {tr.galones && Number(tr.galones) > espacioDisp
+                    ? <span style={{ color:T.danger,marginLeft:8 }}>⚠️ Supera capacidad operativa</span>
+                    : null}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        <button onClick={()=>setEd({trasiegos:[...ed.trasiegos,{origen:"",destino:"",galones:"",completado:false}]})}
+          style={{ background:"transparent",border:`1px dashed ${T.border}`,color:T.muted,borderRadius:6,padding:"7px 16px",cursor:"pointer",fontSize:12,fontWeight:600,width:"100%",marginBottom:16 }}>
+          + Agregar trasiego
+        </button>
+
+        <div style={{ display:"flex",gap:10,justifyContent:"flex-end" }}>
+          <button onClick={()=>setOtEditando(null)}
+            style={{ background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"8px 20px",cursor:"pointer",fontWeight:700,fontSize:13 }}>
+            Cancelar
+          </button>
+          <button onClick={guardar}
+            style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"8px 24px",cursor:"pointer",fontWeight:700,fontSize:13 }}>
+            Guardar cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+})()}
 
 {/* ═══ MODAL NUEVA OT ═══ */}
 {otModal && (()=>{
