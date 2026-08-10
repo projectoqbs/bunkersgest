@@ -638,35 +638,44 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
         {/* ── Balance por tanque (rango desde→hasta) ── */}
         {(()=>{
-          // Inv. inicial por tanque:
-          // 1. Matrix en la fecha "desde" (físico o teórico)
-          // 2. Primer dato disponible en la matrix dentro del rango
-          // 3. Inventario físico más reciente antes del rango
-          // 4. tanques_antes del primer CMT en el rango (el inventario siempre se
-          //    toma al inicio de la operación, así que tanques_antes ES la medición física)
+          // Inv. inicial por tanque — prioridad:
+          // 1. Físico registrado en "desde" (fuente=fisico en matrix)
+          // 2. tanques_antes del primer CMT del rango: medición física al inicio de la
+          //    operación → ES la lectura real más confiable para tanques sin físico diario
+          // 3. Teórico de la matrix (carry-forward de CMTs previos)
+          // 4. Inventario físico antes del rango
+          const cmtsOrdenados = [...balanceCmtsRango]
+            .filter(c=>c.fecha>=balanceDesde && c.fecha<balanceHasta)
+            .sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||""));
+
+          // Construir mapa: primer tanques_antes por tanque dentro del rango
+          const primerAntesRango = {};
+          for(const c of cmtsOrdenados){
+            for(const ta of (c.tanques_antes||[])){
+              if(!ta.tanque || primerAntesRango[ta.tanque]!=null) continue;
+              if(ta.galones!=null && ta.galones!=="") primerAntesRango[ta.tanque]=Number(ta.galones);
+            }
+          }
+
           const invInicialPorTanque = {};
           for(const tq of tanquesPlanta){
+            // 1. Físico en "desde"
             const exacto = matrix[tq]?.[balanceDesde];
+            if(exacto?.fuente==="fisico"){ invInicialPorTanque[tq]=exacto.gls; continue; }
+            // 2. tanques_antes del primer CMT en el rango (lectura real)
+            if(primerAntesRango[tq]!=null){ invInicialPorTanque[tq]=primerAntesRango[tq]; continue; }
+            // 3. Teórico en "desde" o primer teórico del rango
             if(exacto?.gls!=null){ invInicialPorTanque[tq]=exacto.gls; continue; }
             for(const f of allFechasRango){
               const e = matrix[tq]?.[f];
               if(e?.gls!=null){ invInicialPorTanque[tq]=e.gls; break; }
             }
           }
-          // Fallback 3: físico antes del rango
+          // 4. Fallback: físico antes del rango
           const invAntes = [...invsOrdenados].reverse().find(i=>i.fecha<balanceDesde)||null;
           for(const t of (invAntes?.tanques||[])){
             if(t.tanque && invInicialPorTanque[t.tanque]==null)
               invInicialPorTanque[t.tanque]=Number(t.galones_calculados||0);
-          }
-          // Fallback 4: tanques_antes del primer CMT en el rango para cada tanque
-          // (el inventario se hace al iniciar la operación → tanques_antes = físico real)
-          const cmtsOrdenados = [...balanceCmtsRango].sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||""));
-          for(const c of cmtsOrdenados){
-            (c.tanques_antes||[]).forEach(ta=>{
-              if(!ta.tanque || invInicialPorTanque[ta.tanque]!=null) return;
-              if(ta.galones!=null && ta.galones!=="") invInicialPorTanque[ta.tanque]=Number(ta.galones);
-            });
           }
 
           // Inv. final = solo inventario FÍSICO registrado en la fecha "hasta"
