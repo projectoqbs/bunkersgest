@@ -115,7 +115,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
   // Balance diario
   const [balancePlanta, setBalancePlanta]     = useState("P1");
-  const [balanceDesde,  setBalanceDesde]      = useState(()=>{ const d=new Date(); d.setDate(d.getDate()-6); return d.toISOString().split("T")[0]; });
+  const [balanceDesde,  setBalanceDesde]      = useState(()=>{ const d=new Date(); d.setDate(1); return d.toISOString().split("T")[0]; });
   const [balanceHasta,  setBalanceHasta]      = useState(()=>new Date().toISOString().split("T")[0]);
   const [balanceInvsRango, setBalanceInvsRango] = useState([]); // inventarios físicos (todo el historial)
   const [balanceCmtsRango, setBalanceCmtsRango] = useState([]); // CMTs del rango seleccionado
@@ -472,8 +472,6 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       }
     }
 
-    const invsPlanta = todosInvsPlanta; // alias para compatibilidad con código siguiente
-    const invsOrdenados = [...invsPlanta].sort((a,b)=>a.fecha.localeCompare(b.fecha));
     // Usar TODAS las fechas del rango que tengan datos en la matrix
     const fechas = allFechasRango.filter(f=>tanquesPlanta.some(tq=>matrix[tq]?.[f]!=null));
     const maxPorTanque = {};
@@ -481,88 +479,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       maxPorTanque[tq] = Math.max(...fechas.map(f=>matrix[tq]?.[f]?.gls||0), 1);
     }
 
-    // ── Balance del día seleccionado ────────────────────────────────────────
-    const isP1 = (planta) => planta === "PLANTA 1" || planta === "QBS002" || (planta||"").startsWith("QBS");
-
-    // Para trasiegos inter-planta: planta origen y destino vienen de plantaFiltro en cada tanque
-    const trasiegoOrigen  = (c) => (c.tanques_antes||[])[0]?.plantaFiltro || "";
-    const trasiegoDestino = (c) => (c.tanques_recepcion||[])[0]?.plantaFiltro || "";
-    const esTrasiegoInterplanta = (c) => {
-      const origen  = trasiegoOrigen(c);
-      const destino = trasiegoDestino(c);
-      return origen && destino && origen !== destino;
-    };
-
-    const cmtsPlanta = balanceCmtsDia.filter(c => {
-      const tipo = (c.tipo_operacion||"").toUpperCase();
-      if (tipo === "PORTEO") {
-        return balancePlanta === "P1"
-          ? isP1(c.porteo_descarga_planta) || isP1(c.porteo_carga_planta)
-          : c.porteo_descarga_planta === "PLANTA 2" || c.porteo_carga_planta === "PLANTA 2";
-      }
-      if (tipo === "TRASIEGO DE PRODUCTO" && esTrasiegoInterplanta(c)) {
-        // Aparece en ambas plantas
-        const origen  = trasiegoOrigen(c);
-        const destino = trasiegoDestino(c);
-        return balancePlanta === "P1"
-          ? isP1(origen) || isP1(destino)
-          : origen === "PLANTA 2" || destino === "PLANTA 2";
-      }
-      return balancePlanta === "P1" ? isP1(c.planta) : c.planta === "PLANTA 2";
-    });
-    // Inventario inicial = el más reciente ANTES del día seleccionado
-    const invsOrdenados = [...invsPlanta].sort((a,b)=>a.fecha.localeCompare(b.fecha));
-    const invInicial  = [...invsOrdenados].reverse().find(i => i.fecha <= balanceFechaDia)
-                        || invsOrdenados[0]
-                        || null;
-    const totalInicial= invInicial ? (invInicial.tanques||[]).reduce((s,t)=>s+(Number(t.galones_calculados)||0),0) : null;
-
-    const movimientos = cmtsPlanta.map(c => {
-      const antes  = Number(c.total_antes||0);
-      const despues= Number(c.total_despues||0);
-      const tipo   = (c.tipo_operacion||"").toUpperCase();
-      let movido;
-      let esEntrada;
-
-      if (tipo === "PORTEO") {
-        const esDestinoP1 = isP1(c.porteo_descarga_planta);
-        if (balancePlanta === "P1" ? esDestinoP1 : c.porteo_descarga_planta === "PLANTA 2") {
-          movido = (c.porteo_descarga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
-          esEntrada = true;
-        } else {
-          movido = (c.porteo_carga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0);
-          esEntrada = false;
-        }
-      } else if (tipo === "TRASIEGO DE PRODUCTO" && esTrasiegoInterplanta(c)) {
-        const origen  = trasiegoOrigen(c);
-        const destino = trasiegoDestino(c);
-        const estaPlantaEsDestino = balancePlanta === "P1" ? isP1(destino) : destino === "PLANTA 2";
-        if (estaPlantaEsDestino) {
-          // Esta planta recibe → entrada: galonesFinal − galonesInicial en tanques_recepcion
-          movido = (c.tanques_recepcion||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
-          esEntrada = true;
-        } else {
-          // Esta planta despacha → salida: tanques_antes − tanques_despues
-          movido = (c.tanques_antes||[]).reduce((a,ta,i)=>{
-            const td = (c.tanques_despues||[])[i];
-            return a + Math.max(0, Number(ta.galones||0) - Number(td?.galones||0));
-          }, 0);
-          esEntrada = false;
-        }
-      } else {
-        movido = Number(c.total_movido||0);
-        if(tipo.includes("DESCARGUE")) esEntrada = true;
-        else if(tipo.includes("ENTREGA")) esEntrada = false;
-        else esEntrada = (despues - antes) >= 0;
-      }
-
-      return { id:c.numero_cmt||c.id, tipo:c.tipo_operacion||"—", galones:movido, esEntrada,
-               obs:c.nombre_motonave||(c.carros||[]).map(r=>r.placa).join(", ")||"" };
-    }).filter(m=>m.galones>0);
-
-    const totalEntradas = movimientos.filter(m=>m.esEntrada).reduce((s,m)=>s+m.galones,0);
-    const totalSalidas  = movimientos.filter(m=>!m.esEntrada).reduce((s,m)=>s+m.galones,0);
-    const teorico = totalInicial !== null ? totalInicial + totalEntradas - totalSalidas : null;
+    const invsOrdenados = [...todosInvsPlanta].sort((a,b)=>a.fecha.localeCompare(b.fecha));
 
     const fmtFecha = f => new Date(f+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"short"});
 
@@ -594,7 +511,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           <div style={{color:TH.muted,padding:24,textAlign:"center"}}>Cargando inventarios...</div>
         ) : fechas.length === 0 ? (
           <div style={{padding:"24px 0",textAlign:"center",color:TH.muted,fontSize:14}}>
-            Sin inventarios físicos registrados para {plantaLabel} en el período seleccionado
+            Sin inventarios ni CMTs registrados para {plantaLabel} en el período seleccionado
           </div>
         ) : (
           <>
@@ -703,29 +620,28 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           </>
         )}
 
-        {/* ── Balance por tanque ── */}
+        {/* ── Balance por tanque (rango desde→hasta) ── */}
         {(()=>{
-          // Inventario inicial por tanque = del día anterior en la matrix (físico o teórico)
-          // Buscamos el día anterior al seleccionado
-          const fechaAnterior = allFechasRango.filter(f=>f<balanceFechaDia).slice(-1)[0]||null;
+          // Inv. inicial por tanque = nivel en la fecha "desde" de la matrix
           const invInicialPorTanque = {};
-          if(fechaAnterior){
-            for(const tq of tanquesPlanta){
-              const entry = matrix[tq]?.[fechaAnterior];
-              if(entry?.gls!=null) invInicialPorTanque[tq]=entry.gls;
-            }
-          } else {
-            // Sin día anterior en rango: usar inventario físico antes del rango
-            const invAntes = [...invsOrdenados].reverse().find(i=>i.fecha<balanceFechaDia)||null;
+          for(const tq of tanquesPlanta){
+            const entry = matrix[tq]?.[balanceDesde];
+            if(entry?.gls!=null) invInicialPorTanque[tq]=entry.gls;
+          }
+          // Fallback: si "desde" no tiene dato en matrix, usar la última físico antes del rango
+          if(Object.keys(invInicialPorTanque).length===0){
+            const invAntes = [...invsOrdenados].reverse().find(i=>i.fecha<balanceDesde)||null;
             for(const t of (invAntes?.tanques||[])) if(t.tanque) invInicialPorTanque[t.tanque]=Number(t.galones_calculados||0);
           }
 
-          // Inventario registrado EN el día seleccionado: físico si existe, teórico de la matrix como referencia
-          const invDelDia = invsOrdenados.find(i=>i.fecha===balanceFechaDia)||null;
+          // Inv. final por tanque = nivel en la fecha "hasta" de la matrix
           const invFinalPorTanque = {};
-          for(const t of (invDelDia?.tanques||[])) if(t.tanque) invFinalPorTanque[t.tanque]=Number(t.galones_calculados||0);
+          for(const tq of tanquesPlanta){
+            const entry = matrix[tq]?.[balanceHasta];
+            if(entry?.gls!=null) invFinalPorTanque[tq]=entry.gls;
+          }
 
-          // Extraer movimientos por tanque desde TODOS los CMTs del día
+          // Movimientos ACUMULADOS de TODO el rango (balanceCmtsRango)
           const movsPorTanque = {};
           const addMov = (tq,gls,esEntrada)=>{
             if(!tq||gls<=0) return;
@@ -733,7 +649,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             if(esEntrada) movsPorTanque[tq].entradas+=gls;
             else          movsPorTanque[tq].salidas+=gls;
           };
-          for(const c of balanceCmtsDia){
+          for(const c of balanceCmtsRango){
             // tanques_antes / tanques_despues: tanques origen (salida) o destino (entrada en descargue)
             (c.tanques_antes||[]).forEach((ta,i)=>{
               const td=(c.tanques_despues||[])[i];
@@ -771,9 +687,9 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             return tq.startsWith("TK-");
           }).sort();
 
-          if(todosLosIds.length===0 && !loadingDia) return (
+          if(todosLosIds.length===0) return (
             <div style={{padding:"24px 0",textAlign:"center",color:TH.muted,fontSize:13}}>
-              Sin datos de inventario ni CMTs para este día en {plantaLabel}
+              Sin datos de inventario ni CMTs para el período en {plantaLabel}
             </div>
           );
 
@@ -810,11 +726,9 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           return (
             <div>
               <div style={{fontWeight:800,fontSize:13,color:TH.navy,marginBottom:12,letterSpacing:0.3}}>
-                BALANCE POR TANQUE · {fmtFecha(balanceFechaDia)} · {plantaLabel}
+                BALANCE POR TANQUE · {fmtFecha(balanceDesde)} → {fmtFecha(balanceHasta)} · {plantaLabel}
               </div>
-              {loadingDia ? (
-                <div style={{color:TH.muted,padding:20,textAlign:"center"}}>Cargando movimientos...</div>
-              ) : (
+              {(
               <div style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`}}>
                 <table style={{borderCollapse:"collapse",width:"100%",fontSize:12}}>
                   <thead>
@@ -871,9 +785,9 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                 </table>
               </div>
               )}
-              {!invAntes && !invDelDia && (
+              {Object.keys(invFinalPorTanque).length===0 && (
                 <div style={{marginTop:10,fontSize:11,color:TH.muted,textAlign:"center"}}>
-                  Sin inventario físico registrado — registra un inventario para ver la variación real
+                  Sin inventario registrado al final del período — registra un inventario para ver la variación real
                 </div>
               )}
             </div>
