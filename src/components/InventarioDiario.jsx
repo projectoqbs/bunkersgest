@@ -443,8 +443,16 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     const movimientos = cmtsPlanta.map(c => {
       const antes  = Number(c.total_antes||0);
       const despues= Number(c.total_despues||0);
-      const movido = Number(c.total_movido||0);
       const tipo   = (c.tipo_operacion||"").toUpperCase();
+      // Para porteo los galones se calculan desde porteo_descarga_tanques (planta destino) o porteo_carga_tanques (planta origen)
+      let movido;
+      if (tipo === "PORTEO") {
+        const descarga = (c.porteo_descarga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
+        const carga    = (c.porteo_carga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0);
+        movido = Math.max(descarga, carga);
+      } else {
+        movido = Number(c.total_movido||0);
+      }
       let esEntrada;
       if(tipo.includes("DESCARGUE")) esEntrada = true;
       else if(tipo.includes("ENTREGA")||tipo.includes("PORTEO")) esEntrada = false;
