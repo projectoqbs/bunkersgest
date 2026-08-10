@@ -689,11 +689,14 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             else          movsPorTanque[tq].salidas+=gls;
           };
           for(const c of balanceCmtsRango.filter(c=>c.fecha>=balanceDesde && c.fecha<balanceHasta)){
-            // tanques_antes / tanques_despues: tanques origen (salida) o destino (entrada en descargue)
-            (c.tanques_antes||[]).forEach((ta,i)=>{
-              const td=(c.tanques_despues||[])[i];
+            // tanques_antes / tanques_despues: emparejamiento por nombre de tanque.
+            // Si el tanque no aparece en despues, se omite (el movimiento lo capturan
+            // porteo_* o tanques_recepcion, y así evitamos falsos movimientos por índice).
+            (c.tanques_antes||[]).forEach(ta=>{
               if(!ta.tanque) return;
-              const delta=Number(ta.galones||0)-Number(td?.galones||0);
+              const td=(c.tanques_despues||[]).find(x=>x.tanque===ta.tanque);
+              if(!td) return;
+              const delta=Number(ta.galones||0)-Number(td.galones||0);
               if(delta>0) addMov(ta.tanque,delta,false);    // salida
               else if(delta<0) addMov(ta.tanque,-delta,true); // entrada
             });
