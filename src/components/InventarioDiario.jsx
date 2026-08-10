@@ -622,13 +622,20 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
         {/* ── Balance por tanque (rango desde→hasta) ── */}
         {(()=>{
-          // Inv. inicial por tanque = nivel en la fecha "desde" de la matrix
+          // Inv. inicial por tanque = nivel en la fecha "desde" de la matrix.
+          // Si "desde" no tiene dato (no hay físico antes del rango), usar el primer dato
+          // disponible en la matrix dentro del rango para cada tanque.
           const invInicialPorTanque = {};
           for(const tq of tanquesPlanta){
-            const entry = matrix[tq]?.[balanceDesde];
-            if(entry?.gls!=null) invInicialPorTanque[tq]=entry.gls;
+            const exacto = matrix[tq]?.[balanceDesde];
+            if(exacto?.gls!=null){ invInicialPorTanque[tq]=exacto.gls; continue; }
+            // Primer día del rango que tenga dato para este tanque
+            for(const f of allFechasRango){
+              const e = matrix[tq]?.[f];
+              if(e?.gls!=null){ invInicialPorTanque[tq]=e.gls; break; }
+            }
           }
-          // Fallback: si "desde" no tiene dato en matrix, usar la última físico antes del rango
+          // Último fallback: inventario físico más reciente antes del rango
           if(Object.keys(invInicialPorTanque).length===0){
             const invAntes = [...invsOrdenados].reverse().find(i=>i.fecha<balanceDesde)||null;
             for(const t of (invAntes?.tanques||[])) if(t.tanque) invInicialPorTanque[t.tanque]=Number(t.galones_calculados||0);
@@ -677,15 +684,8 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             });
           }
 
-          // Tanques a mostrar: los de la planta seleccionada que tienen datos
-          const todosLosIds = [...new Set([
-            ...Object.keys(movsPorTanque),
-            ...Object.keys(invInicialPorTanque),
-            ...Object.keys(invFinalPorTanque),
-          ])].filter(tq=>{
-            if(balancePlanta==="P1") return tq.startsWith("QBS002-")||tq.startsWith("TKT-");
-            return tq.startsWith("TK-");
-          }).sort();
+          // Tanques a mostrar: TODOS los de la planta, siempre (con 0 si no hay datos)
+          const todosLosIds = [...tanquesPlanta].sort();
 
           if(todosLosIds.length===0) return (
             <div style={{padding:"24px 0",textAlign:"center",color:TH.muted,fontSize:13}}>
