@@ -143,7 +143,10 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       dbCall({ table:"inventarios_diarios", op:"select", select:"*", filters:[], single:false }),
       dbCall({ table:"cmts", op:"select",
         select:"numero_cmt,fecha,tipo_operacion,planta,total_movido,tanques_antes,tanques_despues,tanques_recepcion,porteo_carga_tanques,porteo_descarga_tanques",
-        filters:[], single:false }),
+        filters:[
+          {col:"fecha",op:"gte",val:(()=>{ const d=new Date(desde+"T12:00:00"); d.setDate(d.getDate()-90); return d.toISOString().split("T")[0]; })()},
+          {col:"fecha",op:"lte",val:hasta}
+        ], single:false }),
     ]);
     setBalanceInvsRango(invRes.data||[]);
     setBalanceCmtsRango(cmtRes.data||[]);
