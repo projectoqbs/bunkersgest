@@ -646,11 +646,12 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             for(const t of (invAntes?.tanques||[])) if(t.tanque) invInicialPorTanque[t.tanque]=Number(t.galones_calculados||0);
           }
 
-          // Inv. final por tanque = nivel en la fecha "hasta" de la matrix
+          // Inv. final = solo inventario FÍSICO registrado en la fecha "hasta"
+          // (no teórico — la columna "Registrado" muestra solo mediciones reales)
           const invFinalPorTanque = {};
-          for(const tq of tanquesPlanta){
-            const entry = matrix[tq]?.[balanceHasta];
-            if(entry?.gls!=null) invFinalPorTanque[tq]=entry.gls;
+          const invFisicoHasta = todosInvsPlanta.find(i=>i.fecha===balanceHasta);
+          for(const t of (invFisicoHasta?.tanques||[])){
+            if(t.tanque) invFinalPorTanque[t.tanque]=Number(t.galones_calculados||0);
           }
 
           // Movimientos ACUMULADOS de TODO el rango (balanceCmtsRango)
