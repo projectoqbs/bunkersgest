@@ -5420,10 +5420,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       ? (c.porteo_descarga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0)
                       : 0;
                     const gls = c.tipo_operacion==="PORTEO" ? glsPorteo : Number(c.total_movido||0);
+                    const esPorteo = c.tipo_operacion==="PORTEO";
+                    const placas = esPorteo ? (c.porteo_carros||[]).map(cr=>cr.placa).filter(Boolean) : [];
+                    const etiqueta = esPorteo
+                      ? (placas.length > 0 ? `🚛 ${placas.join(" · ")}` : `🚛 Sin placa · ${c.numero_cmt}`)
+                      : `📋 ${c.numero_cmt}`;
                     return (
-                    <span key={c.id} style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
+                    <span key={c.id}
+                      title={esPorteo ? `${c.numero_cmt} · ${fmt(gls)} gls` : `${fmt(gls)} gls`}
+                      style={{ background:`${T.orange}22`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer" }}
                       onClick={()=>abrirCmt(c)}>
-                      📋 {c.numero_cmt}{c.tipo_operacion==="PORTEO"?" · Porteo":""} — {fmt(gls)} gls
+                      {etiqueta}{gls>0?` — ${fmt(gls)} gls`:""}
                     </span>
                     );
                   })}
