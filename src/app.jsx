@@ -4770,7 +4770,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                 <span style={{fontSize:11,background:`${T.success}18`,border:`1px solid ${T.success}44`,borderRadius:6,padding:"2px 8px",cursor:"pointer",color:T.success,fontFamily:"monospace",fontWeight:700}} onClick={()=>{const tq=tiquetes.find(x=>x.id===ot.tiquete_id);if(tq){setForm({...tq});setModal("tiquete");}}}>🧪 {ot.tiquete_id}</span>
                               )}
                             </div>
-                            <button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id}]); setActiveTabId(id); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Ver / Gestionar →</button>
+                            <button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id,source:"programacion"}]); setActiveTabId(id); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Ver / Gestionar →</button>
                           </div>
                           {/* Progreso descargues */}
                           {ot.estado==="DESCARGANDO" && (
@@ -4827,7 +4827,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               <td style={{ padding:"10px 14px" }}><Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/></td>
                               <td style={{ padding:"10px 14px",color:T.muted,fontSize:11 }}>{(ot.created_at||"").slice(0,10)}</td>
                               <td style={{ padding:"10px 14px" }}>{ot.tiquete_id ? <span style={{color:T.success,fontFamily:"monospace",fontWeight:700,cursor:"pointer",textDecoration:"underline"}} onClick={()=>{const tq=tiquetes.find(x=>x.id===ot.tiquete_id);if(tq){setForm({...tq});setModal("tiquete");}}}>{ot.tiquete_id}</span> : <span style={{color:T.muted,fontSize:11}}>Sin análisis</span>}</td>
-                              <td style={{ padding:"10px 14px" }}><button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id}]); setActiveTabId(id); }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Ver →</button></td>
+                              <td style={{ padding:"10px 14px" }}><button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id,source:"programacion"}]); setActiveTabId(id); }} style={{ background:"none",border:"none",color:T.orange,cursor:"pointer",fontSize:12,fontWeight:700 }}>Ver →</button></td>
                             </tr>
                           );
                         })}
@@ -5318,10 +5318,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
               <div style={{ display:"flex",alignItems:"center",gap:10 }}>
                 <Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/>
-                <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})}
-                  style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>
-                  ✏️ Editar OT
-                </button>
+                {activeTab?.source==="programacion" && (
+                  <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})}
+                    style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>
+                    ✏️ Editar OT
+                  </button>
+                )}
               </div>
             </div>
 
