@@ -117,7 +117,8 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   const [balancePlanta, setBalancePlanta]     = useState("P1");
   const [balanceDesde,  setBalanceDesde]      = useState(()=>{ const d=new Date(); d.setDate(d.getDate()-6); return d.toISOString().split("T")[0]; });
   const [balanceHasta,  setBalanceHasta]      = useState(()=>new Date().toISOString().split("T")[0]);
-  const [balanceInvsRango, setBalanceInvsRango] = useState([]);
+  const [balanceInvsRango, setBalanceInvsRango] = useState([]); // inventarios físicos (todo el historial)
+  const [balanceCmtsRango, setBalanceCmtsRango] = useState([]); // CMTs del rango seleccionado
   const [balanceFechaDia,  setBalanceFechaDia]  = useState(()=>new Date().toISOString().split("T")[0]);
   const [balanceCmtsDia,   setBalanceCmtsDia]   = useState([]);
   const [loadingBalance,   setLoadingBalance]   = useState(false);
@@ -136,12 +137,16 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
   const loadBalance = useCallback(async (desde, hasta) => {
     setLoadingBalance(true);
-    const { data } = await dbCall({
-      table:"inventarios_diarios", op:"select", select:"*",
-      filters:[{col:"fecha",op:"gte",val:desde},{col:"fecha",op:"lte",val:hasta}],
-      single:false
-    });
-    setBalanceInvsRango(data||[]);
+    // Carga inventarios físicos completos (todo el historial, para poder establecer el nivel inicial)
+    // y CMTs del rango para calcular inventario teórico
+    const [invRes, cmtRes] = await Promise.all([
+      dbCall({ table:"inventarios_diarios", op:"select", select:"*", filters:[], single:false }),
+      dbCall({ table:"cmts", op:"select",
+        select:"numero_cmt,fecha,tipo_operacion,planta,total_movido,tanques_antes,tanques_despues,tanques_recepcion,porteo_carga_tanques,porteo_descarga_tanques",
+        filters:[{col:"fecha",op:"gte",val:desde},{col:"fecha",op:"lte",val:hasta}], single:false }),
+    ]);
+    setBalanceInvsRango(invRes.data||[]);
+    setBalanceCmtsRango(cmtRes.data||[]);
     setLoadingBalance(false);
   }, [dbCall]);
 
@@ -408,22 +413,72 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       ? [...TANQUES_BARCAZA.map(t=>`QBS002-${t}`), ...TANQUES_TKT]
       : TANQUES_P2;
 
-    // ── Matriz inventario físico día a día ──────────────────────────────────
-    const invsPlanta = balanceInvsRango.filter(i => i.planta === plantaLabel);
-    const fechas = [...new Set(invsPlanta.map(i=>i.fecha))].sort();
+    // ── Inventario teórico: reconstruir nivel por tanque día a día desde CMTs ──
+    // 1. Todos los inventarios físicos históricos de esta planta
+    const todosInvsPlanta = balanceInvsRango.filter(i => i.planta === plantaLabel)
+      .sort((a,b)=>a.fecha.localeCompare(b.fecha));
 
-    // matrix[tanque][fecha] = galones_calculados
+    // 2. Generar todos los días del rango seleccionado
+    const allFechasRango = [];
+    { let d = new Date(balanceDesde+"T12:00:00"), fin = new Date(balanceHasta+"T12:00:00");
+      while(d<=fin){ allFechasRango.push(d.toISOString().split("T")[0]); d=new Date(d); d.setDate(d.getDate()+1); } }
+
+    // 3. CMTs del rango agrupados por fecha, extraer snapshots de nivel final por tanque
+    const snapPorFecha = {}; // fecha → { tankId → nivel_final }
+    for(const c of balanceCmtsRango){
+      if(!c.fecha) continue;
+      if(!snapPorFecha[c.fecha]) snapPorFecha[c.fecha]={};
+      const snap = snapPorFecha[c.fecha];
+      const setSnap=(tq,v)=>{ if(tq&&v!=null&&v!=="") snap[tq]=Number(v); };
+      for(const td of (c.tanques_despues||[]))        setSnap(td.tanque, td.galones);
+      for(const tr of (c.tanques_recepcion||[]))      setSnap(tr.tanque, tr.galonesFinal);
+      for(const tp of (c.porteo_descarga_tanques||[])) setSnap(tp.tanque, tp.galonesFinal);
+      for(const tc of (c.porteo_carga_tanques||[]))   setSnap(tc.tanque, tc.galonesFinal);
+    }
+
+    // 4. Reconstruir nivel teórico día a día
+    // Nivel inicial = último inventario físico ANTES del rango (o primero disponible)
+    const invAnteRango = [...todosInvsPlanta].reverse().find(i=>i.fecha<balanceDesde);
+    const nivelActual = {}; // tankId → último nivel conocido
+    if(invAnteRango){
+      for(const t of (invAnteRango.tanques||[])) if(t.tanque) nivelActual[t.tanque]=Number(t.galones_calculados||0);
+    }
+
+    // matrix[tanque][fecha] = { gls, fuente: "fisico" | "teorico" }
     const matrix = {};
-    for(const inv of invsPlanta){
-      for(const t of (inv.tanques||[])){
-        if(!matrix[t.tanque]) matrix[t.tanque] = {};
-        matrix[t.tanque][inv.fecha] = Number(t.galones_calculados)||0;
+    const setMatriz=(tq,f,gls,fuente)=>{
+      if(!matrix[tq]) matrix[tq]={};
+      matrix[tq][f]={gls,fuente};
+    };
+
+    for(const fecha of allFechasRango){
+      // Aplicar snapshots de CMTs de este día
+      const snap = snapPorFecha[fecha]||{};
+      Object.assign(nivelActual, snap);
+
+      // ¿Hay inventario físico registrado este día?
+      const invFisico = todosInvsPlanta.find(i=>i.fecha===fecha);
+      if(invFisico){
+        for(const t of (invFisico.tanques||[])){
+          if(!t.tanque) continue;
+          nivelActual[t.tanque]=Number(t.galones_calculados||0);
+          setMatriz(t.tanque, fecha, Number(t.galones_calculados||0), "fisico");
+        }
+      } else {
+        // No hay físico: guardar nivel teórico para tanques de esta planta
+        for(const tq of tanquesPlanta){
+          if(nivelActual[tq]!=null) setMatriz(tq, fecha, nivelActual[tq], "teorico");
+        }
       }
     }
-    // máximo por tanque (para la barra proporcional)
+
+    const invsPlanta = todosInvsPlanta; // alias para compatibilidad con código siguiente
+    const invsOrdenados = [...invsPlanta].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+    // Usar TODAS las fechas del rango que tengan datos en la matrix
+    const fechas = allFechasRango.filter(f=>tanquesPlanta.some(tq=>matrix[tq]?.[f]!=null));
     const maxPorTanque = {};
     for(const tq of tanquesPlanta){
-      maxPorTanque[tq] = Math.max(...fechas.map(f=>matrix[tq]?.[f]||0), 1);
+      maxPorTanque[tq] = Math.max(...fechas.map(f=>matrix[tq]?.[f]?.gls||0), 1);
     }
 
     // ── Balance del día seleccionado ────────────────────────────────────────
@@ -542,6 +597,18 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             Sin inventarios físicos registrados para {plantaLabel} en el período seleccionado
           </div>
         ) : (
+          <>
+          {/* Leyenda */}
+          <div style={{display:"flex",gap:14,marginBottom:8,fontSize:11,alignItems:"center"}}>
+            <span style={{display:"flex",alignItems:"center",gap:5,fontWeight:700,color:TH.navy}}>
+              <span style={{width:12,height:12,borderRadius:2,background:TH.navy,display:"inline-block"}}/>
+              Físico registrado
+            </span>
+            <span style={{display:"flex",alignItems:"center",gap:5,fontWeight:700,color:"#6C5CE7"}}>
+              <span style={{width:12,height:12,borderRadius:2,background:"#6C5CE7",display:"inline-block",opacity:0.7}}/>
+              Teórico (calculado desde CMTs)
+            </span>
+          </div>
           <div style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`,marginBottom:20}}>
             <table style={{borderCollapse:"collapse",tableLayout:"auto"}}>
               <thead>
@@ -550,20 +617,25 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                     position:"sticky",left:0,background:TH.navy,zIndex:2,whiteSpace:"nowrap"}}>
                     Tanque
                   </th>
-                  {fechas.map(f=>(
+                  {fechas.map(f=>{
+                    const tieneFisico = tanquesPlanta.some(tq=>matrix[tq]?.[f]?.fuente==="fisico");
+                    return(
                     <th key={f} onClick={()=>{ setBalanceFechaDia(f); loadCmtsDia(f); }}
-                      style={{padding:"10px 14px",color:f===balanceFechaDia?"#FFD700":"#b8d4ee",fontSize:11,fontWeight:700,
-                        cursor:"pointer",minWidth:110,textAlign:"center",whiteSpace:"nowrap",
+                      style={{padding:"10px 14px",
+                        color:f===balanceFechaDia?"#FFD700":tieneFisico?"#b8d4ee":"#c4b5fd",
+                        fontSize:11,fontWeight:700,cursor:"pointer",minWidth:110,textAlign:"center",whiteSpace:"nowrap",
                         background:f===balanceFechaDia?"#005299":TH.navy,
                         borderLeft:`1px solid #ffffff22`,transition:"background 0.15s"}}>
                       {fmtFecha(f)}
+                      {!tieneFisico&&<div style={{fontSize:8,fontWeight:400,opacity:0.7,letterSpacing:0.5}}>teórico</div>}
                     </th>
-                  ))}
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
                 {tanquesPlanta.map((tq,ri)=>{
-                  const hasAnyData = fechas.some(f=>matrix[tq]?.[f]!==undefined);
+                  const hasAnyData = fechas.some(f=>matrix[tq]?.[f]!=null);
                   return(
                     <tr key={tq} style={{background:ri%2===0?TH.card:"#f4f7fb"}}>
                       <td style={{padding:"10px 16px",fontWeight:700,color:TH.navy,fontSize:12,
@@ -573,17 +645,23 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                         {tq}
                       </td>
                       {fechas.map(f=>{
-                        const gls = matrix[tq]?.[f];
-                        const pct = gls ? Math.round((gls/maxPorTanque[tq])*100) : 0;
+                        const entry = matrix[tq]?.[f];
+                        const gls = entry?.gls;
+                        const fuente = entry?.fuente;
                         const isSelected = f===balanceFechaDia;
+                        const esTeorico = fuente==="teorico";
                         return(
                           <td key={f} onClick={()=>{ setBalanceFechaDia(f); loadCmtsDia(f); }}
                             style={{padding:"8px 14px",textAlign:"right",cursor:"pointer",
                               borderLeft:`1px solid ${TH.border}`,
-                              background:isSelected?"#e8f4fd":undefined,
+                              background:isSelected?(esTeorico?"#f0ebff":"#e8f4fd"):undefined,
                               transition:"background 0.15s"}}>
-                            {gls !== undefined ? (
-                              <span style={{fontFamily:"monospace",fontWeight:700,color:TH.navy,fontSize:12}}>
+                            {gls != null ? (
+                              <span style={{fontFamily:"monospace",
+                                fontWeight:esTeorico?500:700,
+                                color:esTeorico?"#6C5CE7":TH.navy,
+                                fontSize:12,
+                                fontStyle:esTeorico?"italic":"normal"}}>
                                 {fmtN(gls,0)}
                               </span>
                             ) : (
@@ -603,13 +681,16 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                     TOTAL
                   </td>
                   {fechas.map(f=>{
-                    const total = tanquesPlanta.reduce((s,tq)=>s+(matrix[tq]?.[f]||0),0);
+                    const total = tanquesPlanta.reduce((s,tq)=>s+(matrix[tq]?.[f]?.gls||0),0);
+                    const esTeorico = tanquesPlanta.some(tq=>matrix[tq]?.[f]?.fuente==="teorico");
                     const isSelected = f===balanceFechaDia;
                     return(
                       <td key={f} style={{padding:"10px 14px",textAlign:"right",
                         borderLeft:`1px solid ${TH.border}`,
-                        background:isSelected?"#d4eaf8":"#eaf0f8"}}>
-                        <span style={{fontFamily:"monospace",fontWeight:900,color:TH.navy,fontSize:13}}>
+                        background:isSelected?(esTeorico?"#ede9fe":"#d4eaf8"):"#eaf0f8"}}>
+                        <span style={{fontFamily:"monospace",fontWeight:900,fontSize:13,
+                          color:esTeorico?"#6C5CE7":TH.navy,
+                          fontStyle:esTeorico?"italic":"normal"}}>
                           {total > 0 ? fmtN(total,0) : "—"}
                         </span>
                       </td>
@@ -619,18 +700,28 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* ── Balance por tanque ── */}
         {(()=>{
-          // Inventario inicial por tanque = registro más reciente ANTES del día seleccionado
-          const invAntes = [...invsOrdenados].reverse().find(i=>i.fecha < balanceFechaDia) || null;
-          // Inventario registrado EN el día seleccionado (si existe)
-          const invDelDia = invsOrdenados.find(i=>i.fecha===balanceFechaDia) || null;
-
+          // Inventario inicial por tanque = del día anterior en la matrix (físico o teórico)
+          // Buscamos el día anterior al seleccionado
+          const fechaAnterior = allFechasRango.filter(f=>f<balanceFechaDia).slice(-1)[0]||null;
           const invInicialPorTanque = {};
-          for(const t of (invAntes?.tanques||[])) if(t.tanque) invInicialPorTanque[t.tanque]=Number(t.galones_calculados||0);
+          if(fechaAnterior){
+            for(const tq of tanquesPlanta){
+              const entry = matrix[tq]?.[fechaAnterior];
+              if(entry?.gls!=null) invInicialPorTanque[tq]=entry.gls;
+            }
+          } else {
+            // Sin día anterior en rango: usar inventario físico antes del rango
+            const invAntes = [...invsOrdenados].reverse().find(i=>i.fecha<balanceFechaDia)||null;
+            for(const t of (invAntes?.tanques||[])) if(t.tanque) invInicialPorTanque[t.tanque]=Number(t.galones_calculados||0);
+          }
 
+          // Inventario registrado EN el día seleccionado: físico si existe, teórico de la matrix como referencia
+          const invDelDia = invsOrdenados.find(i=>i.fecha===balanceFechaDia)||null;
           const invFinalPorTanque = {};
           for(const t of (invDelDia?.tanques||[])) if(t.tanque) invFinalPorTanque[t.tanque]=Number(t.galones_calculados||0);
 
