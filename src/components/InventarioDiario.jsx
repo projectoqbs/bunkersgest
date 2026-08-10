@@ -428,13 +428,30 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
     // ── Balance del día seleccionado ────────────────────────────────────────
     const isP1 = (planta) => planta === "PLANTA 1" || planta === "QBS002" || (planta||"").startsWith("QBS");
-    // CMTs normales: filtrar por c.planta. CMTs porteo: incluir si tienen carga o descarga en esta planta.
+
+    // Para trasiegos inter-planta: planta origen y destino vienen de plantaFiltro en cada tanque
+    const trasiegoOrigen  = (c) => (c.tanques_antes||[])[0]?.plantaFiltro || "";
+    const trasiegoDestino = (c) => (c.tanques_recepcion||[])[0]?.plantaFiltro || "";
+    const esTrasiegoInterplanta = (c) => {
+      const origen  = trasiegoOrigen(c);
+      const destino = trasiegoDestino(c);
+      return origen && destino && origen !== destino;
+    };
+
     const cmtsPlanta = balanceCmtsDia.filter(c => {
       const tipo = (c.tipo_operacion||"").toUpperCase();
       if (tipo === "PORTEO") {
         return balancePlanta === "P1"
           ? isP1(c.porteo_descarga_planta) || isP1(c.porteo_carga_planta)
           : c.porteo_descarga_planta === "PLANTA 2" || c.porteo_carga_planta === "PLANTA 2";
+      }
+      if (tipo === "TRASIEGO DE PRODUCTO" && esTrasiegoInterplanta(c)) {
+        // Aparece en ambas plantas
+        const origen  = trasiegoOrigen(c);
+        const destino = trasiegoDestino(c);
+        return balancePlanta === "P1"
+          ? isP1(origen) || isP1(destino)
+          : origen === "PLANTA 2" || destino === "PLANTA 2";
       }
       return balancePlanta === "P1" ? isP1(c.planta) : c.planta === "PLANTA 2";
     });
@@ -450,27 +467,40 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       const despues= Number(c.total_despues||0);
       const tipo   = (c.tipo_operacion||"").toUpperCase();
       let movido;
+      let esEntrada;
+
       if (tipo === "PORTEO") {
-        // Planta destino (descarga): producto entra → usar porteo_descarga_tanques
-        // Planta origen (carga): producto sale → usar porteo_carga_tanques
         const esDestinoP1 = isP1(c.porteo_descarga_planta);
-        const esOrigenP1  = isP1(c.porteo_carga_planta);
         if (balancePlanta === "P1" ? esDestinoP1 : c.porteo_descarga_planta === "PLANTA 2") {
           movido = (c.porteo_descarga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
+          esEntrada = true;
         } else {
           movido = (c.porteo_carga_tanques||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesInicial||0)-Number(r.galonesFinal||0)),0);
+          esEntrada = false;
+        }
+      } else if (tipo === "TRASIEGO DE PRODUCTO" && esTrasiegoInterplanta(c)) {
+        const origen  = trasiegoOrigen(c);
+        const destino = trasiegoDestino(c);
+        const estaPlantaEsDestino = balancePlanta === "P1" ? isP1(destino) : destino === "PLANTA 2";
+        if (estaPlantaEsDestino) {
+          // Esta planta recibe → entrada: galonesFinal − galonesInicial en tanques_recepcion
+          movido = (c.tanques_recepcion||[]).reduce((a,r)=>a+Math.max(0,Number(r.galonesFinal||0)-Number(r.galonesInicial||0)),0);
+          esEntrada = true;
+        } else {
+          // Esta planta despacha → salida: tanques_antes − tanques_despues
+          movido = (c.tanques_antes||[]).reduce((a,ta,i)=>{
+            const td = (c.tanques_despues||[])[i];
+            return a + Math.max(0, Number(ta.galones||0) - Number(td?.galones||0));
+          }, 0);
+          esEntrada = false;
         }
       } else {
         movido = Number(c.total_movido||0);
+        if(tipo.includes("DESCARGUE")) esEntrada = true;
+        else if(tipo.includes("ENTREGA")) esEntrada = false;
+        else esEntrada = (despues - antes) >= 0;
       }
-      let esEntrada;
-      if (tipo === "PORTEO") {
-        // En planta destino (descarga) es entrada; en planta origen (carga) es salida
-        const esDestino = balancePlanta === "P1" ? isP1(c.porteo_descarga_planta) : c.porteo_descarga_planta === "PLANTA 2";
-        esEntrada = esDestino;
-      } else if(tipo.includes("DESCARGUE")) esEntrada = true;
-      else if(tipo.includes("ENTREGA")) esEntrada = false;
-      else esEntrada = (despues - antes) >= 0;
+
       return { id:c.numero_cmt||c.id, tipo:c.tipo_operacion||"—", galones:movido, esEntrada,
                obs:c.nombre_motonave||(c.carros||[]).map(r=>r.placa).join(", ")||"" };
     }).filter(m=>m.galones>0);
