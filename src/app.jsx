@@ -2797,28 +2797,43 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   }
                 </div>
 
-                {/* Recirculaciones pendientes de análisis */}
+                {/* Recirculaciones pendientes de análisis — una muestra por tanque destino */}
                 <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 18px"}}>
                   <div style={{fontSize:12,fontWeight:700,color:T.orange,marginBottom:10}}>Recirculaciones pendientes de análisis</div>
-                  {otsPendientesLab.length===0
-                    ? <div style={{fontSize:12,color:T.muted}}>Sin recirculaciones pendientes</div>
-                    : <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                        {otsPendientesLab.map(o=>{
-                          const tanquesOT = [...new Set([...(o.descargues||[]).map(d=>d.tanque),(o.trasiegos||[]).map(t=>t.destino)].flat())].filter(Boolean);
-                          const tanquesLabel = tanquesOT.map(id=>{ const tq=tanques.find(t=>t.id===id); return tq?`${id} (${tq.nombre})`:id; }).join(", ");
-                          const horasRecirc = o.recirculacion_inicio&&o.recirculacion_fin
-                            ? ((new Date(o.recirculacion_fin)-new Date(o.recirculacion_inicio))/3600000).toFixed(1)+"h" : null;
-                          return (
-                            <div key={o.id} style={{background:`${T.orange}10`,border:`1px solid ${T.orange}44`,borderRadius:8,padding:"8px 14px",fontSize:12}}>
-                              <b>{o.numero_ot}</b> · {tanquesLabel||"—"}
-                              {horasRecirc&&<span style={{color:T.muted,fontSize:11}}> · {horasRecirc}</span>}
-                              <button onClick={()=>{setForm({tipo_analisis:"Planta 2",ot_id:o.id,ot_numero:o.numero_ot});setModal("tiquete");}}
-                                style={{marginLeft:10,background:T.orange,color:"#071422",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Analizar</button>
-                            </div>
-                          );
-                        })}
+                  {(()=>{
+                    // Aplanar: una entrada por tanque destino de cada OT completada
+                    const muestras = [];
+                    for (const o of otsPendientesLab) {
+                      const trasiegos = o.trasiegos||[];
+                      // Tiquetes ya emitidos para esta OT (para marcar cuáles ya tienen análisis)
+                      const tiqOT = tiquetes.filter(t=>t.ot_id===o.id);
+                      for (const tr of trasiegos) {
+                        if (!tr.destino) continue;
+                        const tq = tanques.find(t=>t.id===tr.destino);
+                        const yaAnalizado = tiqOT.some(t=>t.tanque_id===tr.destino||t.tanque===tr.destino);
+                        const horasRecirc = tr.recirculacion_inicio&&tr.recirculacion_fin
+                          ? ((new Date(tr.recirculacion_fin)-new Date(tr.recirculacion_inicio))/3600000).toFixed(1)+"h" : null;
+                        muestras.push({ ot:o, tr, tq, yaAnalizado, horasRecirc });
+                      }
+                    }
+                    if (muestras.length===0) return <div style={{fontSize:12,color:T.muted}}>Sin recirculaciones pendientes</div>;
+                    return (
+                      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                        {muestras.map(({ot:o,tr,tq,yaAnalizado,horasRecirc},idx)=>(
+                          <div key={`${o.id}-${tr.destino}-${idx}`} style={{background:yaAnalizado?`${T.success}10`:`${T.orange}10`,border:`1px solid ${yaAnalizado?T.success:T.orange}44`,borderRadius:8,padding:"8px 14px",fontSize:12}}>
+                            <b>{o.numero_ot}</b> · <b style={{color:T.navy}}>{tr.destino}</b>
+                            {tq?.nombre && <span style={{color:T.muted,fontSize:11}}> ({tq.nombre})</span>}
+                            {horasRecirc && <span style={{color:T.muted,fontSize:11}}> · {horasRecirc}</span>}
+                            {yaAnalizado
+                              ? <span style={{marginLeft:10,fontSize:11,color:T.success,fontWeight:700}}>✅ Analizado</span>
+                              : <button onClick={()=>{setForm({tipo_analisis:"Planta 2",ot_id:o.id,ot_numero:o.numero_ot,tanque_id:tr.destino,tanque:tr.destino});setModal("tiquete");}}
+                                  style={{marginLeft:10,background:T.orange,color:"#071422",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Analizar</button>
+                            }
+                          </div>
+                        ))}
                       </div>
-                  }
+                    );
+                  })()}
                 </div>
               </div>
               );
