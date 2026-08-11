@@ -5657,6 +5657,45 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 PASO 2 — DESCARGUES
                 {ot.estado==="DESCARGANDO" && <span style={{ marginLeft:10,fontSize:11,color:T.orange }}>{pct}% completado</span>}
               </div>
+              {/* Formulaciones vinculadas + botón para agregar más */}
+              {(()=>{
+                const fIds = ot.formulacion_ids || (ot.formulacion_id ? [ot.formulacion_id] : []);
+                const fosOT = fIds.map(id=>formulaciones.find(f=>f.id===id)).filter(Boolean);
+                const foDisp = formulaciones.filter(f=>(f.estado==="PLANEADA"||!f.estado) && !fIds.includes(f.id) && !(ordenesTrabaio||[]).some(o=>o.id!==ot.id && (o.formulacion_ids||[o.formulacion_id]).includes(f.id)));
+                return (
+                  <div style={{ marginBottom:12 }}>
+                    {fosOT.length>0 && (
+                      <div style={{ display:"flex",gap:8,flexWrap:"wrap",marginBottom:8 }}>
+                        {fosOT.map(f=>(
+                          <span key={f.id} style={{ background:`${T.navy}12`,border:`1px solid ${T.navy}33`,borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,color:T.navy }}>
+                            📋 {f.tanque} · {f.producto} · {f.fecha} ({fmt(Number(f.total_galones||0))} gls)
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {["DESCARGANDO","TRASIEGOS"].includes(ot.estado) && foDisp.length>0 && (
+                      <select defaultValue="" key={fIds.join(",")} onChange={async e=>{
+                        if(!e.target.value) return;
+                        const nuevaFo = formulaciones.find(f=>f.id===e.target.value);
+                        if(!nuevaFo) return;
+                        const nuevosIds = [...fIds, e.target.value];
+                        const nuevosDesc = [...(ot.descargues||[]), ...(nuevaFo.mps||[]).filter(mp=>Number(mp.galones||0)>0).map(mp=>({
+                          producto:mp._producto||mp.nombre||"", placa:mp._placa||"",
+                          galones_planeado:Number(mp.galones||0), galones_descargado:0,
+                          estado:"pendiente", formulacion_id:nuevaFo.id,
+                        }))];
+                        const tanques = [...new Set([ot.tanque_destino, nuevaFo.tanque].filter(Boolean))].join(", ");
+                        await actualizarOT({ formulacion_ids:nuevosIds, formulacion_id:nuevosIds[0], descargues:nuevosDesc, tanque_destino:tanques });
+                        showToast("Formulación agregada a la OT");
+                        e.target.value="";
+                      }} style={{ padding:"6px 12px",borderRadius:6,border:`1px dashed ${T.orange}`,background:T.card,color:T.text,fontSize:12,outline:"none",cursor:"pointer" }}>
+                        <option value="">+ Agregar formulación a esta OT…</option>
+                        {foDisp.map(f=><option key={f.id} value={f.id}>{f.fecha} · {f.tanque} · {f.producto} ({fmt(Number(f.total_galones||0))} gls)</option>)}
+                      </select>
+                    )}
+                  </div>
+                );
+              })()}
               {desc.length===0 ? <div style={{ color:T.muted,fontSize:12 }}>Sin descargues</div> : (() => {
                 const grupos = agruparDescarguesPorProducto(desc);
                 return (
@@ -7826,33 +7865,49 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 {otModal && (()=>{
   const m = otModal;
   const setM = patch => setOtModal(p=>({...p,...patch}));
-  const fo = formulaciones.find(f=>f.id===m.formulacionId);
+  // Soporte multi-formulación: formulacionIds es array
+  const formulacionIds = m.formulacionIds || (m.formulacionId ? [m.formulacionId] : []);
+  const fosSeleccionadas = formulacionIds.map(id=>formulaciones.find(f=>f.id===id)).filter(Boolean);
+  // Para compatibilidad con paso 3 (tanque destino, tiempo recircular)
+  const fo = fosSeleccionadas[0] || null;
   const foMps = fo?.mps||[];
   const pond = fo ? {api:fo.api_planeado,visc:fo.visc_planeado,azufre:fo.azufre_planeado,agua:fo.agua_planeada,flash:fo.flash_point_planeado} : {};
   const TANQUES_LIST = (tanques||[]).map(t=>t.id);
+  // Formulaciones disponibles: planeadas y no asignadas a otra OT (excepto las ya seleccionadas)
+  const foDisponibles = formulaciones.filter(f=>
+    (f.estado==="PLANEADA"||!f.estado) &&
+    !formulacionIds.includes(f.id) &&
+    !(ordenesTrabaio||[]).some(o=>{
+      const ids = o.formulacion_ids || (o.formulacion_id ? [o.formulacion_id] : []);
+      return ids.includes(f.id);
+    })
+  );
 
   const crearOT = async()=>{
     const trasiegos = m.necesitaTrasiego==="si" ? (m.trasiegos||[]).filter(t=>t.origen&&t.destino&&t.galones).map(t=>({...t,completado:false})) : [];
-    if(!m.formulacionId && trasiegos.length===0) return showToast("Selecciona una formulación o agrega al menos un trasiego",false);
+    if(formulacionIds.length===0 && trasiegos.length===0) return showToast("Selecciona al menos una formulación o agrega un trasiego",false);
     setOtSaving(true);
     // Generar número OT
     const countRes = await supabase.from("ordenes_trabajo").select("id",{count:"exact",head:true});
     const num = String((countRes.count||0)+1).padStart(3,"0");
     const numeroOt = `OT-${num}`;
-    // Descargues desde mps de formulación
-    const descargues = foMps.map(mp=>({
+    // Descargues combinados de todas las formulaciones
+    const descargues = fosSeleccionadas.flatMap(f=>(f.mps||[]).map(mp=>({
       producto: mp._producto||mp.nombre||"",
       placa: mp._placa||"",
       galones_planeado: Number(mp.galones||0),
       galones_descargado: 0,
       estado: "pendiente",
-    })).filter(d=>d.galones_planeado>0);
+      formulacion_id: f.id,
+    }))).filter(d=>d.galones_planeado>0);
     const estadoInicial = trasiegos.length>0 ? "TRASIEGOS" : "DESCARGANDO";
+    const tanqueDestino = fosSeleccionadas.map(f=>f.tanque).filter(Boolean).join(", ") || (trasiegos.length>0 ? trasiegos.map(t=>t.destino).join(",") : "");
     const payload = {
       numero_ot: numeroOt,
-      formulacion_id: m.formulacionId||null,
+      formulacion_id: formulacionIds[0]||null,
+      formulacion_ids: formulacionIds.length>0 ? formulacionIds : null,
       tipo_operacion: m.tipoOp||"directo",
-      tanque_destino: fo?.tanque || (trasiegos.length>0 ? trasiegos.map(t=>t.destino).join(",") : ""),
+      tanque_destino: tanqueDestino,
       estado: estadoInicial,
       trasiegos,
       descargues,
@@ -7977,64 +8032,49 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         {/* PASO 2 */}
         {m.step===2 && (
           <div>
-            <div style={{ fontWeight:700,fontSize:13,color:T.text,marginBottom:12 }}>Selecciona la formulación</div>
-            <select value={m.formulacionId} onChange={e=>setM({formulacionId:e.target.value})} style={{ width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:13,marginBottom:16,outline:"none" }}>
-              <option value="">— Seleccionar formulación —</option>
-              {formulaciones.filter(f=>(f.estado==="PLANEADA"||!f.estado) && !(ordenesTrabaio||[]).some(o=>o.formulacion_id===f.id)).map(f=><option key={f.id} value={f.id}>{f.fecha} · {f.tanque} · {f.producto} ({fmt(Number(f.total_galones||0))} gls)</option>)}
-            </select>
-            {fo && (
-              <div style={{ background:T.bg,borderRadius:10,padding:14,border:`1px solid ${T.border}`,marginBottom:16 }}>
-                <div style={{ fontSize:11,color:T.muted,fontWeight:700,marginBottom:10,textTransform:"uppercase" }}>Desglose de Descargues — Tanque {fo.tanque}</div>
-                {(() => {
-                  const mpsFiltrados = foMps.filter(mp=>Number(mp.galones||0)>0);
-                  const descPrev = mpsFiltrados.map(mp=>({ producto: mp._producto||mp.nombre||"", placa: mp._placa||mp.nombre||"", galones_planeado: Number(mp.galones||0), galones_descargado:0 }));
-                  const grupos = agruparDescarguesPorProducto(descPrev);
-                  return (
-                    <>
-                      <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 0.8fr 0.3fr",gap:8,paddingBottom:6,borderBottom:`1px solid ${T.border}`,fontSize:10,fontWeight:600,color:T.muted,marginBottom:6 }}>
-                        <div>PRODUCTO</div><div style={{ textAlign:"right" }}>GLS PLANEADO</div><div style={{ textAlign:"right" }}>CARROS</div><div></div>
-                      </div>
-                      {grupos.map(g => (
-                        <div key={g.productoBase} style={{ marginBottom:4 }}>
-                          <div onClick={()=>toggleOtExpandir("prev_"+g.productoBase)} style={{ display:"grid",gridTemplateColumns:"2fr 1fr 0.8fr 0.3fr",gap:8,padding:"8px 10px",background:T.card,borderRadius:6,cursor:"pointer",borderLeft:`3px solid ${T.orange}`,fontSize:12 }}
-                            onMouseEnter={e=>e.currentTarget.style.background=T.bg}
-                            onMouseLeave={e=>e.currentTarget.style.background=T.card}
-                          >
-                            <div style={{ fontWeight:700,color:T.text }}>{g.productoBase}</div>
-                            <div style={{ textAlign:"right",color:T.success,fontWeight:700 }}>{fmtNum(g.galones_planeado)}</div>
-                            <div style={{ textAlign:"right",color:T.muted }}>{g.carrotanques}</div>
-                            <div style={{ textAlign:"center",color:T.muted }}>{otExpandidos["prev_"+g.productoBase]?"▲":"▼"}</div>
-                          </div>
-                          {otExpandidos["prev_"+g.productoBase] && (
-                            <div style={{ background:T.bg,padding:"6px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid ${T.orange}` }}>
-                              {g.plancas.map((p,pi)=>(
-                                <div key={pi} style={{ display:"flex",justifyContent:"space-between",marginBottom:2,paddingLeft:8 }}>
-                                  <span>├─ {p.placa||"—"} <span style={{ color:T.muted }}>({p.producto_original})</span></span>
-                                  <span style={{ color:T.success }}>{fmtNum(p.galones)} gls</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                      <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 0.8fr 0.3fr",gap:8,padding:"8px 10px",background:`${T.orange}08`,borderRadius:6,marginTop:6,fontWeight:800,fontSize:12,borderTop:`1px solid ${T.border}` }}>
-                        <div style={{ color:T.text }}>TOTAL</div>
-                        <div style={{ textAlign:"right",color:T.success }}>{fmt(Number(fo.total_galones||0))}</div>
-                        <div style={{ textAlign:"right",color:T.muted }}>{(Number(fo.total_galones||0)/9300).toFixed(1)} carros</div>
-                        <div></div>
-                      </div>
-                    </>
-                  );
-                })()}
-                {fo.producto==="VLSFO" && (
-                  <div style={{ marginTop:10,display:"flex",gap:8,flexWrap:"wrap" }}>
-                    {[["Azufre",Number(fo.azufre_planeado||0).toFixed(4)+"%",Number(fo.azufre_planeado||0)<=0.5],["Agua",Number(fo.agua_planeada||0).toFixed(4)+"%",true],["Flash",Number(fo.flash_point_planeado||0).toFixed(1)+"°C",Number(fo.flash_point_planeado||0)>=60]].map(([lbl,val,ok])=>(
-                      <span key={lbl} style={{ fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:6,background:ok?`${T.success}18`:`${T.danger}18`,border:`1px solid ${ok?`${T.success}55`:`${T.danger}55`}`,color:ok?T.success:T.danger }}>{lbl}: {val} {ok?"✅":"🔴"}</span>
-                    ))}
-                  </div>
-                )}
+            <div style={{ fontWeight:700,fontSize:13,color:T.text,marginBottom:8 }}>Formulaciones de descargue</div>
+            <div style={{ fontSize:11,color:T.muted,marginBottom:12 }}>Puedes agregar una o varias formulaciones. Los descargues se combinan automáticamente.</div>
+
+            {/* Lista de formulaciones ya agregadas */}
+            {fosSeleccionadas.map((f,i)=>(
+              <div key={f.id} style={{ display:"flex",alignItems:"center",gap:10,background:T.bg,border:`1px solid ${T.border}`,borderRadius:8,padding:"10px 14px",marginBottom:8 }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:700,fontSize:12,color:T.navy }}>{f.tanque} · {f.producto}</div>
+                  <div style={{ fontSize:11,color:T.muted }}>{f.fecha} · {fmt(Number(f.total_galones||0))} gls · {(f.mps||[]).filter(mp=>Number(mp.galones||0)>0).length} carros</div>
+                </div>
+                <button onClick={()=>setM({formulacionIds: formulacionIds.filter(id=>id!==f.id)})}
+                  style={{ background:"none",border:`1px solid ${T.danger}44`,borderRadius:6,color:T.danger,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:700 }}>✕ Quitar</button>
+              </div>
+            ))}
+
+            {/* Selector para agregar nueva formulación */}
+            {foDisponibles.length>0 ? (
+              <div style={{ display:"flex",gap:8,marginBottom:16 }}>
+                <select
+                  defaultValue=""
+                  key={formulacionIds.join(",")}
+                  onChange={e=>{ if(e.target.value) setM({formulacionIds:[...formulacionIds,e.target.value]}); e.target.value=""; }}
+                  style={{ flex:1,padding:"9px 12px",borderRadius:8,border:`1px dashed ${T.orange}`,background:T.card,color:T.text,fontSize:13,outline:"none" }}>
+                  <option value="">+ Agregar formulación…</option>
+                  {foDisponibles.map(f=><option key={f.id} value={f.id}>{f.fecha} · {f.tanque} · {f.producto} ({fmt(Number(f.total_galones||0))} gls)</option>)}
+                </select>
+              </div>
+            ) : formulacionIds.length===0 ? (
+              <div style={{ color:T.muted,fontSize:12,padding:"12px 0",marginBottom:12 }}>No hay formulaciones PLANEADAS disponibles.</div>
+            ) : null}
+
+            {/* Resumen total combinado */}
+            {fosSeleccionadas.length>0 && (
+              <div style={{ background:`${T.orange}08`,border:`1px solid ${T.orange}33`,borderRadius:8,padding:"10px 14px",marginBottom:16 }}>
+                <div style={{ fontSize:11,fontWeight:700,color:T.orange,marginBottom:6,textTransform:"uppercase" }}>Resumen total — {fosSeleccionadas.length} formulación{fosSeleccionadas.length>1?"es":""}</div>
+                <div style={{ display:"flex",gap:24,flexWrap:"wrap" }}>
+                  <span style={{ fontSize:12,color:T.navy }}><b>{fmt(fosSeleccionadas.reduce((a,f)=>a+Number(f.total_galones||0),0))}</b> gls totales</span>
+                  <span style={{ fontSize:12,color:T.muted }}>{fosSeleccionadas.reduce((a,f)=>a+(f.mps||[]).filter(mp=>Number(mp.galones||0)>0).length,0)} carros</span>
+                  <span style={{ fontSize:12,color:T.muted }}>Tanques: {[...new Set(fosSeleccionadas.map(f=>f.tanque).filter(Boolean))].join(", ")}</span>
+                </div>
               </div>
             )}
+
             <div style={{ display:"flex",justifyContent:"space-between" }}>
               <button onClick={()=>setM({step:1})} style={{ background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"9px 18px",cursor:"pointer",fontWeight:700,fontSize:13 }}>← Atrás</button>
               <button onClick={()=>setM({step:3})} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"9px 22px",cursor:"pointer",fontWeight:700,fontSize:13 }}>Siguiente: Recirculación →</button>
