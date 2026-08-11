@@ -1966,7 +1966,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               viajes:       { icon:"🚛", label:"LOGÍSTICA",     subs:[{id:"viajes",label:"Listado Tránsito"},{id:"listado_planta",label:"Listado Planta"}] },
               despacho:     { icon:"🚢", label:"DESPACHO",      subs:[{id:"despacho",label:"Listado Buques"},{id:"despacho_entrega",label:"Entrega"},{id:"despacho_historial",label:"Historial"}] },
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
-              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"programacion",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA","ANALIZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"inventario_diario",label:"Inventario Diario"}] },
+              pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"ot_ops",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA","ANALIZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"inventario_diario",label:"Inventario Diario"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
               liquidador:   { icon:"🔢", label:"LIQUIDADOR",    subs:[{id:"liquidador",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
               tanques:      { icon:"🛢", label:"TANQUES",        subs:[{id:"tanques",label:"Planta 2 (TK-111–117)"},{id:"tanques_p1",label:"Planta 1 — QBS002"}] },
@@ -4728,7 +4728,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   </div>
 )}
 
-          {nav==="programacion" && (()=>{
+          {(nav==="programacion"||nav==="ot_ops") && (()=>{
+            const esProgramacion = nav==="programacion";
             const estadoColor = e => e==="ANALIZADA"?T.success:e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
             const estadoLabel = e => e==="ANALIZADA"?"COMPLETADA":e;
             const activas = (ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA","ANALIZADA"].includes(o.estado));
@@ -4740,7 +4741,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{ fontWeight:800, fontSize:20, color:T.navy }}>Órdenes de Trabajo</div>
                   <div style={{ fontSize:11, color:T.muted }}>{perfil?.rol==="operaciones" ? "Órdenes asignadas para ejecución" : "Trasiegos · Descargues · Recirculación"}</div>
                 </div>
-                {perfil?.rol!=="operaciones" && <Btn color={T.orange} onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",tipoOp:"directo",formulacionId:"",recircHoras:4})}>+ Nueva Orden</Btn>}
+                {esProgramacion && perfil?.rol!=="operaciones" && <Btn color={T.orange} onClick={()=>setOtModal({step:1,trasiegos:[{origen:"",destino:"",galones:""}],necesitaTrasiego:"si",tipoOp:"directo",formulacionId:"",recircHoras:4})}>+ Nueva Orden</Btn>}
               </div>
 
               {/* Órdenes activas */}
@@ -4772,7 +4773,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             </div>
                             <div style={{ display:"flex",gap:8 }}>
                               <button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id,source:"programacion"}]); setActiveTabId(id); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Ver / Gestionar →</button>
-                              {perfil?.rol!=="operaciones" && <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})} style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✏️ Editar</button>}
+                              {esProgramacion && perfil?.rol!=="operaciones" && <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})} style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✏️ Editar</button>}
                             </div>
                           </div>
                           {/* Progreso descargues */}
