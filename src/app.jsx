@@ -2334,7 +2334,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{fontWeight:800,fontSize:13,color:T.navy,marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
                     <Ship size={14}/> Planta 1 · Barcaza + TKT
                   </div>
-                  {(()=>{ const sub=p1Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t)); return sub.length>0 ? <CapBar nivel={sub.reduce((a,t)=>a+Number(t.nivel||0),0)} cap={sub.reduce((a,t)=>a+tkCap(t),0)} incoming={0} label={dashFamilia==="negro"?"⬛ Negro":"⬜ Blanco"} alert={false}/> : <div style={{fontSize:11,color:T.muted,padding:"8px 0"}}>Sin tanques de producto {dashFamilia} en Planta 1</div>; })()}
+                  {(()=>{
+                    const sub=p1Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t));
+                    const subP2=p2Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t));
+                    const inc=dashFamilia==="negro"?glsEntrantesNegro:glsEntrantesBlanco;
+                    const capP2=subP2.reduce((a,t)=>a+tkCap(t),0);
+                    const nivP2=subP2.reduce((a,t)=>a+Number(t.nivel||0),0);
+                    const libreP2=Math.max(0,capP2-nivP2);
+                    // Overflow: lo que no cabe en P2 desborda a P1
+                    const incP1=Math.max(0,inc-libreP2);
+                    const capP1=sub.reduce((a,t)=>a+tkCap(t),0);
+                    const nivP1=sub.reduce((a,t)=>a+Number(t.nivel||0),0);
+                    const alP1=(nivP1+incP1)>capP1;
+                    return sub.length>0 ? <CapBar nivel={nivP1} cap={capP1} incoming={incP1} label={dashFamilia==="negro"?"⬛ Negro":"⬜ Blanco"} alert={alP1}/> : <div style={{fontSize:11,color:T.muted,padding:"8px 0"}}>Sin tanques de producto {dashFamilia} en Planta 1</div>;
+                  })()}
                   {/* Detalle por tanque */}
                   <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
                     {p1Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t)).map(t=>{
