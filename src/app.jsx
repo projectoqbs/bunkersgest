@@ -2350,7 +2350,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {p1Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t)).map(t=>{
                       const cap=tkCap(t); const niv=Number(t.nivel||0);
                       const pct=cap>0?Math.min(100,Math.round((niv/cap)*100)):0;
-                      const bc=pct>80?T.danger:pct>50?T.success:T.orange;
+                      const bc=prodColor(t.producto);
                       return (
                         <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:10}}>
                           <span style={{width:80,fontWeight:700,color:T.navy,flexShrink:0}}>{t.id.replace("QBS002-","")}</span>
@@ -2374,7 +2374,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {p2Tanks.filter(t=>dashFamilia==="negro"?isTankNegro(t):isTankBlanco(t)).map(t=>{
                       const cap=tkCap(t); const niv=Number(t.nivel||0);
                       const pct=cap>0?Math.min(100,Math.round((niv/cap)*100)):0;
-                      const bc=pct>80?T.danger:pct>50?T.success:T.orange;
+                      const bc=prodColor(t.producto);
                       return (
                         <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,fontSize:10}}>
                           <span style={{width:60,fontWeight:700,color:T.navy,flexShrink:0}}>{t.id}</span>
