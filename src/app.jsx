@@ -4930,7 +4930,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             </div>
                             <div style={{ display:"flex",gap:8 }}>
                               <button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id,source:"programacion"}]); setActiveTabId(id); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Ver / Gestionar →</button>
-                              {esProgramacion && perfil?.rol!=="operaciones" && <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})} style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✏️ Editar</button>}
+                              {esProgramacion && perfil?.rol!=="operaciones" && <button onClick={()=>setOtEditando({otId:ot.id, trasiegos:(ot.trasiegos||[]).map(t=>({...t})), estado:ot.estado||"DESCARGANDO", tipo_operacion:ot.tipo_operacion||"directo", recircHoras:Math.round((ot.recirculacion_tiempo_total||240)/60), formulacion_id:ot.formulacion_id||null, formulacion_ids:ot.formulacion_ids||(ot.formulacion_id?[ot.formulacion_id]:[])})} style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✏️ Editar</button>}
                             </div>
                           </div>
                           {/* Progreso descargues */}
@@ -7762,21 +7762,87 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const ed = otEditando;
   const setEd = patch => setOtEditando(p=>({...p,...patch}));
   const TANQUES_LIST = (tanques||[]).map(t=>t.id);
+  // Multi-formulación
+  const edFIds = ed.formulacion_ids || (ed.formulacion_id ? [ed.formulacion_id] : []);
+  const edFos  = edFIds.map(id=>formulaciones.find(f=>f.id===id)).filter(Boolean);
+  const edFoDisp = formulaciones.filter(f=>(f.estado==="PLANEADA"||!f.estado) && !edFIds.includes(f.id) && !(ordenesTrabaio||[]).some(o=>o.id!==ed.otId && (o.formulacion_ids||[o.formulacion_id]).includes(f.id)));
+  const ESTADOS_OT = ["TRASIEGOS","DESCARGANDO","RECIRCULANDO","COMPLETADA","RECHAZADA"];
   const guardar = async () => {
     const otActual = (ordenesTrabaio||[]).find(o=>o.id===ed.otId);
     if(!otActual) return;
-    await dbCall({ table:"ordenes_trabajo", op:"update", data:{ trasiegos: ed.trasiegos, updated_at: new Date().toISOString() }, filters:[{col:"id",val:ed.otId}] });
-    await logAudit({ tabla:"ordenes_trabajo", registro_id:ed.otId, accion:"editar", datos_antes:{ trasiegos:otActual.trasiegos }, datos_despues:{ trasiegos:ed.trasiegos } });
+    // Recalcular descargues si cambiaron las formulaciones
+    const descargues = edFos.flatMap(f=>(f.mps||[]).filter(mp=>Number(mp.galones||0)>0).map(mp=>({
+      producto:mp._producto||mp.nombre||"", placa:mp._placa||"",
+      galones_planeado:Number(mp.galones||0), galones_descargado:0, estado:"pendiente", formulacion_id:f.id,
+    })));
+    // Si ya había descargues con progreso, conservarlos
+    const descFinal = descargues.length>0 ? descargues.map(d=>{
+      const prev = (otActual.descargues||[]).find(p=>p.producto===d.producto&&p.placa===d.placa);
+      return prev ? {...d, galones_descargado:prev.galones_descargado, estado:prev.estado} : d;
+    }) : (otActual.descargues||[]);
+    const tanquesStr = edFos.map(f=>f.tanque).filter(Boolean).join(", ") || ed.tanque_destino || "";
+    const patch = {
+      estado: ed.estado,
+      tipo_operacion: ed.tipo_operacion,
+      tanque_destino: tanquesStr||ed.tanque_destino,
+      recirculacion_tiempo_total: Number(ed.recircHoras||4)*60,
+      trasiegos: ed.trasiegos,
+      descargues: descFinal,
+      formulacion_id: edFIds[0]||null,
+      formulacion_ids: edFIds.length>0 ? edFIds : null,
+      updated_at: new Date().toISOString(),
+    };
+    await dbCall({ table:"ordenes_trabajo", op:"update", data:patch, filters:[{col:"id",val:ed.otId}] });
+    await logAudit({ tabla:"ordenes_trabajo", registro_id:ed.otId, accion:"editar", datos_antes:{ trasiegos:otActual.trasiegos, estado:otActual.estado }, datos_despues:patch });
     await loadData();
     setOtEditando(null);
     showToast("OT actualizada");
   };
   return (
     <div style={{ position:"fixed",inset:0,background:"#00000088",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center" }} onClick={()=>setOtEditando(null)}>
-      <div style={{ background:T.card,borderRadius:12,padding:28,width:560,maxWidth:"95vw",maxHeight:"85vh",overflowY:"auto" }} onClick={e=>e.stopPropagation()}>
-        <div style={{ fontWeight:800,fontSize:17,color:T.navy,marginBottom:16 }}>Editar OT · Trasiegos</div>
+      <div style={{ background:T.card,borderRadius:12,padding:28,width:620,maxWidth:"95vw",maxHeight:"90vh",overflowY:"auto" }} onClick={e=>e.stopPropagation()}>
+        <div style={{ fontWeight:800,fontSize:17,color:T.navy,marginBottom:20 }}>Editar Orden de Trabajo</div>
 
-        {/* Filas editables */}
+        {/* Campos generales */}
+        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20 }}>
+          <div>
+            <div style={{ fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",marginBottom:4 }}>Estado</div>
+            <select value={ed.estado||""} onChange={e=>setEd({estado:e.target.value})} style={{ width:"100%",padding:"8px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.bg,color:T.text,fontSize:12,outline:"none" }}>
+              {ESTADOS_OT.map(s=><option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",marginBottom:4 }}>Tipo operación</div>
+            <select value={ed.tipo_operacion||""} onChange={e=>setEd({tipo_operacion:e.target.value})} style={{ width:"100%",padding:"8px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.bg,color:T.text,fontSize:12,outline:"none" }}>
+              <option value="directo">Descargue directo</option>
+              <option value="porteo">Porteo inter-planta</option>
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",marginBottom:4 }}>Tiempo recirculación (h)</div>
+            <input type="number" min={1} max={48} value={ed.recircHoras||4} onChange={e=>setEd({recircHoras:e.target.value})} style={{ width:"100%",padding:"8px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:T.bg,color:T.text,fontSize:12,outline:"none" }}/>
+          </div>
+        </div>
+
+        {/* Formulaciones */}
+        <div style={{ marginBottom:20 }}>
+          <div style={{ fontSize:11,color:T.muted,fontWeight:700,textTransform:"uppercase",marginBottom:8 }}>Formulaciones</div>
+          {edFos.map(f=>(
+            <div key={f.id} style={{ display:"flex",alignItems:"center",gap:10,background:T.bg,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 12px",marginBottom:6 }}>
+              <div style={{ flex:1,fontSize:12 }}><b style={{ color:T.navy }}>{f.tanque} · {f.producto}</b> <span style={{ color:T.muted }}>— {f.fecha} · {fmt(Number(f.total_galones||0))} gls</span></div>
+              <button onClick={()=>setEd({formulacion_ids:edFIds.filter(id=>id!==f.id),formulacion_id:edFIds.filter(id=>id!==f.id)[0]||null})} style={{ background:"none",border:`1px solid ${T.danger}44`,borderRadius:5,color:T.danger,padding:"3px 8px",cursor:"pointer",fontSize:11 }}>✕</button>
+            </div>
+          ))}
+          {edFoDisp.length>0 && (
+            <select defaultValue="" key={edFIds.join(",")} onChange={e=>{ if(e.target.value) setEd({formulacion_ids:[...edFIds,e.target.value],formulacion_id:edFIds[0]||e.target.value}); }} style={{ width:"100%",padding:"8px 10px",borderRadius:6,border:`1px dashed ${T.orange}`,background:T.card,color:T.text,fontSize:12,outline:"none",cursor:"pointer" }}>
+              <option value="">+ Agregar formulación…</option>
+              {edFoDisp.map(f=><option key={f.id} value={f.id}>{f.fecha} · {f.tanque} · {f.producto} ({fmt(Number(f.total_galones||0))} gls)</option>)}
+            </select>
+          )}
+        </div>
+
+        <div style={{ borderTop:`1px solid ${T.border}`,paddingTop:16,marginBottom:16 }}>
+          <div style={{ fontSize:11,color:T.muted,fontWeight:700,textTransform:"uppercase",marginBottom:10 }}>Trasiegos</div>
         {ed.trasiegos.length === 0 && (
           <div style={{ color:T.muted,fontSize:13,marginBottom:12 }}>Sin trasiegos. Agrega uno abajo.</div>
         )}
@@ -7842,11 +7908,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         })}
 
         <button onClick={()=>setEd({trasiegos:[...ed.trasiegos,{origen:"",destino:"",galones:"",completado:false}]})}
-          style={{ background:"transparent",border:`1px dashed ${T.border}`,color:T.muted,borderRadius:6,padding:"7px 16px",cursor:"pointer",fontSize:12,fontWeight:600,width:"100%",marginBottom:16 }}>
+          style={{ background:"transparent",border:`1px dashed ${T.border}`,color:T.muted,borderRadius:6,padding:"7px 16px",cursor:"pointer",fontSize:12,fontWeight:600,width:"100%",marginBottom:8 }}>
           + Agregar trasiego
         </button>
+        </div>{/* cierre sección trasiegos */}
 
-        <div style={{ display:"flex",gap:10,justifyContent:"flex-end" }}>
+        <div style={{ display:"flex",gap:10,justifyContent:"flex-end",marginTop:8 }}>
           <button onClick={()=>setOtEditando(null)}
             style={{ background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"8px 20px",cursor:"pointer",fontWeight:700,fontSize:13 }}>
             Cancelar
