@@ -170,6 +170,7 @@ const NAV_META = {
   programacion:  { label:"Programación",  icon:"📅" },
   liquidador:    { label:"Liquidador",    icon:"🔢" },
   inventario_diario: { label:"Inventario Diario", icon:"📊" },
+  auditoria:         { label:"Auditoría",          icon:"🔎" },
 };
 
 const NAV_ROL = {
@@ -190,6 +191,7 @@ const NAV_ROL = {
     "tanques",
     "liquidador",
     "inventario_diario",
+    "auditoria",
   ],
 };
 
@@ -425,6 +427,9 @@ export default function App() {
   const [afoP2Loading, setAfoP2Loading] = useState(false);
   const [otModal, setOtModal] = useState(null); // null | {step:1|2|3, trasiegos, formulacionId, recircHoras}
   const [otEditando, setOtEditando] = useState(null); // {otId, trasiegos:[...]} cuando el coordinador edita una OT
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditFiltro, setAuditFiltro] = useState({ tabla:"", accion:"", usuario:"" });
   const [recircDates, setRecircDates] = useState({}); // {[otId]: {inicio, fin}}
   const [otSaving, setOtSaving] = useState(false);
   const [progTab, setProgTab] = useState("programaciones"); // "programaciones" | "formulaciones"
@@ -847,6 +852,15 @@ export default function App() {
     return ()=>supabase.removeChannel(channel);
   },[perfil]);
 
+  async function loadAuditLogs() {
+    setAuditLoading(true);
+    const { data } = await supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(500);
+    if (data) setAuditLogs(data);
+    setAuditLoading(false);
+  }
+
+  React.useEffect(() => { if (nav === "auditoria" && perfil?.rol === "administrador") loadAuditLogs(); }, [nav]);
+
   async function loadPerfil(uid) {
     const {data, error: aforoError} = await supabase.from("perfiles").select("*").eq("id",uid).maybeSingle();
     setPerfil(data);
@@ -914,6 +928,18 @@ export default function App() {
     if (form2?.data) setFormulaciones(form2.data);
     if (ot?.data) setOrdenesTrabajo(ot.data);
     if (t.data && c.data) await reconciliarNivelesTanques(c.data, t.data);
+  }
+
+  async function logAudit({ tabla, registro_id, accion, datos_antes=null, datos_despues=null }) {
+    try {
+      await supabase.from("audit_log").insert({
+        tabla, registro_id: String(registro_id||""), accion,
+        usuario_id: session?.user?.id || null,
+        usuario_nombre: perfil?.nombre || session?.user?.email || "Desconocido",
+        datos_antes, datos_despues,
+        created_at: new Date().toISOString(),
+      });
+    } catch(_) {}
   }
 
   async function reconciliarNivelesTanques(cmtsData, tanquesData) {
@@ -1684,6 +1710,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       }
       setSaving(false);
       if (error) return showToast("Error: "+error.message,false);
+      await logAudit({ tabla:"cmts", registro_id:form.id, accion:"editar", datos_antes:{ numero_cmt:original?.numero_cmt, tipo_operacion:original?.tipo_operacion, fecha:original?.fecha }, datos_despues:{ numero_cmt:form.numero_cmt, tipo_operacion:form.tipo_operacion, fecha:form.fecha } });
       // Refrescar cmts de forma independiente para evitar que fallas en otras tablas dejen datos viejos
       const {data: freshCmts} = await supabase.from("cmts").select("*").order("created_at",{ascending:false});
       if (freshCmts) setCmts(freshCmts);
@@ -1735,6 +1762,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       if (!error) {
         const {data: cmtGuardado} = await dbCall({ table:"cmts", op:"select", filters:[{col:"id",val:id}], single:true });
         if (cmtGuardado) await aplicarTanquesDesdeCMT(cmtGuardado);
+        await logAudit({ tabla:"cmts", registro_id:id, accion:"crear", datos_despues:{ numero_cmt:form.numero_cmt, tipo_operacion:form.tipo_operacion, fecha:form.fecha } });
         const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
         if (placasCarros.length > 0) {
           for (const placa of placasCarros) await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"placa",val:placa}] });
@@ -7385,6 +7413,117 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   </Modal>
 )}
 
+{/* AUDITORÍA — solo administrador */}
+{nav==="auditoria" && perfil?.rol==="administrador" && (()=>{
+  const TABLAS = [...new Set(auditLogs.map(l=>l.tabla))].sort();
+  const USUARIOS = [...new Set(auditLogs.map(l=>l.usuario_nombre).filter(Boolean))].sort();
+  const logs = auditLogs.filter(l=>
+    (!auditFiltro.tabla   || l.tabla===auditFiltro.tabla) &&
+    (!auditFiltro.accion  || l.accion===auditFiltro.accion) &&
+    (!auditFiltro.usuario || l.usuario_nombre===auditFiltro.usuario)
+  );
+  const accionColor = a => a==="crear"?"#00B894":a==="editar"?T.orange:a==="eliminar"?"#ef4444":T.muted;
+  const accionIcon  = a => a==="crear"?"✚":a==="editar"?"✏️":a==="eliminar"?"🗑️":"·";
+  return (
+  <div style={{ maxWidth:1100 }}>
+    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:22 }}>
+      <div>
+        <div style={{ fontWeight:800,fontSize:20,color:T.navy }}>Auditoría del Sistema</div>
+        <div style={{ fontSize:11,color:T.muted }}>Registro de todas las acciones · {logs.length} eventos</div>
+      </div>
+      <button onClick={loadAuditLogs} style={{ background:T.navy,border:"none",color:"#fff",borderRadius:6,padding:"7px 16px",cursor:"pointer",fontWeight:700,fontSize:12 }}>↺ Actualizar</button>
+    </div>
+
+    {/* Filtros */}
+    <div style={{ display:"flex",gap:10,marginBottom:16,flexWrap:"wrap" }}>
+      <select value={auditFiltro.tabla} onChange={e=>setAuditFiltro(p=>({...p,tabla:e.target.value}))}
+        style={{ padding:"7px 12px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12 }}>
+        <option value="">Todas las tablas</option>
+        {TABLAS.map(t=><option key={t} value={t}>{t}</option>)}
+      </select>
+      <select value={auditFiltro.accion} onChange={e=>setAuditFiltro(p=>({...p,accion:e.target.value}))}
+        style={{ padding:"7px 12px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12 }}>
+        <option value="">Todas las acciones</option>
+        <option value="crear">Crear</option>
+        <option value="editar">Editar</option>
+        <option value="eliminar">Eliminar</option>
+      </select>
+      <select value={auditFiltro.usuario} onChange={e=>setAuditFiltro(p=>({...p,usuario:e.target.value}))}
+        style={{ padding:"7px 12px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:12 }}>
+        <option value="">Todos los usuarios</option>
+        {USUARIOS.map(u=><option key={u} value={u}>{u}</option>)}
+      </select>
+      {(auditFiltro.tabla||auditFiltro.accion||auditFiltro.usuario) && (
+        <button onClick={()=>setAuditFiltro({tabla:"",accion:"",usuario:""})}
+          style={{ background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:6,padding:"7px 12px",cursor:"pointer",fontSize:12 }}>
+          ✕ Limpiar
+        </button>
+      )}
+    </div>
+
+    {auditLoading ? (
+      <div style={{ textAlign:"center",color:T.muted,padding:40 }}>Cargando...</div>
+    ) : logs.length===0 ? (
+      <div style={{ textAlign:"center",color:T.muted,padding:40 }}>Sin registros</div>
+    ) : (
+      <div style={{ overflowX:"auto" }}>
+        <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+          <thead>
+            <tr style={{ borderBottom:`2px solid ${T.border}` }}>
+              {["Fecha / Hora","Acción","Tabla","Registro","Usuario","Detalle"].map(h=>(
+                <th key={h} style={{ padding:"8px 12px",textAlign:"left",color:T.muted,fontWeight:700,fontSize:10,textTransform:"uppercase",whiteSpace:"nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {logs.map((l,i)=>{
+              const fecha = l.created_at ? new Date(l.created_at) : null;
+              const fechaStr = fecha ? fecha.toLocaleDateString("es-CO",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
+              const horaStr  = fecha ? fecha.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "";
+              const cambios = [];
+              if (l.datos_antes && l.datos_despues) {
+                const keys = [...new Set([...Object.keys(l.datos_antes||{}), ...Object.keys(l.datos_despues||{})])];
+                for (const k of keys) {
+                  const ant = JSON.stringify(l.datos_antes?.[k]);
+                  const nvo = JSON.stringify(l.datos_despues?.[k]);
+                  if (ant !== nvo) cambios.push(`${k}: ${ant} → ${nvo}`);
+                }
+              } else if (l.datos_despues) {
+                cambios.push(...Object.entries(l.datos_despues).map(([k,v])=>`${k}: ${JSON.stringify(v)}`));
+              }
+              return (
+                <tr key={l.id||i} style={{ borderBottom:`1px solid ${T.border}`,background:i%2===0?T.card:T.bg }}>
+                  <td style={{ padding:"10px 12px",whiteSpace:"nowrap",color:T.muted }}>
+                    <div style={{ fontWeight:700,color:T.text }}>{fechaStr}</div>
+                    <div style={{ fontSize:10 }}>{horaStr}</div>
+                  </td>
+                  <td style={{ padding:"10px 12px",whiteSpace:"nowrap" }}>
+                    <span style={{ background:`${accionColor(l.accion)}22`,color:accionColor(l.accion),borderRadius:5,padding:"3px 8px",fontWeight:700,fontSize:11 }}>
+                      {accionIcon(l.accion)} {(l.accion||"").toUpperCase()}
+                    </span>
+                  </td>
+                  <td style={{ padding:"10px 12px",fontFamily:"monospace",color:T.navy,fontWeight:700 }}>{l.tabla}</td>
+                  <td style={{ padding:"10px 12px",fontFamily:"monospace",fontSize:11,color:T.muted }}>{l.registro_id||"—"}</td>
+                  <td style={{ padding:"10px 12px",fontWeight:700,color:T.text }}>{l.usuario_nombre||"—"}</td>
+                  <td style={{ padding:"10px 12px",maxWidth:320 }}>
+                    {cambios.length>0 ? (
+                      <ul style={{ margin:0,paddingLeft:16,color:T.muted,fontSize:11 }}>
+                        {cambios.slice(0,5).map((c,j)=><li key={j}>{c}</li>)}
+                        {cambios.length>5 && <li style={{ color:T.navy }}>+{cambios.length-5} más...</li>}
+                      </ul>
+                    ) : <span style={{ color:T.muted,fontSize:11 }}>—</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+  );
+})()}
+
 {/* LIQUIDADOR PLANTA 1 */}
 {nav==="liquidador" && (
   <LiquidadorPlanta1
@@ -7415,6 +7554,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     const otActual = (ordenesTrabaio||[]).find(o=>o.id===ed.otId);
     if(!otActual) return;
     await dbCall({ table:"ordenes_trabajo", op:"update", data:{ trasiegos: ed.trasiegos, updated_at: new Date().toISOString() }, filters:[{col:"id",val:ed.otId}] });
+    await logAudit({ tabla:"ordenes_trabajo", registro_id:ed.otId, accion:"editar", datos_antes:{ trasiegos:otActual.trasiegos }, datos_despues:{ trasiegos:ed.trasiegos } });
     await loadData();
     setOtEditando(null);
     showToast("OT actualizada");
@@ -7548,9 +7688,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       creado_por: session.user.id,
       ...(estadoInicial==="DESCARGANDO"?{fecha_inicio_descargue:new Date().toISOString()}:{fecha_inicio_trasiegos:new Date().toISOString()}),
     };
-    const {error} = await dbCall({ table:"ordenes_trabajo", op:"insert", data:payload });
+    const {error, data: otCreada} = await dbCall({ table:"ordenes_trabajo", op:"insert", data:payload });
     setOtSaving(false);
     if(error) return showToast("Error: "+error,false);
+    await logAudit({ tabla:"ordenes_trabajo", registro_id:otCreada?.id||numeroOt, accion:"crear", datos_despues:{ numero_ot:numeroOt, tipo_operacion:payload.tipo_operacion, trasiegos:payload.trasiegos } });
     await loadData();
     setOtModal(null);
     showToast(`${numeroOt} creada exitosamente`);
