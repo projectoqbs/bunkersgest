@@ -2306,10 +2306,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const alert    = esNegro ? alertNegro     : alertBlanco;
                 const nCarros  = allActivos.filter(v=> esNegro ? isNegro(v.producto) : isBlanco(v.producto)).length;
                 const acColor  = esNegro ? T.navy : "#38bdf8";
+                const carrosTransito = vTransito.filter(v=>esNegro?isNegro(v.producto):isBlanco(v.producto));
+                const carrosPlanta   = vEnPlanta.filter(v=>esNegro?isNegro(v.producto):isBlanco(v.producto));
+                const glsTransito = carrosTransito.reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
+                const glsPlanta   = carrosPlanta.reduce((a,v)=>a+Number(v.gls_netos_guia||0),0);
                 return (
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, marginBottom:16 }}>
-                    <Stat label="Carros en Tránsito" value={vTransito.filter(v=>esNegro?isNegro(v.producto):isBlanco(v.producto)).length} color={T.orange} sub="en camino a planta" />
-                    <Stat label="Carros en Planta"   value={vEnPlanta.filter(v=>esNegro?isNegro(v.producto):isBlanco(v.producto)).length} color={T.navy}  sub="pendientes descargue" />
+                    <Stat label="Carros en Tránsito" value={carrosTransito.length} color={T.orange} sub={glsTransito>0?`${fmt(glsTransito)} gls guía`:"en camino a planta"} />
+                    <Stat label="Carros en Planta"   value={carrosPlanta.length}   color={T.navy}   sub={glsPlanta>0?`${fmt(glsPlanta)} gls guía`:"pendientes descargue"} />
                     <Stat label="Capacidad Total"    value={`${fmt(cap)} gls`}    color={acColor} sub={`${esNegro?"negro":"blanco"} P1+P2`} />
                     <Stat label="Inventario Actual"  value={`${fmt(nivel)} gls`}  color={acColor} sub={`${Math.round(cap>0?(nivel/cap)*100:0)}% lleno`} />
                     <Stat label="Espacio Disponible" value={`${fmt(espDisp)} gls`} color={T.success} sub="libre ahora" />
