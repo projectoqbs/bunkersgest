@@ -2427,7 +2427,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const vFiltrados = vEnRuta.filter(v=>dashFamilia==="negro"?isNegro(v.producto):isBlanco(v.producto));
                 const byFechaFam = {};
                 vFiltrados.forEach(v=>{
-                  const key=v.fecha_aprox_llegada; if(!byFechaFam[key]) byFechaFam[key]={};
+                  // Carros con fecha pasada se mueven a hoy (retraso en ruta)
+                  const key = (v.fecha_aprox_llegada && v.fecha_aprox_llegada < hoy) ? hoy : v.fecha_aprox_llegada;
+                  if(!byFechaFam[key]) byFechaFam[key]={};
                   const p=v.producto||"Sin producto"; byFechaFam[key][p]=(byFechaFam[key][p]||0)+glsViaje(v);
                 });
                 const fechasFam = Object.keys(byFechaFam).sort();
