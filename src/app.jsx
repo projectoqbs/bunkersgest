@@ -1652,23 +1652,15 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
           const ajuste = Number(nR?.galonesFinal||0) - Number(oR?.galonesFinal||0);
           acumular(id, ajuste);
         }
-        // PORTEO: ajuste neto en tanques de carga/descarga
-        const porteoTqIds = new Set([
-          ...(original.porteo_descarga_tanques||[]).map(t=>t.tanque),
-          ...cmtPorteoDescarga.map(t=>t.tanque),
-          ...(original.porteo_carga_tanques||[]).map(t=>t.tanque),
-          ...cmtPorteoCarga.map(t=>t.tanque),
-        ].filter(Boolean));
-        for (const id of porteoTqIds) {
-          const oD = (original.porteo_descarga_tanques||[]).find(t=>t.tanque===id);
-          const nD = cmtPorteoDescarga.find(t=>t.tanque===id);
-          const oC = (original.porteo_carga_tanques||[]).find(t=>t.tanque===id);
-          const nC = cmtPorteoCarga.find(t=>t.tanque===id);
-          const ajuste = (Number(nD?.galonesFinal||0)-Number(oD?.galonesFinal||0))
-                       + (Number(nC?.galonesFinal||0)-Number(oC?.galonesFinal||0));
-          acumular(id, ajuste);
+        // PORTEO: galonesFinal es lectura absoluta de sonda — actualizar nivel directo, no como delta
+        const porteoAbsolutos = {}; // tankId -> nuevo nivel absoluto
+        for (const td of cmtPorteoDescarga) {
+          if (td.tanque && td.galonesFinal) porteoAbsolutos[td.tanque] = Math.max(0, Number(td.galonesFinal));
         }
-        // Aplicar ajustes leyendo el nivel actual desde la DB (no desde estado React)
+        for (const tc of cmtPorteoCarga) {
+          if (tc.tanque && tc.galonesFinal) porteoAbsolutos[tc.tanque] = Math.max(0, Number(tc.galonesFinal));
+        }
+        // Aplicar ajustes de tanques normales (delta) leyendo nivel actual desde DB
         const idsAfectados = Object.keys(ajustesPorTanque).filter(id => ajustesPorTanque[id] !== 0);
         if (idsAfectados.length > 0) {
           const { data: tqsActuales } = await dbCall({ table:"tanques", op:"select", select:"id,nivel", filters:[] });
@@ -1676,6 +1668,10 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
             const nuevoNivel = Math.max(0, Number(tq.nivel||0) + ajustesPorTanque[tq.id]);
             await dbCall({ table:"tanques", op:"update", data:{ nivel: nuevoNivel }, filters:[{col:"id",val:tq.id}] });
           }
+        }
+        // Aplicar niveles absolutos de porteo
+        for (const [id, nivel] of Object.entries(porteoAbsolutos)) {
+          await dbCall({ table:"tanques", op:"update", data:{ nivel }, filters:[{col:"id",val:id}] });
         }
         const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
         if (placasCarros.length > 0) {
