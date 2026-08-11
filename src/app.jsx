@@ -7792,7 +7792,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       formulacion_ids: edFIds.length>0 ? edFIds : null,
       updated_at: new Date().toISOString(),
     };
-    await dbCall({ table:"ordenes_trabajo", op:"update", data:patch, filters:[{col:"id",val:ed.otId}] });
+    // Intentar con formulacion_ids; si falla por columna inexistente, reintentar sin ella
+    let { error } = await dbCall({ table:"ordenes_trabajo", op:"update", data:patch, filters:[{col:"id",val:ed.otId}] });
+    if (error && error.toString().includes("formulacion_ids")) {
+      const { formulacion_ids: _drop, ...patchSin } = patch;
+      const res2 = await dbCall({ table:"ordenes_trabajo", op:"update", data:patchSin, filters:[{col:"id",val:ed.otId}] });
+      error = res2.error;
+    }
+    if (error) { showToast("Error al guardar: "+error, false); return; }
     await logAudit({ tabla:"ordenes_trabajo", registro_id:ed.otId, accion:"editar", datos_antes:{ trasiegos:otActual.trasiegos, estado:otActual.estado }, datos_despues:patch });
     await loadData();
     setOtEditando(null);
