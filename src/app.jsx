@@ -943,10 +943,16 @@ export default function App() {
   }
 
   async function reconciliarNivelesTanques(cmtsData, tanquesData) {
-    // Ordena por fecha de operación del CMT (no por cuándo se editó).
-    // Así un CMT editado al día siguiente no pisa lecturas de CMTs posteriores.
+    // Ordena por fecha de operación; desempate por updated_at para capturar ediciones del mismo día.
     const ultimaLectura = {}; // tankId -> { galones, ts }
-    const tsOf = cmt => new Date(cmt.fecha || cmt.created_at || 0).getTime();
+    const tsOf = cmt => {
+      const fechaTs = new Date(cmt.fecha || cmt.created_at || 0).getTime();
+      const editTs  = new Date(cmt.updated_at || cmt.created_at || 0).getTime();
+      // Para porteo (tiene porteo_carga_tanques o porteo_descarga_tanques), el destino
+      // se llena editando el CMT después; usamos updated_at para que esa edición cuente.
+      const esPorteo = (cmt.porteo_carga_tanques?.length || cmt.porteo_descarga_tanques?.length);
+      return esPorteo ? editTs : fechaTs;
+    };
     const cmtsOrdenados = [...cmtsData].sort((a,b) => tsOf(a) - tsOf(b));
 
     const registrar = (tankId, galones, ts) => {
