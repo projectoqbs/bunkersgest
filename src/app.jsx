@@ -7431,8 +7431,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <div style={{ color:T.muted,fontSize:13,marginBottom:12 }}>Sin trasiegos. Agrega uno abajo.</div>
         )}
         {ed.trasiegos.map((tr,i)=>{
+          const tqOrigen  = tr.origen  ? tanques.find(t=>t.id===tr.origen)  : null;
           const tqDestino = tr.destino ? tanques.find(t=>t.id===tr.destino) : null;
-          const espacioDisp = tqDestino ? Math.max(0, Math.round((tqDestino.capacidad||0)*0.9) - (tqDestino.nivel||0)) : null;
+          const disponibleOrigen = tqOrigen  ? Number(tqOrigen.nivel||0) : null;
+          const espacioDisp      = tqDestino ? Math.max(0, Math.round((tqDestino.capacidad||0)*0.9) - (tqDestino.nivel||0)) : null;
+          const superaOrigen  = tr.galones && disponibleOrigen!=null && Number(tr.galones) > disponibleOrigen;
+          const superaDestino = tr.galones && espacioDisp!=null      && Number(tr.galones) > espacioDisp;
           return (
             <div key={i} style={{ marginBottom:10,padding:12,background:T.bg,borderRadius:8,border:`1px solid ${T.border}` }}>
               <div style={{ display:"grid",gridTemplateColumns:"1fr auto 1fr auto",gap:8,alignItems:"end" }}>
@@ -7443,6 +7447,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <option value="">Seleccionar...</option>
                     {TANQUES_LIST.map(t=><option key={t}>{t}</option>)}
                   </select>
+                  {tqOrigen && (
+                    <div style={{ fontSize:11,marginTop:4,fontWeight:700,color:superaOrigen?T.danger:T.success }}>
+                      📦 Disponible: {fmt(disponibleOrigen)} gls
+                      {superaOrigen && <span style={{ marginLeft:6 }}>⚠️ Insuficiente</span>}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div style={{ fontSize:10,color:T.muted,fontWeight:600,marginBottom:4 }}>GALONES</div>
@@ -7456,27 +7466,25 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <option value="">Seleccionar...</option>
                     {TANQUES_LIST.filter(t=>t!==tr.origen).map(t=><option key={t}>{t}</option>)}
                   </select>
+                  {tqDestino && (
+                    <div style={{ fontSize:11,marginTop:4 }}>
+                      {!tr.galones || Number(tr.galones)===0 ? (
+                        <button onClick={()=>{const n=[...ed.trasiegos];n[i]={...n[i],galones:String(espacioDisp)};setEd({trasiegos:n});}}
+                          style={{ background:`${T.orange}18`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"2px 8px",cursor:"pointer",fontWeight:700,fontSize:11 }}>
+                          🏷️ Usar espacio libre (90%): {fmt(espacioDisp)} gls
+                        </button>
+                      ) : (
+                        <span style={{ fontWeight:700,color:superaDestino?T.danger:T.orange }}>
+                          🏷️ Espacio libre (90%): {fmt(espacioDisp)} gls
+                          {superaDestino && <span style={{ marginLeft:6 }}>⚠️ Supera capacidad</span>}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <button onClick={()=>setEd({trasiegos:ed.trasiegos.filter((_,j)=>j!==i)})}
-                  style={{ background:"#ef444418",border:"1px solid #ef444455",color:"#ef4444",borderRadius:6,padding:"7px 10px",cursor:"pointer",fontWeight:700,fontSize:12,alignSelf:"flex-end" }}>✕</button>
+                  style={{ background:"#ef444418",border:"1px solid #ef444455",color:"#ef4444",borderRadius:6,padding:"7px 10px",cursor:"pointer",fontWeight:700,fontSize:12,alignSelf:"flex-start",marginTop:20 }}>✕</button>
               </div>
-              {tqDestino && (
-                <div style={{ fontSize:11,paddingLeft:2,marginTop:6,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap" }}>
-                  {!tr.galones || Number(tr.galones)===0 ? (
-                    <button onClick={()=>{const n=[...ed.trasiegos];n[i]={...n[i],galones:String(espacioDisp)};setEd({trasiegos:n});}}
-                      style={{ background:`${T.orange}18`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"3px 10px",cursor:"pointer",fontWeight:700,fontSize:11 }}>
-                      🏷️ Usar espacio libre (90%): {fmt(espacioDisp)} gls
-                    </button>
-                  ) : (
-                    <span style={{ fontWeight:700,color:T.navy }}>
-                      🏷️ Espacio libre (90%): <span style={{ color: espacioDisp > 0 ? T.orange : T.danger }}>{fmt(espacioDisp)} gls</span>
-                    </span>
-                  )}
-                  {tr.galones && Number(tr.galones) > espacioDisp
-                    ? <span style={{ color:T.danger,fontWeight:700 }}>⚠️ Supera capacidad operativa</span>
-                    : null}
-                </div>
-              )}
             </div>
           );
         })}
