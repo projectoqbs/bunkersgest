@@ -2209,12 +2209,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const prodColor = p => {
               const u = (p||"").toUpperCase();
               if(u.includes("VLSFO")) return "#0077CC";
-              if(u.includes("MGO"))   return "#38bdf8";
-              if(u.includes("PENDARE")) return "#f59e0b";
-              if(u.includes("DISEL") || u.includes("DIESEL")) return "#38bdf8";
-              if(u.includes("FRONTERA")) return "#e11d48";
-              if(u.includes("CARRIZAL")) return "#a78bfa";
-              return "#7c8fa6";
+              if(u.includes("MGO") || u.includes("DISEL") || u.includes("DIESEL")) return "#06b6d4";
+              // Resto de materias primas → gris oscuro
+              return "#374151";
             };
 
             // alertas por familia
