@@ -2554,16 +2554,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               })()}
 
               {/* Alertas */}
-              {(alertNegro || alertBlanco) && (
-                <div style={{marginTop:16,background:"#fff0f0",border:`1px solid ${T.danger}`,borderRadius:8,padding:"12px 16px",display:"flex",gap:10,alignItems:"flex-start"}}>
-                  <AlertTriangle size={18} style={{color:T.danger,flexShrink:0,marginTop:1}}/>
-                  <div>
-                    <div style={{fontWeight:800,color:T.danger,fontSize:13,marginBottom:4}}>Alerta de Capacidad</div>
-                    {alertNegro  && <div style={{fontSize:12,color:T.danger,marginBottom:2}}>⬛ Producto Negro: inventario actual ({fmt(nivelNegro)} gls) + entrantes ({fmt(glsEntrantesNegro)} gls) = {fmt(nivelNegro+glsEntrantesNegro)} gls — supera capacidad disponible ({fmt(capNegro)} gls).</div>}
-                    {alertBlanco && <div style={{fontSize:12,color:T.danger}}>⬜ Producto Blanco: inventario actual ({fmt(nivelBlanco)} gls) + entrantes ({fmt(glsEntrantesBlanco)} gls) = {fmt(nivelBlanco+glsEntrantesBlanco)} gls — supera capacidad disponible ({fmt(capBlanco)} gls).</div>}
-                  </div>
-                </div>
-              )}
             </div>
             );
           })()}
