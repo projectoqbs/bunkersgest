@@ -7433,8 +7433,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         {ed.trasiegos.map((tr,i)=>{
           const tqOrigen  = tr.origen  ? tanques.find(t=>t.id===tr.origen)  : null;
           const tqDestino = tr.destino ? tanques.find(t=>t.id===tr.destino) : null;
-          const disponibleOrigen = tqOrigen  ? Number(tqOrigen.nivel||0) : null;
-          const espacioDisp      = tqDestino ? Math.max(0, Math.round((tqDestino.capacidad||0)*0.9) - (tqDestino.nivel||0)) : null;
+          const yaComprometidoOrigen  = tr.origen  ? ed.trasiegos.slice(0,i).filter(t=>t.origen===tr.origen).reduce((s,t)=>s+Number(t.galones||0),0) : 0;
+          const yaComprometidoDestino = tr.destino ? ed.trasiegos.slice(0,i).filter(t=>t.destino===tr.destino).reduce((s,t)=>s+Number(t.galones||0),0) : 0;
+          const disponibleOrigen = tqOrigen  ? Math.max(0, Number(tqOrigen.nivel||0) - yaComprometidoOrigen) : null;
+          const espacioDisp      = tqDestino ? Math.max(0, Math.round((tqDestino.capacidad||0)*0.9) - (tqDestino.nivel||0) - yaComprometidoDestino) : null;
           const superaOrigen  = tr.galones && disponibleOrigen!=null && Number(tr.galones) > disponibleOrigen;
           const superaDestino = tr.galones && espacioDisp!=null      && Number(tr.galones) > espacioDisp;
           return (
