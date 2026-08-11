@@ -5188,21 +5188,37 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               </div>
 
               {/* Campos header */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:20 }}>
-                <div><Lbl>Tanque</Lbl>
-                  <select value={fForm.tanque||""} onChange={e=>setFForm(p=>({...p,tanque:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
-                    {["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"].map(t=><option key={t}>{t}</option>)}
-                  </select>
+              {(()=>{
+                const TANQUES_P2  = ["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
+                const TANQUES_P1  = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","TKT-1","TKT-2"];
+                const plantaForm  = fForm.planta || "PLANTA 2";
+                const tanquesDisp = plantaForm === "PLANTA 1" ? TANQUES_P1 : TANQUES_P2;
+                // Si el tanque actual no pertenece a la planta seleccionada, resetear
+                const tanqueVal = tanquesDisp.includes(fForm.tanque) ? fForm.tanque : tanquesDisp[0];
+                return (
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12, marginBottom:20 }}>
+                  <div><Lbl>Planta</Lbl>
+                    <select value={plantaForm} onChange={e=>setFForm(p=>({...p, planta:e.target.value, tanque: e.target.value==="PLANTA 1" ? TANQUES_P1[0] : TANQUES_P2[0] }))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
+                      <option>PLANTA 2</option>
+                      <option>PLANTA 1</option>
+                    </select>
+                  </div>
+                  <div><Lbl>Tanque</Lbl>
+                    <select value={tanqueVal} onChange={e=>setFForm(p=>({...p,tanque:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
+                      {tanquesDisp.map(t=><option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div><Lbl>Producto Final</Lbl>
+                    <select value={fForm.producto||""} onChange={e=>setFForm(p=>({...p,producto:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
+                      <option>VLSFO</option><option>HSFO</option><option>MGO</option>
+                    </select>
+                  </div>
+                  <div><Lbl>Fecha</Lbl>
+                    <input type="date" value={fForm.fecha||today()} onChange={e=>setFForm(p=>({...p,fecha:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box" }}/>
+                  </div>
                 </div>
-                <div><Lbl>Producto Final</Lbl>
-                  <select value={fForm.producto||""} onChange={e=>setFForm(p=>({...p,producto:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none" }}>
-                    <option>VLSFO</option><option>HSFO</option><option>MGO</option>
-                  </select>
-                </div>
-                <div><Lbl>Fecha</Lbl>
-                  <input type="date" value={fForm.fecha||today()} onChange={e=>setFForm(p=>({...p,fecha:e.target.value}))} style={{ width:"100%",background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box" }}/>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Aviso AUTO */}
               {fModo==="AUTO" && (
