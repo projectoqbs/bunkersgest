@@ -2408,8 +2408,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 (despachos||[]).filter(d=>d.etd && d.estado!=="ENTREGADO").forEach(d=>{
                   const liqN = (liquidacionesQbs||[]).find(l=>Number(l.factor)>0 && l.producto && isNegro(l.producto));
                   const liqB = (liquidacionesQbs||[]).find(l=>Number(l.factor)>0 && l.producto && isBlanco(l.producto));
-                  const factN = liqN ? Number(liqN.factor) : 264;
-                  const factB = liqB ? Number(liqB.factor) : 282;
+                  const factN = liqN ? Number(liqN.factor) : 277;
+                  const factB = liqB ? Number(liqB.factor) : 310;
                   const gls = dashFamilia==="negro"
                     ? (Number(d.mt_vlso||0)+Number(d.mt_hsfo||0))*factN
                     : Number(d.mt_mgo||0)*factB;
@@ -2462,8 +2462,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 // Factor dinámico: última liquidación con factor válido por familia
                 const liqNegro  = (liquidacionesQbs||[]).find(l=>Number(l.factor)>0 && l.producto && isNegro(l.producto));
                 const liqBlanco = (liquidacionesQbs||[]).find(l=>Number(l.factor)>0 && l.producto && isBlanco(l.producto));
-                const MT_A_GLS   = liqNegro  ? Number(liqNegro.factor)  : 264;
-                const MT_A_GLS_B = liqBlanco ? Number(liqBlanco.factor) : 282;
+                const MT_A_GLS   = liqNegro  ? Number(liqNegro.factor)  : 277;
+                const MT_A_GLS_B = liqBlanco ? Number(liqBlanco.factor) : 310;
 
                 // Galones que descargan HOY: carros en planta de la familia activa
                 const glsEnPlantaHoy = vEnPlanta
