@@ -2469,7 +2469,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 // Balance acumulado por fecha
                 const espacioPorFecha = {};
                 for (const f of todasFechas) {
-                  const entran = f===hoy ? 0 : (Object.values(byFechaFam[f]||{}).reduce((a,b)=>a+b,0));
+                  const entran = Object.values(byFechaFam[f]||{}).reduce((a,b)=>a+b,0);
                   const salen  = salidasPorFecha[f]||0;
                   espacioRunning = espacioRunning - entran + salen;
                   espacioPorFecha[f] = espacioRunning;
