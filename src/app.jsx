@@ -5672,8 +5672,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {trasiegos.map((tr,i)=>(
                       <div key={i} style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8,alignItems:"center" }}>
                         <div style={{ fontWeight:700,fontSize:12,color:T.navy }}>
-                          {tr.origen || `Trasiego ${i+1}`}
-                          {tr.destino && <span style={{ fontWeight:400,fontSize:11,color:T.muted }}> → {tr.destino}</span>}
+                          {tr.destino || `Trasiego ${i+1}`}
+                          {tr.origen && <span style={{ fontWeight:400,fontSize:11,color:T.muted }}> (desde {tr.origen})</span>}
                         </div>
                         <input type="datetime-local" style={inSt}
                           value={getVal(i,"inicio")}
