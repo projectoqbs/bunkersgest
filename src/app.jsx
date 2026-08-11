@@ -2212,7 +2212,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               if(u.includes("MGO"))   return "#38bdf8";
               if(u.includes("PENDARE")) return "#f59e0b";
               if(u.includes("DISEL") || u.includes("DIESEL")) return "#38bdf8";
-              if(u.includes("FRONTERA")) return "#22c55e";
+              if(u.includes("FRONTERA")) return "#0e9488";
               if(u.includes("CARRIZAL")) return "#a78bfa";
               return "#7c8fa6";
             };
@@ -2392,6 +2392,37 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </div>
                 </Card>
               </div>
+
+              {/* Fecha límite de recibo */}
+              {(()=>{
+                const cap   = dashFamilia==="negro" ? capNegro   : capBlanco;
+                const nivel = dashFamilia==="negro" ? nivelNegro : nivelBlanco;
+                const vFilt = vEnRuta.filter(v=>dashFamilia==="negro"?isNegro(v.producto):isBlanco(v.producto));
+                const byF = {};
+                vFilt.forEach(v=>{ const k=v.fecha_aprox_llegada; if(k) byF[k]=(byF[k]||0)+glsViaje(v); });
+                const fechas = Object.keys(byF).sort();
+                let acum = nivel;
+                let fechaLleno = null;
+                for (const f of fechas) {
+                  acum += byF[f];
+                  if (acum >= cap) { fechaLleno = f; break; }
+                }
+                const libreActual = Math.max(0, cap - nivel);
+                const pctActual = cap>0 ? Math.round((nivel/cap)*100) : 0;
+                if (!fechaLleno) return (
+                  <div style={{background:`${T.success}15`,border:`1px solid ${T.success}44`,borderRadius:8,padding:"10px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10,fontSize:12}}>
+                    <span style={{fontSize:18}}>✅</span>
+                    <span>Con los <b>{vFilt.length} viajes</b> en tránsito ({fmt(vFilt.reduce((a,v)=>a+glsViaje(v),0))} gls) hay espacio suficiente. Libre actual: <b>{fmt(libreActual)} gls</b> ({100-pctActual}% disponible).</span>
+                  </div>
+                );
+                const label = new Date(fechaLleno+"T12:00:00").toLocaleDateString("es-CO",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+                return (
+                  <div style={{background:`${T.danger}15`,border:`1px solid ${T.danger}55`,borderRadius:8,padding:"10px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10,fontSize:12}}>
+                    <span style={{fontSize:18}}>🚨</span>
+                    <span>Capacidad completa estimada: <b style={{color:T.danger}}>{label}</b> — a partir de esa fecha no hay espacio para más materia prima sin antes mover producto a buques.</span>
+                  </div>
+                );
+              })()}
 
               {/* Entradas proyectadas por fecha */}
               <div style={{ fontWeight:800, fontSize:14, color:T.navy, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${T.orange}22`, display:"flex", alignItems:"center", gap:6 }}>
