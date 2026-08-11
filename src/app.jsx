@@ -2212,7 +2212,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               if(u.includes("MGO"))   return "#38bdf8";
               if(u.includes("PENDARE")) return "#f59e0b";
               if(u.includes("DISEL") || u.includes("DIESEL")) return "#38bdf8";
-              if(u.includes("FRONTERA")) return "#0e9488";
+              if(u.includes("FRONTERA")) return "#e11d48";
               if(u.includes("CARRIZAL")) return "#a78bfa";
               return "#7c8fa6";
             };
