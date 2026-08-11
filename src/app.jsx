@@ -2450,13 +2450,20 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   .filter(v=>dashFamilia==="negro"?isNegro(v.producto):isBlanco(v.producto))
                   .reduce((a,v)=>a+glsViaje(v),0);
 
-                // Salidas por buque agrupadas por ETD
-                const salidasPorFecha = {};
+                // Salidas por buque — el espacio queda libre el día DESPUÉS del ETD
+                const salidasPorFecha = {}; // fecha -> gls liberados
+                const buquesPorFecha  = {}; // fecha -> [{buque, gls}]
+                const etdMas1 = etd => { const d=new Date(etd+"T12:00:00"); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); };
                 (despachos||[]).filter(d=>d.etd && d.estado!=="ENTREGADO").forEach(d=>{
                   const gls = dashFamilia==="negro"
                     ? (Number(d.mt_vlso||0)+Number(d.mt_hsfo||0))*MT_A_GLS
                     : Number(d.mt_mgo||0)*MT_A_GLS_B;
-                  if (gls>0) salidasPorFecha[d.etd] = (salidasPorFecha[d.etd]||0)+gls;
+                  if (gls>0) {
+                    const f = etdMas1(d.etd);
+                    salidasPorFecha[f] = (salidasPorFecha[f]||0)+gls;
+                    if (!buquesPorFecha[f]) buquesPorFecha[f]=[];
+                    buquesPorFecha[f].push({ buque:d.buque||"Buque", gls });
+                  }
                 });
 
                 // Espacio inicial = libre actual - carros ya en planta (descargan hoy)
@@ -2474,39 +2481,46 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   espacioRunning = espacioRunning - entran + salen;
                   espacioPorFecha[f] = espacioRunning;
                 }
-              return vFiltrados.length === 0 ? (
+              // Unión de todas las fechas: llegadas de carros + salidas de buques
+              const todasFechasTabla = [...new Set([...fechasFam, ...Object.keys(buquesPorFecha)])].sort();
+              return vFiltrados.length === 0 && todasFechasTabla.length === 0 ? (
                 <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes en tránsito con fecha estimada para producto {dashFamilia}.</div>
               ) : (
                 <div data-scroll-key="viajes-prog-llegadas" style={{overflowX:"auto"}}>
                   <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                     <thead>
                       <tr style={{background:T.navy+"18"}}>
-                        <th style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:T.navy}}>F. Llegada Est.</th>
+                        <th style={{padding:"7px 10px",textAlign:"left",fontWeight:700,color:T.navy}}>Fecha</th>
                         {prodsFam.map(p=>(
                           <th key={p} style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:prodColor(p)}}>{p}</th>
                         ))}
-                        <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:T.navy}}>Total (gls)</th>
+                        <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:T.navy}}>Entran (gls)</th>
+                        <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:"#a855f7"}}>Sale Buque (gls)</th>
                         <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:T.success}}>Espacio libre</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {fechasFam.map((f,i)=>{
-                        const row = byFechaFam[f];
+                      {todasFechasTabla.map((f,i)=>{
+                        const row = byFechaFam[f]||{};
                         const total = Object.values(row).reduce((a,b)=>a+b,0);
-                        const esHoy = f === new Date().toISOString().slice(0,10);
+                        const buquesEseDia = buquesPorFecha[f]||[];
+                        const glsBuques = buquesEseDia.reduce((a,b)=>a+b.gls,0);
                         const eLibre = espacioPorFecha[f] ?? libreActualFam;
                         const hayEspacio = eLibre > 0;
+                        const esBuque = buquesEseDia.length > 0;
                         return (
-                          <tr key={f} style={{background:i%2===0?T.bg:T.card,borderTop:`1px solid ${T.border}`}}>
+                          <tr key={f} style={{background:esBuque?(i%2===0?"#f3e8ff":"#ede9fe"):(i%2===0?T.bg:T.card),borderTop:`1px solid ${T.border}`}}>
                             <td style={{padding:"6px 10px",fontWeight:600,color:T.navy}}>
                               {hayEspacio?"🟢 ":"🔴 "}{new Date(f+"T12:00:00").toLocaleDateString("es-CO",{weekday:"short",day:"2-digit",month:"short"})}
+                              {esBuque && <span style={{marginLeft:6,fontSize:10,color:"#7c3aed",fontWeight:700}}>⚓ {buquesEseDia.map(b=>b.buque).join(", ")}</span>}
                             </td>
                             {prodsFam.map(p=>(
                               <td key={p} style={{padding:"6px 10px",textAlign:"right",color:row[p]?prodColor(p):T.muted}}>
                                 {row[p]?fmt(row[p]):"—"}
                               </td>
                             ))}
-                            <td style={{padding:"6px 10px",textAlign:"right",fontWeight:800,color:T.navy}}>{fmt(total)}</td>
+                            <td style={{padding:"6px 10px",textAlign:"right",fontWeight:800,color:total>0?T.navy:T.muted}}>{total>0?fmt(total):"—"}</td>
+                            <td style={{padding:"6px 10px",textAlign:"right",fontWeight:700,color:glsBuques>0?"#7c3aed":T.muted}}>{glsBuques>0?`+${fmt(glsBuques)}`:"—"}</td>
                             <td style={{padding:"6px 10px",textAlign:"right",fontWeight:700,color:hayEspacio?T.success:T.danger}}>
                               {hayEspacio?fmt(Math.round(eLibre)):"Sin espacio"}
                             </td>
@@ -2520,6 +2534,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           return <td key={p} style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:prodColor(p)}}>{fmt(tot)}</td>;
                         })}
                         <td style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:T.navy}}>{fmt(totalFam)}</td>
+                        <td style={{padding:"7px 10px",textAlign:"right",color:T.muted,fontSize:10}}>buques</td>
                         <td style={{padding:"7px 10px",textAlign:"right",color:T.muted,fontSize:10}}>proyectado</td>
                       </tr>
                     </tbody>
