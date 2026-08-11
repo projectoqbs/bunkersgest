@@ -2399,12 +2399,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const vFilt = vEnRuta.filter(v=>dashFamilia==="negro"?isNegro(v.producto):isBlanco(v.producto));
                 const byF = {};
                 vFilt.forEach(v=>{ const k=v.fecha_aprox_llegada; if(k) byF[k]=(byF[k]||0)+glsViaje(v); });
-                const fechas = Object.keys(byF).sort();
+                // Salidas por buque (ETD+1)
+                const salF = {};
+                const etd1b = etd => { const d=new Date(etd+"T12:00:00"); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); };
+                (despachos||[]).filter(d=>d.etd && d.estado!=="ENTREGADO").forEach(d=>{
+                  const gls = dashFamilia==="negro"
+                    ? (Number(d.mt_vlso||0)+Number(d.mt_hsfo||0))*264
+                    : Number(d.mt_mgo||0)*282;
+                  if (gls>0) { const f=etd1b(d.etd); salF[f]=(salF[f]||0)+gls; }
+                });
+                const fechas = [...new Set([...Object.keys(byF), ...Object.keys(salF)])].sort();
                 let acum = nivel;
                 let fechaLleno = null;
                 for (const f of fechas) {
-                  acum += byF[f];
-                  if (acum >= cap) { fechaLleno = f; break; }
+                  acum += (byF[f]||0) - (salF[f]||0);
+                  if (acum >= cap && !fechaLleno) { fechaLleno = f; }
+                  if (fechaLleno && acum < cap) { fechaLleno = null; } // buque liberó espacio
                 }
                 const libreActual = Math.max(0, cap - nivel);
                 const pctActual = cap>0 ? Math.round((nivel/cap)*100) : 0;
