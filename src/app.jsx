@@ -5634,48 +5634,71 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{ fontWeight:700,fontSize:13,color:T.navy,marginBottom:10 }}>
                 PASO 3 — RECIRCULACIÓN
               </div>
-              <div style={{ fontSize:12,color:T.muted,marginBottom:8 }}>Tiempo programado: <b style={{ color:T.text }}>{ot.recirculacion_tiempo_total} min ({(ot.recirculacion_tiempo_total/60).toFixed(1)}h)</b></div>
-              {ot.estado==="RECIRCULANDO" && (
-                <div style={{ marginBottom:10 }}>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
-                    <div>
-                      <div style={{ fontSize:11,fontWeight:700,color:T.muted,marginBottom:4,textTransform:"uppercase",letterSpacing:0.5 }}>Inicio del Trasiego</div>
-                      <input type="datetime-local"
-                        value={recircDates[ot.id]?.inicio ?? (ot.recirculacion_inicio ? ot.recirculacion_inicio.slice(0,16) : "")}
-                        onChange={e=>{
-                          const val = e.target.value;
-                          setRecircDates(prev=>({...prev,[ot.id]:{...prev[ot.id],inicio:val}}));
-                          actualizarOT({recirculacion_inicio: val ? new Date(val).toISOString() : null});
-                        }}
-                        style={{ width:"100%", padding:"8px 10px", borderRadius:6, border:`1px solid ${T.border}`, background:T.card, color:T.text, fontSize:12, outline:"none", boxSizing:"border-box" }}/>
+              <div style={{ fontSize:12,color:T.muted,marginBottom:12 }}>Tiempo programado: <b style={{ color:T.text }}>{ot.recirculacion_tiempo_total} min ({(ot.recirculacion_tiempo_total/60).toFixed(1)}h)</b></div>
+              {ot.estado==="RECIRCULANDO" && (()=>{
+                const trasiegos = ot.trasiegos || [];
+                // Tiempos por tanque guardados en recircDates[otId][i] = {inicio, fin}
+                const getVal = (i, campo) => {
+                  const local = recircDates[ot.id]?.[i]?.[campo];
+                  if (local !== undefined) return local;
+                  const tr = trasiegos[i];
+                  const iso = tr?.[`recirculacion_${campo}`];
+                  return iso ? iso.slice(0,16) : "";
+                };
+                const setVal = (i, campo, val) =>
+                  setRecircDates(prev=>({...prev,[ot.id]:{...prev[ot.id],[i]:{...prev[ot.id]?.[i],[campo]:val}}}));
+                const guardaTrasiegosRecirc = async () => {
+                  const nuevos = trasiegos.map((tr,i)=>({
+                    ...tr,
+                    recirculacion_inicio: recircDates[ot.id]?.[i]?.inicio !== undefined
+                      ? (recircDates[ot.id][i].inicio ? new Date(recircDates[ot.id][i].inicio).toISOString() : null)
+                      : tr.recirculacion_inicio || null,
+                    recirculacion_fin: recircDates[ot.id]?.[i]?.fin !== undefined
+                      ? (recircDates[ot.id][i].fin ? new Date(recircDates[ot.id][i].fin).toISOString() : null)
+                      : tr.recirculacion_fin || null,
+                  }));
+                  await actualizarOT({ trasiegos: nuevos });
+                };
+                const todosListos = trasiegos.length > 0 && trasiegos.every((_,i)=>getVal(i,"inicio") && getVal(i,"fin"));
+                const inSt = { width:"100%",padding:"7px 8px",borderRadius:6,border:`1px solid ${T.border}`,background:T.card,color:T.text,fontSize:11,outline:"none",boxSizing:"border-box" };
+                return (
+                  <div>
+                    {/* Fila de cabecera */}
+                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:6 }}>
+                      <div style={{ fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.5 }}>Tanque</div>
+                      <div style={{ fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.5 }}>Inicio recirculación</div>
+                      <div style={{ fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.5 }}>Fin recirculación</div>
                     </div>
-                    <div>
-                      <div style={{ fontSize:11,fontWeight:700,color:T.muted,marginBottom:4,textTransform:"uppercase",letterSpacing:0.5 }}>Final del Trasiego</div>
-                      <input type="datetime-local"
-                        value={recircDates[ot.id]?.fin ?? (ot.recirculacion_fin ? ot.recirculacion_fin.slice(0,16) : "")}
-                        onChange={e=>{
-                          const val = e.target.value;
-                          setRecircDates(prev=>({...prev,[ot.id]:{...prev[ot.id],fin:val}}));
-                          actualizarOT({recirculacion_fin: val ? new Date(val).toISOString() : null});
+                    {trasiegos.map((tr,i)=>(
+                      <div key={i} style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8,alignItems:"center" }}>
+                        <div style={{ fontWeight:700,fontSize:12,color:T.navy }}>
+                          {tr.origen || `Trasiego ${i+1}`}
+                          {tr.destino && <span style={{ fontWeight:400,fontSize:11,color:T.muted }}> → {tr.destino}</span>}
+                        </div>
+                        <input type="datetime-local" style={inSt}
+                          value={getVal(i,"inicio")}
+                          onChange={e=>{ setVal(i,"inicio",e.target.value); }}
+                          onBlur={guardaTrasiegosRecirc}/>
+                        <input type="datetime-local" style={inSt}
+                          value={getVal(i,"fin")}
+                          onChange={e=>{ setVal(i,"fin",e.target.value); }}
+                          onBlur={guardaTrasiegosRecirc}/>
+                      </div>
+                    ))}
+                    <div style={{ marginTop:14 }}>
+                      <button disabled={!todosListos}
+                        onClick={async()=>{
+                          await guardaTrasiegosRecirc();
+                          await actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada"});
                         }}
-                        style={{ width:"100%", padding:"8px 10px", borderRadius:6, border:`1px solid ${T.border}`, background:T.card, color:T.text, fontSize:12, outline:"none", boxSizing:"border-box" }}/>
+                        style={{ background:todosListos?T.success:"#ccc",border:"none",color:todosListos?"#071422":"#888",borderRadius:6,padding:"7px 18px",cursor:todosListos?"pointer":"not-allowed",fontWeight:700,fontSize:12,transition:"background 0.2s" }}>
+                        ✅ Recirculación Completada → Enviar a Lab
+                      </button>
+                      {!todosListos && <div style={{ fontSize:11,color:T.muted,marginTop:6 }}>⚠️ Completa inicio y fin de recirculación para cada tanque</div>}
                     </div>
                   </div>
-                  {(()=>{
-                    const listo = (recircDates[ot.id]?.inicio ?? ot.recirculacion_inicio) && (recircDates[ot.id]?.fin ?? ot.recirculacion_fin);
-                    return (
-                      <div>
-                        <button disabled={!listo}
-                          onClick={()=>actualizarOT({estado:"COMPLETADA",fecha_fin_recirculacion:new Date().toISOString(),recirculacion_estado:"completada",recirculacion_inicio:recircDates[ot.id]?.inicio,recirculacion_fin:recircDates[ot.id]?.fin})}
-                          style={{ background:listo?T.success:"#ccc",border:"none",color:listo?"#071422":"#888",borderRadius:6,padding:"7px 18px",cursor:listo?"pointer":"not-allowed",fontWeight:700,fontSize:12,transition:"background 0.2s" }}>
-                          ✅ Recirculación Completada → Enviar a Lab
-                        </button>
-                        {!listo && <div style={{ fontSize:11,color:T.muted,marginTop:6 }}>⚠️ Completa el inicio y final del trasiego para habilitar este botón</div>}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
+                );
+              })()}
               {ot.estado==="COMPLETADA" && (
                 <div style={{ fontSize:12,color:T.orange,fontWeight:700 }}>⏳ Pendiente análisis Laboratorio (Tiquete Planta 2)</div>
               )}
