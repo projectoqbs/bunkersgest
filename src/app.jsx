@@ -2224,7 +2224,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const CapBar = ({ nivel, cap, incoming, label, alert }) => {
               const pctAct = cap>0 ? Math.min(100, (nivel/cap)*100) : 0;
               const pctIn  = cap>0 ? Math.min(100-pctAct, (incoming/cap)*100) : 0;
-              const libre  = Math.max(0, cap - nivel - incoming);
+              const libre  = Math.max(0, cap - nivel);
               const pctColor = pctAct>80 ? T.danger : pctAct>50 ? T.success : T.orange;
               return (
                 <div style={{marginBottom:6}}>
