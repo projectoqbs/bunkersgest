@@ -4770,7 +4770,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                 <span style={{fontSize:11,background:`${T.success}18`,border:`1px solid ${T.success}44`,borderRadius:6,padding:"2px 8px",cursor:"pointer",color:T.success,fontFamily:"monospace",fontWeight:700}} onClick={()=>{const tq=tiquetes.find(x=>x.id===ot.tiquete_id);if(tq){setForm({...tq});setModal("tiquete");}}}>🧪 {ot.tiquete_id}</span>
                               )}
                             </div>
-                            <button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id,source:"programacion"}]); setActiveTabId(id); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Ver / Gestionar →</button>
+                            <div style={{ display:"flex",gap:8 }}>
+                              <button onClick={()=>{ const id=`ot-${ot.id}`; const ex=tabs.find(t=>t.id===id); if(ex){setActiveTabId(id);return;} setTabs(p=>[...p,{id,type:"orden_trabajo",title:ot.numero_ot,icon:"🏗️",closeable:true,otId:ot.id,source:"programacion"}]); setActiveTabId(id); }} style={{ background:T.orange,border:"none",color:"#fff",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>Ver / Gestionar →</button>
+                              {perfil?.rol!=="operaciones" && <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})} style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>✏️ Editar</button>}
+                            </div>
                           </div>
                           {/* Progreso descargues */}
                           {ot.estado==="DESCARGANDO" && (
@@ -5316,15 +5319,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <div style={{ fontWeight:800,fontSize:22,color:T.navy }}>{ot.numero_ot}</div>
                 <div style={{ fontSize:12,color:T.muted,marginTop:2 }}>{fo?.producto||""} · {ot.tanque_destino} · {(ot.created_at||"").slice(0,10)}</div>
               </div>
-              <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-                <Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/>
-                {nav==="programacion" && (
-                  <button onClick={()=>setOtEditando({otId:ot.id,trasiegos:(ot.trasiegos||[]).map(t=>({...t}))})}
-                    style={{ background:`${T.navy}18`,border:`1px solid ${T.navy}44`,color:T.navy,borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:12 }}>
-                    ✏️ Editar OT
-                  </button>
-                )}
-              </div>
+              <Badge label={estadoLabel(ot.estado)} color={estadoColor(ot.estado)}/>
             </div>
 
             {/* PASO 1: TRASIEGOS */}
