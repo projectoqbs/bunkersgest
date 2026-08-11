@@ -2522,7 +2522,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             <td style={{padding:"6px 10px",textAlign:"right",fontWeight:800,color:total>0?T.navy:T.muted}}>{total>0?fmt(total):"—"}</td>
                             <td style={{padding:"6px 10px",textAlign:"right",fontWeight:700,color:glsBuques>0?"#7c3aed":T.muted}}>{glsBuques>0?`+${fmt(glsBuques)}`:"—"}</td>
                             <td style={{padding:"6px 10px",textAlign:"right",fontWeight:700,color:hayEspacio?T.success:T.danger}}>
-                              {hayEspacio?fmt(Math.round(eLibre)):"Sin espacio"}
+                              {hayEspacio?fmt(Math.round(eLibre)):`-${fmt(Math.abs(Math.round(eLibre)))}`}
                             </td>
                           </tr>
                         );
