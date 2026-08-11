@@ -6124,6 +6124,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <select value={flotaEditCampo} onChange={e=>{setFlotaEditCampo(e.target.value);setFlotaEditValor("");}}
                         style={inpStyle}>
                         <option value="">— Seleccionar —</option>
+                        <option value="fecha_cargue">Fecha de cargue</option>
                         <option value="producto">Producto</option>
                         <option value="placa">Placa</option>
                         <option value="transportadora">Transportadora</option>
@@ -6134,7 +6135,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     {flotaEditCampo && (
                       <div>
                         <Lbl>Nuevo valor</Lbl>
-                        {flotaEditCampo==="producto" ? (
+                        {flotaEditCampo==="fecha_cargue" ? (
+                          <input type="date" value={flotaEditValor} onChange={e=>setFlotaEditValor(e.target.value)} style={inpStyle}/>
+                        ) : flotaEditCampo==="producto" ? (
                           <select value={flotaEditValor} onChange={e=>setFlotaEditValor(e.target.value)} style={inpStyle}>
                             <option value="">— Seleccionar —</option>
                             {[...MATERIAS_PRIMAS,"VLSFO","MGO","DIESEL NACIONAL","DIESEL INTERNACIONAL"].map(p=><option key={p}>{p}</option>)}
@@ -6157,7 +6160,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </div>
                     )}
                     <Btn color={T.navy} disabled={!flotaEditCampo||!flotaEditValor||saving}
-                      onClick={()=>modificarCampoFlota(viajesElim, flotaEditCampo, flotaEditValor.toUpperCase())}>
+                      onClick={()=>modificarCampoFlota(viajesElim, flotaEditCampo, flotaEditCampo==="fecha_cargue"?flotaEditValor:flotaEditValor.toUpperCase())}>
                       {saving?"Aplicando...":"Aplicar cambio"}
                     </Btn>
                   </div>
