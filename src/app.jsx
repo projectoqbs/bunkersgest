@@ -7044,7 +7044,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           )}
           {/* ── PORTEO ─────────────────────────────────────────────────────────── */}
           {(form.tipo_operacion||"")==="PORTEO" && (()=>{
-            const allPlantas = [...new Set(["PLANTA 1","PLANTA 2",...(perfil?.planta||"").split(",").map(p=>p.trim()).filter(Boolean)])];
+            const allPlantas = ["PLANTA 1","PLANTA 2"];
             const inSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
             const roSt = {...inSt,background:"#f1f5f9",color:T.navy,fontWeight:700,cursor:"default"};
 
