@@ -2433,6 +2433,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const fechasFam = Object.keys(byFechaFam).sort();
                 const prodsFam = [...new Set(vFiltrados.map(v=>v.producto||"Sin producto"))].sort();
                 const totalFam = vFiltrados.reduce((a,v)=>a+glsViaje(v),0);
+                // Calcular acumulado por fecha para saber desde qué día no hay espacio
+                const libreActualFam = dashFamilia==="negro" ? espacioDispNegro : espacioDispBlanco;
+                let acumFecha = 0;
+                const acumPorFecha = {};
+                for (const f of fechasFam) {
+                  acumFecha += Object.values(byFechaFam[f]).reduce((a,b)=>a+b,0);
+                  acumPorFecha[f] = acumFecha;
+                }
               return vFiltrados.length === 0 ? (
                 <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes en tránsito con fecha estimada para producto {dashFamilia}.</div>
               ) : (
@@ -2452,11 +2460,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         const row = byFechaFam[f];
                         const total = Object.values(row).reduce((a,b)=>a+b,0);
                         const esHoy = f === new Date().toISOString().slice(0,10);
-                        const esPasado = f < new Date().toISOString().slice(0,10);
+                        const hayEspacio = acumPorFecha[f] <= libreActualFam;
                         return (
-                          <tr key={f} style={{background:esHoy?"#fff8e1":i%2===0?T.bg:T.card,borderTop:`1px solid ${T.border}`}}>
-                            <td style={{padding:"6px 10px",fontWeight:esHoy?800:600,color:esHoy?T.orange:esPasado?T.muted:T.navy}}>
-                              {esPasado?"🔴 ":esHoy?"🟡 ":"🟢 "}{new Date(f+"T12:00:00").toLocaleDateString("es-CO",{weekday:"short",day:"2-digit",month:"short"})}
+                          <tr key={f} style={{background:i%2===0?T.bg:T.card,borderTop:`1px solid ${T.border}`}}>
+                            <td style={{padding:"6px 10px",fontWeight:600,color:T.navy}}>
+                              {hayEspacio?"🟢 ":"🔴 "}{new Date(f+"T12:00:00").toLocaleDateString("es-CO",{weekday:"short",day:"2-digit",month:"short"})}
                             </td>
                             {prodsFam.map(p=>(
                               <td key={p} style={{padding:"6px 10px",textAlign:"right",color:row[p]?prodColor(p):T.muted}}>
