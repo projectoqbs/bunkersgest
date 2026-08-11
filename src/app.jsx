@@ -396,6 +396,7 @@ export default function App() {
   const [pbsList, setPbsList] = useState([]);
   const [cmts, setCmts] = useState([]);
   const [despachos, setDespachos] = useState([]);
+  const [liquidacionesQbs, setLiquidacionesQbs] = useState([]);
     const [perfiles, setPerfiles] = useState([]);
     const [permisosRoles, setPermisosRoles] = useState([]);
 
@@ -903,7 +904,7 @@ export default function App() {
   }
 
   async function loadData() {
-    const [t,v,tq,p,c,d,pr,permR,prog,form2,ot] = await Promise.all([
+    const [t,v,tq,p,c,d,pr,permR,prog,form2,ot,liqQ] = await Promise.all([
       supabase.from("tanques").select("*").order("id"),
       supabase.from("viajes").select("*").order("created_at",{ascending:false}).limit(300),
       supabase.from("tiquetes").select("*").order("created_at",{ascending:false}).limit(300),
@@ -915,6 +916,7 @@ export default function App() {
       supabase.from("programaciones").select("*").order("fecha",{ascending:false}).limit(100),
       supabase.from("formulaciones").select("*").order("created_at",{ascending:false}).limit(100),
       supabase.from("ordenes_trabajo").select("*").order("created_at",{ascending:false}).limit(200),
+      supabase.from("liquidaciones_qbs002").select("id,motonave,producto,factor,fecha,mt_entregadas,gls_entregados").order("fecha",{ascending:false}).limit(100),
     ]);
     if (t.data) setTanques(t.data);
     if (v.data) setViajes(v.data);
@@ -927,6 +929,7 @@ export default function App() {
     if (prog?.data) setProgramaciones(prog.data);
     if (form2?.data) setFormulaciones(form2.data);
     if (ot?.data) setOrdenesTrabajo(ot.data);
+    if (liqQ?.data) setLiquidacionesQbs(liqQ.data);
     if (t.data && c.data) await reconciliarNivelesTanques(c.data, t.data);
   }
 
@@ -2403,9 +2406,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const salF = {};
                 const etd1b = etd => { const d=new Date(etd+"T12:00:00"); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); };
                 (despachos||[]).filter(d=>d.etd && d.estado!=="ENTREGADO").forEach(d=>{
+                  const liqN = (liquidacionesQbs||[]).find(l=>Number(l.factor)>0 && l.producto && isNegro(l.producto));
+                  const liqB = (liquidacionesQbs||[]).find(l=>Number(l.factor)>0 && l.producto && isBlanco(l.producto));
+                  const factN = liqN ? Number(liqN.factor) : 264;
+                  const factB = liqB ? Number(liqB.factor) : 282;
                   const gls = dashFamilia==="negro"
-                    ? (Number(d.mt_vlso||0)+Number(d.mt_hsfo||0))*264
-                    : Number(d.mt_mgo||0)*282;
+                    ? (Number(d.mt_vlso||0)+Number(d.mt_hsfo||0))*factN
+                    : Number(d.mt_mgo||0)*factB;
                   if (gls>0) { const f=etd1b(d.etd); salF[f]=(salF[f]||0)+gls; }
                 });
                 const fechas = [...new Set([...Object.keys(byF), ...Object.keys(salF)])].sort();
@@ -2452,8 +2459,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const totalFam = vFiltrados.reduce((a,v)=>a+glsViaje(v),0);
 
                 // ── Línea de tiempo de espacio libre ──────────────────────
-                const MT_A_GLS = 264; // toneladas métricas → galones (VLSFO/HSFO negro)
-                const MT_A_GLS_B = 282; // MGO/diesel blanco
+                // Factor dinámico: última liquidación con factor válido por familia
+                const liqNegro  = (liquidacionesQbs||[]).find(l=>Number(l.factor)>0 && l.producto && isNegro(l.producto));
+                const liqBlanco = (liquidacionesQbs||[]).find(l=>Number(l.factor)>0 && l.producto && isBlanco(l.producto));
+                const MT_A_GLS   = liqNegro  ? Number(liqNegro.factor)  : 264;
+                const MT_A_GLS_B = liqBlanco ? Number(liqBlanco.factor) : 282;
 
                 // Galones que descargan HOY: carros en planta de la familia activa
                 const glsEnPlantaHoy = vEnPlanta
