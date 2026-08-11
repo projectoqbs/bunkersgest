@@ -2433,13 +2433,40 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 const fechasFam = Object.keys(byFechaFam).sort();
                 const prodsFam = [...new Set(vFiltrados.map(v=>v.producto||"Sin producto"))].sort();
                 const totalFam = vFiltrados.reduce((a,v)=>a+glsViaje(v),0);
-                // Calcular acumulado por fecha para saber desde qué día no hay espacio
+
+                // ── Línea de tiempo de espacio libre ──────────────────────
+                const MT_A_GLS = 264; // toneladas métricas → galones (VLSFO/HSFO negro)
+                const MT_A_GLS_B = 282; // MGO/diesel blanco
+                const hoy = new Date().toISOString().slice(0,10);
+
+                // Galones que descargan HOY: carros en planta de la familia activa
+                const glsEnPlantaHoy = vEnPlanta
+                  .filter(v=>dashFamilia==="negro"?isNegro(v.producto):isBlanco(v.producto))
+                  .reduce((a,v)=>a+glsViaje(v),0);
+
+                // Salidas por buque agrupadas por ETD
+                const salidasPorFecha = {};
+                (despachos||[]).filter(d=>d.etd && d.estado!=="ENTREGADO").forEach(d=>{
+                  const gls = dashFamilia==="negro"
+                    ? (Number(d.mt_vlso||0)+Number(d.mt_hsfo||0))*MT_A_GLS
+                    : Number(d.mt_mgo||0)*MT_A_GLS_B;
+                  if (gls>0) salidasPorFecha[d.etd] = (salidasPorFecha[d.etd]||0)+gls;
+                });
+
+                // Espacio inicial = libre actual - carros ya en planta (descargan hoy)
                 const libreActualFam = dashFamilia==="negro" ? espacioDispNegro : espacioDispBlanco;
-                let acumFecha = 0;
-                const acumPorFecha = {};
-                for (const f of fechasFam) {
-                  acumFecha += Object.values(byFechaFam[f]).reduce((a,b)=>a+b,0);
-                  acumPorFecha[f] = acumFecha;
+                let espacioRunning = libreActualFam - glsEnPlantaHoy;
+
+                // Todas las fechas relevantes (llegadas + ETDs de buques)
+                const todasFechas = [...new Set([...fechasFam, ...Object.keys(salidasPorFecha)])].sort();
+
+                // Balance acumulado por fecha
+                const espacioPorFecha = {};
+                for (const f of todasFechas) {
+                  const entran = f===hoy ? 0 : (Object.values(byFechaFam[f]||{}).reduce((a,b)=>a+b,0));
+                  const salen  = salidasPorFecha[f]||0;
+                  espacioRunning = espacioRunning - entran + salen;
+                  espacioPorFecha[f] = espacioRunning;
                 }
               return vFiltrados.length === 0 ? (
                 <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes en tránsito con fecha estimada para producto {dashFamilia}.</div>
@@ -2453,6 +2480,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           <th key={p} style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:prodColor(p)}}>{p}</th>
                         ))}
                         <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:T.navy}}>Total (gls)</th>
+                        <th style={{padding:"7px 10px",textAlign:"right",fontWeight:700,color:T.success}}>Espacio libre</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2460,7 +2488,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         const row = byFechaFam[f];
                         const total = Object.values(row).reduce((a,b)=>a+b,0);
                         const esHoy = f === new Date().toISOString().slice(0,10);
-                        const hayEspacio = acumPorFecha[f] <= libreActualFam;
+                        const eLibre = espacioPorFecha[f] ?? libreActualFam;
+                        const hayEspacio = eLibre > 0;
                         return (
                           <tr key={f} style={{background:i%2===0?T.bg:T.card,borderTop:`1px solid ${T.border}`}}>
                             <td style={{padding:"6px 10px",fontWeight:600,color:T.navy}}>
@@ -2472,6 +2501,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               </td>
                             ))}
                             <td style={{padding:"6px 10px",textAlign:"right",fontWeight:800,color:T.navy}}>{fmt(total)}</td>
+                            <td style={{padding:"6px 10px",textAlign:"right",fontWeight:700,color:hayEspacio?T.success:T.danger}}>
+                              {hayEspacio?fmt(Math.round(eLibre)):"Sin espacio"}
+                            </td>
                           </tr>
                         );
                       })}
@@ -2482,6 +2514,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           return <td key={p} style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:prodColor(p)}}>{fmt(tot)}</td>;
                         })}
                         <td style={{padding:"7px 10px",textAlign:"right",fontWeight:800,color:T.navy}}>{fmt(totalFam)}</td>
+                        <td style={{padding:"7px 10px",textAlign:"right",color:T.muted,fontSize:10}}>proyectado</td>
                       </tr>
                     </tbody>
                   </table>
