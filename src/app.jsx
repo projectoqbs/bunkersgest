@@ -2424,6 +2424,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 <Truck size={15}/> Entradas Proyectadas · {dashFamilia==="negro"?"Producto Negro":"Producto Blanco"}
               </div>
               {(()=>{
+                const hoy = new Date().toISOString().slice(0,10);
                 const vFiltrados = vEnRuta.filter(v=>dashFamilia==="negro"?isNegro(v.producto):isBlanco(v.producto));
                 const byFechaFam = {};
                 vFiltrados.forEach(v=>{
@@ -2439,7 +2440,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 // ── Línea de tiempo de espacio libre ──────────────────────
                 const MT_A_GLS = 264; // toneladas métricas → galones (VLSFO/HSFO negro)
                 const MT_A_GLS_B = 282; // MGO/diesel blanco
-                const hoy = new Date().toISOString().slice(0,10);
 
                 // Galones que descargan HOY: carros en planta de la familia activa
                 const glsEnPlantaHoy = vEnPlanta
