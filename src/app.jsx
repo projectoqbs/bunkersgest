@@ -943,10 +943,10 @@ export default function App() {
   }
 
   async function reconciliarNivelesTanques(cmtsData, tanquesData) {
-    // Para cada tanque, determinar la última lectura registrada en CMTs.
-    // Usa updated_at si existe (captura ediciones posteriores), sino created_at.
+    // Ordena por fecha de operación del CMT (no por cuándo se editó).
+    // Así un CMT editado al día siguiente no pisa lecturas de CMTs posteriores.
     const ultimaLectura = {}; // tankId -> { galones, ts }
-    const tsOf = cmt => new Date(cmt.updated_at || cmt.created_at || 0).getTime();
+    const tsOf = cmt => new Date(cmt.fecha || cmt.created_at || 0).getTime();
     const cmtsOrdenados = [...cmtsData].sort((a,b) => tsOf(a) - tsOf(b));
 
     const registrar = (tankId, galones, ts) => {
