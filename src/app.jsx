@@ -7461,10 +7461,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   style={{ background:"#ef444418",border:"1px solid #ef444455",color:"#ef4444",borderRadius:6,padding:"7px 10px",cursor:"pointer",fontWeight:700,fontSize:12,alignSelf:"flex-end" }}>✕</button>
               </div>
               {tqDestino && (
-                <div style={{ fontSize:11,color:T.navy,fontWeight:700,paddingLeft:2,marginTop:6 }}>
-                  🏷️ Espacio libre (90%): <span style={{ color: espacioDisp > 0 ? T.orange : T.danger }}>{fmt(espacioDisp)} gls</span>
+                <div style={{ fontSize:11,paddingLeft:2,marginTop:6,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap" }}>
+                  {!tr.galones || Number(tr.galones)===0 ? (
+                    <button onClick={()=>{const n=[...ed.trasiegos];n[i]={...n[i],galones:String(espacioDisp)};setEd({trasiegos:n});}}
+                      style={{ background:`${T.orange}18`,border:`1px solid ${T.orange}55`,color:T.orange,borderRadius:6,padding:"3px 10px",cursor:"pointer",fontWeight:700,fontSize:11 }}>
+                      🏷️ Usar espacio libre (90%): {fmt(espacioDisp)} gls
+                    </button>
+                  ) : (
+                    <span style={{ fontWeight:700,color:T.navy }}>
+                      🏷️ Espacio libre (90%): <span style={{ color: espacioDisp > 0 ? T.orange : T.danger }}>{fmt(espacioDisp)} gls</span>
+                    </span>
+                  )}
                   {tr.galones && Number(tr.galones) > espacioDisp
-                    ? <span style={{ color:T.danger,marginLeft:8 }}>⚠️ Supera capacidad operativa</span>
+                    ? <span style={{ color:T.danger,fontWeight:700 }}>⚠️ Supera capacidad operativa</span>
                     : null}
                 </div>
               )}
