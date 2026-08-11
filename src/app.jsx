@@ -943,17 +943,11 @@ export default function App() {
   }
 
   async function reconciliarNivelesTanques(cmtsData, tanquesData) {
-    // Ordena por fecha de operación; desempate por updated_at para capturar ediciones del mismo día.
+    // Cada lectura tiene su propio timestamp según cuándo ocurrió el evento real:
+    // - tanques_despues / tanques_recepcion → fecha de operación del CMT
+    // - porteo_carga_tanques (origen)       → created_at (el carro se cargó al crear el CMT)
+    // - porteo_descarga_tanques (destino)   → updated_at (el carro descargó al editar el CMT)
     const ultimaLectura = {}; // tankId -> { galones, ts }
-    const tsOf = cmt => {
-      const fechaTs = new Date(cmt.fecha || cmt.created_at || 0).getTime();
-      const editTs  = new Date(cmt.updated_at || cmt.created_at || 0).getTime();
-      // Para porteo (tiene porteo_carga_tanques o porteo_descarga_tanques), el destino
-      // se llena editando el CMT después; usamos updated_at para que esa edición cuente.
-      const esPorteo = (cmt.porteo_carga_tanques?.length || cmt.porteo_descarga_tanques?.length);
-      return esPorteo ? editTs : fechaTs;
-    };
-    const cmtsOrdenados = [...cmtsData].sort((a,b) => tsOf(a) - tsOf(b));
 
     const registrar = (tankId, galones, ts) => {
       if (!tankId || galones === "" || galones === null || galones === undefined) return;
@@ -963,16 +957,21 @@ export default function App() {
         ultimaLectura[tankId] = { galones: g, ts };
     };
 
-    for (const cmt of cmtsOrdenados) {
-      const ts = tsOf(cmt);
+    for (const cmt of cmtsData) {
+      const tsFecha   = new Date(cmt.fecha      || cmt.created_at || 0).getTime();
+      const tsCreated = new Date(cmt.created_at || cmt.fecha      || 0).getTime();
+      const tsUpdated = new Date(cmt.updated_at || cmt.created_at || cmt.fecha || 0).getTime();
+
       for (const td of cmt.tanques_despues||[])
-        registrar(td.tanque, td.galones, ts);
+        registrar(td.tanque, td.galones, tsFecha);
       for (const tr of cmt.tanques_recepcion||[])
-        registrar(tr.tanque, tr.galonesFinal, ts);
-      for (const td of cmt.porteo_descarga_tanques||[])
-        registrar(td.tanque, td.galonesFinal, ts);
+        registrar(tr.tanque, tr.galonesFinal, tsFecha);
+      // Origen del porteo: evento de carga (al crear el CMT)
       for (const tc of cmt.porteo_carga_tanques||[])
-        registrar(tc.tanque, tc.galonesFinal, ts);
+        registrar(tc.tanque, tc.galonesFinal, tsCreated);
+      // Destino del porteo: evento de descargue (al editar el CMT cuando llega el carro)
+      for (const td of cmt.porteo_descarga_tanques||[])
+        registrar(td.tanque, td.galonesFinal, tsUpdated);
     }
 
     // Aplicar siempre la última lectura (sin umbral) para asegurar corrección
