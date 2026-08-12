@@ -5697,7 +5697,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 );
               })()}
               {desc.length===0 ? <div style={{ color:T.muted,fontSize:12 }}>Sin descargues</div> : (() => {
-                const grupos = agruparDescarguesPorProducto(desc);
+                // Agrupar por formulación (tanque) y dentro por producto
+                const fIds = ot.formulacion_ids || (ot.formulacion_id ? [ot.formulacion_id] : [null]);
+                const seccionesPorFo = fIds.map(fid => {
+                  const fo = formulaciones.find(f=>f.id===fid);
+                  const descFo = fid ? desc.filter(d=>d.formulacion_id===fid) : desc;
+                  // Si no tiene formulacion_id en los items (OT antigua), mostrar todos sin filtrar por fid
+                  const items = descFo.length>0 ? descFo : (fIds.length===1 ? desc : []);
+                  const grupos = agruparDescarguesPorProducto(items);
+                  return { fid, fo, grupos, items };
+                }).filter(s=>s.items.length>0);
+                const multiSec = seccionesPorFo.length > 1;
                 return (
                   <>
                     {ot.estado==="DESCARGANDO" && (
@@ -5714,67 +5724,78 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div style={{ textAlign:"center" }}>ACCIÓN</div>
                       <div></div>
                     </div>
-                    {/* Filas agrupadas */}
-                    {grupos.map(grupo => {
-                      const gPlan = grupo.galones_planeado;
-                      const gReal = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>{
-                        if(prodCarro(carro)!==grupo.productoBase) return s;
-                        return s+glsDescargadosCarro(carro);
-                      },0),0);
-                      const gFalta = Math.max(0, gPlan - gReal);
-                      const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
-                      return (
-                        <div key={grupo.productoBase} style={{ marginBottom:6 }}>
-                          {/* Fila principal */}
-                          <div onClick={() => toggleOtExpandir(grupo.productoBase)} style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,padding:"9px 10px",background:T.card,borderRadius:6,cursor:"pointer",borderLeft:`3px solid ${gPct>=100?T.success:T.orange}`,transition:"background 0.15s" }}
-                            onMouseEnter={e=>e.currentTarget.style.background=T.bg}
-                            onMouseLeave={e=>e.currentTarget.style.background=T.card}
-                          >
-                            <div style={{ fontWeight:700,color:T.text,fontSize:12 }}>{grupo.productoBase}</div>
-                            <div style={{ textAlign:"right",color:T.muted,fontSize:12 }}>{fmtNum(gPlan)}</div>
-                            <div style={{ textAlign:"right",color:T.success,fontWeight:700,fontSize:12 }}>{fmtNum(gReal)}</div>
-                            <div style={{ textAlign:"right",color:"#ef4444",fontWeight:700,fontSize:12 }}>{fmtNum(Math.max(0,gPlan-gReal))}</div>
-                            <div style={{ textAlign:"center" }}>
-                              {ot.estado==="DESCARGANDO" && gPct<100 && (
-                                <div style={{ display:"flex",gap:4,alignItems:"center",justifyContent:"center" }} onClick={e=>e.stopPropagation()}>
-                                  <input type="number" placeholder="gls" style={{ width:90,padding:"3px 6px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,background:T.bg,color:T.text,outline:"none" }}
-                                    onKeyDown={async e=>{ if(e.key==="Enter"){
-                                      const val = Number(e.target.value || 0);
-                                      const nuevo = desc.map(dd => {
-                                        const pb = normalizarProducto(dd.producto || dd.nombre || "");
-                                        if (pb !== grupo.productoBase) return dd;
-                                        const ddPlan = Number(dd.galones_planeado || 0);
-                                        const ddReal = Number(dd.galones_descargado || 0);
-                                        const ddFalta = Math.max(0, ddPlan - ddReal);
-                                        const ddAgregar = Math.min(ddFalta, val * (ddFalta / Math.max(1, gFalta)));
-                                        return { ...dd, galones_descargado: Math.min(ddPlan, ddReal + ddAgregar) };
-                                      });
-                                      const todos = nuevo.every(dd => Number(dd.galones_descargado||0) >= Number(dd.galones_planeado||0));
-                                      await actualizarOT({descargues:nuevo,...(todos?{estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"}:{})});
-                                      e.target.value="";
-                                    }}}/>
-                                  <span style={{ fontSize:9,color:T.muted }}>↵</span>
+                    {/* Secciones por formulación/tanque */}
+                    {seccionesPorFo.map(({fid, fo, grupos, items}) => (
+                      <div key={fid||"main"} style={{ marginBottom: multiSec ? 16 : 0 }}>
+                        {/* Header de tanque si hay múltiples formulaciones */}
+                        {multiSec && (
+                          <div style={{ fontSize:11,fontWeight:800,color:T.navy,padding:"6px 10px",background:`${T.navy}10`,borderRadius:6,marginBottom:6,borderLeft:`3px solid ${T.navy}` }}>
+                            🛢 {fo?.tanque||"Sin tanque"} · {fo?.producto||""} <span style={{ fontWeight:400,color:T.muted }}>— {fmt(items.reduce((a,d)=>a+Number(d.galones_planeado||0),0))} gls planeados</span>
+                          </div>
+                        )}
+                        {/* Filas agrupadas por producto dentro de esta formulación */}
+                        {grupos.map(grupo => {
+                          const gPlan = grupo.galones_planeado;
+                          const gReal = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>{
+                            if(prodCarro(carro)!==grupo.productoBase) return s;
+                            return s+glsDescargadosCarro(carro);
+                          },0),0);
+                          const gFalta = Math.max(0, gPlan - gReal);
+                          const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
+                          const rowKey = (fid||"x")+"-"+grupo.productoBase;
+                          return (
+                            <div key={rowKey} style={{ marginBottom:6 }}>
+                              <div onClick={() => toggleOtExpandir(rowKey)} style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,padding:"9px 10px",background:T.card,borderRadius:6,cursor:"pointer",borderLeft:`3px solid ${gPct>=100?T.success:T.orange}`,transition:"background 0.15s" }}
+                                onMouseEnter={e=>e.currentTarget.style.background=T.bg}
+                                onMouseLeave={e=>e.currentTarget.style.background=T.card}
+                              >
+                                <div style={{ fontWeight:700,color:T.text,fontSize:12 }}>{grupo.productoBase}</div>
+                                <div style={{ textAlign:"right",color:T.muted,fontSize:12 }}>{fmtNum(gPlan)}</div>
+                                <div style={{ textAlign:"right",color:T.success,fontWeight:700,fontSize:12 }}>{fmtNum(gReal)}</div>
+                                <div style={{ textAlign:"right",color:"#ef4444",fontWeight:700,fontSize:12 }}>{fmtNum(Math.max(0,gPlan-gReal))}</div>
+                                <div style={{ textAlign:"center" }}>
+                                  {ot.estado==="DESCARGANDO" && gPct<100 && (
+                                    <div style={{ display:"flex",gap:4,alignItems:"center",justifyContent:"center" }} onClick={e=>e.stopPropagation()}>
+                                      <input type="number" placeholder="gls" style={{ width:90,padding:"3px 6px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,background:T.bg,color:T.text,outline:"none" }}
+                                        onKeyDown={async e=>{ if(e.key==="Enter"){
+                                          const val = Number(e.target.value || 0);
+                                          const nuevo = desc.map(dd => {
+                                            const pb = normalizarProducto(dd.producto || dd.nombre || "");
+                                            if (pb !== grupo.productoBase) return dd;
+                                            if (fid && dd.formulacion_id && dd.formulacion_id !== fid) return dd;
+                                            const ddPlan = Number(dd.galones_planeado || 0);
+                                            const ddReal = Number(dd.galones_descargado || 0);
+                                            const ddFalta = Math.max(0, ddPlan - ddReal);
+                                            const ddAgregar = Math.min(ddFalta, val * (ddFalta / Math.max(1, gFalta)));
+                                            return { ...dd, galones_descargado: Math.min(ddPlan, ddReal + ddAgregar) };
+                                          });
+                                          const todos = nuevo.every(dd => Number(dd.galones_descargado||0) >= Number(dd.galones_planeado||0));
+                                          await actualizarOT({descargues:nuevo,...(todos?{estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"}:{})});
+                                          e.target.value="";
+                                        }}}/>
+                                      <span style={{ fontSize:9,color:T.muted }}>↵</span>
+                                    </div>
+                                  )}
+                                  {gPct>=100 && <span style={{ fontSize:10,fontWeight:700,color:T.success }}>✅ Completo</span>}
+                                </div>
+                                <div style={{ textAlign:"center",color:T.muted,fontSize:12 }}>{otExpandidos[rowKey]?"▲":"▼"}</div>
+                              </div>
+                              {otExpandidos[rowKey] && (
+                                <div style={{ background:T.bg,padding:"8px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid ${T.orange}` }}>
+                                  <div style={{ marginBottom:6,fontWeight:600,color:T.orange }}>Carros descargados:</div>
+                                  {cmtsDeEstaOT.flatMap(c=>(c.carros||[]).filter(cr=>prodCarro(cr)===grupo.productoBase).map(cr=>({cr,cmt:c}))).map(({cr,cmt},pi) => (
+                                    <div key={pi} style={{ display:"flex",justifyContent:"space-between",marginBottom:3,paddingLeft:8 }}>
+                                      <span>├─ {cr.placa||"—"} <span style={{ color:T.muted }}>({cmt.numero_cmt})</span></span>
+                                      <span style={{ color:T.success,fontWeight:500 }}>{fmtNum(glsDescargadosCarro(cr))} gls</span>
+                                    </div>
+                                  ))}
                                 </div>
                               )}
-                              {gPct>=100 && <span style={{ fontSize:10,fontWeight:700,color:T.success }}>✅ Completo</span>}
                             </div>
-                            <div style={{ textAlign:"center",color:T.muted,fontSize:12 }}>{otExpandidos[grupo.productoBase]?"▲":"▼"}</div>
-                          </div>
-                          {/* Detalle expandido */}
-                          {otExpandidos[grupo.productoBase] && (
-                            <div style={{ background:T.bg,padding:"8px 12px",marginTop:2,borderRadius:6,fontSize:10,color:T.muted,borderLeft:`3px solid ${T.orange}` }}>
-                              <div style={{ marginBottom:6,fontWeight:600,color:T.orange }}>Carros descargados:</div>
-                              {cmtsDeEstaOT.flatMap(c=>(c.carros||[]).filter(cr=>prodCarro(cr)===grupo.productoBase).map(cr=>({cr,cmt:c}))).map(({cr,cmt},pi) => (
-                                <div key={pi} style={{ display:"flex",justifyContent:"space-between",marginBottom:3,paddingLeft:8 }}>
-                                  <span>├─ {cr.placa||"—"} <span style={{ color:T.muted }}>({cmt.numero_cmt})</span></span>
-                                  <span style={{ color:T.success,fontWeight:500 }}>{fmtNum(glsDescargadosCarro(cr))} gls</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    ))}
                     {/* Fila total */}
                     <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,padding:"10px",background:T.bg,borderRadius:6,marginTop:8,borderTop:`2px solid ${T.orange}`,fontWeight:700,fontSize:12 }}>
                       <div style={{ color:T.muted }}>TOTAL</div>
