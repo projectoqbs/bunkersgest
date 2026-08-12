@@ -6935,7 +6935,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 );
               })()}
             </div>
-            {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && (form.tipo_operacion||"")!=="PORTEO" && (
+            {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && (
               <div style={{width:160,flexShrink:0}}>
                 {(form.tipo_operacion||"")==="ENTREGA A MOTONAVE" ? (
                   <Sel label="Barcaza" value={form.planta||""} onChange={e=>{setForm(prev=>({...prev,planta:e.target.value}));}}>
