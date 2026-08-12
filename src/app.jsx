@@ -2937,7 +2937,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             {horasRecirc && <span style={{color:T.muted,fontSize:11}}> · {horasRecirc}</span>}
                             {yaAnalizado
                               ? <span style={{marginLeft:10,fontSize:11,color:T.success,fontWeight:700}}>✅ Analizado</span>
-                              : <button onClick={()=>{setForm({tipo_analisis:"Planta 2",ot_id:o.id,ot_numero:o.numero_ot,tanque_id:tr.destino,tanque:tr.destino});setModal("tiquete");}}
+                              : <button onClick={()=>{
+                                  const esP1 = (tr.destino||"").startsWith("QBS002-") || (tr.destino||"").startsWith("TKT-");
+                                  setForm({tipo_analisis: esP1 ? "Planta 1" : "Planta 2", ot_id:o.id, ot_numero:o.numero_ot, tanque_id:tr.destino, tanque:tr.destino});
+                                  setModal("tiquete");
+                                }}
                                   style={{marginLeft:10,background:T.orange,color:"#071422",border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Analizar</button>
                             }
                           </div>
