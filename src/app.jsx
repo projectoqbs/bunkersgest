@@ -1355,7 +1355,19 @@ const aprueba = esVLSFO
         await dbCall({ table:"viajes", op:"update", data:{estado:aprueba?"En Planta":"Rechazado", tiquete_id:id}, filters:[{col:"id",val:form.viaje_id}] });
       }
       if (!error && form.ot_id) {
-        await dbCall({ table:"ordenes_trabajo", op:"update", data:{estado:"ANALIZADA", tiquete_id:id, updated_at:new Date().toISOString()}, filters:[{col:"id",val:form.ot_id}] });
+        const otActual = (ordenesTrabaio||[]).find(o=>o.id===form.ot_id);
+        const trasiegos = otActual?.trasiegos||[];
+        // Tiquetes ya existentes para esta OT + el recién creado
+        const tiqExistentes = tiquetes.filter(t=>t.ot_id===form.ot_id);
+        const tanquesYaAnalizados = new Set([
+          ...tiqExistentes.map(t=>t.tanque_id||t.tanque),
+          form.tanque_id||form.tanque, // el del tiquete recién creado
+        ]);
+        const todosAnalizados = trasiegos.length>0
+          ? trasiegos.every(tr=>!tr.destino||tanquesYaAnalizados.has(tr.destino))
+          : true;
+        const nuevoEstado = todosAnalizados ? "ANALIZADA" : "COMPLETADA";
+        await dbCall({ table:"ordenes_trabajo", op:"update", data:{estado:nuevoEstado, tiquete_id:id, updated_at:new Date().toISOString()}, filters:[{col:"id",val:form.ot_id}] });
       }
       setSaving(false);
       if (error) return showToast("Error: "+error,false);
