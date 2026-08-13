@@ -6910,7 +6910,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (
               <div>
-                <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{(form.tipo_operacion||"")==="ENTREGA A MOTONAVE"?"Barcaza":"Planta"}</div>
+                <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{["ENTREGA A MOTONAVE","ENTREGA A CARROTANQUE"].includes(form.tipo_operacion||"")?"Barcaza":"Planta"}</div>
                 <div style={{fontSize:12,fontWeight:700,color:T.navy}}>{form.planta||<span style={{color:T.muted,fontWeight:400}}>Por seleccionar</span>}</div>
               </div>
             )}
@@ -6958,7 +6958,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             </div>
             {(form.sede||perfil.sede||"MALAMBO")==="MALAMBO" && (form.tipo_operacion||"")!=="TRASIEGO DE PRODUCTO" && (
               <div style={{width:160,flexShrink:0}}>
-                {(form.tipo_operacion||"")==="ENTREGA A MOTONAVE" ? (
+                {["ENTREGA A MOTONAVE","ENTREGA A CARROTANQUE"].includes(form.tipo_operacion||"") ? (
                   <Sel label="Barcaza" value={form.planta||""} onChange={e=>{setForm(prev=>({...prev,planta:e.target.value}));}}>
                     <option value="">Seleccionar...</option>
                     <option value="QBS002">QBS002</option>
@@ -6994,7 +6994,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
               const cmtPlantaRaw = form.planta || "";
               const esTrasiegoInterplanta = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
-              const esEntregaMot = (form.tipo_operacion||"")==="ENTREGA A MOTONAVE";
+              const esEntregaMot = ["ENTREGA A MOTONAVE","ENTREGA A CARROTANQUE"].includes(form.tipo_operacion||"");
               const P1_IDS_CMT = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","TKT-1","TKT-2"];
               const tanquesEnriquecidos = [...tanques, ...P1_IDS_CMT.filter(id=>!tanques.some(t=>t.id===id)).map(id=>({id}))];
               const tankEnPlanta = (t, p) => {
