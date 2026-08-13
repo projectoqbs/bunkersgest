@@ -7303,6 +7303,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {/* ── PORTEO ─────────────────────────────────────────────────────────── */}
           {(form.tipo_operacion||"")==="PORTEO" && (()=>{
             const allPlantas = ["PLANTA 1","PLANTA 2"];
+            const P1_IDS_PORTEO = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","TKT-1","TKT-2"];
+            const tanquesPorteoAll = [...tanques, ...P1_IDS_PORTEO.filter(id=>!tanques.some(t=>t.id===id)).map(id=>({id,planta:"PLANTA 1"}))];
             const inSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
             const roSt = {...inSt,background:"#f1f5f9",color:T.navy,fontWeight:700,cursor:"default"};
 
@@ -7351,7 +7353,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const CLbl = ({children}) => <div style={{fontSize:10,color:T.muted,fontWeight:600,marginBottom:2,letterSpacing:0.2}}>{children}</div>;
 
             const renderTanqueSection = (color, planta, setPlanta, rows, setRows, isDescarga=false) => {
-              const tanquesPlanta = tanques.filter(t=>t.planta===planta);
+              const tanquesPlanta = planta==="PLANTA 1"
+                ? tanquesPorteoAll.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"))
+                : planta==="PLANTA 2"
+                ? tanquesPorteoAll.filter(t=>t.id.startsWith("TK-"))
+                : [];
               return (<>
                 <div style={{marginBottom:10}}>
                   <CLbl>Planta</CLbl>
