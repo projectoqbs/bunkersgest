@@ -2863,7 +2863,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             /* ── LANDING: 4 tarjetas ── */
             if (!analisisNav) {
-              const otsPendientesLab = (ordenesTrabaio||[]).filter(o=>o.estado==="COMPLETADA");
+              // OTs con al menos un tanque sin analizar: incluye COMPLETADA y ANALIZADA
+              const otsPendientesLab = (ordenesTrabaio||[]).filter(o=>
+                (o.estado==="COMPLETADA"||o.estado==="ANALIZADA") &&
+                (o.trasiegos||[]).some(tr=>tr.destino && !tiquetes.some(t=>t.ot_id===o.id&&(t.tanque_id===tr.destino||t.tanque===tr.destino)))
+              );
               const carrosSinTiquete = viajes.filter(v=>v.estado==="En Planta"&&!v.tiquete_id);
               const navBtns = [
                 {key:"tiquetes_mp",label:"Tiquetes MP",color:"#0077CC"},
