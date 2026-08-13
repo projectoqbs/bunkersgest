@@ -2938,6 +2938,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         if (!tr.destino) continue;
                         const tq = tanques.find(t=>t.id===tr.destino);
                         const yaAnalizado = tiqOT.some(t=>t.tanque_id===tr.destino||t.tanque===tr.destino);
+                        if (yaAnalizado) continue; // omitir tanques ya analizados
                         const horasRecirc = tr.recirculacion_inicio&&tr.recirculacion_fin
                           ? ((new Date(tr.recirculacion_fin)-new Date(tr.recirculacion_inicio))/3600000).toFixed(1)+"h" : null;
                         muestras.push({ ot:o, tr, tq, yaAnalizado, horasRecirc });
