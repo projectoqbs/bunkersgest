@@ -7233,11 +7233,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     const prodUpper = (cmtProducto||"").toUpperCase();
                     const esGlobal = ["HSFO","VLSFO"].includes(prodUpper);
                     const placasUsadas = cmtCarros.filter((_,j)=>j!==i).map(c=>c.placa).filter(Boolean);
+                    const esMGO = (p) => { const u=(p||"").toUpperCase(); return u==="MGO"||u.includes("DIESEL"); };
                     const matchProducto = (vProd) => {
                       if (!cmtProducto || esGlobal) return true;
                       const vUp = (vProd||"").toUpperCase();
-                      // Si cualquiera de los dos contiene "PENDARE", mostrar todos los PENDARE
                       if (prodUpper.includes("PENDARE") || vUp.includes("PENDARE")) return vUp.includes("PENDARE");
+                      // MGO y DIESEL son equivalentes
+                      if (esMGO(prodUpper) && esMGO(vUp)) return true;
                       return vUp === prodUpper;
                     };
                     const enPlanta = viajes.filter(v =>
