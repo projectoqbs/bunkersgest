@@ -5644,7 +5644,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       setCmtPorteoDescargaPlanta("");
                       setCmtPorteoDescarga([{tanque:"",sondaInicial:"",tempInicial:"",apiInicial:"",galonesInicial:"",sondaFinal:"",tempFinal:"",apiFinal:"",galonesFinal:""}]);
                     } else {
-                      setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,fecha:today(),tanques_ot:tanquesOT});
+                      setForm({ot_id:ot.id,ot_numero:ot.numero_ot,bloqueado_ot:true,tipo_operacion:"TRASIEGO DE PRODUCTO",sede,planta,fecha:today(),tanques_ot:tanquesOT});
                       setCmtProducto(fo?.producto||"");
                       setCmtAntes([{tanque:"",sonda:"",galones:""}]);
                       setCmtDespues([{tanque:"",producto:fo?.producto||"",sonda:"",galones:""}]);
@@ -7009,7 +7009,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 return true;
               };
               const tanquesBase = cmtSede==="MALAMBO" ? tanquesEnriquecidos.filter(t=>tankEnPlanta(t,cmtPlantaRaw)) : [];
-              const tanquesDisponibles = form.tanques_ot?.length ? tanquesBase.filter(t=>form.tanques_ot.includes(t.id)) : tanquesBase;
+              const tanquesDisponibles = tanquesBase;
               const esTrasiego = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
               const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
               return cmtAntes.map((row,i)=>{
@@ -7113,7 +7113,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                 return true;
               };
               const tanquesBase = cmtSede==="MALAMBO" ? tanquesEnriquecidos2.filter(t=>tankEnPlanta(t,cmtPlantaRaw)) : [];
-              const tanquesDisponibles = form.tanques_ot?.length ? tanquesBase.filter(t=>form.tanques_ot.includes(t.id)) : tanquesBase;
+              const tanquesDisponibles = tanquesBase;
               const inputStyle = { width:"100%", background:T.card, border:`1px solid ${T.border}`, borderRadius:6, padding:"8px 10px", color:T.text, fontSize:13, fontFamily:"system-ui,sans-serif", outline:"none", boxSizing:"border-box" };
               return cmtRecepcion.map((rec,i)=>(
                 <div key={i} style={{background:T.bg,borderRadius:8,padding:"12px 14px",marginBottom:10,border:`1px solid ${T.border}`}}>
