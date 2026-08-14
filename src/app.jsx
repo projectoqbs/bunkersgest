@@ -1234,7 +1234,10 @@ export default function App() {
   async function confirmarImportExcel() {
     if (!importExcel) return;
     setSaving(true);
-    const filas = importExcel.preview.filter(f => !f._duplicado && (!importFechaDesde || f.fecha >= importFechaDesde));
+    const activos = (viajes||[]).filter(v=>v.estado==="En Ruta"||v.estado==="En Planta"||v.estado==="Rechazado");
+    const placasActivas = new Set(activos.map(v=>v.placa).filter(Boolean));
+    const guiasActivas  = new Set(activos.map(v=>v.guia).filter(Boolean));
+    const filas = importExcel.preview.filter(f => !f._duplicado && (!importFechaDesde || f.fecha >= importFechaDesde) && !placasActivas.has(f.placa) && !guiasActivas.has(f.guia));
     let ok = 0, err = 0;
     // Calcular el número máximo actual para no colisionar IDs en el loop
     const maxVJ = (viajes||[]).reduce((max, v) => {
@@ -1287,6 +1290,14 @@ export default function App() {
       setForm({});
       showToast(`Viaje ${form.id} actualizado`);
     } else {
+      // Validar placa y guía únicos en tránsito/planta
+      const activos = (viajes||[]).filter(v=>v.estado==="En Ruta"||v.estado==="En Planta"||v.estado==="Rechazado");
+      if (form.placa && activos.some(v=>v.placa===form.placa)) {
+        setSaving(false); return showToast(`La placa ${form.placa} ya está en tránsito o en planta`, false);
+      }
+      if (form.guia && activos.some(v=>v.guia===form.guia)) {
+        setSaving(false); return showToast(`La guía ${form.guia} ya está registrada en tránsito o en planta`, false);
+      }
       const id = genId("VJ", viajes);
       const {error} = await dbCall({ table:"viajes", op:"insert", data:{
         id, ...form, volumen_guia:Number(form.volumen_guia||0),
@@ -8326,8 +8337,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       </div>
       <Btn disabled={!form.viaje_id||!form.fecha_llegada||saving} onClick={async()=>{
         if(!form.viaje_id){showToast("Selecciona un carro primero",false);return;}
-        setSaving(true);
         const viajeTarget = enRuta.find(v=>v.id===form.viaje_id);
+        const yaEnPlanta = (viajes||[]).filter(v=>v.id!==form.viaje_id&&(v.estado==="En Planta"||v.estado==="Rechazado"));
+        if (viajeTarget?.placa && yaEnPlanta.some(v=>v.placa===viajeTarget.placa)) {
+          return showToast(`La placa ${viajeTarget.placa} ya está en planta`, false);
+        }
+        setSaving(true);
         // Turno global: máximo turno_planta entre todos los carros activos (En Planta) + 1
         const {data:turnos} = await supabase.from("viajes").select("turno_planta").eq("estado","En Planta").not("turno_planta","is",null);
         const maxTurno = turnos&&turnos.length>0 ? Math.max(...turnos.map(t=>t.turno_planta||0)) : 0;
