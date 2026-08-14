@@ -2514,7 +2514,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   espacioPorFecha[f] = espacioRunning;
                 }
               // Unión de todas las fechas: llegadas de carros + salidas de buques
-              const todasFechasTabla = [...new Set([...fechasFam, ...Object.keys(buquesPorFecha)])].sort();
+              const todasFechasTabla = [...new Set([...fechasFam, ...Object.keys(buquesPorFecha)])].filter(f=>f>=hoy).sort();
               return vFiltrados.length === 0 && todasFechasTabla.length === 0 ? (
                 <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes en tránsito con fecha estimada para producto {dashFamilia}.</div>
               ) : (
