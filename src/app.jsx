@@ -3629,7 +3629,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                             </div>
                                             {cr.tiquete&&<div style={{color:T.navy}}>Tiquete: <span style={{cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{ const t=tiquetes.find(x=>x.id===cr.tiquete); if(t){setForm({...t});setModal("tiquete");} }}>{cr.tiquete}</span></div>}
                                             {cr.guia&&<div style={{color:T.muted}}>Guía: {cr.guia}</div>}
-                                            {cr.pbs_id&&<div style={{color:T.orange}}>PBS: <span style={{cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{ const p=(pbsList||[]).find(x=>x.id===cr.pbs_id); if(p){setForm({...p});setPbsChecklist(p.checklist||Array(27).fill(""));setModal("pbs");} }}>{cr.pbs_id}</span></div>}
+                                            {(()=>{const tq=tiquetes.find(x=>x.id===cr.tiquete);const factor=Number(tq?.factor_tabla13||0);const pesoNeto=Number(cr.peso_neto||0);const gls=(factor>0&&pesoNeto>0)?Math.round(pesoNeto/factor):Number(cr.galones_descargados||cr.galones_guia||0);return gls>0?<div style={{color:T.success,fontWeight:700}}>Gls descargados: {fmt(gls)}</div>:null;})()}
                                             {cr.hora_inicio&&<div style={{color:T.muted}}>Inicio: {cr.hora_inicio} — Fin: {cr.hora_final||"—"}</div>}
                                           </div>
                                         ))}
