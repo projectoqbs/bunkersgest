@@ -2491,7 +2491,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     ? (Number(d.mt_vlso||0)+Number(d.mt_hsfo||0))*MT_A_GLS
                     : Number(d.mt_mgo||0)*MT_A_GLS_B;
                   if (gls>0) {
-                    const f = etdMas1(d.etd);
+                    const fRaw = etdMas1(d.etd);
+                    // Si el ETD+1 ya pasó y el buque no se entregó, aparece en hoy
+                    const f = fRaw < hoy ? hoy : fRaw;
                     salidasPorFecha[f] = (salidasPorFecha[f]||0)+gls;
                     if (!buquesPorFecha[f]) buquesPorFecha[f]=[];
                     buquesPorFecha[f].push({ buque:d.buque||"Buque", gls });
@@ -2514,7 +2516,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   espacioPorFecha[f] = espacioRunning;
                 }
               // Unión de todas las fechas: llegadas de carros + salidas de buques
-              const todasFechasTabla = [...new Set([...fechasFam, ...Object.keys(buquesPorFecha)])].filter(f=>f>=hoy).sort();
+              const todasFechasTabla = [...new Set([...fechasFam, ...Object.keys(buquesPorFecha)])].sort();
               return vFiltrados.length === 0 && todasFechasTabla.length === 0 ? (
                 <div style={{color:T.muted,fontSize:12,padding:"20px 0"}}>No hay viajes en tránsito con fecha estimada para producto {dashFamilia}.</div>
               ) : (
