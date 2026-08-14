@@ -1721,9 +1721,16 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         for (const [id, nivel] of Object.entries(porteoAbsolutos)) {
           await dbCall({ table:"tanques", op:"update", data:{ nivel }, filters:[{col:"id",val:id}] });
         }
-        const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
-        if (placasCarros.length > 0) {
-          for (const placa of placasCarros) await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"placa",val:placa}] });
+        if (cmtCarros.length > 0) {
+          for (const carro of cmtCarros) {
+            if (!carro.placa) continue;
+            if (carro.viaje_id) {
+              await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"id",val:carro.viaje_id}] });
+            } else {
+              const vEnPlanta = (viajes||[]).find(v=>v.placa===carro.placa&&(v.estado==="En Planta"||v.estado==="Rechazado"));
+              if (vEnPlanta) await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"id",val:vEnPlanta.id}] });
+            }
+          }
         } else if (form.placa) {
           await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"placa",val:form.placa}] });
         }
@@ -1783,9 +1790,16 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
         const {data: cmtGuardado} = await dbCall({ table:"cmts", op:"select", filters:[{col:"id",val:id}], single:true });
         if (cmtGuardado) await aplicarTanquesDesdeCMT(cmtGuardado);
         await logAudit({ tabla:"cmts", registro_id:id, accion:"crear", datos_despues:{ numero_cmt:form.numero_cmt, tipo_operacion:form.tipo_operacion, fecha:form.fecha } });
-        const placasCarros = cmtCarros.map(c=>c.placa).filter(Boolean);
-        if (placasCarros.length > 0) {
-          for (const placa of placasCarros) await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"placa",val:placa}] });
+        if (cmtCarros.length > 0) {
+          for (const carro of cmtCarros) {
+            if (!carro.placa) continue;
+            if (carro.viaje_id) {
+              await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"id",val:carro.viaje_id}] });
+            } else {
+              const vEnPlanta = (viajes||[]).find(v=>v.placa===carro.placa&&(v.estado==="En Planta"||v.estado==="Rechazado"));
+              if (vEnPlanta) await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"id",val:vEnPlanta.id}] });
+            }
+          }
         } else if (form.placa) {
           await dbCall({ table:"viajes", op:"update", data:{estado:"Descargado"}, filters:[{col:"placa",val:form.placa}] });
         }
