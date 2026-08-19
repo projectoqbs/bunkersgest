@@ -213,6 +213,13 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
         creado_por:session?.user?.id,
       }});
 
+      // Actualizar nivel en tabla tanques con la medición física real
+      await Promise.all(
+        tanquesReg
+          .filter(t=>t.galones_calculados!==null)
+          .map(t=>dbCall({table:"tanques",op:"update",data:{nivel:t.galones_calculados},filters:[{col:"id",val:t.tanque}]}))
+      );
+
       showToast(`Inventario ${numero} guardado`,true);
       if(planta==="P1") setFilasP1(initFilasP1()); else setFilasP2(initFilasP2());
       setObs("");
