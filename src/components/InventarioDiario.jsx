@@ -263,7 +263,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
         sistema: t?.galones_sistema??null,
         diferencia: t?.diferencia??null,
         pct: fDiff,
-        novedad: fDiff!==null&&Math.abs(fDiff)>TOLERANCIA_PCT,
+        novedad: fDiff!==null&&t.diferencia<0&&Math.abs(fDiff)>TOLERANCIA_PCT,
       };
     }).sort((a,b)=>a.fechaFull.localeCompare(b.fechaFull));
   }
@@ -1100,7 +1100,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     const inv = selectedInv;
     if(!inv) return null;
     const esP1 = (inv.planta||"").includes("1");
-    const nov = (inv.tanques||[]).filter(t=>t.diferencia!==null&&t.galones_sistema>0&&Math.abs(t.pct_diferencia||0)>TOLERANCIA_PCT);
+    const nov = (inv.tanques||[]).filter(t=>t.diferencia!==null&&t.galones_sistema>0&&t.diferencia<0&&Math.abs(t.pct_diferencia||0)>TOLERANCIA_PCT);
     const trim = (inv.calados_popa!=null&&inv.calados_proa!=null)
       ? mkTrim(inv.calados_popa, inv.calados_proa)
       : null;
@@ -1268,7 +1268,8 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           </thead>
           <tbody>
             {histDesc.map((inv,i)=>{
-              const nov=(inv.tanques||[]).filter(t=>t.diferencia!==null&&t.galones_sistema>0&&Math.abs(t.pct_diferencia||0)>TOLERANCIA_PCT);
+              // Solo FALTANTE es novedad real (físico < sistema). SOBRANTE = sistema desactualizado, no alerta.
+    const nov=(inv.tanques||[]).filter(t=>t.diferencia!==null&&t.galones_sistema>0&&t.diferencia<0&&Math.abs(t.pct_diferencia||0)>TOLERANCIA_PCT);
               return(
                 <tr key={inv.id} onClick={()=>setSelectedInv(inv)}
                   style={{background:i%2===0?TH.card:"#f8fafc",cursor:"pointer",transition:"background 0.12s"}}
