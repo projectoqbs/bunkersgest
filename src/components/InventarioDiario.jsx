@@ -1182,9 +1182,10 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                 </thead>
                 <tbody>
                   {(inv.tanques||[]).map((t,i)=>{
-                    const isOk = t.diferencia===null||t.galones_sistema===0||Math.abs(t.pct_diferencia||0)<=TOLERANCIA_PCT;
+                    // Solo FALTANTE (físico < sistema) es problema; SOBRANTE es informativo
+                    const esFaltante = t.diferencia!==null&&t.galones_sistema>0&&t.diferencia<0&&Math.abs(t.pct_diferencia||0)>TOLERANCIA_PCT;
                     const rowBg = i%2===0?TH.card:"#f8fafc";
-                    const difColor = !t.diferencia||isOk?TH.success:t.diferencia<0?TH.danger:TH.warn;
+                    const difColor = t.diferencia===null?TH.muted:esFaltante?TH.danger:t.diferencia>0?TH.muted:TH.success;
                     return(
                       <tr key={t.tanque} style={{background:rowBg}}>
                         <td style={{padding:"8px 12px",fontWeight:700,color:TH.navy,borderBottom:`1px solid ${TH.border}`}}>{t.tanque}</td>
@@ -1205,11 +1206,9 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                         <td style={{padding:"8px 12px",textAlign:"center",borderBottom:`1px solid ${TH.border}`}}>
                           {t.diferencia===null||t.galones_sistema===0
                             ? <span style={{color:TH.muted,fontSize:10}}>—</span>
-                            : isOk
-                            ? <span style={{color:TH.success,fontWeight:700,fontSize:11}}>✓ OK</span>
-                            : t.diferencia<0
+                            : esFaltante
                             ? <span style={{color:TH.danger,fontWeight:700,fontSize:11}}>⚠ FALTANTE</span>
-                            : <span style={{color:TH.warn,fontWeight:700,fontSize:11}}>↑ SOBRANTE</span>
+                            : <span style={{color:TH.success,fontWeight:700,fontSize:11}}>✓ OK</span>
                           }
                         </td>
                       </tr>
