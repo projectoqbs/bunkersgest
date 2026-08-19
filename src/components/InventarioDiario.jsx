@@ -109,6 +109,9 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   const [historial, setHistorial] = useState([]);
   const [loadingHist, setLoadingHist] = useState(false);
 
+  // Detalle historial
+  const [selectedInv, setSelectedInv] = useState(null);
+
   // Análisis
   const [analisisPlanta, setAnalisisPlanta] = useState("P1");
   const [tanqueSeleccionado, setTanqueSeleccionado] = useState("");
@@ -1092,6 +1095,161 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     );
   }
 
+  // ── Modal detalle inventario ──────────────────────────────────────────────────
+  function renderModalInv(){
+    const inv = selectedInv;
+    if(!inv) return null;
+    const esP1 = (inv.planta||"").includes("1");
+    const nov = (inv.tanques||[]).filter(t=>t.diferencia!==null&&t.galones_sistema>0&&Math.abs(t.pct_diferencia||0)>TOLERANCIA_PCT);
+    const trim = (inv.calados_popa!=null&&inv.calados_proa!=null)
+      ? mkTrim(inv.calados_popa, inv.calados_proa)
+      : null;
+
+    return(
+      <div onClick={()=>setSelectedInv(null)} style={{
+        position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:9000,
+        display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"32px 16px",overflowY:"auto"
+      }}>
+        <div onClick={e=>e.stopPropagation()} style={{
+          background:TH.card,borderRadius:12,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",
+          width:"100%",maxWidth:820,padding:0,overflow:"hidden"
+        }}>
+          {/* Header */}
+          <div style={{background:TH.navy,padding:"18px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div>
+              <div style={{fontSize:18,fontWeight:900,color:"#fff"}}>{inv.numero||inv.id}</div>
+              <div style={{fontSize:12,color:"#b8d4ee",marginTop:2}}>
+                {inv.planta} · {inv.fecha?new Date(inv.fecha+"T12:00:00").toLocaleDateString("es-CO",{weekday:"long",day:"2-digit",month:"long",year:"numeric"}):"—"} · {inv.turno||"—"} · {inv.operador||"—"}
+              </div>
+            </div>
+            <button onClick={()=>setSelectedInv(null)} style={{
+              background:"transparent",border:"1px solid #ffffff44",borderRadius:6,
+              color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",padding:"6px 14px"
+            }}>✕ Cerrar</button>
+          </div>
+
+          <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:16}}>
+
+            {/* Calados (P1) */}
+            {esP1 && (inv.calados_proa||inv.calados_popa) && (
+              <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+                {inv.calados_proa!=null&&<div style={{padding:"8px 16px",background:`${TH.navy}10`,borderRadius:8,fontSize:12,fontWeight:700,color:TH.navy}}>
+                  Calado Proa: <span style={{fontFamily:"monospace"}}>{inv.calados_proa} m</span>
+                </div>}
+                {inv.calados_popa!=null&&<div style={{padding:"8px 16px",background:`${TH.navy}10`,borderRadius:8,fontSize:12,fontWeight:700,color:TH.navy}}>
+                  Calado Popa: <span style={{fontFamily:"monospace"}}>{inv.calados_popa} m</span>
+                </div>}
+                {trim&&<div style={{padding:"8px 16px",background:`${TH.navy}10`,borderRadius:8,fontSize:12,fontWeight:700,color:TH.navy}}>
+                  Trim: <span style={{fontFamily:"monospace"}}>{trim.val.toFixed(2)} m {trim.dir}</span>
+                </div>}
+              </div>
+            )}
+
+            {/* Novedades banner */}
+            {nov.length===0
+              ? <div style={{padding:"8px 16px",background:`${TH.success}15`,border:`1px solid ${TH.success}`,borderRadius:8,color:TH.success,fontWeight:700,fontSize:12}}>
+                  ✓ Todos los tanques dentro del margen de tolerancia (±{TOLERANCIA_PCT}%)
+                </div>
+              : <div style={{padding:"8px 16px",background:`${TH.danger}10`,border:`1px solid ${TH.danger}`,borderRadius:8}}>
+                  <div style={{fontWeight:800,fontSize:12,color:TH.danger,marginBottom:6}}>⚠ {nov.length} novedad(es) detectada(s)</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                    {nov.map(t=>(
+                      <span key={t.tanque} style={{padding:"3px 10px",borderRadius:5,fontSize:11,fontWeight:700,
+                        background:t.diferencia<0?`${TH.danger}20`:`${TH.warn}20`,
+                        border:`1px solid ${t.diferencia<0?TH.danger:TH.warn}`,
+                        color:t.diferencia<0?TH.danger:TH.warn}}>
+                        {t.tanque}: {t.diferencia>0?"+":""}{fmtN(t.diferencia,0)} gls ({(t.pct_diferencia||0)>0?"+":""}{(t.pct_diferencia||0).toFixed(1)}%)
+                      </span>
+                    ))}
+                  </div>
+                </div>
+            }
+
+            {/* Tabla de tanques */}
+            <div style={{overflowX:"auto",borderRadius:8,border:`1px solid ${TH.border}`}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead>
+                  <tr style={{background:TH.navy,color:"#fff"}}>
+                    <th style={{padding:"8px 12px",textAlign:"left",fontWeight:700}}>Tanque</th>
+                    {esP1&&<th style={{padding:"8px 12px",textAlign:"right",fontWeight:700}}>Sonda (mm)</th>}
+                    <th style={{padding:"8px 12px",textAlign:"right",fontWeight:700}}>Temp °C</th>
+                    <th style={{padding:"8px 12px",textAlign:"right",fontWeight:700}}>API</th>
+                    <th style={{padding:"8px 12px",textAlign:"right",fontWeight:700}}>Gls Calculados</th>
+                    <th style={{padding:"8px 12px",textAlign:"right",fontWeight:700}}>Gls Sistema</th>
+                    <th style={{padding:"8px 12px",textAlign:"right",fontWeight:700}}>Diferencia</th>
+                    <th style={{padding:"8px 12px",textAlign:"center",fontWeight:700}}>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(inv.tanques||[]).map((t,i)=>{
+                    const isOk = t.diferencia===null||t.galones_sistema===0||Math.abs(t.pct_diferencia||0)<=TOLERANCIA_PCT;
+                    const rowBg = i%2===0?TH.card:"#f8fafc";
+                    const difColor = !t.diferencia||isOk?TH.success:t.diferencia<0?TH.danger:TH.warn;
+                    return(
+                      <tr key={t.tanque} style={{background:rowBg}}>
+                        <td style={{padding:"8px 12px",fontWeight:700,color:TH.navy,borderBottom:`1px solid ${TH.border}`}}>{t.tanque}</td>
+                        {esP1&&<td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>{t.sonda||"—"}</td>}
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>{t.temperatura||"—"}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>{t.api||"—"}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,color:TH.navy}}>
+                          {t.galones_calculados!==null?fmtN(t.galones_calculados,0):"—"}
+                        </td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>
+                          {t.galones_sistema!==null?fmtN(t.galones_sistema,0):"—"}
+                        </td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,color:difColor}}>
+                          {t.diferencia!==null
+                            ?<>{(t.diferencia>0?"+":"")+fmtN(t.diferencia,0)} <span style={{fontSize:10,fontWeight:400}}>({(t.pct_diferencia||0)>0?"+":""}{(t.pct_diferencia||0).toFixed(1)}%)</span></>
+                            :"—"}
+                        </td>
+                        <td style={{padding:"8px 12px",textAlign:"center",borderBottom:`1px solid ${TH.border}`}}>
+                          {t.diferencia===null||t.galones_sistema===0
+                            ? <span style={{color:TH.muted,fontSize:10}}>—</span>
+                            : isOk
+                            ? <span style={{color:TH.success,fontWeight:700,fontSize:11}}>✓ OK</span>
+                            : t.diferencia<0
+                            ? <span style={{color:TH.danger,fontWeight:700,fontSize:11}}>⚠ FALTANTE</span>
+                            : <span style={{color:TH.warn,fontWeight:700,fontSize:11}}>↑ SOBRANTE</span>
+                          }
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {/* Fila total */}
+                  {(inv.tanques||[]).length>1&&(()=>{
+                    const totCalc = (inv.tanques||[]).reduce((s,t)=>s+(t.galones_calculados||0),0);
+                    const totSys  = (inv.tanques||[]).reduce((s,t)=>s+(t.galones_sistema||0),0);
+                    const totDif  = totCalc-totSys;
+                    return(
+                      <tr style={{background:"#eaf0f8",borderTop:`2px solid ${TH.navy}`}}>
+                        <td colSpan={esP1?4:3} style={{padding:"9px 12px",fontWeight:900,color:TH.navy,fontSize:12,borderTop:`2px solid ${TH.navy}`}}>TOTAL</td>
+                        <td style={{padding:"9px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:900,color:TH.navy,borderTop:`2px solid ${TH.navy}`}}>{fmtN(totCalc,0)}</td>
+                        <td style={{padding:"9px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:700,color:TH.muted,borderTop:`2px solid ${TH.navy}`}}>{fmtN(totSys,0)}</td>
+                        <td style={{padding:"9px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:900,borderTop:`2px solid ${TH.navy}`,
+                          color:totDif<0?TH.danger:totDif>0?TH.warn:TH.success}}>
+                          {(totDif>0?"+":"")+fmtN(totDif,0)}
+                        </td>
+                        <td style={{borderTop:`2px solid ${TH.navy}`}}/>
+                      </tr>
+                    );
+                  })()}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Observaciones */}
+            {inv.observaciones&&(
+              <div style={{padding:"10px 14px",background:`${TH.navy}08`,border:`1px solid ${TH.border}`,borderRadius:8}}>
+                <div style={{fontSize:10,fontWeight:700,color:TH.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Observaciones</div>
+                <div style={{fontSize:13,color:TH.text}}>{inv.observaciones}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── Historial ─────────────────────────────────────────────────────────────────
   function renderHistorial(){
     const histDesc=[...historial].sort((a,b)=>new Date(b.created_at||b.fecha)-new Date(a.created_at||a.fecha));
@@ -1099,6 +1257,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     if(histDesc.length===0) return <div style={{color:TH.muted,padding:32,textAlign:"center"}}>Sin registros</div>;
     return(
       <div data-scroll-key="inventario-historial" style={{overflowX:"auto"}}>
+        <div style={{fontSize:11,color:TH.muted,marginBottom:8}}>Haz clic en un registro para ver las medidas y cálculos del día</div>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
           <thead>
             <tr style={{background:TH.navy,color:"#fff"}}>
@@ -1111,7 +1270,10 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             {histDesc.map((inv,i)=>{
               const nov=(inv.tanques||[]).filter(t=>t.diferencia!==null&&t.galones_sistema>0&&Math.abs(t.pct_diferencia||0)>TOLERANCIA_PCT);
               return(
-                <tr key={inv.id} style={{background:i%2===0?TH.card:"#f8fafc"}}>
+                <tr key={inv.id} onClick={()=>setSelectedInv(inv)}
+                  style={{background:i%2===0?TH.card:"#f8fafc",cursor:"pointer",transition:"background 0.12s"}}
+                  onMouseEnter={e=>e.currentTarget.style.background="#dbeafe"}
+                  onMouseLeave={e=>e.currentTarget.style.background=i%2===0?TH.card:"#f8fafc"}>
                   <td style={{padding:"8px 10px",fontFamily:"monospace",fontWeight:700,color:TH.navy,borderBottom:`1px solid ${TH.border}`}}>{inv.numero||inv.id}</td>
                   <td style={{padding:"8px 10px",borderBottom:`1px solid ${TH.border}`}}>{inv.fecha?new Date(inv.fecha+"T12:00:00").toLocaleDateString("es-CO"):"—"}</td>
                   <td style={{padding:"8px 10px",borderBottom:`1px solid ${TH.border}`}}>{inv.planta}</td>
@@ -1126,6 +1288,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             })}
           </tbody>
         </table>
+        {selectedInv && renderModalInv()}
       </div>
     );
   }
