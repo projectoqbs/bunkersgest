@@ -1360,24 +1360,36 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     for(const fecha of allFechas){
       const cmtsDia=cmtsOrdenados.filter(c=>c.fecha===fecha);
       const nivelInicio=nivelActual;
-      let entradas=0,salidas=0,snapFinal=null,cmtsNombres=[];
+      let entradas=0,salidas=0,cmtsNombres=[];
+      // Procesar CMTs secuencialmente acumulando delta desde el nivel corriente
+      let nivelDia=nivelActual;
       for(const c of cmtsDia){
         const snap=getSnap(c,tanqueId);
-        const{e,s}=getMov(c,tanqueId);
-        entradas+=e; salidas+=s;
-        if(snap!==null) snapFinal=snap;
-        if(e||s||snap!==null) cmtsNombres.push(c.numero_cmt||c.id||"");
+        if(snap!==null){
+          // Snap absoluto: delta respecto al nivel corriente del día
+          const delta=snap-(nivelDia??snap);
+          if(delta>0) entradas+=delta;
+          else if(delta<0) salidas+=(-delta);
+          nivelDia=snap;
+          cmtsNombres.push(c.numero_cmt||c.id||"");
+        } else {
+          const{e,s}=getMov(c,tanqueId);
+          if(e||s){
+            entradas+=e; salidas+=s;
+            nivelDia=Math.max(0,(nivelDia??0)+e-s);
+            cmtsNombres.push(c.numero_cmt||c.id||"");
+          }
+        }
       }
-      const nivelTeorico=snapFinal!==null?snapFinal:nivelActual!==null?Math.max(0,nivelActual+entradas-salidas):null;
+      const nivelTeorico=nivelDia;
       // Inventario físico del día
       const invF=balanceInvsRango.find(i=>i.planta===plantaLabel&&i.fecha===fecha&&(i.tanques||[]).some(t=>t.tanque===tanqueId&&t.galones_calculados!=null));
       const nivelFisico=invF?Number(invF.tanques.find(t=>t.tanque===tanqueId)?.galones_calculados??null):null;
       const variacion=nivelFisico!==null&&nivelTeorico!==null?nivelFisico-nivelTeorico:null;
       const tieneDatos=entradas>0||salidas>0||nivelFisico!==null||(nivelTeorico!==null&&nivelTeorico>0);
       filas.push({fecha,nivelInicio,entradas,salidas,nivelTeorico,nivelFisico,variacion,cmts:cmtsNombres,tieneDatos});
-      // Avanzar nivel: físico tiene prioridad, luego snap absoluto, luego teórico
+      // Avanzar nivel: físico tiene prioridad
       if(nivelFisico!==null) nivelActual=nivelFisico;
-      else if(snapFinal!==null) nivelActual=snapFinal;
       else nivelActual=nivelTeorico;
     }
     const filasConDatos=filas.filter(f=>f.tieneDatos);
