@@ -1470,7 +1470,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             <table style={{borderCollapse:"collapse",width:"100%",fontSize:12}}>
               <thead>
                 <tr style={{background:TH.navy,color:"#fff"}}>
-                  {["Fecha","Nivel Inicio","+ Entradas","− Salidas","Teórico Fin","Físico Reg.","Variación","CMT(s)"].map(h=>(
+                  {["Fecha","+ Entradas","− Salidas","Nivel Inicio","Teórico Fin","Físico Reg.","Variación","CMT(s)"].map(h=>(
                     <th key={h} style={{padding:"9px 12px",textAlign:h==="Fecha"||h==="CMT(s)"?"left":"right",fontWeight:700,fontSize:11,letterSpacing:0.5,whiteSpace:"nowrap"}}>{h}</th>
                   ))}
                 </tr>
@@ -1486,14 +1486,14 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                         {fmtFecha(f.fecha)}
                         {f.nivelFisico!==null&&<span style={{marginLeft:6,fontSize:9,fontWeight:700,color:TH.orange,textTransform:"uppercase",letterSpacing:0.5}}>● FÍS</span>}
                       </td>
-                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>
-                        {f.nivelInicio!==null?fmtN(f.nivelInicio,0):"—"}
-                      </td>
                       <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:f.entradas>0?700:400,borderBottom:`1px solid ${TH.border}`,color:f.entradas>0?TH.success:TH.muted}}>
                         {f.entradas>0?`+${fmtN(f.entradas,0)}`:"—"}
                       </td>
                       <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:f.salidas>0?700:400,borderBottom:`1px solid ${TH.border}`,color:f.salidas>0?TH.danger:TH.muted}}>
                         {f.salidas>0?`−${fmtN(f.salidas,0)}`:"—"}
+                      </td>
+                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>
+                        {f.nivelInicio!==null?fmtN(f.nivelInicio,0):"—"}
                       </td>
                       <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,color:"#6C5CE7",fontStyle:"italic"}}>
                         {f.nivelTeorico!==null?fmtN(f.nivelTeorico,0):"—"}
