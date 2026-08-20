@@ -1373,11 +1373,15 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     const filas=[];
     for(const fecha of allFechas){
       const cmtsDia=cmtsOrdenados.filter(c=>c.fecha===fecha);
-      const nivelInicio=nivelActual;
+      // Físico = inicio real del día (base para CMTs de ese día)
+      // Si no hay físico, usar carry-forward teórico del día anterior
+      const invFCheck=balanceInvsRango.find(i=>i.planta===plantaLabel&&i.fecha===fecha&&(i.tanques||[]).some(t=>t.tanque===tanqueId&&t.galones_calculados!=null));
+      const nivelFisicoInicio=invFCheck?Number(invFCheck.tanques.find(t=>t.tanque===tanqueId)?.galones_calculados??null):null;
+      const nivelInicio=nivelFisicoInicio??nivelActual;
       // entradas/salidas como array [{monto, tipo, cmt}]
       const entradasDet=[],salidasDet=[];
       let cmtsNombres=[];
-      let nivelDia=nivelActual;
+      let nivelDia=nivelInicio; // CMTs del día parten del nivel inicio (físico si existe)
       for(const c of cmtsDia){
         const snap=getSnap(c,tanqueId);
         const numCmt=c.numero_cmt||c.id||"";
@@ -1397,13 +1401,12 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       const nivelTeorico=nivelDia;
       const entradas=entradasDet.reduce((s,d)=>s+d.monto,0);
       const salidas=salidasDet.reduce((s,d)=>s+d.monto,0);
-      const invF=balanceInvsRango.find(i=>i.planta===plantaLabel&&i.fecha===fecha&&(i.tanques||[]).some(t=>t.tanque===tanqueId&&t.galones_calculados!=null));
-      const nivelFisico=invF?Number(invF.tanques.find(t=>t.tanque===tanqueId)?.galones_calculados??null):null;
+      const nivelFisico=nivelFisicoInicio; // ya lo calculamos arriba
       const variacion=nivelFisico!==null&&nivelTeorico!==null?nivelFisico-nivelTeorico:null;
       const tieneDatos=entradas>0||salidas>0||nivelFisico!==null||(nivelTeorico!==null&&nivelTeorico>0);
-      filas.push({fecha,nivelInicio,entradas,salidas,entradasDet,salidasDet,nivelTeorico,nivelFisico,variacion,cmts:[...new Set(cmtsNombres)],tieneDatos});
-      if(nivelFisico!==null) nivelActual=nivelFisico;
-      else nivelActual=nivelTeorico;
+      filas.push({fecha,nivelInicio:nivelActual,entradas,salidas,entradasDet,salidasDet,nivelTeorico,nivelFisico,variacion,cmts:[...new Set(cmtsNombres)],tieneDatos});
+      // Carry-forward = siempre el teórico fin del día (físico es inicio, no fin)
+      nivelActual=nivelTeorico;
     }
     const filasConDatos=filas.filter(f=>f.tieneDatos);
 
