@@ -1355,40 +1355,53 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       else{const{e,s}=getMov(c,tanqueId);if(e||s) nivelActual=Math.max(0,(nivelActual||0)+e-s);}
     }
 
+    // Clasificar tipo de movimiento de un CMT para un tanque
+    const tipoMov=(cmt,tqId,delta)=>{
+      const op=(cmt.tipo_operacion||"").toUpperCase();
+      if(delta>0){
+        if(op.includes("DESCARGUE")||op.includes("MATERIA")) return "MP";
+        if(op.includes("PORTEO")) return "Porteo";
+        return "Trasiego";
+      } else {
+        if(op.includes("MOTONAVE")||op.includes("CARROTANQUE")&&op.includes("ENTREGA")) return "Entrega";
+        if(op.includes("PORTEO")) return "Porteo";
+        return "Trasiego";
+      }
+    };
+
     // Construir filas día a día
     const filas=[];
     for(const fecha of allFechas){
       const cmtsDia=cmtsOrdenados.filter(c=>c.fecha===fecha);
       const nivelInicio=nivelActual;
-      let entradas=0,salidas=0,cmtsNombres=[];
-      // Procesar CMTs secuencialmente acumulando delta desde el nivel corriente
+      // entradas/salidas como array [{monto, tipo, cmt}]
+      const entradasDet=[],salidasDet=[];
+      let cmtsNombres=[];
       let nivelDia=nivelActual;
       for(const c of cmtsDia){
         const snap=getSnap(c,tanqueId);
+        const numCmt=c.numero_cmt||c.id||"";
         if(snap!==null){
-          // Snap absoluto: delta respecto al nivel corriente del día
           const delta=snap-(nivelDia??snap);
-          if(delta>0) entradas+=delta;
-          else if(delta<0) salidas+=(-delta);
+          if(delta>0) entradasDet.push({monto:delta,tipo:tipoMov(c,tanqueId,delta),cmt:numCmt});
+          else if(delta<0) salidasDet.push({monto:-delta,tipo:tipoMov(c,tanqueId,delta),cmt:numCmt});
           nivelDia=snap;
-          cmtsNombres.push(c.numero_cmt||c.id||"");
+          cmtsNombres.push(numCmt);
         } else {
           const{e,s}=getMov(c,tanqueId);
-          if(e||s){
-            entradas+=e; salidas+=s;
-            nivelDia=Math.max(0,(nivelDia??0)+e-s);
-            cmtsNombres.push(c.numero_cmt||c.id||"");
-          }
+          if(e>0){ entradasDet.push({monto:e,tipo:tipoMov(c,tanqueId,1),cmt:numCmt}); cmtsNombres.push(numCmt); }
+          if(s>0){ salidasDet.push({monto:s,tipo:tipoMov(c,tanqueId,-1),cmt:numCmt}); cmtsNombres.push(numCmt); }
+          nivelDia=Math.max(0,(nivelDia??0)+e-s);
         }
       }
       const nivelTeorico=nivelDia;
-      // Inventario físico del día
+      const entradas=entradasDet.reduce((s,d)=>s+d.monto,0);
+      const salidas=salidasDet.reduce((s,d)=>s+d.monto,0);
       const invF=balanceInvsRango.find(i=>i.planta===plantaLabel&&i.fecha===fecha&&(i.tanques||[]).some(t=>t.tanque===tanqueId&&t.galones_calculados!=null));
       const nivelFisico=invF?Number(invF.tanques.find(t=>t.tanque===tanqueId)?.galones_calculados??null):null;
       const variacion=nivelFisico!==null&&nivelTeorico!==null?nivelFisico-nivelTeorico:null;
       const tieneDatos=entradas>0||salidas>0||nivelFisico!==null||(nivelTeorico!==null&&nivelTeorico>0);
-      filas.push({fecha,nivelInicio,entradas,salidas,nivelTeorico,nivelFisico,variacion,cmts:cmtsNombres,tieneDatos});
-      // Avanzar nivel: físico tiene prioridad
+      filas.push({fecha,nivelInicio,entradas,salidas,entradasDet,salidasDet,nivelTeorico,nivelFisico,variacion,cmts:[...new Set(cmtsNombres)],tieneDatos});
       if(nivelFisico!==null) nivelActual=nivelFisico;
       else nivelActual=nivelTeorico;
     }
@@ -1492,11 +1505,25 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                       <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:f.nivelFisico!==null?700:400,borderBottom:`1px solid ${TH.border}`,color:f.nivelFisico!==null?TH.navy:TH.border}}>
                         {f.nivelFisico!==null?fmtN(f.nivelFisico,0):"—"}
                       </td>
-                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:f.entradas>0?700:400,borderBottom:`1px solid ${TH.border}`,color:f.entradas>0?TH.success:TH.muted}}>
-                        {f.entradas>0?`+${fmtN(f.entradas,0)}`:"—"}
+                      <td style={{padding:"6px 12px",textAlign:"right",borderBottom:`1px solid ${TH.border}`,verticalAlign:"top"}}>
+                        {f.entradasDet.length===0?<span style={{color:TH.muted,fontFamily:"monospace"}}>—</span>:
+                          f.entradasDet.map((d,j)=>(
+                            <div key={j} style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:6,marginBottom:j<f.entradasDet.length-1?2:0}}>
+                              <span style={{fontFamily:"monospace",fontWeight:700,color:TH.success}}>+{fmtN(d.monto,0)}</span>
+                              <span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:3,background:`${TH.success}18`,color:TH.success,whiteSpace:"nowrap"}}>{d.tipo}</span>
+                            </div>
+                          ))
+                        }
                       </td>
-                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:f.salidas>0?700:400,borderBottom:`1px solid ${TH.border}`,color:f.salidas>0?TH.danger:TH.muted}}>
-                        {f.salidas>0?`−${fmtN(f.salidas,0)}`:"—"}
+                      <td style={{padding:"6px 12px",textAlign:"right",borderBottom:`1px solid ${TH.border}`,verticalAlign:"top"}}>
+                        {f.salidasDet.length===0?<span style={{color:TH.muted,fontFamily:"monospace"}}>—</span>:
+                          f.salidasDet.map((d,j)=>(
+                            <div key={j} style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:6,marginBottom:j<f.salidasDet.length-1?2:0}}>
+                              <span style={{fontFamily:"monospace",fontWeight:700,color:TH.danger}}>−{fmtN(d.monto,0)}</span>
+                              <span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:3,background:`${TH.danger}15`,color:TH.danger,whiteSpace:"nowrap"}}>{d.tipo}</span>
+                            </div>
+                          ))
+                        }
                       </td>
                       <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,color:"#6C5CE7",fontStyle:"italic"}}>
                         {f.nivelTeorico!==null?fmtN(f.nivelTeorico,0):"—"}
