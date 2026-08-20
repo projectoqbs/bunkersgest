@@ -751,7 +751,11 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           // 4. Inventario físico antes del rango
           const cmtsOrdenados = [...balanceCmtsRango]
             .filter(c=>c.fecha>=balanceDesde && c.fecha<balanceHasta)
-            .sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||""));
+            .sort((a,b)=>{
+              const fd=(a.fecha||"").localeCompare(b.fecha||"");
+              if(fd!==0) return fd;
+              return (a.numero_cmt||a.id||"").localeCompare(b.numero_cmt||b.id||"");
+            });
 
           // Construir mapa: primer tanques_antes por tanque dentro del rango
           const primerAntesRango = {};
@@ -1317,7 +1321,11 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     { let d=new Date(balanceDesde+"T12:00:00"),fin=new Date(balanceHasta+"T12:00:00");
       while(d<=fin){allFechas.push(d.toISOString().split("T")[0]);d=new Date(d);d.setDate(d.getDate()+1);} }
 
-    const cmtsOrdenados=[...balanceCmtsRango].sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||""));
+    const cmtsOrdenados=[...balanceCmtsRango].sort((a,b)=>{
+      const fd=(a.fecha||"").localeCompare(b.fecha||"");
+      if(fd!==0) return fd;
+      return (a.numero_cmt||a.id||"").localeCompare(b.numero_cmt||b.id||"");
+    });
 
     // Nivel final de un tanque en un CMT (lectura absoluta de sonda)
     const getSnap=(cmt,tqId)=>{
