@@ -126,6 +126,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   const [balanceCmtsDia,   setBalanceCmtsDia]   = useState([]);
   const [loadingBalance,   setLoadingBalance]   = useState(false);
   const [loadingDia,       setLoadingDia]       = useState(false);
+  const [balanceTanqueId,  setBalanceTanqueId]  = useState("");
   const [balanceExpandido, setBalanceExpandido] = useState({entradas:true, salidas:true});
 
   const trim = mkTrim(calados.popaIni, calados.proaIni);
@@ -165,7 +166,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
   useEffect(() => {
     if(activeTab==="historial"||activeTab==="analisis") loadHist();
-    if(activeTab==="balance"){ loadBalance(balanceDesde, balanceHasta); loadCmtsDia(balanceFechaDia); }
+    if(activeTab==="balance"||activeTab==="tanque"){ loadBalance(balanceDesde, balanceHasta); loadCmtsDia(balanceFechaDia); }
   }, [activeTab, loadHist]);
 
   // ── Calc helpers ─────────────────────────────────────────────────────────────
@@ -1293,8 +1294,222 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     );
   }
 
+  // ── Balance Por Tanque ────────────────────────────────────────────────────────
+  function renderPorTanque(){
+    const todosLosTanquesLista = [
+      ...TANQUES_BARCAZA.map(t=>`QBS002-${t}`),
+      ...TANQUES_TKT,
+      ...TANQUES_P2,
+    ];
+    const tanqueId = balanceTanqueId || todosLosTanquesLista[0];
+    const esP1 = tanqueId.startsWith("QBS002-")||tanqueId.startsWith("TKT-");
+    const plantaLabel = esP1?"PLANTA 1":"PLANTA 2";
+
+    // Generar fechas del rango
+    const allFechas=[];
+    { let d=new Date(balanceDesde+"T12:00:00"),fin=new Date(balanceHasta+"T12:00:00");
+      while(d<=fin){allFechas.push(d.toISOString().split("T")[0]);d=new Date(d);d.setDate(d.getDate()+1);} }
+
+    const cmtsOrdenados=[...balanceCmtsRango].sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||""));
+
+    // Nivel final de un tanque en un CMT (lectura absoluta de sonda)
+    const getSnap=(cmt,tqId)=>{
+      const td=(cmt.tanques_despues||[]).find(t=>t.tanque===tqId);
+      if(td?.galones!=null&&td.galones!=="") return Number(td.galones);
+      const tr=(cmt.tanques_recepcion||[]).find(t=>t.tanque===tqId);
+      if(tr?.galonesFinal!=null&&tr.galonesFinal!=="") return Number(tr.galonesFinal);
+      const pc=(cmt.porteo_carga_tanques||[]).find(t=>t.tanque===tqId);
+      if(pc?.galonesFinal!=null&&pc.galonesFinal!=="") return Number(pc.galonesFinal);
+      const pd=(cmt.porteo_descarga_tanques||[]).find(t=>t.tanque===tqId);
+      if(pd?.galonesFinal!=null&&pd.galonesFinal!=="") return Number(pd.galonesFinal);
+      return null;
+    };
+
+    // Movimiento (entrada/salida) de un tanque en un CMT
+    const getMov=(cmt,tqId)=>{
+      let e=0,s=0;
+      const ta=(cmt.tanques_antes||[]).find(t=>t.tanque===tqId);
+      const td=(cmt.tanques_despues||[]).find(t=>t.tanque===tqId);
+      if(ta&&td){const d=Number(td.galones||0)-Number(ta.galones||0);if(d>0)e+=d;else if(d<0)s+=-d;}
+      const tr=(cmt.tanques_recepcion||[]).find(t=>t.tanque===tqId);
+      if(tr){const d=Number(tr.galonesFinal||0)-Number(tr.galonesInicial||0);if(d>0)e+=d;}
+      const pc=(cmt.porteo_carga_tanques||[]).find(t=>t.tanque===tqId);
+      if(pc){const d=Number(pc.galonesInicial||0)-Number(pc.galonesFinal||0);if(d>0)s+=d;}
+      const pd=(cmt.porteo_descarga_tanques||[]).find(t=>t.tanque===tqId);
+      if(pd){const d=Number(pd.galonesFinal||0)-Number(pd.galonesInicial||0);if(d>0)e+=d;}
+      return{e,s};
+    };
+
+    // Nivel inicial: último inventario físico antes del rango
+    let nivelActual=null;
+    const invPrev=[...balanceInvsRango]
+      .filter(i=>i.planta===plantaLabel&&i.fecha<balanceDesde)
+      .sort((a,b)=>b.fecha.localeCompare(a.fecha))
+      .find(i=>(i.tanques||[]).some(t=>t.tanque===tanqueId&&t.galones_calculados!=null));
+    if(invPrev){const te=invPrev.tanques.find(t=>t.tanque===tanqueId);if(te) nivelActual=Number(te.galones_calculados||0);}
+
+    // Aplicar CMTs antes del rango
+    for(const c of cmtsOrdenados.filter(c=>c.fecha<balanceDesde)){
+      const snap=getSnap(c,tanqueId);
+      if(snap!==null) nivelActual=snap;
+      else{const{e,s}=getMov(c,tanqueId);if(e||s) nivelActual=Math.max(0,(nivelActual||0)+e-s);}
+    }
+
+    // Construir filas día a día
+    const filas=[];
+    for(const fecha of allFechas){
+      const cmtsDia=cmtsOrdenados.filter(c=>c.fecha===fecha);
+      const nivelInicio=nivelActual;
+      let entradas=0,salidas=0,snapFinal=null,cmtsNombres=[];
+      for(const c of cmtsDia){
+        const snap=getSnap(c,tanqueId);
+        const{e,s}=getMov(c,tanqueId);
+        entradas+=e; salidas+=s;
+        if(snap!==null) snapFinal=snap;
+        if(e||s||snap!==null) cmtsNombres.push(c.numero_cmt||c.id||"");
+      }
+      const nivelTeorico=snapFinal!==null?snapFinal:nivelActual!==null?Math.max(0,nivelActual+entradas-salidas):null;
+      // Inventario físico del día
+      const invF=balanceInvsRango.find(i=>i.planta===plantaLabel&&i.fecha===fecha&&(i.tanques||[]).some(t=>t.tanque===tanqueId&&t.galones_calculados!=null));
+      const nivelFisico=invF?Number(invF.tanques.find(t=>t.tanque===tanqueId)?.galones_calculados??null):null;
+      const variacion=nivelFisico!==null&&nivelTeorico!==null?nivelFisico-nivelTeorico:null;
+      const tieneDatos=entradas>0||salidas>0||nivelFisico!==null||(nivelTeorico!==null&&nivelTeorico>0);
+      filas.push({fecha,nivelInicio,entradas,salidas,nivelTeorico,nivelFisico,variacion,cmts:cmtsNombres,tieneDatos});
+      // Avanzar nivel: físico tiene prioridad, luego snap absoluto, luego teórico
+      if(nivelFisico!==null) nivelActual=nivelFisico;
+      else if(snapFinal!==null) nivelActual=snapFinal;
+      else nivelActual=nivelTeorico;
+    }
+    const filasConDatos=filas.filter(f=>f.tieneDatos);
+
+    // Datos para la gráfica
+    const chartData=filasConDatos.map(f=>({
+      fecha:new Date(f.fecha+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"2-digit"}),
+      Teórico:f.nivelTeorico,
+      Físico:f.nivelFisico,
+    }));
+
+    const fmtFecha=f=>new Date(f+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"short"});
+    const varMax=filasConDatos.reduce((m,f)=>Math.max(m,Math.abs(f.variacion??0)),0);
+
+    return(
+      <div style={{display:"flex",flexDirection:"column",gap:20}}>
+        {/* Controles */}
+        <div style={{display:"flex",gap:14,flexWrap:"wrap",alignItems:"flex-end"}}>
+          <div>
+            <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Tanque</div>
+            <select value={tanqueId} onChange={e=>setBalanceTanqueId(e.target.value)}
+              style={{padding:"7px 12px",border:`1px solid ${TH.border}`,borderRadius:6,fontSize:13,color:TH.text,background:TH.card,fontWeight:700,minWidth:160}}>
+              <optgroup label="Planta 1 — Barcaza">
+                {TANQUES_BARCAZA.map(t=><option key={`QBS002-${t}`} value={`QBS002-${t}`}>QBS002-{t}</option>)}
+              </optgroup>
+              <optgroup label="Planta 1 — Tierra">
+                {TANQUES_TKT.map(t=><option key={t} value={t}>{t}</option>)}
+              </optgroup>
+              <optgroup label="Planta 2">
+                {TANQUES_P2.map(t=><option key={t} value={t}>{t}</option>)}
+              </optgroup>
+            </select>
+          </div>
+          {[{lbl:"Desde",val:balanceDesde,set:setBalanceDesde},{lbl:"Hasta",val:balanceHasta,set:setBalanceHasta}].map(({lbl,val,set})=>(
+            <div key={lbl}>
+              <div style={{fontSize:10,color:TH.navy,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{lbl}</div>
+              <input type="date" value={val}
+                onChange={e=>{set(e.target.value);loadBalance(lbl==="Desde"?e.target.value:balanceDesde,lbl==="Hasta"?e.target.value:balanceHasta);}}
+                style={{padding:"7px 10px",border:`1px solid ${TH.border}`,borderRadius:6,fontSize:13,color:TH.text,background:TH.card}}/>
+            </div>
+          ))}
+        </div>
+
+        {loadingBalance?(
+          <div style={{color:TH.muted,padding:24,textAlign:"center"}}>Cargando datos...</div>
+        ):filasConDatos.length===0?(
+          <div style={{color:TH.muted,padding:24,textAlign:"center",fontSize:13}}>Sin datos para {tanqueId} en el período seleccionado</div>
+        ):<>
+          {/* Gráfica */}
+          <div style={{background:TH.card,borderRadius:10,border:`1px solid ${TH.border}`,padding:20,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+            <div style={{fontWeight:800,fontSize:14,color:TH.navy,marginBottom:4}}>📈 Evolución de nivel — {tanqueId}</div>
+            <div style={{fontSize:11,color:TH.muted,marginBottom:16}}>Nivel teórico (CMTs) vs físico registrado (inventarios)</div>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={chartData} margin={{top:5,right:20,left:0,bottom:5}}>
+                <CartesianGrid strokeDasharray="3 3" stroke={TH.border}/>
+                <XAxis dataKey="fecha" tick={{fontSize:11,fill:TH.muted}}/>
+                <YAxis tick={{fontSize:10,fill:TH.muted}} tickFormatter={v=>fmtN(v/1000,1)+"k"} width={52}/>
+                <Tooltip content={({active,payload,label})=>{
+                  if(!active||!payload?.length) return null;
+                  return(
+                    <div style={{background:TH.card,border:`1px solid ${TH.border}`,borderRadius:8,padding:"10px 14px",fontSize:12,boxShadow:"0 4px 16px rgba(0,0,0,0.12)"}}>
+                      <div style={{fontWeight:700,color:TH.navy,marginBottom:6}}>{label}</div>
+                      {payload.map((p,i)=><div key={i} style={{color:p.color,fontWeight:600,marginBottom:2}}>{p.name}: {fmtN(p.value,0)} gls</div>)}
+                    </div>
+                  );
+                }}/>
+                <Legend iconSize={10} wrapperStyle={{fontSize:11}}/>
+                <Line type="monotone" dataKey="Teórico" stroke="#6C5CE7" strokeWidth={2} strokeDasharray="4 2" dot={false} connectNulls/>
+                <Line type="monotone" dataKey="Físico" stroke={TH.orange} strokeWidth={2.5}
+                  dot={({cx,cy,payload})=>payload.Físico!=null?<circle key={cx} cx={cx} cy={cy} r={5} fill={TH.orange} stroke="#fff" strokeWidth={2}/>:<g key={cx}/>}
+                  activeDot={{r:6}} connectNulls={false}/>
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Tabla día a día */}
+          <div style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`}}>
+            <table style={{borderCollapse:"collapse",width:"100%",fontSize:12}}>
+              <thead>
+                <tr style={{background:TH.navy,color:"#fff"}}>
+                  {["Fecha","Nivel Inicio","+ Entradas","− Salidas","Teórico Fin","Físico Reg.","Variación","CMT(s)"].map(h=>(
+                    <th key={h} style={{padding:"9px 12px",textAlign:h==="Fecha"||h==="CMT(s)"?"left":"right",fontWeight:700,fontSize:11,letterSpacing:0.5,whiteSpace:"nowrap"}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filasConDatos.map((f,i)=>{
+                  const esFaltante=f.variacion!==null&&f.variacion<0&&Math.abs(f.variacion)>0;
+                  const varColor=f.variacion===null?TH.muted:f.variacion<0?TH.danger:f.variacion>0?TH.warn:TH.success;
+                  const esMaxVar=varMax>0&&f.variacion!==null&&Math.abs(f.variacion)===varMax&&varMax>100;
+                  return(
+                    <tr key={f.fecha} style={{background:esMaxVar?`${TH.danger}08`:i%2===0?TH.card:"#f4f7fb"}}>
+                      <td style={{padding:"8px 12px",fontWeight:700,color:TH.navy,borderBottom:`1px solid ${TH.border}`,whiteSpace:"nowrap"}}>
+                        {fmtFecha(f.fecha)}
+                        {f.nivelFisico!==null&&<span style={{marginLeft:6,fontSize:9,fontWeight:700,color:TH.orange,textTransform:"uppercase",letterSpacing:0.5}}>● FÍS</span>}
+                      </td>
+                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",borderBottom:`1px solid ${TH.border}`,color:TH.muted}}>
+                        {f.nivelInicio!==null?fmtN(f.nivelInicio,0):"—"}
+                      </td>
+                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:f.entradas>0?700:400,borderBottom:`1px solid ${TH.border}`,color:f.entradas>0?TH.success:TH.muted}}>
+                        {f.entradas>0?`+${fmtN(f.entradas,0)}`:"—"}
+                      </td>
+                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:f.salidas>0?700:400,borderBottom:`1px solid ${TH.border}`,color:f.salidas>0?TH.danger:TH.muted}}>
+                        {f.salidas>0?`−${fmtN(f.salidas,0)}`:"—"}
+                      </td>
+                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:700,borderBottom:`1px solid ${TH.border}`,color:"#6C5CE7",fontStyle:"italic"}}>
+                        {f.nivelTeorico!==null?fmtN(f.nivelTeorico,0):"—"}
+                      </td>
+                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:f.nivelFisico!==null?700:400,borderBottom:`1px solid ${TH.border}`,color:f.nivelFisico!==null?TH.navy:TH.border}}>
+                        {f.nivelFisico!==null?fmtN(f.nivelFisico,0):"—"}
+                      </td>
+                      <td style={{padding:"8px 12px",textAlign:"right",fontFamily:"monospace",fontWeight:f.variacion!==null?700:400,borderBottom:`1px solid ${TH.border}`,color:varColor}}>
+                        {f.variacion!==null
+                          ?<>{(f.variacion>0?"+":"")+fmtN(f.variacion,0)} {f.nivelTeorico?<span style={{fontSize:10,fontWeight:400}}>({((Math.abs(f.variacion)/f.nivelTeorico)*100).toFixed(1)}%)</span>:null}</>
+                          :"—"}
+                      </td>
+                      <td style={{padding:"8px 12px",fontSize:10,color:TH.muted,borderBottom:`1px solid ${TH.border}`}}>
+                        {f.cmts.join(", ")||"—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>}
+      </div>
+    );
+  }
+
   // ── Main ──────────────────────────────────────────────────────────────────────
-  const TABS=[{k:"nuevo",l:"Nuevo Inventario"},{k:"balance",l:"⚖ Balance Diario"},{k:"historial",l:"Historial"},{k:"analisis",l:"📊 Análisis"}];
+  const TABS=[{k:"nuevo",l:"Nuevo Inventario"},{k:"balance",l:"⚖ Balance Diario"},{k:"tanque",l:"📈 Por Tanque"},{k:"historial",l:"Historial"},{k:"analisis",l:"📊 Análisis"}];
 
   return(
     <div style={{padding:"20px 24px",maxWidth:1200,margin:"0 auto"}}>
@@ -1318,6 +1533,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       {activeTab==="historial" && renderHistorial()}
       {activeTab==="analisis"  && renderAnalisis()}
       {activeTab==="balance"   && renderBalance()}
+      {activeTab==="tanque"    && renderPorTanque()}
       {activeTab==="nuevo" && (
         <>
           {/* Selector planta */}
