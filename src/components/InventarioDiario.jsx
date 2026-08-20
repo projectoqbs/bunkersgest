@@ -93,7 +93,7 @@ function TooltipGals({ active, payload, label }){
 
 export default function InventarioDiario({ supabase, session, perfil, showToast, tanques, dbCall }){
   const [planta, setPlanta] = useState("P1");
-  const [activeTab, setActiveTab] = useState("nuevo");
+  const [activeTab, setActiveTab] = useState(()=>localStorage.getItem("inv_activeTab")||"nuevo");
 
   // Formulario
   const [filasP1, setFilasP1] = useState(initFilasP1);
@@ -117,19 +117,26 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   const [tanqueSeleccionado, setTanqueSeleccionado] = useState("");
 
   // Balance diario
-  const [balancePlanta, setBalancePlanta]     = useState("P1");
-  const [balanceDesde,  setBalanceDesde]      = useState(()=>{ const d=new Date(); d.setDate(1); return d.toISOString().split("T")[0]; });
-  const [balanceHasta,  setBalanceHasta]      = useState(()=>new Date().toISOString().split("T")[0]);
+  const [balancePlanta, setBalancePlanta]     = useState(()=>localStorage.getItem("inv_balancePlanta")||"P1");
+  const [balanceDesde,  setBalanceDesde]      = useState(()=>localStorage.getItem("inv_balanceDesde")||(()=>{ const d=new Date(); d.setDate(1); return d.toISOString().split("T")[0]; })());
+  const [balanceHasta,  setBalanceHasta]      = useState(()=>localStorage.getItem("inv_balanceHasta")||new Date().toISOString().split("T")[0]);
   const [balanceInvsRango, setBalanceInvsRango] = useState([]); // inventarios físicos (todo el historial)
   const [balanceCmtsRango, setBalanceCmtsRango] = useState([]); // CMTs del rango seleccionado
   const [balanceFechaDia,  setBalanceFechaDia]  = useState(()=>new Date().toISOString().split("T")[0]);
   const [balanceCmtsDia,   setBalanceCmtsDia]   = useState([]);
   const [loadingBalance,   setLoadingBalance]   = useState(false);
   const [loadingDia,       setLoadingDia]       = useState(false);
-  const [balanceTanqueId,  setBalanceTanqueId]  = useState("");
+  const [balanceTanqueId,  setBalanceTanqueId]  = useState(()=>localStorage.getItem("inv_balanceTanqueId")||"");
   const [balanceExpandido, setBalanceExpandido] = useState({entradas:true, salidas:true});
 
   const trim = mkTrim(calados.popaIni, calados.proaIni);
+
+  // Persistir pestaña activa y selección de tanque
+  useEffect(()=>{ localStorage.setItem("inv_activeTab", activeTab); }, [activeTab]);
+  useEffect(()=>{ localStorage.setItem("inv_balanceTanqueId", balanceTanqueId); }, [balanceTanqueId]);
+  useEffect(()=>{ localStorage.setItem("inv_balancePlanta", balancePlanta); }, [balancePlanta]);
+  useEffect(()=>{ localStorage.setItem("inv_balanceDesde", balanceDesde); }, [balanceDesde]);
+  useEffect(()=>{ localStorage.setItem("inv_balanceHasta", balanceHasta); }, [balanceHasta]);
 
   const loadHist = useCallback(async () => {
     setLoadingHist(true);
