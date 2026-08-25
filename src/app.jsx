@@ -442,7 +442,7 @@ export default function App() {
   const [trazDesde, setTrazDesde] = useState("");
   const [trazHasta, setTrazHasta] = useState("");
   const [trazEstado, setTrazEstado] = useState("DESCARGUE");
-  const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","pbs","ot","tanques","horaInicio","horaFinal","duracion","pesoIng","pesoSal","pesoNeto","rpm","presion"]));
+  const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","varPct","pbs","ot","tanques","horaInicio","horaFinal","duracion","pesoIng","pesoSal","pesoNeto","rpm","presion"]));
   const [trazColsPorteo, setTrazColsPorteo] = useState(new Set(["placa","fecha","cmt","transportadora","tqsCarga","inicio","fin","durCargue","inicioDesc","finDesc","durDescargue","contador","pesoIng","pesoSal","bascula","ot","tqsDesc"]));
   const [trazColPanel, setTrazColPanel] = useState(false);
   const [mps, setMps] = useState([ // materias primas en el modal formulación
@@ -4675,7 +4675,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           ? [
                               {k:"placa",l:"Placa"},{k:"fecha",l:"Fecha CMT"},{k:"cmt",l:"CMT"},{k:"producto",l:"Producto"},
                               {k:"transportadora",l:"Transportadora"},{k:"guia",l:"Guía"},{k:"tiquete",l:"Tiquete"},
-                              {k:"api",l:"API"},{k:"glsGuia",l:"Gls Guía"},{k:"glsBas",l:"Gls Báscula"},
+                              {k:"api",l:"API"},{k:"glsGuia",l:"Gls Guía"},{k:"glsBas",l:"Gls Báscula"},{k:"varPct",l:"Variación %"},
                               {k:"horaInicio",l:"Hora Inicio"},{k:"horaFinal",l:"Hora Final"},{k:"duracion",l:"Duración"},
                               {k:"pesoIng",l:"Peso Ingreso (Kg)"},{k:"pesoSal",l:"Peso Salida (Kg)"},{k:"pesoNeto",l:"Peso Neto (Kg)"},
                               {k:"rpm",l:"RPM"},{k:"presion",l:"Presión (Bar)"},
@@ -4734,6 +4734,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {C.has("api")            && <th style={thStyle}>API</th>}
                         {C.has("glsGuia")        && <th style={thStyle}>Gls Guía</th>}
                         {C.has("glsBas")         && <th style={thStyle}>Gls Báscula</th>}
+                        {C.has("varPct")         && <th style={thStyle}>Variación %</th>}
                         {C.has("horaInicio")     && <th style={thStyle}>Hora Inicio</th>}
                         {C.has("horaFinal")      && <th style={thStyle}>Hora Final</th>}
                         {C.has("duracion")       && <th style={thStyle}>Duración</th>}
@@ -4764,6 +4765,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             {C.has("api")            && <td style={tdS({color:T.muted})}>{tq?.api_corregido?`${tq.api_corregido}°`:"—"}</td>}
                             {C.has("glsGuia")        && <td style={tdS({color:T.muted})}>{Number(cr.galones_guia||viaje?.volumen_guia||0)>0?fmt(Number(cr.galones_guia||viaje?.volumen_guia)):"—"}</td>}
                             {C.has("glsBas")         && <td style={tdS({fontWeight:700,color:glsBas>0?T.success:T.muted})}>{glsBas>0?fmt(glsBas):"—"}</td>}
+                            {C.has("varPct")         && (()=>{
+                              const gGuia=Number(cr.galones_guia||viaje?.volumen_guia||0);
+                              const pct=gGuia>0&&glsBas>0?((glsBas-gGuia)/gGuia*100):null;
+                              const color=pct===null?T.muted:Math.abs(pct)<=1?T.success:Math.abs(pct)<=3?T.orange:T.danger;
+                              return <td style={tdS({fontWeight:700,color,fontFamily:"monospace"})}>{pct!==null?`${pct>0?"+":""}${pct.toFixed(2)}%`:"—"}</td>;
+                            })()}
                             {C.has("horaInicio")     && <td style={tdS({color:T.muted,fontSize:11})}>{cr.hora_inicio||"—"}</td>}
                             {C.has("horaFinal")      && <td style={tdS({color:T.muted,fontSize:11})}>{cr.hora_final||"—"}</td>}
                             {C.has("duracion")       && <td style={tdS({...mono,color:T.navy,fontWeight:700})}>{duracion(cr.hora_inicio,cr.hora_final)||"—"}</td>}
