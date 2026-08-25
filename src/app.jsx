@@ -4582,7 +4582,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const descFiltradas = filasDescargue.filter(({cm,cr,tq,pb,ot,viaje})=>{
               if (trazDesde && cm.fecha < trazDesde) return false;
               if (trazHasta && cm.fecha > trazHasta) return false;
-              if (trazPlanta && (cm.planta||"")!==trazPlanta) return false;
+              if (trazPlanta && !(cm.planta||"").split(",").map(p=>p.trim()).includes(trazPlanta)) return false;
               if (!q) return true;
               return [cr.placa,cm.numero_cmt,tq?.id,pb?.id,ot?.numero_ot,cr.transportadora,viaje?.guia,cm.producto||viaje?.producto]
                 .some(v=>(v||"").toUpperCase().includes(q));
@@ -4606,7 +4606,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const porteoFiltradas = filasPorteo.filter(({cm,cr,ot})=>{
               if (trazDesde && cm.fecha < trazDesde) return false;
               if (trazHasta && cm.fecha > trazHasta) return false;
-              if (trazPlanta && (cm.planta||"")!==trazPlanta) return false;
+              if (trazPlanta && !(cm.planta||"").split(",").map(p=>p.trim()).includes(trazPlanta)) return false;
               if (!q) return true;
               return [cr.placa,cm.numero_cmt,ot?.numero_ot,cr.transportadora,cr.numero_pbs]
                 .some(v=>(v||"").toUpperCase().includes(q));
@@ -4623,7 +4623,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const modoActivo = ["TODOS","Descargado","Rechazado","En Planta","En Tránsito"].includes(trazEstado) ? "DESCARGUE"
               : trazEstado === "PORTEO" ? "PORTEO" : "CARGUE";
 
-            const plantasDisp=[...new Set((cmts||[]).map(c=>c.planta||"").filter(Boolean))].sort();
+            const plantasDisp=[...new Set((cmts||[]).flatMap(c=>(c.planta||"").split(",").map(p=>p.trim())).filter(Boolean))].sort();
 
             return (
               <div style={{padding:"0 0 20px"}}>
