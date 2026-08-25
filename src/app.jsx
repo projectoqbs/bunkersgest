@@ -438,6 +438,7 @@ export default function App() {
   const [otVincSeleccionada, setOtVincSeleccionada] = useState("");
   const [formFormulacion, setFormFormulacion] = useState(null); // null=cerrado, {}=nuevo, {id,...}=editar
   const [trazBuscar, setTrazBuscar] = useState("");
+  const [trazPlanta, setTrazPlanta] = useState("");
   const [trazDesde, setTrazDesde] = useState("");
   const [trazHasta, setTrazHasta] = useState("");
   const [trazEstado, setTrazEstado] = useState("DESCARGUE");
@@ -4581,6 +4582,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const descFiltradas = filasDescargue.filter(({cm,cr,tq,pb,ot,viaje})=>{
               if (trazDesde && cm.fecha < trazDesde) return false;
               if (trazHasta && cm.fecha > trazHasta) return false;
+              if (trazPlanta && (cm.planta||"")!==trazPlanta) return false;
               if (!q) return true;
               return [cr.placa,cm.numero_cmt,tq?.id,pb?.id,ot?.numero_ot,cr.transportadora,viaje?.guia,cm.producto||viaje?.producto]
                 .some(v=>(v||"").toUpperCase().includes(q));
@@ -4604,6 +4606,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const porteoFiltradas = filasPorteo.filter(({cm,cr,ot})=>{
               if (trazDesde && cm.fecha < trazDesde) return false;
               if (trazHasta && cm.fecha > trazHasta) return false;
+              if (trazPlanta && (cm.planta||"")!==trazPlanta) return false;
               if (!q) return true;
               return [cr.placa,cm.numero_cmt,ot?.numero_ot,cr.transportadora,cr.numero_pbs]
                 .some(v=>(v||"").toUpperCase().includes(q));
@@ -4619,6 +4622,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             const modoActivo = ["TODOS","Descargado","Rechazado","En Planta","En Tránsito"].includes(trazEstado) ? "DESCARGUE"
               : trazEstado === "PORTEO" ? "PORTEO" : "CARGUE";
+
+            const plantasDisp=[...new Set((cmts||[]).map(c=>c.planta||"").filter(Boolean))].sort();
 
             return (
               <div style={{padding:"0 0 20px"}}>
@@ -4640,13 +4645,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <input placeholder="Buscar placa, CMT, tiquete, PBS, OT, transportadora..." value={trazBuscar}
                     onChange={e=>setTrazBuscar(e.target.value)}
                     style={{flex:1,minWidth:240,background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 14px",color:T.text,fontSize:12,outline:"none"}}/>
+                  <select value={trazPlanta} onChange={e=>setTrazPlanta(e.target.value)}
+                    style={{background:T.card,border:`1px solid ${trazPlanta?T.orange:T.border}`,borderRadius:8,padding:"8px 12px",color:trazPlanta?T.orange:T.muted,fontSize:12,outline:"none",fontWeight:trazPlanta?700:400,cursor:"pointer"}}>
+                    <option value="">Todas las plantas</option>
+                    {plantasDisp.map(p=><option key={p} value={p}>{p}</option>)}
+                  </select>
                   <input type="date" value={trazDesde} onChange={e=>setTrazDesde(e.target.value)}
                     style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,outline:"none"}}/>
                   <span style={{color:T.muted,fontSize:11}}>—</span>
                   <input type="date" value={trazHasta} onChange={e=>setTrazHasta(e.target.value)}
                     style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 10px",color:T.text,fontSize:12,outline:"none"}}/>
-                  {(trazBuscar||trazDesde||trazHasta) && (
-                    <button onClick={()=>{setTrazBuscar("");setTrazDesde("");setTrazHasta("");}}
+                  {(trazBuscar||trazDesde||trazHasta||trazPlanta) && (
+                    <button onClick={()=>{setTrazBuscar("");setTrazDesde("");setTrazHasta("");setTrazPlanta("");}}
                       style={{background:"transparent",border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 12px",color:T.muted,fontSize:12,cursor:"pointer"}}>✕</button>
                   )}
                   {/* Botón columnas */}
