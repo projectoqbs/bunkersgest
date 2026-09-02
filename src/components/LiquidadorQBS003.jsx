@@ -1,0 +1,336 @@
+// LiquidadorQBS003.jsx — Liquidador barcaza QBS003 (12 tanques: T1-T6 Port/Starboard)
+import { useState, useCallback } from 'react';
+import { TABLAS_QBS003, CAP_QBS003_GAL } from '../data/tablas_qbs003';
+
+const M3_TO_GAL = 264.172;
+
+// ─── Utilidades ─────────────────────────────────────────────────────────────
+function interp(x, x0, x1, y0, y1) {
+  if (x1 === x0) return y0;
+  return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+}
+
+function interpolarMM(tabla, sondaMM) {
+  if (!tabla || sondaMM === null || isNaN(sondaMM)) return null;
+  const n = tabla.length;
+  if (sondaMM <= tabla[0][0]) return tabla[0][1];
+  if (sondaMM >= tabla[n - 1][0]) return tabla[n - 1][1];
+  let lo = 0, hi = n - 1;
+  while (hi - lo > 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (tabla[mid][0] <= sondaMM) lo = mid; else hi = mid;
+  }
+  return interp(sondaMM, tabla[lo][0], tabla[hi][0], tabla[lo][1], tabla[hi][1]);
+}
+
+// VCF: ASTM D1250 (productos del petróleo, densidad 15°C a partir de API)
+function calcVCF(api, tempC) {
+  if (isNaN(api) || isNaN(tempC)) return null;
+  const rho15 = 141.5 / (api + 131.5) * 1000; // kg/m3 a 15°C
+  const alpha = rho15 < 770 ? 613.97226 / (rho15 * rho15)
+    : rho15 < 787 ? 346.42300 / (rho15 * rho15)
+    : rho15 < 838 ? 186.96990 / (rho15 * rho15)
+    : rho15 < 1074 ? 0.186840 / (rho15 * rho15) * 1e6
+    : 0;
+  const deltaT = tempC - 15;
+  return Math.exp(-alpha * deltaT * (1 + 0.8 * alpha * deltaT));
+}
+
+function calcF13(api) {
+  if (isNaN(api) || api <= 0) return null;
+  const sg = 141.5 / (api + 131.5);
+  return sg * 1000 * 0.00378541;
+}
+
+function pf(v) { return parseFloat(String(v).replace(',', '.')) || 0; }
+function pfn(v) { const r = parseFloat(String(v).replace(',', '.')); return isNaN(r) ? NaN : r; }
+function fmtN(n, dec = 2) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('es-CO', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmt0(n) { return fmtN(n, 0); }
+
+// ─── Tanques QBS003 ──────────────────────────────────────────────────────────
+const TANKS = [
+  { key: 'T1P', label: 'Tank 1 Port',      group: 1, side: 'P' },
+  { key: 'T1S', label: 'Tank 1 Starboard', group: 1, side: 'S' },
+  { key: 'T2P', label: 'Tank 2 Port',      group: 2, side: 'P' },
+  { key: 'T2S', label: 'Tank 2 Starboard', group: 2, side: 'S' },
+  { key: 'T3P', label: 'Tank 3 Port',      group: 3, side: 'P' },
+  { key: 'T3S', label: 'Tank 3 Starboard', group: 3, side: 'S' },
+  { key: 'T4P', label: 'Tank 4 Port',      group: 4, side: 'P' },
+  { key: 'T4S', label: 'Tank 4 Starboard', group: 4, side: 'S' },
+  { key: 'T5P', label: 'Tank 5 Port',      group: 5, side: 'P' },
+  { key: 'T5S', label: 'Tank 5 Starboard', group: 5, side: 'S' },
+  { key: 'T6P', label: 'Tank 6 Port',      group: 6, side: 'P' },
+  { key: 'T6S', label: 'Tank 6 Starboard', group: 6, side: 'S' },
+];
+
+const initFilas = () => TANKS.map(t => ({
+  key: t.key,
+  label: t.label,
+  group: t.group,
+  side: t.side,
+  sonda: '',
+  temperatura: '',
+  api: '',
+}));
+
+// ─── Componente ──────────────────────────────────────────────────────────────
+export default function LiquidadorQBS003({ supabase, session, perfil, showToast, dbCall, onResult }) {
+  const T = {
+    bg: 'var(--bg, #f8f9fa)', card: 'var(--card, #ffffff)', border: 'var(--border, #e2e8f0)',
+    text: 'var(--text, #1e293b)', muted: 'var(--muted, #64748b)', navy: 'var(--navy, #1e3a5f)',
+    orange: 'var(--orange, #f97316)', success: 'var(--success, #22c55e)', danger: 'var(--danger, #ef4444)',
+  };
+
+  const [filas, setFilas] = useState(initFilas());
+  const [apiGlobal, setApiGlobal] = useState('');
+  const [tempGlobal, setTempGlobal] = useState('');
+
+  const updateFila = (key, campo, valor) => {
+    setFilas(prev => prev.map(f => f.key === key ? { ...f, [campo]: valor } : f));
+  };
+
+  const aplicarGlobal = () => {
+    setFilas(prev => prev.map(f => ({
+      ...f,
+      api: apiGlobal || f.api,
+      temperatura: tempGlobal || f.temperatura,
+    })));
+  };
+
+  const limpiar = () => {
+    setFilas(initFilas());
+    setApiGlobal('');
+    setTempGlobal('');
+  };
+
+  // Calcular resultado para una fila
+  const calcFila = (f) => {
+    const sondaMM = pfn(f.sonda);
+    const tempC   = pfn(f.temperatura);
+    const api     = pfn(f.api);
+    if (isNaN(sondaMM) || sondaMM === '') return null;
+    const tabla = TABLAS_QBS003[f.key];
+    const m3 = interpolarMM(tabla, sondaMM);
+    if (m3 === null) return null;
+    const glsB = m3 * M3_TO_GAL;
+    const vcf  = (!isNaN(tempC) && !isNaN(api)) ? calcVCF(api, tempC) : null;
+    const glsN = vcf ? glsB * vcf : glsB;
+    const f13  = !isNaN(api) ? calcF13(api) : null;
+    const mt   = (f13 && vcf) ? (glsN / 1000) * f13 : null;
+    const capGal = CAP_QBS003_GAL[f.key];
+    const pct  = capGal ? (glsN / capGal) * 100 : null;
+    return { m3, glsB, vcf, glsN, f13, mt, pct };
+  };
+
+  const resultados = filas.map(f => ({ ...f, res: calcFila(f) }));
+
+  const totM3   = resultados.reduce((s, r) => s + (r.res?.m3   ?? 0), 0);
+  const totGlsB = resultados.reduce((s, r) => s + (r.res?.glsB ?? 0), 0);
+  const totGlsN = resultados.reduce((s, r) => s + (r.res?.glsN ?? 0), 0);
+  const totMT   = resultados.every(r => r.res?.mt != null) ? resultados.reduce((s, r) => s + (r.res?.mt ?? 0), 0) : null;
+  const totCapGal = Object.values(CAP_QBS003_GAL).reduce((s, v) => s + v, 0);
+  const totPct  = totCapGal ? (totGlsN / totCapGal) * 100 : null;
+  const hayResultados = resultados.some(r => r.res !== null);
+
+  // ─── Colores por % llenado ────────────────────────────────────────────────
+  const colorPct = (pct) => {
+    if (pct === null) return T.muted;
+    if (pct >= 85) return T.danger;
+    if (pct >= 60) return T.orange;
+    return T.success;
+  };
+
+  const inputSt = {
+    width: '100%', background: T.bg, border: `1px solid ${T.border}`,
+    borderRadius: 6, padding: '6px 8px', color: T.text, fontSize: 12,
+    outline: 'none', fontFamily: 'monospace', textAlign: 'right',
+  };
+  const thSt = {
+    padding: '8px 10px', fontSize: 9, color: T.navy, textTransform: 'uppercase',
+    letterSpacing: 1, fontWeight: 700, borderBottom: `2px solid ${T.border}`,
+    whiteSpace: 'nowrap', background: T.bg, textAlign: 'right',
+  };
+  const tdSt = (extra = {}) => ({
+    padding: '7px 10px', fontSize: 11, whiteSpace: 'nowrap',
+    borderBottom: `1px solid ${T.border}`, ...extra,
+  });
+
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', color: T.text }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 18, color: T.navy }}>🛢 Liquidador QBS003</div>
+          <div style={{ fontSize: 11, color: T.muted }}>Barcaza QBS003 — 12 tanques (Innage mm → m³ → gal)</div>
+        </div>
+        <button onClick={limpiar}
+          style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 14px', color: T.muted, fontSize: 11, cursor: 'pointer' }}>
+          ↺ Limpiar
+        </button>
+      </div>
+
+      {/* Valores globales */}
+      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: T.navy, alignSelf: 'center' }}>Aplicar a todos:</div>
+        <div>
+          <div style={{ fontSize: 10, color: T.muted, marginBottom: 3 }}>API</div>
+          <input type="number" step="0.1" value={apiGlobal} onChange={e => setApiGlobal(e.target.value)}
+            placeholder="API°" style={{ ...inputSt, width: 80 }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: T.muted, marginBottom: 3 }}>Temperatura (°C)</div>
+          <input type="number" step="0.1" value={tempGlobal} onChange={e => setTempGlobal(e.target.value)}
+            placeholder="°C" style={{ ...inputSt, width: 80 }} />
+        </div>
+        <button onClick={aplicarGlobal}
+          style={{ background: T.navy, border: 'none', borderRadius: 7, padding: '7px 16px', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+          ✓ Aplicar
+        </button>
+        <div style={{ marginLeft: 'auto', fontSize: 10, color: T.muted, alignSelf: 'center' }}>
+          Corrección VCF se aplica automáticamente si se ingresa API y temperatura
+        </div>
+      </div>
+
+      {/* Tabla de entrada / resultados */}
+      <div style={{ overflowX: 'auto', borderRadius: 10, border: `1px solid ${T.border}` }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 780 }}>
+          <thead>
+            <tr>
+              <th style={{ ...thSt, textAlign: 'left' }}>Tanque</th>
+              <th style={{ ...thSt }}>Sonda (mm)</th>
+              <th style={{ ...thSt }}>Temp (°C)</th>
+              <th style={{ ...thSt }}>API°</th>
+              <th style={{ ...thSt, color: T.orange }}>m³</th>
+              <th style={{ ...thSt }}>Gls Brutos</th>
+              <th style={{ ...thSt }}>VCF</th>
+              <th style={{ ...thSt, color: T.success }}>Gls Netos</th>
+              <th style={{ ...thSt }}>MT</th>
+              <th style={{ ...thSt }}>% Llenado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {resultados.map((f, i) => {
+              const r = f.res;
+              const isNewGroup = i === 0 || f.group !== resultados[i - 1].group;
+              return (
+                <tr key={f.key} style={{ background: i % 2 === 0 ? T.card : T.bg }}>
+                  {/* Tanque label */}
+                  <td style={tdSt({ fontWeight: 700, color: f.side === 'P' ? T.navy : T.orange, fontSize: 11 })}>
+                    {f.label}
+                    <div style={{ fontSize: 9, color: T.muted, fontWeight: 400 }}>
+                      Cap: {fmt0(CAP_QBS003_GAL[f.key])} gal
+                    </div>
+                  </td>
+                  {/* Sonda */}
+                  <td style={tdSt()}>
+                    <input type="number" step="1" min="0" max="2400"
+                      value={f.sonda} onChange={e => updateFila(f.key, 'sonda', e.target.value)}
+                      placeholder="0" style={inputSt} />
+                  </td>
+                  {/* Temperatura */}
+                  <td style={tdSt()}>
+                    <input type="number" step="0.1"
+                      value={f.temperatura} onChange={e => updateFila(f.key, 'temperatura', e.target.value)}
+                      placeholder="—" style={inputSt} />
+                  </td>
+                  {/* API */}
+                  <td style={tdSt()}>
+                    <input type="number" step="0.1"
+                      value={f.api} onChange={e => updateFila(f.key, 'api', e.target.value)}
+                      placeholder="—" style={inputSt} />
+                  </td>
+                  {/* m3 */}
+                  <td style={tdSt({ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: r ? T.orange : T.muted })}>
+                    {r ? fmtN(r.m3, 3) : '—'}
+                  </td>
+                  {/* Gls Brutos */}
+                  <td style={tdSt({ textAlign: 'right', fontFamily: 'monospace', color: T.muted })}>
+                    {r ? fmt0(r.glsB) : '—'}
+                  </td>
+                  {/* VCF */}
+                  <td style={tdSt({ textAlign: 'right', fontFamily: 'monospace', fontSize: 10, color: T.muted })}>
+                    {r?.vcf ? r.vcf.toFixed(4) : '—'}
+                  </td>
+                  {/* Gls Netos */}
+                  <td style={tdSt({ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: r ? T.success : T.muted })}>
+                    {r ? fmt0(r.glsN) : '—'}
+                  </td>
+                  {/* MT */}
+                  <td style={tdSt({ textAlign: 'right', fontFamily: 'monospace', color: T.muted })}>
+                    {r?.mt ? fmtN(r.mt, 3) : '—'}
+                  </td>
+                  {/* % Llenado */}
+                  <td style={tdSt({ textAlign: 'right' })}>
+                    {r?.pct != null ? (
+                      <span style={{ fontWeight: 700, color: colorPct(r.pct), fontFamily: 'monospace' }}>
+                        {fmtN(r.pct, 1)}%
+                      </span>
+                    ) : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          {hayResultados && (
+            <tfoot>
+              <tr style={{ background: T.navy }}>
+                <td colSpan={4} style={{ ...tdSt({ color: '#fff', fontWeight: 700, fontSize: 12 }), textAlign: 'left' }}>
+                  TOTAL QBS003
+                </td>
+                <td style={tdSt({ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: T.orange })}>
+                  {fmtN(totM3, 3)}
+                </td>
+                <td style={tdSt({ textAlign: 'right', fontFamily: 'monospace', color: '#ccc' })}>
+                  {fmt0(totGlsB)}
+                </td>
+                <td style={tdSt({ color: '#ccc' })}>—</td>
+                <td style={tdSt({ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: T.success })}>
+                  {fmt0(totGlsN)}
+                </td>
+                <td style={tdSt({ textAlign: 'right', fontFamily: 'monospace', color: '#ccc' })}>
+                  {totMT ? fmtN(totMT, 3) : '—'}
+                </td>
+                <td style={tdSt({ textAlign: 'right', fontWeight: 700, color: totPct != null ? colorPct(totPct) : '#ccc' })}>
+                  {totPct != null ? `${fmtN(totPct, 1)}%` : '—'}
+                </td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+
+      {/* Resumen visual por grupo de tanques */}
+      {hayResultados && (
+        <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
+          {[1, 2, 3, 4, 5, 6].map(g => {
+            const port = resultados.find(r => r.group === g && r.side === 'P');
+            const stbd = resultados.find(r => r.group === g && r.side === 'S');
+            const totalGls = (port?.res?.glsN ?? 0) + (stbd?.res?.glsN ?? 0);
+            const totalCap = (CAP_QBS003_GAL[port?.key] ?? 0) + (CAP_QBS003_GAL[stbd?.key] ?? 0);
+            const pct = totalCap ? (totalGls / totalCap) * 100 : 0;
+            return (
+              <div key={g} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 10, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: T.muted, fontWeight: 700, marginBottom: 6 }}>TANK {g}</div>
+                {/* Barra de llenado */}
+                <div style={{ height: 60, background: T.bg, borderRadius: 6, overflow: 'hidden', position: 'relative', marginBottom: 6, border: `1px solid ${T.border}` }}>
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${Math.min(pct, 100)}%`, background: colorPct(pct), opacity: 0.7, transition: 'height 0.3s' }} />
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: T.text }}>
+                    {totalGls > 0 ? `${fmtN(pct, 0)}%` : '—'}
+                  </div>
+                </div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: T.navy }}>{fmt0(totalGls)} gal</div>
+                <div style={{ fontSize: 9, color: T.muted }}>{fmtN(totalGls / M3_TO_GAL * 264.172 / 264.172 * (port?.res?.m3 ? port.res.m3 + (stbd?.res?.m3 ?? 0) : 0), 2)} m³</div>
+                <div style={{ fontSize: 9, color: T.muted, marginTop: 4 }}>
+                  P: {fmt0(port?.res?.glsN ?? 0)} | S: {fmt0(stbd?.res?.glsN ?? 0)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

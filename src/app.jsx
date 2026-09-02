@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import * as XLSX from "xlsx";
 import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
+import LiquidadorQBS003  from "./components/LiquidadorQBS003";
 import InventarioDiario from "./components/InventarioDiario";
 import { calcularGalonesP1, parseTankId } from "./utils/aforoP1";
 import LiquidadorPlanta2 from "./components/LiquidadorPlanta2";
@@ -1950,7 +1951,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const horas = (new Date() - new Date(created_at)) / 1000 / 3600;
   return horas <= 72;
 };
-  const ALL_MODULOS = ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","programacion","usuarios","liquidador","inventario_diario"];
+  const ALL_MODULOS = ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","programacion","usuarios","liquidador","liquidador_qbs003","inventario_diario"];
   const navItems = perfil.rol === "administrador"
     ? NAV_ROL.administrador
     : ALL_MODULOS.filter(m => {
@@ -2040,7 +2041,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
               pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"ot_ops",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA","ANALIZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"inventario_diario",label:"Inventario Diario"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
-              liquidador:   { icon:"🔢", label:"LIQUIDADOR",    subs:[{id:"liquidador",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
+              liquidador:   { icon:"🔢", label:"LIQUIDADOR",    subs:[{id:"liquidador",label:"Planta 1 — QBS002"},{id:"liquidador_qbs003",label:"Planta 1 — QBS003"},{id:"liquidador_p2",label:"Planta 2"}] },
               tanques:      { icon:"🛢", label:"TANQUES",        subs:[{id:"tanques",label:"Planta 2 (TK-111–117)"},{id:"tanques_p1",label:"Planta 1 — QBS002"}] },
             };
             const badges = {};
@@ -7848,6 +7849,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 )}
 
 {/* LIQUIDADOR PLANTA 2 */}
+{nav==="liquidador_qbs003" && (
+  <div style={{padding:"24px 32px"}}>
+    <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
+  </div>
+)}
+
 {nav==="liquidador_p2" && (
   <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading}/>
 )}
