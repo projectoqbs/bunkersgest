@@ -87,6 +87,17 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
   const [filas, setFilas] = useState(initFilas());
   const [apiGlobal, setApiGlobal] = useState('');
   const [tempGlobal, setTempGlobal] = useState('');
+  const [calados, setCalados] = useState({ proaIni: '', popaIni: '', proaFin: '', popaFin: '' });
+
+  const mkTrim = (popa, proa) => {
+    const a = pfn(popa), b = pfn(proa);
+    if (isNaN(a) || isNaN(b) || (String(popa).trim() === '' && String(proa).trim() === '')) return { val: 0, dir: '—' };
+    const diff = a - b;
+    return { val: Math.abs(diff), dir: diff > 0 ? 'POPA' : diff < 0 ? 'PROA' : 'KEEL' };
+  };
+  const trimI = mkTrim(calados.popaIni, calados.proaIni);
+  const trimF = mkTrim(calados.popaFin, calados.proaFin);
+  const tcDir = d => d === 'POPA' ? T.orange : d === 'PROA' ? '#3b82f6' : T.muted;
 
   const updateFila = (key, campo, valor) => {
     setFilas(prev => prev.map(f => f.key === key ? { ...f, [campo]: valor } : f));
@@ -170,6 +181,35 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
           style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 14px', color: T.muted, fontSize: 11, cursor: 'pointer' }}>
           ↺ Limpiar
         </button>
+      </div>
+
+      {/* Calados */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+        {[
+          { label: 'Calados Iniciales', proa: 'proaIni', popa: 'popaIni', trim: trimI },
+          { label: 'Calados Finales',   proa: 'proaFin', popa: 'popaFin', trim: trimF },
+        ].map(({ label, proa, popa, trim }) => (
+          <div key={label} style={{ background: T.card, border: `1px solid ${T.border}`, borderLeft: `3px solid ${T.orange}`, borderRadius: 6, padding: '8px 12px' }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: T.orange, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
+              {label === 'Calados Iniciales' ? '▶' : '■'} {label}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              {[{ lbl: 'Proa (m)', key: proa }, { lbl: 'Popa (m)', key: popa }].map(({ lbl, key }) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 10, color: T.muted, whiteSpace: 'nowrap' }}>{lbl}</span>
+                  <input type="number" step="0.01" value={calados[key]}
+                    onChange={e => setCalados(c => ({ ...c, [key]: e.target.value }))}
+                    style={{ width: 72, background: T.card, border: `1px solid ${T.border}`, borderRadius: 4, padding: '4px 6px', color: T.text, fontSize: 12, outline: 'none', textAlign: 'right' }} />
+                </div>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+                <span style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>Trim:</span>
+                <span style={{ fontSize: 14, fontWeight: 900, color: tcDir(trim.dir) }}>{trim.dir !== '—' ? `${trim.val.toFixed(2)}m ${trim.dir}` : '—'}</span>
+                {trim.dir === 'POPA' && trim.val > 0.7 && <span style={{ fontSize: 9, color: T.orange, fontWeight: 700 }}>⚠ &gt;0.7m</span>}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Valores globales */}
