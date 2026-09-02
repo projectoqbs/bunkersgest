@@ -1,6 +1,7 @@
 // LiquidadorQBS003.jsx — Liquidador barcaza QBS003 (12 tanques: T1-T6 Port/Starboard)
 import { useState, useCallback } from 'react';
 import { TABLAS_QBS003, CAP_QBS003_GAL } from '../data/tablas_qbs003';
+import { TRIM_QBS003, TRIM_VALS_QBS003 } from '../data/trim_qbs003';
 
 const M3_TO_GAL = 264.172;
 
@@ -21,6 +22,38 @@ function interpolarMM(tabla, sondaMM) {
     if (tabla[mid][0] <= sondaMM) lo = mid; else hi = mid;
   }
   return interp(sondaMM, tabla[lo][0], tabla[hi][0], tabla[lo][1], tabla[hi][1]);
+}
+
+// Corrección de trim: interpola en tabla 2D (innage_m, trim_m) → corrección en metros
+function interpTrim(tabla, innage_m, trim_m) {
+  if (!tabla || tabla.length === 0) return 0;
+  // Clamp trim to table range
+  const tMin = TRIM_VALS_QBS003[0], tMax = TRIM_VALS_QBS003[TRIM_VALS_QBS003.length - 1];
+  const tc = Math.max(tMin, Math.min(tMax, trim_m));
+  // Find trim column indices
+  let ti0 = 0, ti1 = 1;
+  for (let i = 0; i < TRIM_VALS_QBS003.length - 1; i++) {
+    if (tc >= TRIM_VALS_QBS003[i] && tc <= TRIM_VALS_QBS003[i + 1]) { ti0 = i; ti1 = i + 1; break; }
+  }
+  if (tc <= tMin) { ti0 = 0; ti1 = 0; }
+  if (tc >= tMax) { ti0 = TRIM_VALS_QBS003.length - 2; ti1 = TRIM_VALS_QBS003.length - 1; }
+  // Find innage row indices
+  const n = tabla.length;
+  let ri0 = 0, ri1 = 1;
+  if (innage_m <= tabla[0][0]) { ri0 = 0; ri1 = 0; }
+  else if (innage_m >= tabla[n - 1][0]) { ri0 = n - 2; ri1 = n - 1; }
+  else { for (let i = 0; i < n - 1; i++) { if (innage_m >= tabla[i][0] && innage_m <= tabla[i + 1][0]) { ri0 = i; ri1 = i + 1; break; } } }
+  // Bilinear interpolation: column index is ti + 1 (col 0 = innage, col 1 = trim[0])
+  const c0 = ti0 + 1, c1 = ti1 + 1;
+  const corrAt = (ri, ci) => tabla[ri][ci] || 0;
+  const interpRow = (ri) => {
+    if (ti0 === ti1) return corrAt(ri, c0);
+    const t0 = TRIM_VALS_QBS003[ti0], t1 = TRIM_VALS_QBS003[ti1];
+    return interp(tc, t0, t1, corrAt(ri, c0), corrAt(ri, c1));
+  };
+  if (ri0 === ri1) return interpRow(ri0);
+  const i0m = tabla[ri0][0], i1m = tabla[ri1][0];
+  return interp(innage_m, i0m, i1m, interpRow(ri0), interpRow(ri1));
 }
 
 // VCF: ASTM D1250 (productos del petróleo, densidad 15°C a partir de API)
@@ -117,14 +150,18 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
     setTempGlobal('');
   };
 
-  // Calcular resultado para una fila
-  const calcFila = (f) => {
+  // Calcular resultado para una fila (trim en metros con signo: pos=popa, neg=proa)
+  const calcFila = (f, trimSignedM = 0) => {
     const sondaMM = pfn(f.sonda);
     const tempC   = pfn(f.temperatura);
     const api     = pfn(f.api);
     if (isNaN(sondaMM) || sondaMM === '') return null;
+    // Aplicar corrección de trim: la tabla da corrección en metros → convertir a mm
+    const innage_m = sondaMM / 1000;
+    const trimCorr_m = interpTrim(TRIM_QBS003[f.key], innage_m, trimSignedM);
+    const sondaCorr = sondaMM + trimCorr_m * 1000;
     const tabla = TABLAS_QBS003[f.key];
-    const m3 = interpolarMM(tabla, sondaMM);
+    const m3 = interpolarMM(tabla, sondaCorr);
     if (m3 === null) return null;
     const glsB = m3 * M3_TO_GAL;
     const vcf  = (!isNaN(tempC) && !isNaN(api)) ? calcVCF(api, tempC) : null;
@@ -136,7 +173,14 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
     return { m3, glsB, vcf, glsN, f13, mt, pct };
   };
 
-  const resultados = filas.map(f => ({ ...f, res: calcFila(f) }));
+  // Trim con signo para corrección: positivo = popa, negativo = proa
+  const trimSignedM = (() => {
+    const p = pfn(calados.popaIni), r = pfn(calados.proaIni);
+    if (isNaN(p) || isNaN(r) || (String(calados.popaIni).trim() === '' && String(calados.proaIni).trim() === '')) return 0;
+    return p - r; // positivo=popa, negativo=proa
+  })();
+
+  const resultados = filas.map(f => ({ ...f, res: calcFila(f, trimSignedM) }));
 
   const totM3   = resultados.reduce((s, r) => s + (r.res?.m3   ?? 0), 0);
   const totGlsB = resultados.reduce((s, r) => s + (r.res?.glsB ?? 0), 0);
