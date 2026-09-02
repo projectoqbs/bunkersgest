@@ -377,8 +377,8 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
 
       {tab==="nuevo"&&<>
 
-        {/* Datos del BDN */}
-        <div style={{background:TH.card,border:"1px solid "+TH.border,borderLeft:`3px solid ${TH.orange}`,borderRadius:6,padding:"10px 14px",marginBottom:8}}>
+        {/* Datos del BDN — solo visible desde Despacho */}
+        {despachoCtx && <div style={{background:TH.card,border:"1px solid "+TH.border,borderLeft:`3px solid ${TH.orange}`,borderRadius:6,padding:"10px 14px",marginBottom:8}}>
           <div style={{fontSize:10,fontWeight:800,color:TH.orange,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>📄 Datos del BDN</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:"6px 12px"}}>
             {[
@@ -405,7 +405,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
               </div>
             );})()}
           </div>
-        </div>
+        </div>}
 
         {/* Calados dividido en Inicial y Final */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
