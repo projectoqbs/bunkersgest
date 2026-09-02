@@ -177,8 +177,8 @@ const NAV_META = {
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
-  operaciones: ["dashboard","pbs","trazabilidad","liquidador","inventario_diario"],
-  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad","liquidador","inventario_diario"],
+  operaciones: ["dashboard","pbs","trazabilidad","liquidador","liquidador_qbs003","inventario_diario"],
+  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad","liquidador","liquidador_qbs003","inventario_diario"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador: [
     "dashboard",
@@ -191,6 +191,7 @@ const NAV_ROL = {
     "programacion",
     "tanques",
     "liquidador",
+    "liquidador_qbs003",
     "inventario_diario",
     "auditoria",
   ],
