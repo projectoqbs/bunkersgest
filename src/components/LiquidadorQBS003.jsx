@@ -152,6 +152,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
     const glsB = m3 * M3_TO_GAL;
     const vcf  = (!isNaN(tempC) && !isNaN(api)) ? calcVCF(api, tempC) : null;
     const glsN = vcf !== null ? glsB * vcf : null;
+    console.log(`[QBS003] ${f.key} sonda=${f.sonda} temp=${f.temperatura}(${tempC}) api=${f.api}(${api}) vcf=${vcf} glsB=${glsB} glsN=${glsN}`);
     const f13  = !isNaN(api) ? calcF13(api) : null;
     const mt   = (f13 !== null && vcf !== null && glsN !== null) ? (glsN / 1000) * f13 : null;
     const capGal = CAP_QBS003_GAL[f.key];
