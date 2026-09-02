@@ -5131,7 +5131,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             // Barcazas disponibles: prefijos únicos de tanques de Planta 1
             const isP1 = id => id.startsWith("QBS002") || id.startsWith("QBS003") || id.startsWith("TKT");
             const p1Tanks = (tanques||[]).filter(t=>isP1(t.id));
-            const barcazas = [...new Set(p1Tanks.filter(t=>!t.id.startsWith("TKT")).map(t => t.id.startsWith("QBS002") ? "QBS002" : "QBS003"))];
+            const barcazas = [...new Set(p1Tanks.map(t => t.id.startsWith("QBS002") ? "QBS002" : t.id.startsWith("QBS003") ? "QBS003" : "TANQUES TIERRA"))];
 
             return (
               <div>
@@ -5153,7 +5153,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <select value={barcazaSelec} onChange={e=>setBarcaza(e.target.value)}
                     style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 14px",color:barcazaSelec?T.text:T.muted,fontSize:13,fontWeight:barcazaSelec?700:400,outline:"none",cursor:"pointer",minWidth:200}}>
                     <option value="">— Seleccionar barcaza —</option>
-                    {barcazas.map(b=><option key={b} value={b}>{b==="QBS002"?"Barcaza QBS002":"Barcaza QBS003"}</option>)}
+                    {barcazas.map(b=><option key={b} value={b}>{b==="QBS002"?"Barcaza QBS002":b==="QBS003"?"Barcaza QBS003":"Tanques Tierra (TKT-1 / TKT-2)"}</option>)}
                   </select>
                 </div>
 
