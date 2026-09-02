@@ -165,11 +165,11 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
     if (m3 === null) return null;
     const glsB = m3 * M3_TO_GAL;
     const vcf  = (!isNaN(tempC) && !isNaN(api)) ? calcVCF(api, tempC) : null;
-    const glsN = vcf ? glsB * vcf : glsB;
+    const glsN = vcf ? glsB * vcf : null;
     const f13  = !isNaN(api) ? calcF13(api) : null;
-    const mt   = (f13 && vcf) ? (glsN / 1000) * f13 : null;
+    const mt   = (f13 && vcf && glsN) ? (glsN / 1000) * f13 : null;
     const capGal = CAP_QBS003_GAL[f.key];
-    const pct  = capGal ? (glsN / capGal) * 100 : null;
+    const pct  = (capGal && glsN) ? (glsN / capGal) * 100 : null;
     return { m3, glsB, vcf, glsN, f13, mt, pct };
   };
 
@@ -184,10 +184,11 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
 
   const totM3   = resultados.reduce((s, r) => s + (r.res?.m3   ?? 0), 0);
   const totGlsB = resultados.reduce((s, r) => s + (r.res?.glsB ?? 0), 0);
-  const totGlsN = resultados.reduce((s, r) => s + (r.res?.glsN ?? 0), 0);
+  const hayGlsN  = resultados.some(r => r.res?.glsN != null);
+  const totGlsN = hayGlsN ? resultados.reduce((s, r) => s + (r.res?.glsN ?? 0), 0) : null;
   const totMT   = resultados.every(r => r.res?.mt != null) ? resultados.reduce((s, r) => s + (r.res?.mt ?? 0), 0) : null;
   const totCapGal = Object.values(CAP_QBS003_GAL).reduce((s, v) => s + v, 0);
-  const totPct  = totCapGal ? (totGlsN / totCapGal) * 100 : null;
+  const totPct  = (totCapGal && totGlsN) ? (totGlsN / totCapGal) * 100 : null;
   const hayResultados = resultados.some(r => r.res !== null);
 
   // ─── Colores por % llenado ────────────────────────────────────────────────
