@@ -118,8 +118,6 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
   };
 
   const [filas, setFilas] = useState(initFilas());
-  const [apiGlobal, setApiGlobal] = useState('');
-  const [tempGlobal, setTempGlobal] = useState('');
   const [calados, setCalados] = useState({ proaIni: '', popaIni: '', proaFin: '', popaFin: '' });
 
   const mkTrim = (popa, proa) => {
@@ -136,19 +134,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
     setFilas(prev => prev.map(f => f.key === key ? { ...f, [campo]: valor } : f));
   };
 
-  const aplicarGlobal = () => {
-    setFilas(prev => prev.map(f => ({
-      ...f,
-      api: apiGlobal || f.api,
-      temperatura: tempGlobal || f.temperatura,
-    })));
-  };
-
-  const limpiar = () => {
-    setFilas(initFilas());
-    setApiGlobal('');
-    setTempGlobal('');
-  };
+  const limpiar = () => { setFilas(initFilas()); };
 
   // Calcular resultado para una fila (trim en metros con signo: pos=popa, neg=proa)
   const calcFila = (f, trimSignedM = 0) => {
@@ -165,9 +151,9 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
     if (m3 === null) return null;
     const glsB = m3 * M3_TO_GAL;
     const vcf  = (!isNaN(tempC) && !isNaN(api)) ? calcVCF(api, tempC) : null;
-    const glsN = vcf ? glsB * vcf : null;
+    const glsN = vcf !== null ? glsB * vcf : null;
     const f13  = !isNaN(api) ? calcF13(api) : null;
-    const mt   = (f13 && vcf && glsN) ? (glsN / 1000) * f13 : null;
+    const mt   = (f13 !== null && vcf !== null && glsN !== null) ? (glsN / 1000) * f13 : null;
     const capGal = CAP_QBS003_GAL[f.key];
     const pct  = (capGal && glsN) ? (glsN / capGal) * 100 : null;
     return { m3, glsB, vcf, glsN, f13, mt, pct };
@@ -257,27 +243,6 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
         ))}
       </div>
 
-      {/* Valores globales */}
-      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: T.navy, alignSelf: 'center' }}>Aplicar a todos:</div>
-        <div>
-          <div style={{ fontSize: 10, color: T.muted, marginBottom: 3 }}>API</div>
-          <input type="number" step="0.1" value={apiGlobal} onChange={e => setApiGlobal(e.target.value)}
-            placeholder="API°" style={{ ...inputSt, width: 80 }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 10, color: T.muted, marginBottom: 3 }}>Temperatura (°C)</div>
-          <input type="number" step="0.1" value={tempGlobal} onChange={e => setTempGlobal(e.target.value)}
-            placeholder="°C" style={{ ...inputSt, width: 80 }} />
-        </div>
-        <button onClick={aplicarGlobal}
-          style={{ background: T.navy, border: 'none', borderRadius: 7, padding: '7px 16px', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-          ✓ Aplicar
-        </button>
-        <div style={{ marginLeft: 'auto', fontSize: 10, color: T.muted, alignSelf: 'center' }}>
-          Corrección VCF se aplica automáticamente si se ingresa API y temperatura
-        </div>
-      </div>
 
       {/* Tabla de entrada / resultados */}
       <div style={{ overflowX: 'auto', borderRadius: 10, border: `1px solid ${T.border}` }}>
