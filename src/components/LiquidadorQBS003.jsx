@@ -59,14 +59,10 @@ function interpTrim(tabla, innage_m, trim_m) {
 // VCF: ASTM D1250 (productos del petróleo, densidad 15°C a partir de API)
 function calcVCF(api, tempC) {
   if (isNaN(api) || isNaN(tempC)) return null;
-  const rho15 = 141.5 / (api + 131.5) * 1000; // kg/m3 a 15°C
-  const alpha = rho15 < 770 ? 613.97226 / (rho15 * rho15)
-    : rho15 < 787 ? 346.42300 / (rho15 * rho15)
-    : rho15 < 838 ? 186.96990 / (rho15 * rho15)
-    : rho15 < 1074 ? 0.186840 / (rho15 * rho15) * 1e6
-    : 0;
-  const deltaT = tempC - 15;
-  return Math.exp(-alpha * deltaT * (1 + 0.8 * alpha * deltaT));
+  const rho15 = (141.5 / (131.5 + api)) * 999.016;
+  const alpha = (186.9696 + 0.486926 * rho15) / (rho15 * rho15);
+  const d = tempC - 15.5556;
+  return Math.exp(-alpha * d * (1 + 0.8 * alpha * d));
 }
 
 function calcF13(api) {
@@ -152,7 +148,6 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
     const glsB = m3 * M3_TO_GAL;
     const vcf  = (!isNaN(tempC) && !isNaN(api)) ? calcVCF(api, tempC) : null;
     const glsN = vcf !== null ? glsB * vcf : null;
-    console.log(`[QBS003] ${f.key} sonda=${f.sonda} temp=${f.temperatura}(${tempC}) api=${f.api}(${api}) vcf=${vcf} glsB=${glsB} glsN=${glsN}`);
     const f13  = !isNaN(api) ? calcF13(api) : null;
     const mt   = (f13 !== null && vcf !== null && glsN !== null) ? (glsN / 1000) * f13 : null;
     const capGal = CAP_QBS003_GAL[f.key];
