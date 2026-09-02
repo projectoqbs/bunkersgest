@@ -1774,7 +1774,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
           : cmtDespues[0]?.tanque;
         if (tanqueOrigen) {
           if (tanqueOrigen.startsWith("TK-")) plantaActual = "PLANTA 2";
-          else if (tanqueOrigen.startsWith("QBS002-") || tanqueOrigen.startsWith("TKT-")) plantaActual = "PLANTA 1";
+          else if (tanqueOrigen.startsWith("QBS002-") || tanqueOrigen.startsWith("QBS003-") || tanqueOrigen.startsWith("TKT-")) plantaActual = "PLANTA 1";
         }
       }
       const {data: cmtsFrescos} = await supabase.from("cmts").select("numero_cmt").order("created_at",{ascending:false});
@@ -2187,7 +2187,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               "QBS002-5B":27194,"QBS002-5E":26935,
             };
             const tkCap = t => Math.round((Number(t.capacidad) || CAP_QBS002_DASH[t.id] || 27000) * 0.9);
-            const isPlanta1 = id => id.startsWith("QBS002") || id === "TKT-1" || id === "TKT-2";
+            const isPlanta1 = id => id.startsWith("QBS002") || id.startsWith("QBS003") || id === "TKT-1" || id === "TKT-2";
             const isPlanta2 = id => id.startsWith("TK-");
 
             const p1Tanks = tanques.filter(t => isPlanta1(t.id));
@@ -2984,7 +2984,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             {yaAnalizado
                               ? <span style={{marginLeft:10,fontSize:11,color:T.success,fontWeight:700}}>✅ Analizado</span>
                               : <button onClick={()=>{
-                                  const esP1 = (tr.destino||"").startsWith("QBS002-") || (tr.destino||"").startsWith("TKT-");
+                                  const esP1 = (tr.destino||"").startsWith("QBS002-") || (tr.destino||"").startsWith("QBS003-") || (tr.destino||"").startsWith("TKT-");
                                   setForm({tipo_analisis: esP1 ? "Planta 1" : "Planta 2", ot_id:o.id, ot_numero:o.numero_ot, tanque_id:tr.destino, tanque:tr.destino});
                                   setModal("tiquete");
                                 }}
@@ -5128,9 +5128,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               setTabs(prev => [...prev]); // fuerza re-render
             };
             // Barcazas disponibles: prefijos únicos de tanques de Planta 1
-            const isP1 = id => id.startsWith("QBS002") || id.startsWith("TKT");
+            const isP1 = id => id.startsWith("QBS002") || id.startsWith("QBS003") || id.startsWith("TKT");
             const p1Tanks = (tanques||[]).filter(t=>isP1(t.id));
-            const barcazas = [...new Set(p1Tanks.map(t => t.id.startsWith("QBS002") ? "QBS002" : "TANQUES TIERRA"))];
+            const barcazas = [...new Set(p1Tanks.map(t => t.id.startsWith("QBS002") ? "QBS002" : t.id.startsWith("QBS003") ? "QBS003" : "TANQUES TIERRA"))];
 
             return (
               <div>
@@ -5260,7 +5260,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {/* Campos header */}
               {(()=>{
                 const TANQUES_P2  = ["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
-                const TANQUES_P1  = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","TKT-1","TKT-2"];
+                const TANQUES_P1  = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2"];
                 const plantaForm  = fForm.planta || "PLANTA 2";
                 const tanquesDisp = plantaForm === "PLANTA 1" ? TANQUES_P1 : TANQUES_P2;
                 // Si el tanque actual no pertenece a la planta seleccionada, resetear
@@ -6549,10 +6549,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloVista||soloLab}/>
               {!esMP && (()=>{
                 const tanquesOpts = tipoA==="Planta 1"
-                  ? ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E"]
+                  ? ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S"]
                   : tipoA==="Planta 2"
                   ? ["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"]
-                  : ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","TKT-1","TKT-2","TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
+                  : ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2","TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
                 return (
                   <div style={{display:"flex",flexDirection:"column",gap:4}}>
                     <label style={{fontSize:12,fontWeight:600,color:T.muted}}>Tanque</label>
@@ -7011,6 +7011,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <Sel label="Barcaza" value={form.planta||""} onChange={e=>{setForm(prev=>({...prev,planta:e.target.value}));}}>
                     <option value="">Seleccionar...</option>
                     <option value="QBS002">QBS002</option>
+                    <option value="QBS003">QBS003</option>
                     <option value="TANQUES TIERRA">TANQUES TIERRA</option>
                   </Sel>
                 ) : (
@@ -7044,16 +7045,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtPlantaRaw = form.planta || "";
               const esTrasiegoInterplanta = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
               const esEntregaMot = ["ENTREGA A MOTONAVE","ENTREGA A CARROTANQUE"].includes(form.tipo_operacion||"");
-              const P1_IDS_CMT = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","TKT-1","TKT-2"];
+              const P1_IDS_CMT = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2"];
               const tanquesEnriquecidos = [...tanques, ...P1_IDS_CMT.filter(id=>!tanques.some(t=>t.id===id)).map(id=>({id}))];
               const tankEnPlanta = (t, p) => {
                 if (!p || esTrasiegoInterplanta) return true;
                 if (esEntregaMot) {
                   if (p==="QBS002") return t.id.startsWith("QBS002-");
+                  if (p==="QBS003") return t.id.startsWith("QBS003-");
                   if (p==="TANQUES TIERRA") return t.id.startsWith("TKT-");
-                  return t.id.startsWith("QBS002-")||t.id.startsWith("TKT-");
+                  return t.id.startsWith("QBS002-")||t.id.startsWith("QBS003-")||t.id.startsWith("TKT-");
                 }
-                if (p==="PLANTA 1") return t.id.startsWith("QBS002-") || t.id.startsWith("TKT-");
+                if (p==="PLANTA 1") return t.id.startsWith("QBS002-") || t.id.startsWith("QBS003-") || t.id.startsWith("TKT-");
                 if (p==="PLANTA 2") return t.id.startsWith("TK-");
                 return true;
               };
@@ -7153,11 +7155,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
               const cmtPlantaRaw = form.planta || "";
               const esTrasiegoInterplanta = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
-              const P1_IDS_CMT2 = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","TKT-1","TKT-2"];
+              const P1_IDS_CMT2 = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2"];
               const tanquesEnriquecidos2 = [...tanques, ...P1_IDS_CMT2.filter(id=>!tanques.some(t=>t.id===id)).map(id=>({id}))];
               const tankEnPlanta = (t, p) => {
                 if (!p || esTrasiegoInterplanta) return true;
-                if (p==="PLANTA 1") return t.id.startsWith("QBS002-") || t.id.startsWith("TKT-");
+                if (p==="PLANTA 1") return t.id.startsWith("QBS002-") || t.id.startsWith("QBS003-") || t.id.startsWith("TKT-");
                 if (p==="PLANTA 2") return t.id.startsWith("TK-");
                 return true;
               };
@@ -7173,6 +7175,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           style={{background:T.navy,color:"#fff",border:"none",borderRadius:6,padding:"5px 10px",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none"}}>
                           <option value="">Barcaza...</option>
                           <option value="QBS002">QBS002</option>
+                          <option value="QBS003">QBS003</option>
                           <option value="TANQUES TIERRA">TANQUES TIERRA</option>
                         </select>
                       ) : (
@@ -7190,12 +7193,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           const esEntrega=(form.tipo_operacion||"")==="ENTREGA A MOTONAVE";
                           if(esEntrega){
                             if(p==="QBS002") return tanquesEnriquecidos2.filter(t=>t.id.startsWith("QBS002-"));
+                            if(p==="QBS003") return tanquesEnriquecidos2.filter(t=>t.id.startsWith("QBS003-"));
                             if(p==="TANQUES TIERRA") return tanquesEnriquecidos2.filter(t=>t.id.startsWith("TKT-"));
-                            return tanquesEnriquecidos2.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"));
+                            return tanquesEnriquecidos2.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("QBS003-")||t.id.startsWith("TKT-"));
                           }
-                          if(p==="PLANTA 1") return tanquesEnriquecidos2.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"));
+                          if(p==="PLANTA 1") return tanquesEnriquecidos2.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("QBS003-")||t.id.startsWith("TKT-"));
                           if(p==="PLANTA 2") return tanquesEnriquecidos2.filter(t=>t.id.startsWith("TK-"));
-                          return tanquesEnriquecidos2.filter(t=>t.id.startsWith("TK-")||t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"));
+                          return tanquesEnriquecidos2.filter(t=>t.id.startsWith("TK-")||t.id.startsWith("QBS002-")||t.id.startsWith("QBS003-")||t.id.startsWith("TKT-"));
                         })().map(t=><option key={t.id}>{t.id}</option>)}
                       </select>
                     </div>
@@ -7352,7 +7356,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {/* ── PORTEO ─────────────────────────────────────────────────────────── */}
           {(form.tipo_operacion||"")==="PORTEO" && (()=>{
             const allPlantas = ["PLANTA 1","PLANTA 2"];
-            const P1_IDS_PORTEO = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","TKT-1","TKT-2"];
+            const P1_IDS_PORTEO = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2"];
             const tanquesPorteoAll = [...tanques, ...P1_IDS_PORTEO.filter(id=>!tanques.some(t=>t.id===id)).map(id=>({id,planta:"PLANTA 1"}))];
             const inSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
             const roSt = {...inSt,background:"#f1f5f9",color:T.navy,fontWeight:700,cursor:"default"};
@@ -7403,7 +7407,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             const renderTanqueSection = (color, planta, setPlanta, rows, setRows, isDescarga=false) => {
               const tanquesPlanta = planta==="PLANTA 1"
-                ? tanquesPorteoAll.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("TKT-"))
+                ? tanquesPorteoAll.filter(t=>t.id.startsWith("QBS002-")||t.id.startsWith("QBS003-")||t.id.startsWith("TKT-"))
                 : planta==="PLANTA 2"
                 ? tanquesPorteoAll.filter(t=>t.id.startsWith("TK-"))
                 : [];
