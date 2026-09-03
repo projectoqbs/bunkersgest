@@ -81,18 +81,18 @@ function fmt0(n) { return fmtN(n, 0); }
 
 // ─── Tanques QBS003 ──────────────────────────────────────────────────────────
 const TANKS = [
-  { key: 'T1P', label: 'Tank 1 Port',      group: 1, side: 'P' },
-  { key: 'T1S', label: 'Tank 1 Starboard', group: 1, side: 'S' },
-  { key: 'T2P', label: 'Tank 2 Port',      group: 2, side: 'P' },
-  { key: 'T2S', label: 'Tank 2 Starboard', group: 2, side: 'S' },
-  { key: 'T3P', label: 'Tank 3 Port',      group: 3, side: 'P' },
-  { key: 'T3S', label: 'Tank 3 Starboard', group: 3, side: 'S' },
-  { key: 'T4P', label: 'Tank 4 Port',      group: 4, side: 'P' },
-  { key: 'T4S', label: 'Tank 4 Starboard', group: 4, side: 'S' },
-  { key: 'T5P', label: 'Tank 5 Port',      group: 5, side: 'P' },
-  { key: 'T5S', label: 'Tank 5 Starboard', group: 5, side: 'S' },
-  { key: 'T6P', label: 'Tank 6 Port',      group: 6, side: 'P' },
-  { key: 'T6S', label: 'Tank 6 Starboard', group: 6, side: 'S' },
+  { key: 'T1BR', label: 'Tank 1 Babor',      group: 1, side: 'BR' },
+  { key: 'T1ER', label: 'Tank 1 Estribor',   group: 1, side: 'ER' },
+  { key: 'T2BR', label: 'Tank 2 Babor',      group: 2, side: 'BR' },
+  { key: 'T2ER', label: 'Tank 2 Estribor',   group: 2, side: 'ER' },
+  { key: 'T3BR', label: 'Tank 3 Babor',      group: 3, side: 'BR' },
+  { key: 'T3ER', label: 'Tank 3 Estribor',   group: 3, side: 'ER' },
+  { key: 'T4BR', label: 'Tank 4 Babor',      group: 4, side: 'BR' },
+  { key: 'T4ER', label: 'Tank 4 Estribor',   group: 4, side: 'ER' },
+  { key: 'T5BR', label: 'Tank 5 Babor',      group: 5, side: 'BR' },
+  { key: 'T5ER', label: 'Tank 5 Estribor',   group: 5, side: 'ER' },
+  { key: 'T6BR', label: 'Tank 6 Babor',      group: 6, side: 'BR' },
+  { key: 'T6ER', label: 'Tank 6 Estribor',   group: 6, side: 'ER' },
 ];
 
 const initFilas = () => TANKS.map(t => ({
@@ -264,7 +264,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
               return (
                 <tr key={f.key} style={{ background: i % 2 === 0 ? T.card : T.bg }}>
                   {/* Tanque label */}
-                  <td style={tdSt({ fontWeight: 700, color: f.side === 'P' ? T.navy : T.orange, fontSize: 11 })}>
+                  <td style={tdSt({ fontWeight: 700, color: f.side === 'BR' ? T.navy : T.orange, fontSize: 11 })}>
                     {f.label}
                     <div style={{ fontSize: 9, color: T.muted, fontWeight: 400 }}>
                       Cap: {fmt0(CAP_QBS003_GAL[f.key])} gal

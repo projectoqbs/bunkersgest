@@ -5260,7 +5260,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               {/* Campos header */}
               {(()=>{
                 const TANQUES_P2  = ["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
-                const TANQUES_P1  = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2"];
+                const TANQUES_P1  = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1BR","QBS003-T1ER","QBS003-T2BR","QBS003-T2ER","QBS003-T3BR","QBS003-T3ER","QBS003-T4BR","QBS003-T4ER","QBS003-T5BR","QBS003-T5ER","QBS003-T6BR","QBS003-T6ER","TKT-1","TKT-2"];
                 const plantaForm  = fForm.planta || "PLANTA 2";
                 const tanquesDisp = plantaForm === "PLANTA 1" ? TANQUES_P1 : TANQUES_P2;
                 // Si el tanque actual no pertenece a la planta seleccionada, resetear
@@ -6549,10 +6549,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <Inp label="Producto" type="text" value={form.producto||""} onChange={f("producto")} readOnly={soloVista||soloLab}/>
               {!esMP && (()=>{
                 const tanquesOpts = tipoA==="Planta 1"
-                  ? ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S"]
+                  ? ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1BR","QBS003-T1ER","QBS003-T2BR","QBS003-T2ER","QBS003-T3BR","QBS003-T3ER","QBS003-T4BR","QBS003-T4ER","QBS003-T5BR","QBS003-T5ER","QBS003-T6BR","QBS003-T6ER"]
                   : tipoA==="Planta 2"
                   ? ["TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"]
-                  : ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2","TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
+                  : ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1BR","QBS003-T1ER","QBS003-T2BR","QBS003-T2ER","QBS003-T3BR","QBS003-T3ER","QBS003-T4BR","QBS003-T4ER","QBS003-T5BR","QBS003-T5ER","QBS003-T6BR","QBS003-T6ER","TKT-1","TKT-2","TK-111","TK-112","TK-113","TK-114","TK-115","TK-116","TK-117"];
                 return (
                   <div style={{display:"flex",flexDirection:"column",gap:4}}>
                     <label style={{fontSize:12,fontWeight:600,color:T.muted}}>Tanque</label>
@@ -7045,7 +7045,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtPlantaRaw = form.planta || "";
               const esTrasiegoInterplanta = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
               const esEntregaMot = ["ENTREGA A MOTONAVE","ENTREGA A CARROTANQUE"].includes(form.tipo_operacion||"");
-              const P1_IDS_CMT = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2"];
+              const P1_IDS_CMT = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1BR","QBS003-T1ER","QBS003-T2BR","QBS003-T2ER","QBS003-T3BR","QBS003-T3ER","QBS003-T4BR","QBS003-T4ER","QBS003-T5BR","QBS003-T5ER","QBS003-T6BR","QBS003-T6ER","TKT-1","TKT-2"];
               const tanquesEnriquecidos = [...tanques, ...P1_IDS_CMT.filter(id=>!tanques.some(t=>t.id===id)).map(id=>({id}))];
               const tankEnPlanta = (t, p) => {
                 if (!p || esTrasiegoInterplanta) return true;
@@ -7155,7 +7155,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const cmtSede = form.sede || (sedeFiltro!=="TODAS"?sedeFiltro:"MALAMBO");
               const cmtPlantaRaw = form.planta || "";
               const esTrasiegoInterplanta = (form.tipo_operacion||"")==="TRASIEGO DE PRODUCTO";
-              const P1_IDS_CMT2 = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2"];
+              const P1_IDS_CMT2 = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1BR","QBS003-T1ER","QBS003-T2BR","QBS003-T2ER","QBS003-T3BR","QBS003-T3ER","QBS003-T4BR","QBS003-T4ER","QBS003-T5BR","QBS003-T5ER","QBS003-T6BR","QBS003-T6ER","TKT-1","TKT-2"];
               const tanquesEnriquecidos2 = [...tanques, ...P1_IDS_CMT2.filter(id=>!tanques.some(t=>t.id===id)).map(id=>({id}))];
               const tankEnPlanta = (t, p) => {
                 if (!p || esTrasiegoInterplanta) return true;
@@ -7356,7 +7356,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {/* ── PORTEO ─────────────────────────────────────────────────────────── */}
           {(form.tipo_operacion||"")==="PORTEO" && (()=>{
             const allPlantas = ["PLANTA 1","PLANTA 2"];
-            const P1_IDS_PORTEO = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1P","QBS003-T1S","QBS003-T2P","QBS003-T2S","QBS003-T3P","QBS003-T3S","QBS003-T4P","QBS003-T4S","QBS003-T5P","QBS003-T5S","QBS003-T6P","QBS003-T6S","TKT-1","TKT-2"];
+            const P1_IDS_PORTEO = ["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E","QBS003-T1BR","QBS003-T1ER","QBS003-T2BR","QBS003-T2ER","QBS003-T3BR","QBS003-T3ER","QBS003-T4BR","QBS003-T4ER","QBS003-T5BR","QBS003-T5ER","QBS003-T6BR","QBS003-T6ER","TKT-1","TKT-2"];
             const tanquesPorteoAll = [...tanques, ...P1_IDS_PORTEO.filter(id=>!tanques.some(t=>t.id===id)).map(id=>({id,planta:"PLANTA 1"}))];
             const inSt = {width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,outline:"none",boxSizing:"border-box"};
             const roSt = {...inSt,background:"#f1f5f9",color:T.navy,fontWeight:700,cursor:"default"};
