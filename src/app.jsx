@@ -4684,7 +4684,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             ]
                           : [
                               {k:"placa",l:"Placa"},{k:"fecha",l:"Fecha CMT"},{k:"cmt",l:"CMT"},{k:"transportadora",l:"Transportadora"},
-                              {k:"tqsCarga",l:"Tanques Carga"},
+                              {k:"tqsCarga",l:"Tanques Carga / Gls Cargados"},
                               {k:"inicio",l:"Inicio Cargue"},{k:"fin",l:"Fin Cargue"},{k:"durCargue",l:"Dur. Cargue"},
                               {k:"inicioDesc",l:"Inicio Descargue"},{k:"finDesc",l:"Fin Descargue"},{k:"durDescargue",l:"Dur. Descargue"},
                               {k:"contador",l:"Gls Contador"},{k:"pesoIng",l:"Peso Ingreso"},{k:"pesoSal",l:"Peso Salida"},
@@ -4809,7 +4809,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {C.has("fecha")          && <th style={thStyle}>Fecha CMT</th>}
                         {C.has("cmt")            && <th style={thStyle}>CMT</th>}
                         {C.has("transportadora") && <th style={thStyle}>Transportadora</th>}
-                        {C.has("tqsCarga")       && <th style={thStyle}>Tanques Carga (gls salidos)</th>}
+                        {C.has("tqsCarga")       && <th style={thStyle}>Tanques Carga</th>}
+                        {C.has("tqsCarga")       && <th style={thStyle}>Gls Cargados</th>}
                         {C.has("inicio")         && <th style={thStyle}>Inicio Cargue</th>}
                         {C.has("fin")            && <th style={thStyle}>Fin Cargue</th>}
                         {C.has("durCargue")      && <th style={thStyle}>Dur. Cargue</th>}
@@ -4835,7 +4836,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                               {C.has("cmt")            && <td style={tdS({...mono,color:T.success})}>{cm.numero_cmt}</td>}
                               {C.has("transportadora") && <td style={tdS({color:T.muted})}>{cr.transportadora||"—"}</td>}
                               {C.has("tqsCarga")       && <td style={{padding:"10px 12px",fontSize:11}}>
-                                {tqsCarga.length>0?tqsCarga.map((t,j)=>{const g=glsCarga(t);return <div key={j} style={{whiteSpace:"nowrap"}}><span style={{...mono,color:T.navy,fontSize:11}}>{t.tanque}</span>{g>0&&<span style={{fontSize:10,color:T.danger,fontWeight:700}}> {fmt(g)} gls</span>}</div>;}):<span style={{color:T.muted,fontSize:10}}>—</span>}
+                                {tqsCarga.length>0?tqsCarga.map((t,j)=><div key={j} style={{whiteSpace:"nowrap",color:T.navy,fontSize:11}}>{t.tanque}</div>):<span style={{color:T.muted,fontSize:10}}>—</span>}
+                              </td>}
+                              {C.has("tqsCarga")       && <td style={{padding:"10px 12px",fontSize:11,textAlign:"right"}}>
+                                {tqsCarga.length>0?tqsCarga.map((t,j)=>{const g=glsCarga(t);return <div key={j} style={{whiteSpace:"nowrap",...mono,color:T.danger,fontWeight:700,fontSize:10}}>{g>0?`${fmt(g)} gls`:"—"}</div>;}):<span style={{color:T.muted,fontSize:10}}>—</span>}
                               </td>}
                               {C.has("inicio")         && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_inicio_cargue||"—"}</td>}
                               {C.has("fin")            && <td style={tdS({color:T.muted,fontSize:10})}>{cr.hora_final_cargue||"—"}</td>}
