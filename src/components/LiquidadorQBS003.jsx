@@ -115,6 +115,10 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
 
   const [filas, setFilas] = useState(initFilas());
   const [calados, setCalados] = useState({ proaIni: '', popaIni: '', proaFin: '', popaFin: '' });
+  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [operador, setOperador] = useState(perfil?.nombre || '');
+  const [obs, setObs] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const mkTrim = (popa, proa) => {
     const a = pfn(popa), b = pfn(proa);
@@ -164,6 +168,64 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
 
   const resultados = filas.map(f => ({ ...f, res: calcFila(f, trimSignedM) }));
 
+  async function guardar() {
+    if (!hayResultados) return showToast('Ingresa al menos una sonda', false);
+    setSaving(true);
+    const registro = {
+      fecha,
+      operador: operador.trim() || perfil?.nombre || '',
+      observaciones: obs.trim() || null,
+      calados: calados,
+      trim_ini: trimI,
+      trim_fin: trimF,
+      filas: resultados.map(f => ({
+        key: f.key, label: f.label,
+        sonda: f.sonda, temperatura: f.temperatura, api: f.api,
+        m3: f.res?.m3 ?? null,
+        gls_brutos: f.res?.glsB ?? null,
+        vcf: f.res?.vcf ?? null,
+        gls_netos: f.res?.glsN ?? null,
+        mt: f.res?.mt ?? null,
+      })),
+      gls_brutos_ini: Math.round(totGlsB),
+      gls_netos_ini: totGlsN !== null ? Math.round(totGlsN) : null,
+      mt_entregadas: totMT ? Number(totMT.toFixed(3)) : null,
+      usuario_id: session?.user?.id,
+    };
+    const { error } = await dbCall({ table: 'liquidaciones_qbs003', op: 'insert', data: registro });
+    if (error) { setSaving(false); showToast('Error: ' + error.message, false); return; }
+
+    // Auto-generar CMT
+    try {
+      const prefijo = 'MAL1';
+      const { data: cmtsFrescos } = await supabase.from('cmts').select('numero_cmt').order('created_at', { ascending: false });
+      const existentes = (cmtsFrescos || []).filter(c => (c.numero_cmt || '').startsWith(`CMT-${prefijo}-`));
+      const numeroCmt = `CMT-${prefijo}-${String(existentes.length + 1).padStart(5, '0')}`;
+      const prod = 'MGO';
+      const tanquesSnap = resultados.filter(f => f.res !== null).map(f => ({
+        tanque: `QBS003-${f.key}`, sonda: f.sonda, temp: f.temperatura, api: f.api,
+        galones: f.res?.glsN ? Math.round(f.res.glsN) : 0, producto: prod,
+      }));
+      const totalGls = tanquesSnap.reduce((s, t) => s + (t.galones || 0), 0);
+      await dbCall({ table: 'cmts', op: 'insert', data: {
+        id: numeroCmt, numero_cmt: numeroCmt,
+        fecha, sede: perfil?.sede || 'MALAMBO', planta: 'QBS003',
+        tipo_operacion: 'MEDICIÓN QBS003',
+        producto: prod,
+        tanques_antes: tanquesSnap,
+        tanques_despues: [],
+        tanques_recepcion: [],
+        total_antes: totalGls, total_despues: 0, total_movido: 0,
+        operador: perfil?.nombre || operador || '',
+        creado_por: session?.user?.id,
+      }});
+    } catch (e) { /* falla silenciosamente */ }
+
+    setSaving(false);
+    showToast('Liquidación QBS003 guardada ✔', true);
+    limpiar();
+  }
+
   const totM3   = resultados.reduce((s, r) => s + (r.res?.m3   ?? 0), 0);
   const totGlsB = resultados.reduce((s, r) => s + (r.res?.glsB ?? 0), 0);
   const hayGlsN  = resultados.some(r => r.res?.glsN != null);
@@ -199,15 +261,36 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', color: T.text }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div>
           <div style={{ fontWeight: 900, fontSize: 18, color: T.navy }}>🛢 Liquidador QBS003</div>
           <div style={{ fontSize: 11, color: T.muted }}>Barcaza QBS003 — 12 tanques (Innage mm → m³ → gal)</div>
         </div>
-        <button onClick={limpiar}
-          style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 14px', color: T.muted, fontSize: 11, cursor: 'pointer' }}>
-          ↺ Limpiar
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={limpiar}
+            style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 14px', color: T.muted, fontSize: 11, cursor: 'pointer' }}>
+            ↺ Limpiar
+          </button>
+          <button onClick={guardar} disabled={saving || !hayResultados}
+            style={{ background: T.success, border: 'none', borderRadius: 8, padding: '6px 18px', color: '#fff', fontSize: 11, fontWeight: 700, cursor: saving || !hayResultados ? 'not-allowed' : 'pointer', opacity: saving || !hayResultados ? 0.6 : 1 }}>
+            {saving ? 'Guardando…' : '✔ Guardar'}
+          </button>
+        </div>
+      </div>
+
+      {/* Campos de registro */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 8, marginBottom: 12 }}>
+        {[
+          { label: 'Fecha', type: 'date', val: fecha, set: setFecha },
+          { label: 'Operador', type: 'text', val: operador, set: setOperador },
+          { label: 'Observaciones', type: 'text', val: obs, set: setObs },
+        ].map(({ label, type, val, set }) => (
+          <div key={label}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 }}>{label}</div>
+            <input type={type} value={val} onChange={e => set(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', background: T.card, border: `1px solid ${T.border}`, borderRadius: 6, padding: '6px 8px', color: T.text, fontSize: 12, outline: 'none' }} />
+          </div>
+        ))}
       </div>
 
       {/* Calados */}
