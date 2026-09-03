@@ -352,8 +352,8 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
       {hayResultados && (
         <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
           {[1, 2, 3, 4, 5, 6].map(g => {
-            const port = resultados.find(r => r.group === g && r.side === 'P');
-            const stbd = resultados.find(r => r.group === g && r.side === 'S');
+            const port = resultados.find(r => r.group === g && r.side === 'BR');
+            const stbd = resultados.find(r => r.group === g && r.side === 'ER');
             const totalGls = (port?.res?.glsN ?? 0) + (stbd?.res?.glsN ?? 0);
             const totalCap = (CAP_QBS003_GAL[port?.key] ?? 0) + (CAP_QBS003_GAL[stbd?.key] ?? 0);
             const pct = totalCap ? (totalGls / totalCap) * 100 : 0;
@@ -370,7 +370,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
                 <div style={{ fontSize: 10, fontWeight: 700, color: T.navy }}>{fmt0(totalGls)} gal</div>
                 <div style={{ fontSize: 9, color: T.muted }}>{fmtN(totalGls / M3_TO_GAL * 264.172 / 264.172 * (port?.res?.m3 ? port.res.m3 + (stbd?.res?.m3 ?? 0) : 0), 2)} m³</div>
                 <div style={{ fontSize: 9, color: T.muted, marginTop: 4 }}>
-                  P: {fmt0(port?.res?.glsN ?? 0)} | S: {fmt0(stbd?.res?.glsN ?? 0)}
+                  BR: {fmt0(port?.res?.glsN ?? 0)} | ER: {fmt0(stbd?.res?.glsN ?? 0)}
                 </div>
               </div>
             );
