@@ -299,10 +299,11 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
     const rf=calcB(f,trimF,f.sFin,f.tFin,f.aFin);
     const ent=(ri&&rf)?ri.glsN-rf.glsN:null;
     const bg=!f.activo?"#f8f9fa":idx%2===0?"#ffffff":"#eef4fb";
+    const tankColor=f.tanque.endsWith("E")?TH.orange:TH.navy;
     return(
       <tr key={f.tanque} style={{background:bg,opacity:f.activo?1:0.5,borderBottom:"1px solid "+TH.border}}>
         <td style={tdC}><input type="checkbox" checked={f.activo} onChange={e=>setFB(idx,"activo",e.target.checked)}/></td>
-        <td style={{...tdC,fontWeight:800,color:TH.navy,fontSize:13}}>{f.tanque}</td>
+        <td style={{...tdC,fontWeight:800,color:tankColor,fontSize:13}}>{f.tanque}</td>
         <td style={{padding:"4px 6px"}}>
           <select value={f.producto} onChange={e=>setFB(idx,"producto",e.target.value)} disabled={!f.activo}
             style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:4,color:TH.text,fontSize:11,padding:"4px 6px",width:"100%"}}>
@@ -314,11 +315,13 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} disabled={!f.activo} onChange={e=>setFB(idx,"aIni",e.target.value)} navRow={idx} navCol={2} navSet="p1b"/></td>
         <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{ri?fmtN(ri.glsB,0):"—"}</td>
         <td style={{...tdR,color:TH.success,fontWeight:700}}>{ri?fmtN(ri.glsN,0):"—"}</td>
+        <td style={{...tdR,color:TH.muted,fontWeight:600}}>{ri?.mt!=null?fmtN(ri.mt,3):"—"}</td>
         <td style={{padding:"4px 6px",minWidth:80}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>setFB(idx,"sFin",e.target.value)} navRow={idx} navCol={3} navSet="p1b"/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} disabled={!f.activo} onChange={e=>setFB(idx,"tFin",e.target.value)} navRow={idx} navCol={4} navSet="p1b"/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} disabled={!f.activo} onChange={e=>setFB(idx,"aFin",e.target.value)} navRow={idx} navCol={5} navSet="p1b"/></td>
         <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{rf?fmtN(rf.glsB,0):"—"}</td>
         <td style={{...tdR,color:TH.success,fontWeight:700}}>{rf?fmtN(rf.glsN,0):"—"}</td>
+        <td style={{...tdR,color:TH.muted,fontWeight:600}}>{rf?.mt!=null?fmtN(rf.mt,3):"—"}</td>
         <td style={{...tdR,fontWeight:800,fontSize:13,color:ent!==null?(ent>=0?TH.navy:TH.danger):TH.muted}}>{ent!==null?fmtN(ent,0):"—"}</td>
       </tr>
     );
@@ -344,11 +347,13 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} disabled={!f.activo} onChange={e=>setFT(idx,"aIni",e.target.value)} navRow={idx} navCol={2} navSet="p1t"/></td>
         <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{ri?fmtN(ri.glsB,0):"—"}</td>
         <td style={{...tdR,color:"#92400e",fontWeight:700}}>{ri?fmtN(ri.glsN,0):"—"}</td>
+        <td style={{...tdR,color:TH.muted,fontWeight:600}}>{ri?.mt!=null?fmtN(ri.mt,3):"—"}</td>
         <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>setFT(idx,"sFin",e.target.value)} navRow={idx} navCol={3} navSet="p1t"/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} disabled={!f.activo} onChange={e=>setFT(idx,"tFin",e.target.value)} navRow={idx} navCol={4} navSet="p1t"/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} disabled={!f.activo} onChange={e=>setFT(idx,"aFin",e.target.value)} navRow={idx} navCol={5} navSet="p1t"/></td>
         <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{rf?fmtN(rf.glsB,0):"—"}</td>
         <td style={{...tdR,color:"#92400e",fontWeight:700}}>{rf?fmtN(rf.glsN,0):"—"}</td>
+        <td style={{...tdR,color:TH.muted,fontWeight:600}}>{rf?.mt!=null?fmtN(rf.mt,3):"—"}</td>
         <td style={{...tdR,fontWeight:800,fontSize:13,color:ent!==null?(ent>=0?TH.navy:TH.danger):TH.muted}}>{ent!==null?fmtN(ent,0):"—"}</td>
       </tr>
     );
@@ -447,37 +452,89 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
           </div>
         </div>
 
-        {(!barcazaFiltro || barcazaFiltro==="QBS002") && <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
-          <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🛢️ Barcaza QBS-002 — Sonda CM (ullage)</div>
-          <div style={{overflowX:"auto"}}>
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-              <thead>
-                <tr style={{background:"#f0f4f8"}}>
-                  {["✓","Tanque","Producto","Sonda Ini","Temp Ini","API Ini","Gls.B Ini","Gls.N Ini","Sonda Fin","Temp Fin","API Fin","Gls.B Fin","Gls.N Fin","Gls.N Entregados"].map(h=>(
-                    <th key={h} style={thStyle}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>{filasB.map((f,i)=>FilaB({f,idx:i}))}</tbody>
-            </table>
+        {(!barcazaFiltro || barcazaFiltro==="QBS002") && (()=>{
+          const actB=filasB.filter(f=>f.activo);
+          const tBGlsBIni=actB.reduce((s,f)=>{const r=calcB(f,trimI,f.sIni,f.tIni,f.aIni);return s+(r?.glsB||0);},0);
+          const tBGlsNIni=actB.reduce((s,f)=>{const r=calcB(f,trimI,f.sIni,f.tIni,f.aIni);return s+(r?.glsN||0);},0);
+          const tBMTIni=actB.some(f=>calcB(f,trimI,f.sIni,f.tIni,f.aIni)?.mt!=null)?actB.reduce((s,f)=>{const r=calcB(f,trimI,f.sIni,f.tIni,f.aIni);return s+(r?.mt||0);},0):null;
+          const tBGlsBFin=actB.reduce((s,f)=>{const r=calcB(f,trimF,f.sFin,f.tFin,f.aFin);return s+(r?.glsB||0);},0);
+          const tBGlsNFin=actB.reduce((s,f)=>{const r=calcB(f,trimF,f.sFin,f.tFin,f.aFin);return s+(r?.glsN||0);},0);
+          const tBMTFin=actB.some(f=>calcB(f,trimF,f.sFin,f.tFin,f.aFin)?.mt!=null)?actB.reduce((s,f)=>{const r=calcB(f,trimF,f.sFin,f.tFin,f.aFin);return s+(r?.mt||0);},0):null;
+          const tBEnt=actB.some(f=>{const ri=calcB(f,trimI,f.sIni,f.tIni,f.aIni);const rf=calcB(f,trimF,f.sFin,f.tFin,f.aFin);return ri&&rf;})?tBGlsNIni-tBGlsNFin:null;
+          const hayResB=actB.some(f=>calcB(f,trimI,f.sIni,f.tIni,f.aIni)!==null);
+          return(
+          <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+            <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🛢️ Barcaza QBS-002 — Sonda CM (ullage)</div>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead>
+                  <tr style={{background:"#f0f4f8"}}>
+                    {["✓","Tanque","Producto","Sonda Ini","Temp Ini","API Ini","Gls.B Ini","Gls.N Ini","MT Ini","Sonda Fin","Temp Fin","API Fin","Gls.B Fin","Gls.N Fin","MT Fin","Gls.N Entregados"].map(h=>(
+                      <th key={h} style={thStyle}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>{filasB.map((f,i)=>FilaB({f,idx:i}))}</tbody>
+                {hayResB&&<tfoot>
+                  <tr style={{background:TH.navy,color:"#fff"}}>
+                    <td colSpan={6} style={{padding:"8px 10px",fontWeight:800,fontSize:12}}>TOTAL QBS-002</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#bae6fd"}}>{fmtN(tBGlsBIni,0)}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#7dd3fc"}}>{fmtN(tBGlsNIni,0)}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#93c5fd"}}>{tBMTIni!=null?fmtN(tBMTIni,3):"—"}</td>
+                    <td colSpan={3}/>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#bae6fd"}}>{fmtN(tBGlsBFin,0)}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#7dd3fc"}}>{fmtN(tBGlsNFin,0)}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#93c5fd"}}>{tBMTFin!=null?fmtN(tBMTFin,3):"—"}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:800,fontSize:14,fontFamily:"monospace",color:tBEnt!=null?(tBEnt>=0?"#6ee7b7":TH.danger):TH.muted}}>{tBEnt!=null?fmtN(tBEnt,0):"—"}</td>
+                  </tr>
+                </tfoot>}
+              </table>
+            </div>
           </div>
-        </div>}
+          );
+        })()}
 
-        {(!barcazaFiltro || barcazaFiltro==="TANQUES TIERRA") && <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
-          <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🏗️ Tanques Tierra — TKT-1 y TKT-2 — Sonda MM (innage)</div>
-          <div style={{overflowX:"auto"}}>
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-              <thead>
-                <tr style={{background:"#f0f4f8"}}>
-                  {["✓","Tanque","Producto","Sonda Ini (mm)","Temp Ini","API Ini","Gls.B Ini","Gls.N Ini","Sonda Fin (mm)","Temp Fin","API Fin","Gls.B Fin","Gls.N Fin","Gls.N Entregados"].map(h=>(
-                    <th key={h} style={{...thStyle,color:TH.navy}}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>{filasT.map((f,i)=>FilaT({f,idx:i}))}</tbody>
-            </table>
+        {(!barcazaFiltro || barcazaFiltro==="TANQUES TIERRA") && (()=>{
+          const actT=filasT.filter(f=>f.activo);
+          const tTGlsBIni=actT.reduce((s,f)=>{const r=calcT(f,f.sIni,f.tIni,f.aIni);return s+(r?.glsB||0);},0);
+          const tTGlsNIni=actT.reduce((s,f)=>{const r=calcT(f,f.sIni,f.tIni,f.aIni);return s+(r?.glsN||0);},0);
+          const tTMTIni=actT.some(f=>calcT(f,f.sIni,f.tIni,f.aIni)?.mt!=null)?actT.reduce((s,f)=>{const r=calcT(f,f.sIni,f.tIni,f.aIni);return s+(r?.mt||0);},0):null;
+          const tTGlsBFin=actT.reduce((s,f)=>{const r=calcT(f,f.sFin,f.tFin,f.aFin);return s+(r?.glsB||0);},0);
+          const tTGlsNFin=actT.reduce((s,f)=>{const r=calcT(f,f.sFin,f.tFin,f.aFin);return s+(r?.glsN||0);},0);
+          const tTMTFin=actT.some(f=>calcT(f,f.sFin,f.tFin,f.aFin)?.mt!=null)?actT.reduce((s,f)=>{const r=calcT(f,f.sFin,f.tFin,f.aFin);return s+(r?.mt||0);},0):null;
+          const tTEnt=actT.some(f=>{const ri=calcT(f,f.sIni,f.tIni,f.aIni);const rf=calcT(f,f.sFin,f.tFin,f.aFin);return ri&&rf;})?tTGlsNIni-tTGlsNFin:null;
+          const hayResT=actT.some(f=>calcT(f,f.sIni,f.tIni,f.aIni)!==null);
+          return(
+          <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+            <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🏗️ Tanques Tierra — TKT-1 y TKT-2 — Sonda MM (innage)</div>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                <thead>
+                  <tr style={{background:"#f0f4f8"}}>
+                    {["✓","Tanque","Producto","Sonda Ini (mm)","Temp Ini","API Ini","Gls.B Ini","Gls.N Ini","MT Ini","Sonda Fin (mm)","Temp Fin","API Fin","Gls.B Fin","Gls.N Fin","MT Fin","Gls.N Entregados"].map(h=>(
+                      <th key={h} style={{...thStyle,color:TH.navy}}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>{filasT.map((f,i)=>FilaT({f,idx:i}))}</tbody>
+                {hayResT&&<tfoot>
+                  <tr style={{background:TH.navy,color:"#fff"}}>
+                    <td colSpan={6} style={{padding:"8px 10px",fontWeight:800,fontSize:12}}>TOTAL TKT</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#bae6fd"}}>{fmtN(tTGlsBIni,0)}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#7dd3fc"}}>{fmtN(tTGlsNIni,0)}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#93c5fd"}}>{tTMTIni!=null?fmtN(tTMTIni,3):"—"}</td>
+                    <td colSpan={3}/>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#bae6fd"}}>{fmtN(tTGlsBFin,0)}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#7dd3fc"}}>{fmtN(tTGlsNFin,0)}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#93c5fd"}}>{tTMTFin!=null?fmtN(tTMTFin,3):"—"}</td>
+                    <td style={{padding:"8px 10px",textAlign:"right",fontWeight:800,fontSize:14,fontFamily:"monospace",color:tTEnt!=null?(tTEnt>=0?"#6ee7b7":TH.danger):TH.muted}}>{tTEnt!=null?fmtN(tTEnt,0):"—"}</td>
+                  </tr>
+                </tfoot>}
+              </table>
+            </div>
           </div>
-        </div>}
+          );
+        })()}
 
         <div style={{background:TH.navy,borderRadius:6,padding:"10px 20px",marginBottom:8,display:"flex",flexWrap:"wrap",gap:"8px 32px",alignItems:"center"}}>
           {[
