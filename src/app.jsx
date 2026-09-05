@@ -2031,7 +2031,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         })}
       </div>
 
-      <div style={{ display:"flex", flex:1, overflow:"hidden", position:"relative" }}>
+      <div style={{ display:"flex", flex:1, overflow:"clip", position:"relative" }}>
         {/* Sidebar */}
         <div style={{ width:58, background:"#121212", borderRight:`1px solid rgba(0,119,204,0.2)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflow:"visible" }}>
           {(()=>{
@@ -2067,6 +2067,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               borderRadius:"0 8px 8px 0",
               padding:"6px 0", minWidth:200,
               boxShadow:"8px 8px 32px rgba(0,0,0,0.4)",
+              maxHeight:"80vh", overflowY:"auto",
             };
 
             const tooltipBase = {
