@@ -230,7 +230,8 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
   const totGlsB = resultados.reduce((s, r) => s + (r.res?.glsB ?? 0), 0);
   const hayGlsN  = resultados.some(r => r.res?.glsN != null);
   const totGlsN = hayGlsN ? resultados.reduce((s, r) => s + (r.res?.glsN ?? 0), 0) : null;
-  const totMT   = resultados.every(r => r.res?.mt != null) ? resultados.reduce((s, r) => s + (r.res?.mt ?? 0), 0) : null;
+  const hayMT   = resultados.some(r => r.res?.mt != null);
+  const totMT   = hayMT ? resultados.reduce((s, r) => s + (r.res?.mt ?? 0), 0) : null;
   const totCapGal = Object.values(CAP_QBS003_GAL).reduce((s, v) => s + v, 0);
   const totPct  = (totCapGal && totGlsN) ? (totGlsN / totCapGal) * 100 : null;
   const hayResultados = resultados.some(r => r.res !== null);
