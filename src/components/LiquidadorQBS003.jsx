@@ -72,6 +72,15 @@ const initFilas = () => TANKS.map(t => ({
   sFin:'', tFin:'', aFin:'',
 }));
 
+function TInp({value, onChange, disabled, border, bg, text}) {
+  return (
+    <input type="number" value={value} onChange={onChange} disabled={disabled}
+      style={{width:'100%',minWidth:72,background:disabled?bg:bg,border:'1px solid '+border,
+        borderRadius:4,padding:'4px 6px',color:text,fontSize:12,outline:'none',
+        textAlign:'right',fontFamily:'monospace',opacity:disabled?0.5:1}}/>
+  );
+}
+
 export default function LiquidadorQBS003({ supabase, session, perfil, showToast, dbCall }) {
   const TH = {
     bg:'var(--bg,#f8f9fa)', card:'var(--card,#ffffff)', border:'var(--border,#e2e8f0)',
@@ -120,14 +129,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
   const tdC = {padding:'5px 6px',textAlign:'center'};
   const tdR = {padding:'5px 8px',textAlign:'right',fontSize:12};
 
-  const TInp = ({value, onChange, disabled}) => (
-    <input type="number" value={value} onChange={onChange} disabled={disabled}
-      style={{width:'100%',minWidth:72,background:disabled?TH.bg:TH.card,border:'1px solid '+TH.border,
-        borderRadius:4,padding:'4px 6px',color:TH.text,fontSize:12,outline:'none',
-        textAlign:'right',fontFamily:'monospace',opacity:disabled?0.5:1}}/>
-  );
-
-  const FilaQ = ({f, idx}) => {
+  const filaQ = (f, idx) => {
     const ri = calcFila(f, f.sIni, f.tIni, f.aIni, trimSignedM);
     const rf = calcFila(f, f.sFin, f.tFin, f.aFin, trimSignedFM);
     const ent = (ri?.glsN!=null && rf?.glsN!=null) ? ri.glsN - rf.glsN : null;
@@ -143,15 +145,15 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
             {PRODUCTOS.map(p=><option key={p}>{p}</option>)}
           </select>
         </td>
-        <td style={{padding:'4px 6px',minWidth:80}}><TInp value={f.sIni} disabled={!f.activo} onChange={e=>setF(idx,'sIni',e.target.value)}/></td>
-        <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.tIni} disabled={!f.activo} onChange={e=>setF(idx,'tIni',e.target.value)}/></td>
-        <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.aIni} disabled={!f.activo} onChange={e=>setF(idx,'aIni',e.target.value)}/></td>
+        <td style={{padding:'4px 6px',minWidth:80}}><TInp value={f.sIni} disabled={!f.activo} onChange={e=>setF(idx,'sIni',e.target.value)} border={TH.border} bg={f.activo?TH.card:TH.bg} text={TH.text}/></td>
+        <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.tIni} disabled={!f.activo} onChange={e=>setF(idx,'tIni',e.target.value)} border={TH.border} bg={f.activo?TH.card:TH.bg} text={TH.text}/></td>
+        <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.aIni} disabled={!f.activo} onChange={e=>setF(idx,'aIni',e.target.value)} border={TH.border} bg={f.activo?TH.card:TH.bg} text={TH.text}/></td>
         <td style={{...tdR,color:'#2563eb',fontWeight:600}}>{ri?fmt0(ri.glsB):'—'}</td>
         <td style={{...tdR,color:TH.success,fontWeight:700}}>{ri?.glsN!=null?fmt0(ri.glsN):'—'}</td>
         <td style={{...tdR,color:TH.muted,fontWeight:600}}>{ri?.mt!=null?fmtN(ri.mt,3):'—'}</td>
-        <td style={{padding:'4px 6px',minWidth:80}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>setF(idx,'sFin',e.target.value)}/></td>
-        <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.tFin} disabled={!f.activo} onChange={e=>setF(idx,'tFin',e.target.value)}/></td>
-        <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.aFin} disabled={!f.activo} onChange={e=>setF(idx,'aFin',e.target.value)}/></td>
+        <td style={{padding:'4px 6px',minWidth:80}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>setF(idx,'sFin',e.target.value)} border={TH.border} bg={f.activo?TH.card:TH.bg} text={TH.text}/></td>
+        <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.tFin} disabled={!f.activo} onChange={e=>setF(idx,'tFin',e.target.value)} border={TH.border} bg={f.activo?TH.card:TH.bg} text={TH.text}/></td>
+        <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.aFin} disabled={!f.activo} onChange={e=>setF(idx,'aFin',e.target.value)} border={TH.border} bg={f.activo?TH.card:TH.bg} text={TH.text}/></td>
         <td style={{...tdR,color:'#2563eb',fontWeight:600}}>{rf?fmt0(rf.glsB):'—'}</td>
         <td style={{...tdR,color:TH.success,fontWeight:700}}>{rf?.glsN!=null?fmt0(rf.glsN):'—'}</td>
         <td style={{...tdR,color:TH.muted,fontWeight:600}}>{rf?.mt!=null?fmtN(rf.mt,3):'—'}</td>
@@ -283,7 +285,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
                 ))}
               </tr>
             </thead>
-            <tbody>{filas.map((f,i)=><FilaQ key={f.key} f={f} idx={i}/>)}</tbody>
+            <tbody>{filas.map((f,i)=>filaQ(f,i))}</tbody>
             {hayResultados && (
               <tfoot>
                 <tr style={{background:TH.navy,color:'#fff'}}>
