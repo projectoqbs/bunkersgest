@@ -2031,7 +2031,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         })}
       </div>
 
-      <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
+      <div style={{ display:"flex", flex:1, overflow:"hidden", position:"relative" }}>
         {/* Sidebar */}
         <div style={{ width:58, background:"#121212", borderRight:`1px solid rgba(0,119,204,0.2)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflow:"visible" }}>
           {(()=>{
@@ -7845,26 +7845,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   );
 })()}
 
-{/* LIQUIDADOR PLANTA 1 — siempre montado para preservar estado */}
-<div style={{display: nav==="liquidador" ? "" : "none"}}>
-  <LiquidadorPlanta1
-    supabase={supabase}
-    session={session}
-    perfil={perfil}
-    showToast={showToast}
-    dbCall={dbCall}
-  />
-</div>
-
-{/* LIQUIDADOR QBS003 — siempre montado para preservar estado */}
-<div style={{display: nav==="liquidador_qbs003" ? "" : "none", padding:"24px 32px"}}>
-  <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
-</div>
-
-{/* LIQUIDADOR PLANTA 2 — siempre montado para preservar estado */}
-<div style={{display: nav==="liquidador_p2" ? "" : "none"}}>
-  <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading}/>
-</div>
 
 {/* INVENTARIO DIARIO */}
 {nav==="inventario_diario" && (
@@ -8594,6 +8574,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
         </motion.div>
         </AnimatePresence>
+
+        {/* ── Liquidadores siempre montados FUERA del motion.div para preservar estado ── */}
+        <div style={{display: nav==="liquidador" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", background:"var(--bg,#f8f9fa)"}}>
+          <LiquidadorPlanta1 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
+        </div>
+        <div style={{display: nav==="liquidador_qbs003" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", background:"var(--bg,#f8f9fa)", padding:"24px 32px", boxSizing:"border-box"}}>
+          <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
+        </div>
+        <div style={{display: nav==="liquidador_p2" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", background:"var(--bg,#f8f9fa)"}}>
+          <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading}/>
+        </div>
+
       </div>
     </div>
   );

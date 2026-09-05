@@ -67,7 +67,7 @@ function fmt0(n) { return fmtN(n,0); }
 
 const initFilas = () => TANKS.map(t => ({
   key:t.key, label:t.label, group:t.group, side:t.side,
-  activo:true, producto:'MGO',
+  activo:true, producto: (t.key==='T3BR'||t.key==='T3ER') ? 'MGO' : 'VLSFO',
   sIni:'', tIni:'', aIni:'',
   sFin:'', tFin:'', aFin:'',
 }));
