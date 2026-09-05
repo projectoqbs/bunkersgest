@@ -7845,8 +7845,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   );
 })()}
 
-{/* LIQUIDADOR PLANTA 1 */}
-{nav==="liquidador" && (
+{/* LIQUIDADOR PLANTA 1 — siempre montado para preservar estado */}
+<div style={{display: nav==="liquidador" ? "" : "none"}}>
   <LiquidadorPlanta1
     supabase={supabase}
     session={session}
@@ -7854,18 +7854,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     showToast={showToast}
     dbCall={dbCall}
   />
-)}
+</div>
 
-{/* LIQUIDADOR PLANTA 2 */}
-{nav==="liquidador_qbs003" && (
-  <div style={{padding:"24px 32px"}}>
-    <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
-  </div>
-)}
+{/* LIQUIDADOR QBS003 — siempre montado para preservar estado */}
+<div style={{display: nav==="liquidador_qbs003" ? "" : "none", padding:"24px 32px"}}>
+  <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
+</div>
 
-{nav==="liquidador_p2" && (
+{/* LIQUIDADOR PLANTA 2 — siempre montado para preservar estado */}
+<div style={{display: nav==="liquidador_p2" ? "" : "none"}}>
   <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading}/>
-)}
+</div>
 
 {/* INVENTARIO DIARIO */}
 {nav==="inventario_diario" && (
