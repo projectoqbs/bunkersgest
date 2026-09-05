@@ -6,18 +6,18 @@ const M3_TO_GAL = 264.172;
 const PRODUCTOS = ['MGO','VLSFO','LSMGO','IFO380','DIESEL'];
 
 const TANKS = [
-  { key:'T1BR', label:'1B', group:1, side:'BR' },
-  { key:'T1ER', label:'1E', group:1, side:'ER' },
-  { key:'T2BR', label:'2B', group:2, side:'BR' },
-  { key:'T2ER', label:'2E', group:2, side:'ER' },
-  { key:'T3BR', label:'3B', group:3, side:'BR' },
-  { key:'T3ER', label:'3E', group:3, side:'ER' },
-  { key:'T4BR', label:'4B', group:4, side:'BR' },
-  { key:'T4ER', label:'4E', group:4, side:'ER' },
-  { key:'T5BR', label:'5B', group:5, side:'BR' },
-  { key:'T5ER', label:'5E', group:5, side:'ER' },
-  { key:'T6BR', label:'6B', group:6, side:'BR' },
-  { key:'T6ER', label:'6E', group:6, side:'ER' },
+  { key:'T1BR', label:'T1BR', group:1, side:'BR' },
+  { key:'T1ER', label:'T1ER', group:1, side:'ER' },
+  { key:'T2BR', label:'T2BR', group:2, side:'BR' },
+  { key:'T2ER', label:'T2ER', group:2, side:'ER' },
+  { key:'T3BR', label:'T3BR', group:3, side:'BR' },
+  { key:'T3ER', label:'T3ER', group:3, side:'ER' },
+  { key:'T4BR', label:'T4BR', group:4, side:'BR' },
+  { key:'T4ER', label:'T4ER', group:4, side:'ER' },
+  { key:'T5BR', label:'T5BR', group:5, side:'BR' },
+  { key:'T5ER', label:'T5ER', group:5, side:'ER' },
+  { key:'T6BR', label:'T6BR', group:6, side:'BR' },
+  { key:'T6ER', label:'T6ER', group:6, side:'ER' },
 ];
 
 function interp(x, x0, x1, y0, y1) {
@@ -148,11 +148,13 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
         <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.aIni} disabled={!f.activo} onChange={e=>setF(idx,'aIni',e.target.value)}/></td>
         <td style={{...tdR,color:'#2563eb',fontWeight:600}}>{ri?fmt0(ri.glsB):'—'}</td>
         <td style={{...tdR,color:TH.success,fontWeight:700}}>{ri?.glsN!=null?fmt0(ri.glsN):'—'}</td>
+        <td style={{...tdR,color:TH.muted,fontWeight:600}}>{ri?.mt!=null?fmtN(ri.mt,3):'—'}</td>
         <td style={{padding:'4px 6px',minWidth:80}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>setF(idx,'sFin',e.target.value)}/></td>
         <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.tFin} disabled={!f.activo} onChange={e=>setF(idx,'tFin',e.target.value)}/></td>
         <td style={{padding:'4px 6px',minWidth:70}}><TInp value={f.aFin} disabled={!f.activo} onChange={e=>setF(idx,'aFin',e.target.value)}/></td>
         <td style={{...tdR,color:'#2563eb',fontWeight:600}}>{rf?fmt0(rf.glsB):'—'}</td>
         <td style={{...tdR,color:TH.success,fontWeight:700}}>{rf?.glsN!=null?fmt0(rf.glsN):'—'}</td>
+        <td style={{...tdR,color:TH.muted,fontWeight:600}}>{rf?.mt!=null?fmtN(rf.mt,3):'—'}</td>
         <td style={{...tdR,fontWeight:800,fontSize:13,color:ent!=null?(ent>=0?TH.navy:TH.danger):TH.muted}}>{ent!=null?fmt0(ent):'—'}</td>
       </tr>
     );
@@ -161,6 +163,10 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
   const activas = filas.filter(f=>f.activo);
   const totGlsNIni = activas.reduce((s,f)=>{ const r=calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM); return s+(r?.glsN??0); },0);
   const totGlsNFin = activas.reduce((s,f)=>{ const r=calcFila(f,f.sFin,f.tFin,f.aFin,trimSignedFM); return s+(r?.glsN??0); },0);
+  const hayMTIni   = activas.some(f=>calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM)?.mt!=null);
+  const hayMTFin   = activas.some(f=>calcFila(f,f.sFin,f.tFin,f.aFin,trimSignedFM)?.mt!=null);
+  const totMTIni   = hayMTIni ? activas.reduce((s,f)=>{ const r=calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM); return s+(r?.mt??0); },0) : null;
+  const totMTFin   = hayMTFin ? activas.reduce((s,f)=>{ const r=calcFila(f,f.sFin,f.tFin,f.aFin,trimSignedFM); return s+(r?.mt??0); },0) : null;
   const totEnt = activas.some(f=>{ const ri=calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM); const rf=calcFila(f,f.sFin,f.tFin,f.aFin,trimSignedFM); return ri?.glsN!=null&&rf?.glsN!=null; })
     ? activas.reduce((s,f)=>{ const ri=calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM); const rf=calcFila(f,f.sFin,f.tFin,f.aFin,trimSignedFM); return s+((ri?.glsN??0)-(rf?.glsN??0)); }, 0)
     : null;
@@ -272,7 +278,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
             <thead>
               <tr style={{background:'#f0f4f8'}}>
-                {['✓','Tanque','Producto','Sonda Ini','Temp Ini','API Ini','Gls.B Ini','Gls.N Ini','Sonda Fin','Temp Fin','API Fin','Gls.B Fin','Gls.N Fin','Gls.N Entregados'].map(h=>(
+                {['✓','Tanque','Producto','Sonda Ini','Temp Ini','API Ini','Gls.B Ini','Gls.N Ini','MT Ini','Sonda Fin','Temp Fin','API Fin','Gls.B Fin','Gls.N Fin','MT Fin','Gls.N Entregados'].map(h=>(
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
               </tr>
@@ -282,9 +288,11 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
               <tfoot>
                 <tr style={{background:TH.navy,color:'#fff'}}>
                   <td colSpan={6} style={{padding:'8px 10px',fontWeight:800,fontSize:12}}>TOTAL QBS003</td>
-                  <td colSpan={2} style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#7dd3fc'}}>{fmt0(totGlsNIni)}</td>
+                  <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#7dd3fc'}}>{fmt0(totGlsNIni)}</td>
+                  <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#93c5fd'}}>{totMTIni!=null?fmtN(totMTIni,3):'—'}</td>
                   <td colSpan={3}/>
-                  <td colSpan={2} style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#7dd3fc'}}>{fmt0(totGlsNFin)}</td>
+                  <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#7dd3fc'}}>{fmt0(totGlsNFin)}</td>
+                  <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#93c5fd'}}>{totMTFin!=null?fmtN(totMTFin,3):'—'}</td>
                   <td style={{padding:'8px 10px',textAlign:'right',fontWeight:800,fontSize:14,fontFamily:'monospace',color:totEnt!=null?(totEnt>=0?'#6ee7b7':TH.danger):TH.muted}}>{totEnt!=null?fmt0(totEnt):'—'}</td>
                 </tr>
               </tfoot>
