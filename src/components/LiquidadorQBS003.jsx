@@ -163,6 +163,8 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
   };
 
   const activas = filas.filter(f=>f.activo);
+  const totGlsBIni = activas.reduce((s,f)=>{ const r=calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM); return s+(r?.glsB??0); },0);
+  const totGlsBFin = activas.reduce((s,f)=>{ const r=calcFila(f,f.sFin,f.tFin,f.aFin,trimSignedFM); return s+(r?.glsB??0); },0);
   const totGlsNIni = activas.reduce((s,f)=>{ const r=calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM); return s+(r?.glsN??0); },0);
   const totGlsNFin = activas.reduce((s,f)=>{ const r=calcFila(f,f.sFin,f.tFin,f.aFin,trimSignedFM); return s+(r?.glsN??0); },0);
   const hayMTIni   = activas.some(f=>calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM)?.mt!=null);
@@ -290,11 +292,11 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
               <tfoot>
                 <tr style={{background:TH.navy,color:'#fff'}}>
                   <td colSpan={6} style={{padding:'8px 10px',fontWeight:800,fontSize:12}}>TOTAL QBS003</td>
-                  <td/>
+                  <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#bae6fd'}}>{fmt0(totGlsBIni)}</td>
                   <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#7dd3fc'}}>{fmt0(totGlsNIni)}</td>
                   <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#93c5fd'}}>{totMTIni!=null?fmtN(totMTIni,3):'—'}</td>
                   <td colSpan={3}/>
-                  <td/>
+                  <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#bae6fd'}}>{fmt0(totGlsBFin)}</td>
                   <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#7dd3fc'}}>{fmt0(totGlsNFin)}</td>
                   <td style={{padding:'8px 10px',textAlign:'right',fontWeight:700,fontFamily:'monospace',color:'#93c5fd'}}>{totMTFin!=null?fmtN(totMTFin,3):'—'}</td>
                   <td style={{padding:'8px 10px',textAlign:'right',fontWeight:800,fontSize:14,fontFamily:'monospace',color:totEnt!=null?(totEnt>=0?'#6ee7b7':TH.danger):TH.muted}}>{totEnt!=null?fmt0(totEnt):'—'}</td>
