@@ -240,16 +240,6 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
         </div>
       </div>
 
-      {/* Campos */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 2fr',gap:8,marginBottom:8}}>
-        {[{label:'Fecha',type:'date',val:fecha,set:setFecha},{label:'Operador',type:'text',val:operador,set:setOperador},{label:'Observaciones',type:'text',val:obs,set:setObs}].map(({label,type,val,set})=>(
-          <div key={label}>
-            <div style={{fontSize:9,fontWeight:700,color:TH.muted,textTransform:'uppercase',letterSpacing:1,marginBottom:3}}>{label}</div>
-            <input type={type} value={val} onChange={e=>set(e.target.value)}
-              style={{width:'100%',boxSizing:'border-box',background:TH.card,border:'1px solid '+TH.border,borderRadius:6,padding:'6px 8px',color:TH.text,fontSize:12,outline:'none'}}/>
-          </div>
-        ))}
-      </div>
 
       {/* Calados */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
