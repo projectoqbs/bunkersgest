@@ -179,8 +179,8 @@ const NAV_META = {
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
-  operaciones: ["dashboard","pbs","trazabilidad","liquidador","inventario_diario"],
-  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad","liquidador","inventario_diario"],
+  operaciones: ["dashboard","pbs","trazabilidad","liquidador"],
+  coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad","liquidador"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador: [
     "dashboard",
@@ -193,7 +193,6 @@ const NAV_ROL = {
     "programacion",
     "tanques",
     "liquidador",
-    "inventario_diario",
     "auditoria",
   ],
 };
@@ -1954,7 +1953,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   const horas = (new Date() - new Date(created_at)) / 1000 / 3600;
   return horas <= 72;
 };
-  const ALL_MODULOS = ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","programacion","usuarios","liquidador","inventario_diario"];
+  const ALL_MODULOS = ["dashboard","viajes","tiquetes","pbs","tanques","despacho","trazabilidad","programacion","usuarios","liquidador"];
   const navItems = perfil.rol === "administrador"
     ? NAV_ROL.administrador
     : ALL_MODULOS.filter(m => {
