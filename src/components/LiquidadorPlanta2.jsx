@@ -219,10 +219,9 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
   const tdC={padding:"5px 6px",textAlign:"center"};
   const tdR={padding:"5px 8px",textAlign:"right",fontSize:12};
 
-  const FilaP2=({f,idx})=>{
+  const filaP2=(f,idx)=>{
     const ri=calcFila(f,f.sIni,f.tIni,f.aIni,"sIni");
     const rf=calcFila(f,f.sFin,f.tFin,f.aFin,"sFin");
-    const entB=(ri&&rf)?ri.glsB-rf.glsB:null;
     const ent=(ri?.glsN!=null&&rf?.glsN!=null)?ri.glsN-rf.glsN:null;
     const bg=!f.activo?"#f8f9fa":idx%2===0?"#ffffff":"#eef4fb";
     return(
@@ -235,26 +234,19 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
             {PRODUCTOS.map(p=><option key={p}>{p}</option>)}
           </select>
         </td>
-        {/* INI */}
         <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sIni} disabled={!f.activo} onChange={e=>{setF(idx,"sIni",e.target.value);triggerLookup(f.tanque,"sIni",e.target.value);}} navRow={idx} navCol={0}/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tIni} disabled={!f.activo} onChange={e=>setF(idx,"tIni",e.target.value)} navRow={idx} navCol={1}/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aIni} disabled={!f.activo} onChange={e=>setF(idx,"aIni",e.target.value)} navRow={idx} navCol={2}/></td>
-        <td style={tdR}>{ri?fmtN(ri.glsB,0):"—"}</td>
-        <td style={tdR}>{ri?.vcf!=null?fmtN(ri.vcf,4):"—"}</td>
-        <td style={tdR}>{ri?.glsN!=null?fmtN(ri.glsN,0):"—"}</td>
-        <td style={tdR}>{ri?.mt!=null?fmtN(ri.mt,3):"—"}</td>
-        {/* FIN */}
+        <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{ri?fmtN(ri.glsB,0):"—"}</td>
+        <td style={{...tdR,color:TH.success,fontWeight:700}}>{ri?.glsN!=null?fmtN(ri.glsN,0):"—"}</td>
+        <td style={{...tdR,color:TH.muted,fontWeight:600}}>{ri?.mt!=null?fmtN(ri.mt,3):"—"}</td>
         <td style={{padding:"4px 6px",minWidth:90}}><TInp value={f.sFin} disabled={!f.activo} onChange={e=>{setF(idx,"sFin",e.target.value);triggerLookup(f.tanque,"sFin",e.target.value);}} navRow={idx} navCol={3}/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.tFin} disabled={!f.activo} onChange={e=>setF(idx,"tFin",e.target.value)} navRow={idx} navCol={4}/></td>
         <td style={{padding:"4px 6px",minWidth:70}}><TInp value={f.aFin} disabled={!f.activo} onChange={e=>setF(idx,"aFin",e.target.value)} navRow={idx} navCol={5}/></td>
-        <td style={tdR}>{rf?fmtN(rf.glsB,0):"—"}</td>
-        <td style={tdR}>{rf?.vcf!=null?fmtN(rf.vcf,4):"—"}</td>
-        <td style={tdR}>{rf?.glsN!=null?fmtN(rf.glsN,0):"—"}</td>
-        <td style={tdR}>{rf?.mt!=null?fmtN(rf.mt,3):"—"}</td>
-        {/* ENTREGADO */}
-        <td style={{...tdR,fontWeight:700,color:ent!=null?(ent>=0?TH.success:TH.danger):TH.muted}}>
-          {ent!=null?fmtN(ent,0):"—"}
-        </td>
+        <td style={{...tdR,color:"#2563eb",fontWeight:600}}>{rf?fmtN(rf.glsB,0):"—"}</td>
+        <td style={{...tdR,color:TH.success,fontWeight:700}}>{rf?.glsN!=null?fmtN(rf.glsN,0):"—"}</td>
+        <td style={{...tdR,color:TH.muted,fontWeight:600}}>{rf?.mt!=null?fmtN(rf.mt,3):"—"}</td>
+        <td style={{...tdR,fontWeight:800,fontSize:13,color:ent!=null?(ent>=0?TH.navy:TH.danger):TH.muted}}>{ent!=null?fmtN(ent,0):"—"}</td>
       </tr>
     );
   };
@@ -262,150 +254,44 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
   const t=tots();
 
   return(
-    <div style={{fontFamily:"system-ui,sans-serif",background:TH.bg,minHeight:"100vh",padding:"24px 16px"}}>
-      {/* Header */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:8}}>
+    <div style={{fontFamily:"system-ui,sans-serif",color:TH.text,padding:"10px 16px",maxWidth:1500,margin:"0 auto"}}>
+      <style>{"input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}"}</style>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <div>
-          <div style={{fontSize:20,fontWeight:800,color:TH.navy}}>Liquidador Planta 2</div>
-          <div style={{fontSize:12,color:TH.muted}}>Tanques TK-111 a TK-117 — Ullage en MM</div>
+          <div style={{fontWeight:800,fontSize:16,color:TH.navy}}>Liquidador — Planta 2</div>
+          <div style={{fontSize:10,color:TH.muted}}>Tanques TK-111 a TK-117 · Ullage MM</div>
         </div>
-        <div style={{display:"flex",gap:8}}></div>
+        <AppBtn color={TH.muted} sm onClick={()=>{setFilas(initFilas());setInterpResults({});}}>Limpiar</AppBtn>
       </div>
 
-      {tab==="historial" && (
-        <div style={{background:TH.card,borderRadius:10,padding:20,border:"1px solid "+TH.border}}>
-          <div style={{fontWeight:700,color:TH.navy,marginBottom:12,fontSize:14}}>Historial de Liquidaciones</div>
-          {!loadingHist&&historial.length>0&&(
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:11,color:TH.muted,marginBottom:8,fontWeight:600,textTransform:"uppercase",letterSpacing:0.8}}>Galones Entregados por Operación</div>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={[...historial].reverse().map(l=>({name:(l.motonave||"").substring(0,10)+(l.fecha?(" "+l.fecha.slice(5)):""),gls:l.gls_entregados||0}))} margin={{top:4,right:8,left:0,bottom:36}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
-                  <XAxis dataKey="name" tick={{fontSize:9,fill:TH.muted}} tickLine={false} axisLine={false} interval={0} angle={-35} textAnchor="end"/>
-                  <YAxis tick={{fontSize:9,fill:TH.muted}} tickLine={false} axisLine={false} tickFormatter={v=>v>=1000?(v/1000).toFixed(0)+"k":v} width={38}/>
-                  <Tooltip formatter={(v)=>[Number(v).toLocaleString("es-CO"),"Gls Netos"]} labelStyle={{fontSize:11,fontWeight:700}} contentStyle={{fontSize:11,borderRadius:6,border:"1px solid #d1d9e0"}}/>
-                  <Bar dataKey="gls" radius={[4,4,0,0]}>
-                    {[...historial].reverse().map((_,i)=><Cell key={i} fill={i===historial.length-1?TH.danger:TH.success}/>)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-          {loadingHist?(
-            <div style={{color:TH.muted,fontSize:13}}>Cargando...</div>
-          ):historial.length===0?(
-            <div style={{color:TH.muted,fontSize:13}}>No hay liquidaciones guardadas.</div>
-          ):(
-            <div style={{overflowX:"auto"}}>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-                <thead>
-                  <tr style={{background:"#f8fafc"}}>
-                    {["Fecha","Motonave","Operador","Gls Ini","Gls Fin","Gls Entregados","MT Entregadas","Obs"].map(h=>(
-                      <th key={h} style={thStyle}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {historial.map(h=>(
-                    <tr key={h.id} style={{borderBottom:"1px solid "+TH.border}}>
-                      <td style={tdC}>{h.fecha}</td>
-                      <td style={{...tdC,fontWeight:700}}>{h.motonave}</td>
-                      <td style={tdC}>{h.operador||"—"}</td>
-                      <td style={tdR}>{h.gls_netos_ini!=null?fmtN(h.gls_netos_ini,0):"—"}</td>
-                      <td style={tdR}>{h.gls_netos_fin!=null?fmtN(h.gls_netos_fin,0):"—"}</td>
-                      <td style={{...tdR,fontWeight:700,color:TH.success}}>{h.gls_entregados!=null?fmtN(h.gls_entregados,0):"—"}</td>
-                      <td style={tdR}>{h.mt_entregadas!=null?fmtN(h.mt_entregadas,3):"—"}</td>
-                      <td style={{...tdC,color:TH.muted,fontSize:11,maxWidth:160,overflow:"hidden",textOverflow:"ellipsis"}}>{h.observaciones||"—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      <div style={{background:TH.card,border:"1px solid "+TH.border,borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+        <div style={{fontSize:10,fontWeight:800,color:TH.navy,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>🏗️ Tanques Planta 2 — TK-111 a TK-117 — Ullage MM</div>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+            <thead>
+              <tr style={{background:"#f0f4f8"}}>
+                {["✓","Tanque","Producto","Ullage Ini (mm)","Temp Ini","API Ini","Gls.B Ini","Gls.N Ini","MT Ini","Ullage Fin (mm)","Temp Fin","API Fin","Gls.B Fin","Gls.N Fin","MT Fin","Gls.N Entregados"].map(h=>(
+                  <th key={h} style={thStyle}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>{filas.map((f,idx)=>filaP2(f,idx))}</tbody>
+            <tfoot>
+              <tr style={{background:TH.navy,color:"#fff"}}>
+                <td colSpan={6} style={{padding:"8px 10px",fontWeight:800,fontSize:12}}>TOTAL PLANTA 2</td>
+                <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#bae6fd"}}>{fmtN(t.gBI,0)}</td>
+                <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#7dd3fc"}}>{t.gNI!=null?fmtN(t.gNI,0):"—"}</td>
+                <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#93c5fd"}}>{t.hasMI?fmtN(t.mI,3):"—"}</td>
+                <td colSpan={3}/>
+                <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#bae6fd"}}>{fmtN(t.gBF,0)}</td>
+                <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#7dd3fc"}}>{t.gNF!=null?fmtN(t.gNF,0):"—"}</td>
+                <td style={{padding:"8px 10px",textAlign:"right",fontWeight:700,fontFamily:"monospace",color:"#93c5fd"}}>{t.hasMF?fmtN(t.mF,3):"—"}</td>
+                <td style={{padding:"8px 10px",textAlign:"right",fontWeight:800,fontSize:14,fontFamily:"monospace",color:t.gEnt!=null?(t.gEnt>=0?"#6ee7b7":TH.danger):TH.muted}}>{t.gEnt!=null?fmtN(t.gEnt,0):"—"}</td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-      )}
-
-      {tab==="nuevo" && (
-        <>
-          {/* Tabla de tanques */}
-          <div style={{background:TH.card,borderRadius:10,border:"1px solid "+TH.border,marginBottom:16,overflowX:"auto"}}>
-            <table style={{width:"100%",borderCollapse:"collapse",minWidth:1000}}>
-              <thead>
-                <tr style={{background:"#f0f4f8"}}>
-                  <th style={thStyle} colSpan={3}></th>
-                  <th style={{...thStyle,background:`${TH.navy}18`,color:TH.navy}} colSpan={7}>INICIO</th>
-                  <th style={{...thStyle,background:`${TH.orange}18`,color:TH.orange}} colSpan={7}>FINAL</th>
-                  <th style={{...thStyle,background:"#f0fdf4",color:TH.success}}>ENTREGADO</th>
-                </tr>
-                <tr style={{background:"#f8fafc"}}>
-                  <th style={thStyle}></th>
-                  <th style={thStyle}>Tanque</th>
-                  <th style={thStyle}>Producto</th>
-                  {/* INI cols */}
-                  <th style={thStyle}>Ullage<br/><span style={{fontSize:9,fontWeight:400}}>mm</span></th>
-                  <th style={thStyle}>Temp<br/><span style={{fontSize:9,fontWeight:400}}>°C</span></th>
-                  <th style={thStyle}>API<br/><span style={{fontSize:9,fontWeight:400}}>°</span></th>
-                  <th style={thStyle}>Gls Brutos</th>
-                  <th style={thStyle}>VCF</th>
-                  <th style={thStyle}>Gls Netos</th>
-                  <th style={thStyle}>MT</th>
-                  {/* FIN cols */}
-                  <th style={thStyle}>Ullage<br/><span style={{fontSize:9,fontWeight:400}}>mm</span></th>
-                  <th style={thStyle}>Temp<br/><span style={{fontSize:9,fontWeight:400}}>°C</span></th>
-                  <th style={thStyle}>API<br/><span style={{fontSize:9,fontWeight:400}}>°</span></th>
-                  <th style={thStyle}>Gls Brutos</th>
-                  <th style={thStyle}>VCF</th>
-                  <th style={thStyle}>Gls Netos</th>
-                  <th style={thStyle}>MT</th>
-                  <th style={thStyle}>Gls Netos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filas.map((f,idx)=>FilaP2({f,idx}))}
-              </tbody>
-              <tfoot>
-                <tr style={{background:"#f0f4f8",fontWeight:800}}>
-                  <td colSpan={3} style={{...tdC,fontSize:11,color:TH.navy,textAlign:"right",paddingRight:12}}>TOTALES</td>
-                  <td colSpan={3}></td>
-                  <td style={{...tdR,color:TH.navy}}>{fmtN(t.gBI,0)}</td>
-                  <td></td>
-                  <td style={{...tdR,color:TH.navy}}>{t.gNI!=null?fmtN(t.gNI,0):"—"}</td>
-                  <td style={{...tdR,color:TH.navy}}>{t.hasMI?fmtN(t.mI,3):"—"}</td>
-                  <td colSpan={3}></td>
-                  <td style={{...tdR,color:TH.orange}}>{fmtN(t.gBF,0)}</td>
-                  <td></td>
-                  <td style={{...tdR,color:TH.orange}}>{t.gNF!=null?fmtN(t.gNF,0):"—"}</td>
-                  <td style={{...tdR,color:TH.orange}}>{t.hasMF?fmtN(t.mF,3):"—"}</td>
-                  <td style={{...tdR,color:TH.success,fontSize:14}}>{t.gEnt!=null?fmtN(t.gEnt,0):"—"}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* Resumen */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:16}}>
-            {[
-              {label:"Gls Brutos Ini",val:fmtN(t.gBI,0),color:TH.navy},
-              {label:"Gls Netos Ini",val:t.gNI!=null?fmtN(t.gNI,0):"—",color:TH.navy},
-              {label:"MT Ini",val:t.hasMI?fmtN(t.mI,3):"—",color:TH.navy},
-              {label:"Gls Brutos Fin",val:fmtN(t.gBF,0),color:TH.orange},
-              {label:"Gls Netos Fin",val:t.gNF!=null?fmtN(t.gNF,0):"—",color:TH.orange},
-              {label:"MT Fin",val:t.hasMF?fmtN(t.mF,3):"—",color:TH.orange},
-              {label:"Gls Entregados",val:t.gEnt!=null?fmtN(t.gEnt,0):"—",color:TH.success,big:true},
-              {label:"MT Entregadas",val:t.mEnt!=null?fmtN(t.mEnt,3):"—",color:TH.success,big:true},
-            ].map(c=>(
-              <div key={c.label} style={{background:TH.card,borderRadius:8,padding:"12px 16px",border:"1px solid "+TH.border,borderTop:"3px solid "+c.color}}>
-                <div style={{fontSize:9,color:TH.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>{c.label}</div>
-                <div style={{fontSize:c.big?22:16,fontWeight:800,color:c.color}}>{c.val}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
-            <AppBtn color={TH.muted} onClick={()=>{setFilas(initFilas());setInterpResults({});}}>Limpiar</AppBtn>
-          </div>
-        </>
-      )}
+      </div>
     </div>
   );
 }
