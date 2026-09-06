@@ -454,6 +454,7 @@ export default function App() {
     { nombre:"PENDARE", galones:"", api:"", visc:"", azufre:"", agua:"", flash:"" }
   ]);
   const [tankProdEdit, setTankProdEdit] = useState(null);   // {id, val} cuando se edita producto
+  const [liqP1Sub, setLiqP1Sub] = useState("qbs002");       // tab activo en liquidador planta 1
   const [tankProdSaving, setTankProdSaving] = useState(false);
   const [tankFullscreen, setTankFullscreen] = useState(false);
   const fsContainerRef = React.useRef(null);
@@ -2045,7 +2046,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               tiquetes:     { icon:"🧪", label:"LABORATORIO",   subs:[{id:"tiquetes",label:"Análisis",badge:pendTiquetes},{id:"resultados",label:"Resultados"}] },
               pbs:          { icon:"⚙️", label:"OPERACIONES",   subs:[{id:"ot_ops",label:"Órdenes de Trabajo",badge:(ordenesTrabaio||[]).filter(o=>!["COMPLETADA","RECHAZADA","ANALIZADA"].includes(o.estado)).length||null},{id:"cmt",label:"CMT"},{id:"inventario_diario",label:"Inventario Diario"}] },
               programacion: { icon:"📅", label:"PROGRAMACIÓN",  subs: perfil?.rol==="operaciones" ? [{id:"programacion",label:"Órdenes de Trabajo"}] : [{id:"programacion",label:"Órdenes de Trabajo"},{id:"formulaciones",label:"Formulaciones"}] },
-              liquidador:   { icon:"🔢", label:"LIQUIDADOR",    subs:[{id:"liquidador_p1",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
+              liquidador_p1: { icon:"🔢", label:"LIQUIDADOR",    subs:[{id:"liquidador_p1",label:"Planta 1"},{id:"liquidador_p2",label:"Planta 2"}] },
               tanques:      { icon:"🛢", label:"TANQUES",        subs:[{id:"tanques",label:"Planta 2 (TK-111–117)"},{id:"tanques_p1",label:"Planta 1 — QBS002"},{id:"tanques_qbs003",label:"Planta 1 — QBS003"}] },
             };
             const badges = {};
@@ -8743,66 +8744,31 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </motion.div>
         </AnimatePresence>
 
-        {/* ── Selector Planta 1 ── */}
-        <div style={{display: nav==="liquidador_p1" ? "" : "none", position:"absolute", top:0, bottom:0, left:58, right:0, overflowY:"auto", background:T.bg}}>
-          <div style={{padding:"40px 48px"}}>
-            <div style={{marginBottom:32}}>
-              <div style={{fontWeight:900, fontSize:22, color:T.navy, display:"flex", alignItems:"center", gap:10}}><span>🔢</span> Liquidador — Planta 1</div>
-              <div style={{fontSize:12, color:T.muted, marginTop:4}}>Selecciona la embarcación o sistema a liquidar</div>
+        {/* ── Liquidador Planta 1 con tabs superiores ── */}
+        <div style={{display: nav==="liquidador_p1" ? "" : "none", position:"absolute", top:0, bottom:0, left:58, right:0, background:T.bg, display: nav==="liquidador_p1" ? "flex" : "none", flexDirection:"column"}}>
+          {/* Barra de tabs */}
+          <div style={{background:T.card, borderBottom:`1px solid ${T.border}`, padding:"10px 24px", display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
+            <span style={{fontWeight:800, fontSize:13, color:T.navy, marginRight:8}}>🔢 Liquidador — Planta 1</span>
+            {[{key:"tkt", label:"🏭 Tanques Tierra"},{key:"qbs002", label:"🚢 QBS002"},{key:"qbs003", label:"⛽ QBS003"}].map(({key,label})=>(
+              <button key={key} onClick={()=>setLiqP1Sub(key)}
+                style={{padding:"6px 18px", borderRadius:8, border:"none", cursor:"pointer", fontSize:12, fontWeight: liqP1Sub===key ? 700 : 400,
+                  background: liqP1Sub===key ? T.navy : "transparent",
+                  color: liqP1Sub===key ? "#fff" : T.muted,
+                  boxShadow: liqP1Sub===key ? `0 2px 8px ${T.navy}44` : "none",
+                  transition:"background 0.15s, color 0.15s"}}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {/* Contenido — montado siempre para preservar estado */}
+          <div style={{flex:1, overflow:"hidden", position:"relative"}}>
+            <div style={{display: liqP1Sub==="tkt" || liqP1Sub==="qbs002" ? "" : "none", position:"absolute", inset:0, overflowY:"auto"}}>
+              <LiquidadorPlanta1 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
             </div>
-            <div style={{display:"flex", gap:24, flexWrap:"wrap"}}>
-              {/* QBS002 */}
-              <div onClick={()=>setNav("liquidador")}
-                style={{flex:"1 1 260px", maxWidth:320, cursor:"pointer", background:T.card, border:`2px solid ${T.border}`,
-                  borderRadius:16, padding:"28px 28px 24px", boxShadow:"0 2px 12px rgba(0,0,0,0.07)",
-                  transition:"box-shadow 0.18s, border-color 0.18s"}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor=T.orange; e.currentTarget.style.boxShadow="0 4px 20px rgba(0,119,204,0.18)";}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border; e.currentTarget.style.boxShadow="0 2px 12px rgba(0,0,0,0.07)";}}>
-                <div style={{fontSize:36, marginBottom:12}}>🚢</div>
-                <div style={{fontWeight:900, fontSize:17, color:T.navy, marginBottom:6}}>QBS002</div>
-                <div style={{fontSize:12, color:T.muted, lineHeight:1.5}}>Barcaza QBS002<br/>10 tanques · Babor y Estribor<br/>Tanques Tierra TKT-1, TKT-2</div>
-                <div style={{marginTop:18, display:"flex", justifyContent:"flex-end"}}>
-                  <span style={{background:T.navy, color:"#fff", borderRadius:8, padding:"5px 16px", fontSize:11, fontWeight:700}}>Abrir →</span>
-                </div>
-              </div>
-              {/* QBS003 */}
-              <div onClick={()=>setNav("liquidador_qbs003")}
-                style={{flex:"1 1 260px", maxWidth:320, cursor:"pointer", background:T.card, border:`2px solid ${T.border}`,
-                  borderRadius:16, padding:"28px 28px 24px", boxShadow:"0 2px 12px rgba(0,0,0,0.07)",
-                  transition:"box-shadow 0.18s, border-color 0.18s"}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor=T.orange; e.currentTarget.style.boxShadow="0 4px 20px rgba(0,119,204,0.18)";}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border; e.currentTarget.style.boxShadow="0 2px 12px rgba(0,0,0,0.07)";}}>
-                <div style={{fontSize:36, marginBottom:12}}>⛽</div>
-                <div style={{fontWeight:900, fontSize:17, color:T.navy, marginBottom:6}}>QBS003</div>
-                <div style={{fontSize:12, color:T.muted, lineHeight:1.5}}>Barcaza QBS003<br/>12 tanques · Babor (BR) y Estribor (ER)<br/>Ullage en milímetros</div>
-                <div style={{marginTop:18, display:"flex", justifyContent:"flex-end"}}>
-                  <span style={{background:T.navy, color:"#fff", borderRadius:8, padding:"5px 16px", fontSize:11, fontWeight:700}}>Abrir →</span>
-                </div>
-              </div>
-              {/* Tanques Tierra */}
-              <div onClick={()=>setNav("liquidador")}
-                style={{flex:"1 1 260px", maxWidth:320, cursor:"pointer", background:T.card, border:`2px solid ${T.border}`,
-                  borderRadius:16, padding:"28px 28px 24px", boxShadow:"0 2px 12px rgba(0,0,0,0.07)",
-                  transition:"box-shadow 0.18s, border-color 0.18s"}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor=T.orange; e.currentTarget.style.boxShadow="0 4px 20px rgba(0,119,204,0.18)";}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border; e.currentTarget.style.boxShadow="0 2px 12px rgba(0,0,0,0.07)";}}>
-                <div style={{fontSize:36, marginBottom:12}}>🏭</div>
-                <div style={{fontWeight:900, fontSize:17, color:T.navy, marginBottom:6}}>Tanques Tierra</div>
-                <div style={{fontSize:12, color:T.muted, lineHeight:1.5}}>Tanques en tierra Planta 1<br/>TKT-1 · TKT-2<br/>Incluido en liquidador QBS002</div>
-                <div style={{marginTop:18, display:"flex", justifyContent:"flex-end"}}>
-                  <span style={{background:T.navy, color:"#fff", borderRadius:8, padding:"5px 16px", fontSize:11, fontWeight:700}}>Abrir →</span>
-                </div>
-              </div>
+            <div style={{display: liqP1Sub==="qbs003" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", padding:"24px 32px", boxSizing:"border-box"}}>
+              <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
             </div>
           </div>
-        </div>
-
-        {/* ── Liquidadores siempre montados FUERA del motion.div para preservar estado ── */}
-        <div style={{display: nav==="liquidador" ? "" : "none", position:"absolute", top:0, bottom:0, left:58, right:0, overflowY:"auto", background:"var(--bg,#f8f9fa)"}}>
-          <LiquidadorPlanta1 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
-        </div>
-        <div style={{display: nav==="liquidador_qbs003" ? "" : "none", position:"absolute", top:0, bottom:0, left:58, right:0, overflowY:"auto", background:"var(--bg,#f8f9fa)", padding:"24px 32px", boxSizing:"border-box"}}>
-          <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
         </div>
         <div style={{display: nav==="liquidador_p2" ? "" : "none", position:"absolute", top:0, bottom:0, left:58, right:0, overflowY:"auto", background:"var(--bg,#f8f9fa)"}}>
           <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading}/>
