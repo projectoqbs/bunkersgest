@@ -228,16 +228,10 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
           <div style={{fontWeight:800,fontSize:16,color:TH.navy}}>Liquidador — Planta 1</div>
           <div style={{fontSize:10,color:TH.muted}}>Barcaza QBS-003 · 12 Tanques (MM innage)</div>
         </div>
-        <div style={{display:'flex',gap:8}}>
-          <button onClick={()=>{setFilas(initFilas());setCalados({proaIni:'',popaIni:'',proaFin:'',popaFin:''});setObs('');}}
-            style={{background:'transparent',border:'1px solid '+TH.border,borderRadius:6,padding:'6px 14px',color:TH.muted,fontSize:11,cursor:'pointer'}}>
-            ↺ Limpiar
-          </button>
-          <button onClick={guardar} disabled={saving||!hayResultados}
-            style={{background:TH.success,border:'none',borderRadius:6,padding:'6px 18px',color:'#fff',fontSize:11,fontWeight:700,cursor:saving||!hayResultados?'not-allowed':'pointer',opacity:saving||!hayResultados?0.6:1}}>
-            {saving?'Guardando…':'✔ Guardar'}
-          </button>
-        </div>
+        <button onClick={()=>{setFilas(initFilas());setCalados({proaIni:'',popaIni:'',proaFin:'',popaFin:''}); }}
+          style={{background:'transparent',border:'1px solid '+TH.border,borderRadius:6,padding:'6px 14px',color:TH.muted,fontSize:11,cursor:'pointer'}}>
+          ↺ Limpiar
+        </button>
       </div>
 
 
