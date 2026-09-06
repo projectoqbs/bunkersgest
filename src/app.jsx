@@ -21,7 +21,8 @@ const ICON_MAP = {
   trazabilidad: Search,
   usuarios:     Users,
   programacion: CalendarDays,
-  liquidador:   Calculator,
+  liquidador:    Calculator,
+  liquidador_p1: Calculator,
 };
 function NavIcon({id, size=17, color}){
   const Ic=ICON_MAP[id];
