@@ -137,7 +137,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   const [mtFirmadas,setMtFirmadas]=useState("");
 
   const initB=()=>TANQUES_BARCAZA.map(t=>({tanque:t,producto:"VLSFO",activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
-  const initT=()=>TANQUES_TKT.map(t=>({tanque:t,producto:"DIESEL",activo:false,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
+  const initT=()=>TANQUES_TKT.map(t=>({tanque:t,producto:"DIESEL",activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
   const [filasB,setFilasB]=useState(initB);
   const [filasT,setFilasT]=useState(initT);
 
