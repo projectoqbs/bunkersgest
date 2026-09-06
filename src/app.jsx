@@ -8763,7 +8763,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           {/* Contenido — montado siempre para preservar estado */}
           <div style={{flex:1, overflow:"hidden", position:"relative"}}>
             <div style={{display: liqP1Sub==="tkt" || liqP1Sub==="qbs002" ? "" : "none", position:"absolute", inset:0, overflowY:"auto"}}>
-              <LiquidadorPlanta1 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
+              <LiquidadorPlanta1 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}
+                barcazaFiltro={liqP1Sub==="tkt" ? "TANQUES TIERRA" : "QBS002"}/>
             </div>
             <div style={{display: liqP1Sub==="qbs003" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", padding:"24px 32px", boxSizing:"border-box"}}>
               <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
