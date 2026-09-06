@@ -8582,13 +8582,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         </AnimatePresence>
 
         {/* ── Liquidadores siempre montados FUERA del motion.div para preservar estado ── */}
-        <div style={{display: nav==="liquidador" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", background:"var(--bg,#f8f9fa)"}}>
+        <div style={{display: nav==="liquidador" ? "" : "none", position:"absolute", top:0, bottom:0, left:58, right:0, overflowY:"auto", background:"var(--bg,#f8f9fa)"}}>
           <LiquidadorPlanta1 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
         </div>
-        <div style={{display: nav==="liquidador_qbs003" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", background:"var(--bg,#f8f9fa)", padding:"24px 32px", boxSizing:"border-box"}}>
+        <div style={{display: nav==="liquidador_qbs003" ? "" : "none", position:"absolute", top:0, bottom:0, left:58, right:0, overflowY:"auto", background:"var(--bg,#f8f9fa)", padding:"24px 32px", boxSizing:"border-box"}}>
           <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
         </div>
-        <div style={{display: nav==="liquidador_p2" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", background:"var(--bg,#f8f9fa)"}}>
+        <div style={{display: nav==="liquidador_p2" ? "" : "none", position:"absolute", top:0, bottom:0, left:58, right:0, overflowY:"auto", background:"var(--bg,#f8f9fa)"}}>
           <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading}/>
         </div>
 
