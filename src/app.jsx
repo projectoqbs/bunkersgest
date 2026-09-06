@@ -2033,7 +2033,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         })}
       </div>
 
-      <div style={{ display:"flex", flex:1, overflow:"clip", position:"relative" }}>
+      <div style={{ display:"flex", flex:1, overflow:"hidden", position:"relative" }}>
         {/* Sidebar */}
         <div style={{ width:58, background:"#121212", borderRight:`1px solid rgba(0,119,204,0.2)`, padding:"10px 0", flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2, zIndex:100, overflow:"visible" }}>
           {(()=>{
