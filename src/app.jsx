@@ -169,7 +169,9 @@ const NAV_META = {
   trazabilidad:  { label:"Trazabilidad",  icon:"🔍" },
   usuarios:      { label:"Usuarios",      icon:"👥" },
   programacion:  { label:"Programación",  icon:"📅" },
-  liquidador:    { label:"Liquidador",    icon:"🔢" },
+  liquidador:        { label:"Liq. QBS002",   icon:"🔢" },
+  liquidador_qbs003: { label:"Liq. QBS003",   icon:"🔢" },
+  liquidador_p2:     { label:"Liq. Planta 2", icon:"🔢" },
   inventario_diario: { label:"Inventario Diario", icon:"📊" },
   auditoria:         { label:"Auditoría",          icon:"🔎" },
 };
