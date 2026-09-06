@@ -536,34 +536,6 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
           );
         })()}
 
-        <div style={{background:TH.navy,borderRadius:6,padding:"10px 20px",marginBottom:8,display:"flex",flexWrap:"wrap",gap:"8px 32px",alignItems:"center"}}>
-          {[
-            {l:"GLS Netos Ini",v:fmtN(tots.gNI,0),c:"#93c5fd"},
-            {l:"GLS Netos Fin",v:fmtN(tots.gNF,0),c:"#93c5fd"},
-            {l:"GLS Brutos Entregados",v:fmtN(tots.gBEnt,0),c:"#fcd34d",big:true},
-            {l:"GLS Netos Entregados",v:fmtN(tots.gEnt,0),c:"#6ee7b7",big:true},
-            {l:"MT Entregadas (cálculo)",v:fmtN(tots.mEnt,3),c:TH.orange,big:true},
-          ].map(({l,v,c,big})=>(
-            <div key={l} style={{textAlign:"center"}}>
-              <div style={{fontSize:9,color:"rgba(255,255,255,0.55)",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{l}</div>
-              <div style={{fontSize:big?22:16,fontWeight:900,color:c}}>{v}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{display:"flex",gap:12,justifyContent:"flex-end",alignItems:"flex-end",marginBottom:12,flexWrap:"wrap"}}>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <label style={{fontSize:11,fontWeight:700,color:TH.muted,textTransform:"uppercase",letterSpacing:0.8}}>MT Firmadas (documentos)</label>
-            <input
-              type="number" step="0.001" min="0"
-              value={mtFirmadas} onChange={e=>setMtFirmadas(e.target.value)}
-              placeholder={tots.mEnt?fmtN(tots.mEnt,3):"ej. 295.000"}
-              style={{padding:"9px 14px",borderRadius:6,border:`2px solid ${TH.orange}`,fontSize:14,fontWeight:700,color:TH.text,background:TH.card,width:180,outline:"none",textAlign:"right"}}
-            />
-          </div>
-          <AppBtn color={TH.muted} sm onClick={()=>{setFilasB(initB());setFilasT(initT());setMotonave("");setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""});setObs("");setMtFirmadas("");setImoNumero("");setTerminal(despachoCtx?.puerto||"");setAutoComisorio("");setBdnNumero("");setGlsFlowmeter("");setDocNumero("");setCoordinador("");}}>Limpiar</AppBtn>
-          <AppBtn color={TH.success} disabled={saving} onClick={guardar}>{saving?"Guardando…":"✔ Entregar"}</AppBtn>
-        </div>
       </>}
     </div>
   );
