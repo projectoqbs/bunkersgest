@@ -378,6 +378,7 @@ export default function App() {
   const [labOpen, setLabOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [navHovered, setNavHovered] = useState(null);
+  const [navHoveredRect, setNavHoveredRect] = useState(null);
 
   // ── TAB SYSTEM ──
   const [tabs, setTabs] = useState([
@@ -2082,17 +2083,18 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             };
 
             const leaveTimer = {current:null};
-            const onEnter = id => { clearTimeout(leaveTimer.current); setNavHovered(id); };
-            const onLeave = ()  => { leaveTimer.current = setTimeout(()=>setNavHovered(null), 80); };
+            const onEnter = (id, e) => { clearTimeout(leaveTimer.current); setNavHovered(id); if(e) setNavHoveredRect(e.currentTarget.getBoundingClientRect()); };
+            const onLeave = ()  => { leaveTimer.current = setTimeout(()=>{ setNavHovered(null); setNavHoveredRect(null); }, 80); };
 
             const items = navItems.map(id => {
               const grupo = GRUPOS[id];
               if (grupo) {
                 const active = grupo.subs.some(s=>s.id===nav);
                 const isHov = navHovered===id;
+                const flyoutTop = navHoveredRect ? Math.min(navHoveredRect.top - 4, window.innerHeight - (grupo.subs.length * 40 + 60)) : 0;
                 return (
                   <div key={id} style={{position:"relative", width:40}}
-                    onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
+                    onMouseEnter={e=>onEnter(id,e)} onMouseLeave={onLeave}>
                     <motion.button
                       style={{...btnStyle(active, isHov, rol.color)}}
                       whileHover={{ scale: 1.12 }}
@@ -2101,14 +2103,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <NavIcon id={id} size={17}/>
                     </motion.button>
                     <AnimatePresence>
-                      {isHov && (
+                      {isHov && navHoveredRect && (
                         <motion.div
                           key="flyout"
                           initial={{ opacity:0, x:-10 }}
                           animate={{ opacity:1, x:0 }}
                           exit={{ opacity:0, x:-10 }}
                           transition={{ duration:0.18, ease:[0.23,1,0.32,1] }}
-                          style={flyoutBase} onMouseEnter={()=>onEnter(id)} onMouseLeave={onLeave}>
+                          style={{position:"fixed", left: navHoveredRect.right + 6, top: flyoutTop, zIndex:9999, pointerEvents:"auto"}}
+                          onMouseEnter={e=>onEnter(id,null)} onMouseLeave={onLeave}>
                           <div style={{...flyoutInner, borderLeftColor: rol.color+"88"}}>
                             <div style={{padding:"8px 16px 8px",fontSize:10,color:T.orange,fontWeight:800,letterSpacing:2,textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.08)",marginBottom:4}}>{grupo.label}</div>
                             {grupo.subs.map((sub,si)=>{
@@ -2118,7 +2121,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                   initial={{ opacity:0, x:-6 }}
                                   animate={{ opacity:1, x:0 }}
                                   transition={{ delay: si*0.04, duration:0.14, ease:"easeOut" }}
-                                  onClick={()=>{setNav(sub.id);setNavHovered(null);setAnalisisNav("");}}
+                                  onClick={()=>{setNav(sub.id);setNavHovered(null);setNavHoveredRect(null);setAnalisisNav("");}}
                                   style={{width:"100%",textAlign:"left",background:subActive?T.orange:"transparent",border:"none",borderLeft:`3px solid ${subActive?T.orange:"transparent"}`,padding:"9px 16px",color:subActive?"#ffffff":"rgba(255,255,255,0.65)",fontSize:12,fontFamily:"system-ui,sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",transition:"background 0.15s, color 0.15s",boxSizing:"border-box",fontWeight:subActive?700:400}}
                                   onMouseEnter={e=>{ if(!subActive){e.currentTarget.style.background="rgba(0,119,204,0.18)"; e.currentTarget.style.color="#ffffff";} }}
                                   onMouseLeave={e=>{ if(!subActive){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(255,255,255,0.65)";} }}>
