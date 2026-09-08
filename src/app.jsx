@@ -6,6 +6,7 @@ import LiquidadorPlanta1 from "./components/LiquidadorPlanta1";
 import LiquidadorQBS003  from "./components/LiquidadorQBS003";
 import InventarioDiario from "./components/InventarioDiario";
 import { calcularGalonesP1, parseTankId } from "./utils/aforoP1";
+import { TABLAS_QBS003 } from "./data/tablas_qbs003";
 import LiquidadorPlanta2 from "./components/LiquidadorPlanta2";
 import { initScrollRestore } from "./utils/scrollRestore";
 import { LayoutDashboard, Truck, FlaskConical, Settings2, ClipboardList, Cylinder, Ship, Search, Users, CalendarDays, Calculator, RefreshCw, Crown, BarChart2, Package, Lock, AlertTriangle, CheckCircle, X, Pencil, Trash2, Save, Fuel, Anchor, MapPin, ArrowDownToLine, Wrench, HardHat, Factory, Clock, CircleCheck, CirclePause, Timer, Beaker, ChevronRight, GaugeCircle, Droplets, Flame } from "lucide-react";
@@ -1475,6 +1476,36 @@ const aprueba = esVLSFO
       }
     }
   }
+function interpQBS003(sondaMM, tabla) {
+  if (!tabla || isNaN(sondaMM)) return null;
+  const n = tabla.length;
+  if (sondaMM <= tabla[0][0]) return tabla[0][1];
+  if (sondaMM >= tabla[n-1][0]) return tabla[n-1][1];
+  let lo = 0, hi = n - 1;
+  while (hi - lo > 1) { const mid = Math.floor((lo+hi)/2); if (tabla[mid][0] <= sondaMM) lo=mid; else hi=mid; }
+  return tabla[lo][1] + (tabla[hi][1]-tabla[lo][1]) * (sondaMM-tabla[lo][0]) / (tabla[hi][0]-tabla[lo][0]);
+}
+function calcularGalonesQBS003(tanque, sondaMM, api, temp) {
+  const key = tanque.replace("QBS003-","");
+  const tabla = TABLAS_QBS003[key];
+  if (!tabla) return null;
+  const M3_TO_GAL = 264.172;
+  const volM3 = interpQBS003(sondaMM, tabla);
+  if (volM3 === null) return null;
+  const glsB = volM3 * M3_TO_GAL;
+  if (temp && api) {
+    const tempF = (Number(temp)*9/5)+32;
+    const deltaT = tempF - 60;
+    const apiNum = Number(api);
+    const rho = (141.5*999.012)/(131.5+apiNum);
+    const k0 = apiNum<40?103.872:330.301;
+    const k1 = apiNum<40?0.2701:0.6;
+    const alpha = k0/(rho*rho)+k1/rho;
+    const vcf = Math.exp(-alpha*deltaT*(1+0.8*alpha*deltaT));
+    return Math.round(glsB * vcf);
+  }
+  return Math.round(glsB);
+}
 async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter, campoGalones="galones") {
   if (!tanque || !ullage) return;
   const ullageNum = Number(ullage);
@@ -1497,6 +1528,14 @@ async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter
     } else if (above) {
       galonesB = Number(above.galones_brutos);
     }
+  }
+  // Fallback: tablas embebidas QBS003
+  if (galonesB === null && tanque.startsWith("QBS003-")) {
+    const glsQ3 = calcularGalonesQBS003(tanque, ullageNum, api, temp);
+    if (glsQ3 !== null) {
+      setter(prev => prev.map((r,j) => j===index ? {...r, [campoGalones]: glsQ3} : r));
+    }
+    return;
   }
   // Fallback: tablas embebidas de Planta 1 (barcaza QBS-002)
   if (galonesB === null) {
