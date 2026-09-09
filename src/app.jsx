@@ -4157,7 +4157,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             const guardarProductoTanque2 = async (tkId, nuevo) => {
               setTankProdEdit(p => p ? {...p, saving:true} : null);
-              const { error } = await supabase.from("tanques").update({ producto: nuevo.toUpperCase() }).eq("id", tkId);
+              const existente = tanques.find(t=>t.id===tkId);
+              const data = { id:tkId, producto: nuevo.toUpperCase(), nivel: existente?.nivel??0, capacidad: existente?.capacidad??CAP_QBS002[tkId]??27000 };
+              const { error } = await supabase.from("tanques").upsert(data, {onConflict:"id"});
               setTankProdEdit(null);
               if (!error) await loadData();
               else showToast("Error al guardar producto", false);
