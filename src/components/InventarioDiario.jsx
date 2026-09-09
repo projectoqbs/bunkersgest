@@ -811,57 +811,51 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             const esDescargue=tipoOp.includes("DESCARGUE")&&!tipoOp.includes("MOTONAVE")&&!tipoOp.includes("ENTREGA");
             const esPorteo=tipoOp==="PORTEO";
 
-            // ── ENTRADAS: usar báscula cuando esté disponible ──────────────────
+            // ── ENTRADAS: medidas reales por tanque, último ajustado para cuadrar con báscula ──
             if(esDescargue){
-              // Báscula: sum(carros[].galones_bascula)
               const scaleTotal=(c.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
-              // Deltas por tanque para calcular ratios de distribución
-              const tankDeltas={};
-              let sumDeltasTanq=0;
+              const tankEntradas=[];
               (c.tanques_antes||[]).forEach(ta=>{
                 if(!ta.tanque) return;
                 const td=(c.tanques_despues||[]).find(x=>x.tanque===ta.tanque);
                 if(!td) return;
                 const d=Number(td.galones||0)-Number(ta.galones||0);
-                if(d>0){tankDeltas[ta.tanque]=d;sumDeltasTanq+=d;}
+                if(d>0) tankEntradas.push({tq:ta.tanque,gls:d});
+                else if(d<0) addMov(ta.tanque,-d,false); // salida
               });
-              if(scaleTotal>0 && sumDeltasTanq>0){
-                // Distribuir báscula proporcionalmente por tanque
-                Object.entries(tankDeltas).forEach(([tq,d])=>addMov(tq,Math.round(scaleTotal*d/sumDeltasTanq),true));
-              } else if(scaleTotal>0 && Object.keys(tankDeltas).length>0){
-                // Sin medidas de tanque, repartir equitativamente
-                const eq=Math.round(scaleTotal/Object.keys(tankDeltas).length);
-                Object.keys(tankDeltas).forEach(tq=>addMov(tq,eq,true));
+              if(scaleTotal>0 && tankEntradas.length>0){
+                // Todos los tanques excepto el último usan medida real
+                let acum=0;
+                for(let i=0;i<tankEntradas.length-1;i++){
+                  addMov(tankEntradas[i].tq,tankEntradas[i].gls,true);
+                  acum+=tankEntradas[i].gls;
+                }
+                // Último tanque: ajuste para que la suma cierre en báscula
+                const ultimo=tankEntradas[tankEntradas.length-1];
+                const ajuste=Math.max(0,scaleTotal-acum);
+                addMov(ultimo.tq,ajuste,true);
               } else {
-                // Sin báscula: fallback a medidas de tanque
-                Object.entries(tankDeltas).forEach(([tq,d])=>addMov(tq,d,true));
+                // Sin báscula: medidas de tanque tal cual
+                tankEntradas.forEach(({tq,gls})=>addMov(tq,gls,true));
               }
-              // Salidas de tanques_antes/despues (si algún tanque bajó)
-              (c.tanques_antes||[]).forEach(ta=>{
-                if(!ta.tanque) return;
-                const td=(c.tanques_despues||[]).find(x=>x.tanque===ta.tanque);
-                if(!td) return;
-                const d=Number(ta.galones||0)-Number(td.galones||0);
-                if(d>0) addMov(ta.tanque,d,false);
-              });
             } else if(esPorteo){
-              // Báscula porteo: sum(porteo_carros[].galones_bascula)
               const scalePorteo=(c.porteo_carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
-              // Deltas de descarga para ratios
-              const porteoDeltas={};
-              let sumPorteoDelta=0;
+              const porteoEntradas=[];
               (c.porteo_descarga_tanques||[]).forEach(td=>{
                 if(!td.tanque) return;
                 const d=Number(td.galonesFinal||0)-Number(td.galonesInicial||0);
-                if(d>0){porteoDeltas[td.tanque]=d;sumPorteoDelta+=d;}
+                if(d>0) porteoEntradas.push({tq:td.tanque,gls:d});
               });
-              if(scalePorteo>0 && sumPorteoDelta>0){
-                Object.entries(porteoDeltas).forEach(([tq,d])=>addMov(tq,Math.round(scalePorteo*d/sumPorteoDelta),true));
-              } else if(scalePorteo>0 && Object.keys(porteoDeltas).length>0){
-                const eq=Math.round(scalePorteo/Object.keys(porteoDeltas).length);
-                Object.keys(porteoDeltas).forEach(tq=>addMov(tq,eq,true));
+              if(scalePorteo>0 && porteoEntradas.length>0){
+                let acum=0;
+                for(let i=0;i<porteoEntradas.length-1;i++){
+                  addMov(porteoEntradas[i].tq,porteoEntradas[i].gls,true);
+                  acum+=porteoEntradas[i].gls;
+                }
+                const ultimo=porteoEntradas[porteoEntradas.length-1];
+                addMov(ultimo.tq,Math.max(0,scalePorteo-acum),true);
               } else {
-                Object.entries(porteoDeltas).forEach(([tq,d])=>addMov(tq,d,true));
+                porteoEntradas.forEach(({tq,gls})=>addMov(tq,gls,true));
               }
               // Salidas porteo (carga): siempre medida de tanque
               (c.porteo_carga_tanques||[]).forEach(tc=>{
@@ -1397,28 +1391,50 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       const esDescargue=tipoOp.includes("DESCARGUE")&&!tipoOp.includes("MOTONAVE")&&!tipoOp.includes("ENTREGA");
       const esPorteo=tipoOp==="PORTEO";
       if(esDescargue){
+        // Medidas reales por tanque, último ajusta para cuadrar con báscula
+        const scaleTotal=(cmt.carros||[]).reduce((sum,cr)=>sum+(Number(cr.galones_bascula)||0),0);
+        const tankEntradas=[];
+        (cmt.tanques_antes||[]).forEach(a=>{
+          const d2=(cmt.tanques_despues||[]).find(x=>x.tanque===a.tanque);
+          if(!d2) return;
+          const dv=Number(d2.galones||0)-Number(a.galones||0);
+          if(dv>0) tankEntradas.push({tq:a.tanque,gls:dv});
+        });
+        const idx=tankEntradas.findIndex(x=>x.tq===tqId);
+        if(idx>=0){
+          if(scaleTotal>0 && tankEntradas.length>0){
+            if(idx<tankEntradas.length-1){
+              e+=tankEntradas[idx].gls; // medida real
+            } else {
+              // último tanque: ajuste
+              const acum=tankEntradas.slice(0,-1).reduce((s,x)=>s+x.gls,0);
+              e+=Math.max(0,scaleTotal-acum);
+            }
+          } else {
+            e+=tankEntradas[idx].gls;
+          }
+        }
         const ta=(cmt.tanques_antes||[]).find(t=>t.tanque===tqId);
         const td=(cmt.tanques_despues||[]).find(t=>t.tanque===tqId);
-        if(ta&&td){
-          const thisDelta=Number(td.galones||0)-Number(ta.galones||0);
-          if(thisDelta>0){
-            const scaleTotal=(cmt.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
-            let sumAllDeltas=0;
-            (cmt.tanques_antes||[]).forEach(a=>{const d2=(cmt.tanques_despues||[]).find(x=>x.tanque===a.tanque);if(d2){const dv=Number(d2.galones||0)-Number(a.galones||0);if(dv>0)sumAllDeltas+=dv;}});
-            if(scaleTotal>0&&sumAllDeltas>0) e+=Math.round(scaleTotal*thisDelta/sumAllDeltas);
-            else e+=thisDelta;
-          } else if(thisDelta<0) s+=-thisDelta;
-        }
+        if(ta&&td){const d=Number(ta.galones||0)-Number(td.galones||0);if(d>0)s+=d;}
       } else if(esPorteo){
-        const pd=(cmt.porteo_descarga_tanques||[]).find(t=>t.tanque===tqId);
-        if(pd){
-          const thisDelta=Number(pd.galonesFinal||0)-Number(pd.galonesInicial||0);
-          if(thisDelta>0){
-            const scalePorteo=(cmt.porteo_carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
-            let sumPorteoDeltas=0;
-            (cmt.porteo_descarga_tanques||[]).forEach(x=>{const dv=Number(x.galonesFinal||0)-Number(x.galonesInicial||0);if(dv>0)sumPorteoDeltas+=dv;});
-            if(scalePorteo>0&&sumPorteoDeltas>0) e+=Math.round(scalePorteo*thisDelta/sumPorteoDeltas);
-            else e+=thisDelta;
+        const scalePorteo=(cmt.porteo_carros||[]).reduce((sum,cr)=>sum+(Number(cr.galones_bascula)||0),0);
+        const porteoEntradas=[];
+        (cmt.porteo_descarga_tanques||[]).forEach(x=>{
+          const dv=Number(x.galonesFinal||0)-Number(x.galonesInicial||0);
+          if(dv>0) porteoEntradas.push({tq:x.tanque,gls:dv});
+        });
+        const idx=porteoEntradas.findIndex(x=>x.tq===tqId);
+        if(idx>=0){
+          if(scalePorteo>0 && porteoEntradas.length>0){
+            if(idx<porteoEntradas.length-1){
+              e+=porteoEntradas[idx].gls;
+            } else {
+              const acum=porteoEntradas.slice(0,-1).reduce((s,x)=>s+x.gls,0);
+              e+=Math.max(0,scalePorteo-acum);
+            }
+          } else {
+            e+=porteoEntradas[idx].gls;
           }
         }
         const pc=(cmt.porteo_carga_tanques||[]).find(t=>t.tanque===tqId);
