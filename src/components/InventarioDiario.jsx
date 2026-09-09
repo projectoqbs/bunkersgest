@@ -153,7 +153,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     const [invRes, cmtRes] = await Promise.all([
       dbCall({ table:"inventarios_diarios", op:"select", select:"*", filters:[], single:false }),
       dbCall({ table:"cmts", op:"select",
-        select:"numero_cmt,fecha,tipo_operacion,planta,total_movido,tanques_antes,tanques_despues,tanques_recepcion,porteo_carga_tanques,porteo_descarga_tanques",
+        select:"numero_cmt,fecha,tipo_operacion,planta,total_movido,tanques_antes,tanques_despues,tanques_recepcion,porteo_carga_tanques,porteo_descarga_tanques,carros,porteo_carros",
         filters:[
           {col:"fecha",op:"gte",val:(()=>{ const d=new Date(desde+"T12:00:00"); d.setDate(d.getDate()-90); return d.toISOString().split("T")[0]; })()},
           {col:"fecha",op:"lte",val:hasta}
@@ -807,34 +807,84 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             else          movsPorTanque[tq].salidas+=gls;
           };
           for(const c of balanceCmtsRango.filter(c=>c.fecha>=balanceDesde && c.fecha<balanceHasta)){
-            // tanques_antes / tanques_despues: emparejamiento por nombre de tanque.
-            // Si el tanque no aparece en despues, se omite (el movimiento lo capturan
-            // porteo_* o tanques_recepcion, y así evitamos falsos movimientos por índice).
-            (c.tanques_antes||[]).forEach(ta=>{
-              if(!ta.tanque) return;
-              const td=(c.tanques_despues||[]).find(x=>x.tanque===ta.tanque);
-              if(!td) return;
-              const delta=Number(ta.galones||0)-Number(td.galones||0);
-              if(delta>0) addMov(ta.tanque,delta,false);    // salida
-              else if(delta<0) addMov(ta.tanque,-delta,true); // entrada
-            });
-            // tanques_recepcion: tanque destino (entrada)
-            (c.tanques_recepcion||[]).forEach(tr=>{
-              if(!tr.tanque) return;
-              const delta=Number(tr.galonesFinal||0)-Number(tr.galonesInicial||0);
-              if(delta>0) addMov(tr.tanque,delta,true);
-            });
-            // porteo: carga=salida, descarga=entrada
-            (c.porteo_carga_tanques||[]).forEach(tc=>{
-              if(!tc.tanque) return;
-              const delta=Number(tc.galonesInicial||0)-Number(tc.galonesFinal||0);
-              if(delta>0) addMov(tc.tanque,delta,false);
-            });
-            (c.porteo_descarga_tanques||[]).forEach(td=>{
-              if(!td.tanque) return;
-              const delta=Number(td.galonesFinal||0)-Number(td.galonesInicial||0);
-              if(delta>0) addMov(td.tanque,delta,true);
-            });
+            const tipoOp=(c.tipo_operacion||"").toUpperCase();
+            const esDescargue=tipoOp.includes("DESCARGUE")&&!tipoOp.includes("MOTONAVE")&&!tipoOp.includes("ENTREGA");
+            const esPorteo=tipoOp==="PORTEO";
+
+            // ── ENTRADAS: usar báscula cuando esté disponible ──────────────────
+            if(esDescargue){
+              // Báscula: sum(carros[].galones_bascula)
+              const scaleTotal=(c.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
+              // Deltas por tanque para calcular ratios de distribución
+              const tankDeltas={};
+              let sumDeltasTanq=0;
+              (c.tanques_antes||[]).forEach(ta=>{
+                if(!ta.tanque) return;
+                const td=(c.tanques_despues||[]).find(x=>x.tanque===ta.tanque);
+                if(!td) return;
+                const d=Number(td.galones||0)-Number(ta.galones||0);
+                if(d>0){tankDeltas[ta.tanque]=d;sumDeltasTanq+=d;}
+              });
+              if(scaleTotal>0 && sumDeltasTanq>0){
+                // Distribuir báscula proporcionalmente por tanque
+                Object.entries(tankDeltas).forEach(([tq,d])=>addMov(tq,Math.round(scaleTotal*d/sumDeltasTanq),true));
+              } else if(scaleTotal>0 && Object.keys(tankDeltas).length>0){
+                // Sin medidas de tanque, repartir equitativamente
+                const eq=Math.round(scaleTotal/Object.keys(tankDeltas).length);
+                Object.keys(tankDeltas).forEach(tq=>addMov(tq,eq,true));
+              } else {
+                // Sin báscula: fallback a medidas de tanque
+                Object.entries(tankDeltas).forEach(([tq,d])=>addMov(tq,d,true));
+              }
+              // Salidas de tanques_antes/despues (si algún tanque bajó)
+              (c.tanques_antes||[]).forEach(ta=>{
+                if(!ta.tanque) return;
+                const td=(c.tanques_despues||[]).find(x=>x.tanque===ta.tanque);
+                if(!td) return;
+                const d=Number(ta.galones||0)-Number(td.galones||0);
+                if(d>0) addMov(ta.tanque,d,false);
+              });
+            } else if(esPorteo){
+              // Báscula porteo: sum(porteo_carros[].galones_bascula)
+              const scalePorteo=(c.porteo_carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
+              // Deltas de descarga para ratios
+              const porteoDeltas={};
+              let sumPorteoDelta=0;
+              (c.porteo_descarga_tanques||[]).forEach(td=>{
+                if(!td.tanque) return;
+                const d=Number(td.galonesFinal||0)-Number(td.galonesInicial||0);
+                if(d>0){porteoDeltas[td.tanque]=d;sumPorteoDelta+=d;}
+              });
+              if(scalePorteo>0 && sumPorteoDelta>0){
+                Object.entries(porteoDeltas).forEach(([tq,d])=>addMov(tq,Math.round(scalePorteo*d/sumPorteoDelta),true));
+              } else if(scalePorteo>0 && Object.keys(porteoDeltas).length>0){
+                const eq=Math.round(scalePorteo/Object.keys(porteoDeltas).length);
+                Object.keys(porteoDeltas).forEach(tq=>addMov(tq,eq,true));
+              } else {
+                Object.entries(porteoDeltas).forEach(([tq,d])=>addMov(tq,d,true));
+              }
+              // Salidas porteo (carga): siempre medida de tanque
+              (c.porteo_carga_tanques||[]).forEach(tc=>{
+                if(!tc.tanque) return;
+                const d=Number(tc.galonesInicial||0)-Number(tc.galonesFinal||0);
+                if(d>0) addMov(tc.tanque,d,false);
+              });
+            } else {
+              // TRASIEGO / otros: usar medidas de tanque (sin báscula)
+              (c.tanques_antes||[]).forEach(ta=>{
+                if(!ta.tanque) return;
+                const td=(c.tanques_despues||[]).find(x=>x.tanque===ta.tanque);
+                if(!td) return;
+                const delta=Number(ta.galones||0)-Number(td.galones||0);
+                if(delta>0) addMov(ta.tanque,delta,false);
+                else if(delta<0) addMov(ta.tanque,-delta,true);
+              });
+              (c.tanques_recepcion||[]).forEach(tr=>{
+                if(!tr.tanque) return;
+                const delta=Number(tr.galonesFinal||0)-Number(tr.galonesInicial||0);
+                if(delta>0) addMov(tr.tanque,delta,true);
+              });
+            }
           }
 
           // Tanques a mostrar: TODOS los de la planta, siempre (con 0 si no hay datos)
@@ -1340,18 +1390,50 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       return null;
     };
 
-    // Movimiento (entrada/salida) de un tanque en un CMT
+    // Movimiento (entrada/salida) de un tanque en un CMT — entradas DESCARGUE/PORTEO usan báscula
     const getMov=(cmt,tqId)=>{
       let e=0,s=0;
-      const ta=(cmt.tanques_antes||[]).find(t=>t.tanque===tqId);
-      const td=(cmt.tanques_despues||[]).find(t=>t.tanque===tqId);
-      if(ta&&td){const d=Number(td.galones||0)-Number(ta.galones||0);if(d>0)e+=d;else if(d<0)s+=-d;}
-      const tr=(cmt.tanques_recepcion||[]).find(t=>t.tanque===tqId);
-      if(tr){const d=Number(tr.galonesFinal||0)-Number(tr.galonesInicial||0);if(d>0)e+=d;}
-      const pc=(cmt.porteo_carga_tanques||[]).find(t=>t.tanque===tqId);
-      if(pc){const d=Number(pc.galonesInicial||0)-Number(pc.galonesFinal||0);if(d>0)s+=d;}
-      const pd=(cmt.porteo_descarga_tanques||[]).find(t=>t.tanque===tqId);
-      if(pd){const d=Number(pd.galonesFinal||0)-Number(pd.galonesInicial||0);if(d>0)e+=d;}
+      const tipoOp=(cmt.tipo_operacion||"").toUpperCase();
+      const esDescargue=tipoOp.includes("DESCARGUE")&&!tipoOp.includes("MOTONAVE")&&!tipoOp.includes("ENTREGA");
+      const esPorteo=tipoOp==="PORTEO";
+      if(esDescargue){
+        const ta=(cmt.tanques_antes||[]).find(t=>t.tanque===tqId);
+        const td=(cmt.tanques_despues||[]).find(t=>t.tanque===tqId);
+        if(ta&&td){
+          const thisDelta=Number(td.galones||0)-Number(ta.galones||0);
+          if(thisDelta>0){
+            const scaleTotal=(cmt.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
+            let sumAllDeltas=0;
+            (cmt.tanques_antes||[]).forEach(a=>{const d2=(cmt.tanques_despues||[]).find(x=>x.tanque===a.tanque);if(d2){const dv=Number(d2.galones||0)-Number(a.galones||0);if(dv>0)sumAllDeltas+=dv;}});
+            if(scaleTotal>0&&sumAllDeltas>0) e+=Math.round(scaleTotal*thisDelta/sumAllDeltas);
+            else e+=thisDelta;
+          } else if(thisDelta<0) s+=-thisDelta;
+        }
+      } else if(esPorteo){
+        const pd=(cmt.porteo_descarga_tanques||[]).find(t=>t.tanque===tqId);
+        if(pd){
+          const thisDelta=Number(pd.galonesFinal||0)-Number(pd.galonesInicial||0);
+          if(thisDelta>0){
+            const scalePorteo=(cmt.porteo_carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
+            let sumPorteoDeltas=0;
+            (cmt.porteo_descarga_tanques||[]).forEach(x=>{const dv=Number(x.galonesFinal||0)-Number(x.galonesInicial||0);if(dv>0)sumPorteoDeltas+=dv;});
+            if(scalePorteo>0&&sumPorteoDeltas>0) e+=Math.round(scalePorteo*thisDelta/sumPorteoDeltas);
+            else e+=thisDelta;
+          }
+        }
+        const pc=(cmt.porteo_carga_tanques||[]).find(t=>t.tanque===tqId);
+        if(pc){const d=Number(pc.galonesInicial||0)-Number(pc.galonesFinal||0);if(d>0)s+=d;}
+      } else {
+        const ta=(cmt.tanques_antes||[]).find(t=>t.tanque===tqId);
+        const td=(cmt.tanques_despues||[]).find(t=>t.tanque===tqId);
+        if(ta&&td){const d=Number(td.galones||0)-Number(ta.galones||0);if(d>0)e+=d;else if(d<0)s+=-d;}
+        const tr=(cmt.tanques_recepcion||[]).find(t=>t.tanque===tqId);
+        if(tr){const d=Number(tr.galonesFinal||0)-Number(tr.galonesInicial||0);if(d>0)e+=d;}
+        const pc=(cmt.porteo_carga_tanques||[]).find(t=>t.tanque===tqId);
+        if(pc){const d=Number(pc.galonesInicial||0)-Number(pc.galonesFinal||0);if(d>0)s+=d;}
+        const pd=(cmt.porteo_descarga_tanques||[]).find(t=>t.tanque===tqId);
+        if(pd){const d=Number(pd.galonesFinal||0)-Number(pd.galonesInicial||0);if(d>0)e+=d;}
+      }
       return{e,s};
     };
 
@@ -1400,11 +1482,21 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
       for(const c of cmtsDia){
         const snap=getSnap(c,tanqueId);
         const numCmt=c.numero_cmt||c.id||"";
+        const tipoOpC=(c.tipo_operacion||"").toUpperCase();
+        const esDescargueC=tipoOpC.includes("DESCARGUE")&&!tipoOpC.includes("MOTONAVE")&&!tipoOpC.includes("ENTREGA");
+        const esPorteoC=tipoOpC==="PORTEO";
         if(snap!==null){
-          const delta=snap-(nivelDia??snap);
-          if(delta>0) entradasDet.push({monto:delta,tipo:tipoMov(c,tanqueId,delta),cmt:numCmt});
-          else if(delta<0) salidasDet.push({monto:-delta,tipo:tipoMov(c,tanqueId,delta),cmt:numCmt});
-          nivelDia=snap;
+          if(esDescargueC||esPorteoC){
+            // Entradas: usar báscula (getMov ya aplica la lógica de escala)
+            const{e,s}=getMov(c,tanqueId);
+            if(e>0) entradasDet.push({monto:e,tipo:tipoMov(c,tanqueId,1),cmt:numCmt});
+            if(s>0) salidasDet.push({monto:s,tipo:tipoMov(c,tanqueId,-1),cmt:numCmt});
+          } else {
+            const delta=snap-(nivelDia??snap);
+            if(delta>0) entradasDet.push({monto:delta,tipo:tipoMov(c,tanqueId,delta),cmt:numCmt});
+            else if(delta<0) salidasDet.push({monto:-delta,tipo:tipoMov(c,tanqueId,delta),cmt:numCmt});
+          }
+          nivelDia=snap; // nivel absoluto siempre desde medida de tanque
           cmtsNombres.push(numCmt);
         } else {
           const{e,s}=getMov(c,tanqueId);
