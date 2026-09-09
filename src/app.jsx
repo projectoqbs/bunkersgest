@@ -2238,7 +2238,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const isPlanta1 = id => id.startsWith("QBS002") || id.startsWith("QBS003") || id === "TKT-1" || id === "TKT-2";
             const isPlanta2 = id => id.startsWith("TK-");
 
-            const p1Tanks = tanques.filter(t => isPlanta1(t.id));
+            const CAP_QBS003_DASH = {"QBS003-T1BR":46207,"QBS003-T1ER":46209,"QBS003-T2BR":46106,"QBS003-T2ER":46134,"QBS003-T3BR":32967,"QBS003-T3ER":32869,"QBS003-T4BR":32960,"QBS003-T4ER":32901,"QBS003-T5BR":45988,"QBS003-T5ER":46146,"QBS003-T6BR":46349,"QBS003-T6ER":46353};
+            // Incluir QBS003 aunque no estén aún en la tabla tanques (fallback estático)
+            const qbs003Ids = Object.keys(CAP_QBS003_DASH);
+            const qbs003Fallback = qbs003Ids.filter(id=>!tanques.find(t=>t.id===id)).map(id=>({id,nivel:0,capacidad:CAP_QBS003_DASH[id],producto:"—"}));
+            const p1Tanks = [...tanques.filter(t => isPlanta1(t.id)), ...qbs003Fallback];
             const p2Tanks = tanques.filter(t => isPlanta2(t.id));
 
             const p1Cap   = p1Tanks.reduce((a,t)=>a+tkCap(t),0);
@@ -4444,7 +4448,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
             const guardarProductoTanque3 = async (tkId, nuevo) => {
               setTankProdEdit(p => p ? {...p, saving:true} : null);
-              const { error } = await supabase.from("tanques").update({ producto: nuevo.toUpperCase() }).eq("id", tkId);
+              const existente = tanques.find(t=>t.id===tkId);
+              const data = { id:tkId, producto: nuevo.toUpperCase(), nivel: existente?.nivel??0, capacidad: existente?.capacidad??CAP_QBS003[tkId]??40000 };
+              const { error } = await supabase.from("tanques").upsert(data, {onConflict:"id"});
               setTankProdEdit(null);
               if (!error) await loadData();
               else showToast("Error al guardar producto", false);
