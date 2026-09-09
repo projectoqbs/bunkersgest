@@ -5383,6 +5383,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     dbCall={dbCall}
                     barcazaFiltro={barcazaSelec}
                     despachoCtx={{ buque:despacho.buque, imo:despacho.imo||"", prod, mt, contrato:despacho.contrato, despachoId:despacho.id, puerto:despacho.destino||despacho.puerto||"" }}
+                    tanques={tanques}
                   />
                 )}
               </div>
@@ -7302,8 +7303,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <span style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:1}}>Tanque:</span>
                       <select value={row.tanque} onChange={e=>{
                         const val=e.target.value;
+                        const tq=tanques.find(t=>t.id===val);
+                        const prod=tq?.producto?normalizarProducto(tq.producto):"";
                         const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
-                        setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]){const tq=tanques.find(t=>t.id===val); nd[i]={...nd[i],tanque:val,producto:normalizarProducto(tq?.producto||"")};} return nd;});
+                        setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]){nd[i]={...nd[i],tanque:val,producto:prod};} return nd;});
+                        if(prod&&!cmtProducto){setCmtProducto(prod);setCmtDespues(p=>p.map(r=>({...r,producto:prod})));setCmtAntes(p=>p.map(r=>({...r,producto:prod})));}
                         calcularGalones(val,na[i].sonda,na[i].temp,na[i].api,false,i);
                       }} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none"}}>
                         <option value="">—</option>{tqDispRow(row.plantaFiltro).map(t=><option key={t.id}>{t.id}</option>)}
@@ -7333,8 +7337,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div><Lbl>Tanque</Lbl>
                     <select value={row.tanque} onChange={e=>{
                       const val=e.target.value;
+                      const tq=tanques.find(t=>t.id===val);
+                      const prod=tq?.producto?normalizarProducto(tq.producto):"";
                       const na=[...cmtAntes]; na[i].tanque=val; setCmtAntes(na);
-                      setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]){const tq=tanques.find(t=>t.id===val); nd[i]={...nd[i],tanque:val,producto:normalizarProducto(tq?.producto||"")};} return nd;});
+                      setCmtDespues(prev=>{const nd=[...prev]; if(nd[i]){nd[i]={...nd[i],tanque:val,producto:prod};} return nd;});
+                      if(prod&&!cmtProducto){setCmtProducto(prod);setCmtDespues(p=>p.map(r=>({...r,producto:prod})));setCmtAntes(p=>p.map(r=>({...r,producto:prod})));}
                       calcularGalones(val,na[i].sonda,na[i].temp,na[i].api,false,i);
                     }} style={{width:"100%",background:"#ffffff",border:`1px solid ${T.border}`,borderRadius:6,padding:"8px 10px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none"}}><option value="">—</option>{tanquesDisponibles.map(t=><option key={t.id}>{t.id}</option>)}</select>
                     </div>
@@ -8804,15 +8811,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <div style={{flex:1, overflow:"hidden", position:"relative"}}>
             <div style={{display: liqP1Sub==="tkt" || liqP1Sub==="qbs002" ? "" : "none", position:"absolute", inset:0, overflowY:"auto"}}>
               <LiquidadorPlanta1 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}
-                barcazaFiltro={liqP1Sub==="tkt" ? "TANQUES TIERRA" : "QBS002"}/>
+                barcazaFiltro={liqP1Sub==="tkt" ? "TANQUES TIERRA" : "QBS002"} tanques={tanques}/>
             </div>
             <div style={{display: liqP1Sub==="qbs003" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", padding:"24px 32px", boxSizing:"border-box"}}>
-              <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}/>
+              <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall} tanques={tanques}/>
             </div>
           </div>
         </div>
         <div style={{display: nav==="liquidador_p2" ? "" : "none", position:"absolute", top:0, bottom:0, left:58, right:0, overflowY:"auto", background:"var(--bg,#f8f9fa)"}}>
-          <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading}/>
+          <LiquidadorPlanta2 supabase={supabase} session={session} perfil={perfil} showToast={showToast} afoCache={afoP2} afoCacheLoading={afoP2Loading} tanques={tanques}/>
         </div>
 
       </div>

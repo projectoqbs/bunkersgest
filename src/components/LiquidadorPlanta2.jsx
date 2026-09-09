@@ -92,7 +92,7 @@ function TInp({value,onChange,disabled,navRow,navCol}){
   );
 }
 
-export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afoCache={},afoCacheLoading=false}){
+export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afoCache={},afoCacheLoading=false,tanques=[]}){
   const [tab,setTab]=useState("nuevo");
   const [historial,setHistorial]=useState([]);
   const [loadingHist,setLoadingHist]=useState(false);
@@ -105,7 +105,7 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
   // Cache local de lookups ya consultados: { "TK-111:1250": [galB_lo, galB_hi, mm_lo, mm_hi] }
   const lookupCache = useState({})[0];
 
-  const initFilas=()=>TANQUES_P2.map(t=>({tanque:t,producto:"VLSFO",activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
+  const initFilas=()=>TANQUES_P2.map(t=>{const tqConf=tanques.find(x=>x.id===t);return{tanque:t,producto:tqConf?.producto?tqConf.producto.toUpperCase():"VLSFO",activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""};});
   const [filas,setFilas]=useState(initFilas);
   // Resultados interpolados por tanque+campo: { "TK-111:sIni": galB }
   const [interpResults,setInterpResults]=useState({});

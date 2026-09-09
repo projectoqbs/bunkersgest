@@ -65,12 +65,18 @@ function pfn(v) { const r=parseFloat(String(v).replace(',','.')); return isNaN(r
 function fmtN(n,dec=2) { if(n===null||n===undefined||isNaN(n)) return '—'; return Number(n).toLocaleString('es-CO',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
 function fmt0(n) { return fmtN(n,0); }
 
-const initFilas = () => TANKS.map(t => ({
-  key:t.key, label:t.label, group:t.group, side:t.side,
-  activo:true, producto: (t.key==='T3BR'||t.key==='T3ER') ? 'MGO' : 'VLSFO',
-  sIni:'', tIni:'', aIni:'',
-  sFin:'', tFin:'', aFin:'',
-}));
+// initFilas recibe tanques opcionales para leer el producto configurado
+const initFilas = (tanquesConf=[]) => TANKS.map(t => {
+  const tqId = `QBS003-${t.key}`;
+  const tqConf = tanquesConf.find(x=>x.id===tqId);
+  const defProd = (t.key==='T3BR'||t.key==='T3ER') ? 'MGO' : 'VLSFO';
+  return {
+    key:t.key, label:t.label, group:t.group, side:t.side,
+    activo:true, producto: tqConf?.producto ? tqConf.producto.toUpperCase() : defProd,
+    sIni:'', tIni:'', aIni:'',
+    sFin:'', tFin:'', aFin:'',
+  };
+});
 
 function TInp({value, onChange, disabled, border, bg, text}) {
   return (
@@ -81,14 +87,14 @@ function TInp({value, onChange, disabled, border, bg, text}) {
   );
 }
 
-export default function LiquidadorQBS003({ supabase, session, perfil, showToast, dbCall }) {
+export default function LiquidadorQBS003({ supabase, session, perfil, showToast, dbCall, tanques=[] }) {
   const TH = {
     bg:'var(--bg,#f8f9fa)', card:'var(--card,#ffffff)', border:'var(--border,#e2e8f0)',
     text:'var(--text,#1e293b)', muted:'var(--muted,#64748b)', navy:'var(--navy,#1e3a5f)',
     orange:'var(--orange,#f97316)', success:'var(--success,#22c55e)', danger:'var(--danger,#ef4444)',
   };
 
-  const [filas, setFilas] = useState(initFilas);
+  const [filas, setFilas] = useState(()=>initFilas(tanques));
   const [calados, setCalados] = useState({proaIni:'',popaIni:'',proaFin:'',popaFin:''});
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [operador, setOperador] = useState(perfil?.nombre||'');
@@ -215,7 +221,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
     } catch(e){}
     setSaving(false);
     showToast('Liquidación QBS003 guardada ✔', true);
-    setFilas(initFilas()); setCalados({proaIni:'',popaIni:'',proaFin:'',popaFin:''}); setObs('');
+    setFilas(initFilas(tanques)); setCalados({proaIni:'',popaIni:'',proaFin:'',popaFin:''}); setObs('');
   }
 
   return (
@@ -228,7 +234,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
           <div style={{fontWeight:800,fontSize:16,color:TH.navy}}>Liquidador — Planta 1</div>
           <div style={{fontSize:10,color:TH.muted}}>Barcaza QBS-003 · 12 Tanques (MM innage)</div>
         </div>
-        <button onClick={()=>{setFilas(initFilas());setCalados({proaIni:'',popaIni:'',proaFin:'',popaFin:''}); }}
+        <button onClick={()=>{setFilas(initFilas(tanques));setCalados({proaIni:'',popaIni:'',proaFin:'',popaFin:''}); }}
           style={{background:'transparent',border:'1px solid '+TH.border,borderRadius:6,padding:'6px 14px',color:TH.muted,fontSize:11,cursor:'pointer'}}>
           ↺ Limpiar
         </button>

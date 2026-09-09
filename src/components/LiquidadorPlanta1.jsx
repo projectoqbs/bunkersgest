@@ -117,7 +117,7 @@ function TInp({value,onChange,disabled,navRow,navCol,navSet}){
   );
 }
 
-export default function LiquidadorPlanta1({supabase,session,perfil,showToast,barcazaFiltro,despachoCtx,dbCall}){
+export default function LiquidadorPlanta1({supabase,session,perfil,showToast,barcazaFiltro,despachoCtx,dbCall,tanques=[]}){
   const [tab,setTab]=useState("nuevo");
   const [historial,setHistorial]=useState([]);
   const [loadingHist,setLoadingHist]=useState(false);
@@ -136,8 +136,9 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   const [saving,setSaving]=useState(false);
   const [mtFirmadas,setMtFirmadas]=useState("");
 
-  const initB=()=>TANQUES_BARCAZA.map(t=>({tanque:t,producto:"VLSFO",activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
-  const initT=()=>TANQUES_TKT.map(t=>({tanque:t,producto:"DIESEL",activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
+  const tqProd=(id,def)=>{const t=tanques.find(x=>x.id===id||x.id===`QBS002-${id}`);return(t?.producto||def).toUpperCase();};
+  const initB=()=>TANQUES_BARCAZA.map(t=>({tanque:t,producto:tqProd(t,"VLSFO"),activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
+  const initT=()=>TANQUES_TKT.map(t=>({tanque:t,producto:tqProd(t,"DIESEL"),activo:true,sIni:"",sFin:"",tIni:"",tFin:"",aIni:"",aFin:""}));
   const [filasB,setFilasB]=useState(initB);
   const [filasT,setFilasT]=useState(initT);
 
@@ -377,7 +378,10 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
           <div style={{fontWeight:800,fontSize:16,color:TH.navy}}>Liquidador — Planta 1</div>
           <div style={{fontSize:10,color:TH.muted}}>Barcaza QBS-002 · 10 Tanques (CM ullage) + TKT-1/TKT-2 (MM innage)</div>
         </div>
-        <div style={{display:"flex",gap:8}}></div>
+        <button onClick={()=>{setFilasB(initB());setFilasT(initT());setCalados({proaIni:"",proaFin:"",popaIni:"",popaFin:""}); }}
+          style={{background:"transparent",border:"1px solid "+TH.border,borderRadius:6,padding:"6px 14px",color:TH.muted,fontSize:11,cursor:"pointer"}}>
+          ↺ Limpiar
+        </button>
       </div>
 
       {tab==="nuevo"&&<>
