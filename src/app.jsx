@@ -2345,6 +2345,31 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             // productos únicos en las entradas
             const allProds = [...new Set(vEnRuta.map(v=>v.producto||"Sin producto"))].sort();
 
+            const sedeActiva = sedeFiltro && sedeFiltro !== "TODAS" ? sedeFiltro : "MALAMBO";
+
+            if (sedeActiva !== "MALAMBO") return (
+              <div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                  <div>
+                    <div style={{fontWeight:800,fontSize:20,color:T.navy}}>Panel Operativo</div>
+                    <div style={{fontSize:11,color:T.muted}}>QBS · {new Date().toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
+                  </div>
+                  {(sedeFiltro==="TODAS"||["administrador","gerencia"].includes(perfil.rol)) && (
+                    <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)}
+                      style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,outline:"none",cursor:"pointer"}}>
+                      <option value="TODAS">Todas las sedes</option>
+                      {SEDES.map(s=><option key={s}>{s}</option>)}
+                    </select>
+                  )}
+                </div>
+                <div style={{textAlign:"center",padding:"80px 20px",color:T.muted}}>
+                  <div style={{fontSize:48,marginBottom:16}}>🏗️</div>
+                  <div style={{fontSize:16,fontWeight:700,color:T.text,marginBottom:8}}>Sin plantas configuradas</div>
+                  <div style={{fontSize:13}}>La sede <strong>{sedeActiva}</strong> no tiene tanques ni plantas asignadas por el momento.</div>
+                </div>
+              </div>
+            );
+
             return (
             <div>
               {/* Cabecera */}
