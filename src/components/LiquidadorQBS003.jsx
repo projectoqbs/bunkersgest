@@ -6,18 +6,18 @@ const M3_TO_GAL = 264.172;
 const PRODUCTOS = ['MGO','VLSFO','LSMGO','IFO380','DIESEL'];
 
 const TANKS = [
-  { key:'T1BR', label:'T1BR', group:1, side:'BR' },
-  { key:'T1ER', label:'T1ER', group:1, side:'ER' },
-  { key:'T2BR', label:'T2BR', group:2, side:'BR' },
-  { key:'T2ER', label:'T2ER', group:2, side:'ER' },
-  { key:'T3BR', label:'T3BR', group:3, side:'BR' },
-  { key:'T3ER', label:'T3ER', group:3, side:'ER' },
-  { key:'T4BR', label:'T4BR', group:4, side:'BR' },
-  { key:'T4ER', label:'T4ER', group:4, side:'ER' },
-  { key:'T5BR', label:'T5BR', group:5, side:'BR' },
-  { key:'T5ER', label:'T5ER', group:5, side:'ER' },
-  { key:'T6BR', label:'T6BR', group:6, side:'BR' },
-  { key:'T6ER', label:'T6ER', group:6, side:'ER' },
+  { key:'T1BR', label:'1B', group:1, side:'B' },
+  { key:'T1ER', label:'1E', group:1, side:'E' },
+  { key:'T2BR', label:'2B', group:2, side:'B' },
+  { key:'T2ER', label:'2E', group:2, side:'E' },
+  { key:'T3BR', label:'3B', group:3, side:'B' },
+  { key:'T3ER', label:'3E', group:3, side:'E' },
+  { key:'T4BR', label:'4B', group:4, side:'B' },
+  { key:'T4ER', label:'4E', group:4, side:'E' },
+  { key:'T5BR', label:'5B', group:5, side:'B' },
+  { key:'T5ER', label:'5E', group:5, side:'E' },
+  { key:'T6BR', label:'6B', group:6, side:'B' },
+  { key:'T6ER', label:'6E', group:6, side:'E' },
 ];
 
 function interp(x, x0, x1, y0, y1) {
@@ -67,7 +67,7 @@ function fmt0(n) { return fmtN(n,0); }
 
 // initFilas recibe tanques opcionales para leer el producto configurado
 const initFilas = (tanquesConf=[]) => TANKS.map(t => {
-  const tqId = `QBS003-${t.key}`;
+  const tqId = `QBS003-${t.label}`;
   const tqConf = tanquesConf.find(x=>x.id===tqId);
   const defProd = (t.key==='T3BR'||t.key==='T3ER') ? 'MGO' : 'VLSFO';
   return {
@@ -207,8 +207,8 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
       const existentes=(cmtsFrescos||[]).filter(c=>(c.numero_cmt||'').startsWith(`CMT-${prefijo}-`));
       const numeroCmt=`CMT-${prefijo}-${String(existentes.length+1).padStart(5,'0')}`;
       const prod = activas[0]?.producto||'MGO';
-      const tanquesAntes = activas.filter(f=>f.sIni).map(f=>{ const r=calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM); return {tanque:`QBS003-${f.key}`,sonda:f.sIni,temp:f.tIni,api:f.aIni,galones:r?.glsN?Math.round(r.glsN):0,producto:prod}; });
-      const tanquesDespues = activas.filter(f=>f.sFin).map(f=>{ const r=calcFila(f,f.sFin,f.tFin,f.aFin,trimSignedFM); return {tanque:`QBS003-${f.key}`,sonda:f.sFin,temp:f.tFin,api:f.aFin,galones:r?.glsN?Math.round(r.glsN):0,producto:prod}; });
+      const tanquesAntes = activas.filter(f=>f.sIni).map(f=>{ const r=calcFila(f,f.sIni,f.tIni,f.aIni,trimSignedM); return {tanque:`QBS003-${f.label}`,sonda:f.sIni,temp:f.tIni,api:f.aIni,galones:r?.glsN?Math.round(r.glsN):0,producto:prod}; });
+      const tanquesDespues = activas.filter(f=>f.sFin).map(f=>{ const r=calcFila(f,f.sFin,f.tFin,f.aFin,trimSignedFM); return {tanque:`QBS003-${f.label}`,sonda:f.sFin,temp:f.tFin,api:f.aFin,galones:r?.glsN?Math.round(r.glsN):0,producto:prod}; });
       await dbCall({table:'cmts',op:'insert',data:{
         id:numeroCmt,numero_cmt:numeroCmt,
         fecha,sede:perfil?.sede||'MALAMBO',planta:'QBS003',
