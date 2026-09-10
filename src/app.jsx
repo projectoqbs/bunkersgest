@@ -548,6 +548,9 @@ export default function App() {
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState({});
   const [authError, setAuthError] = useState("");
+  const [cambioClaveForm, setCambioClaveForm] = useState({ nueva:"", confirmar:"" });
+  const [cambioClaveError, setCambioClaveError] = useState("");
+  const [cambioClaveLoading, setCambioClaveLoading] = useState(false);
 
   const af = k => e => setAuthForm(p=>({...p,[k]:e.target.value}));
   const f  = k => e => setForm(p=>({...p,[k]: e.target.type==="text"||!e.target.type ? String(e.target.value).toUpperCase() : e.target.value}));
@@ -1041,6 +1044,22 @@ export default function App() {
     setTabs([{ id: 'tab-dashboard', type: 'nav', section: 'dashboard', title: 'Dashboard', icon: '▦', closeable: false }]);
     setActiveTabId('tab-dashboard');
     tabStateCache.current = {};
+  }
+
+  async function handleCambiarClave(e) {
+    e.preventDefault();
+    setCambioClaveError("");
+    const { nueva, confirmar } = cambioClaveForm;
+    if (!nueva || nueva.length < 8) return setCambioClaveError("La clave debe tener mínimo 8 caracteres.");
+    if (nueva !== confirmar) return setCambioClaveError("Las claves no coinciden.");
+    if (nueva === (perfil?.cedula||"")) return setCambioClaveError("La nueva clave no puede ser igual a tu número de cédula.");
+    setCambioClaveLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: nueva });
+    if (error) { setCambioClaveLoading(false); return setCambioClaveError("Error al cambiar la clave. Intenta de nuevo."); }
+    await supabase.from("perfiles").update({ debe_cambiar_clave: false }).eq("id", session.user.id);
+    setPerfil(p => ({...p, debe_cambiar_clave: false}));
+    setCambioClaveLoading(false);
+    showToast("Clave actualizada correctamente", true);
   }
 
   // ── IMPORTAR EXCEL VIAJES ──
@@ -1985,6 +2004,44 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
   if (!perfil) return (
     <div style={{ minHeight:"100vh", background:"#121212", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ color:"#ffffff55", fontSize:13 }}>Cargando perfil...</div>
+    </div>
+  );
+
+  if (perfil.debe_cambiar_clave) return (
+    <div style={{ minHeight:"100vh", background:"#121212", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <div style={{ width:420, background:"#1c1c1c", borderRadius:14, overflow:"hidden", boxShadow:"0 24px 64px rgba(0,0,0,0.6)", border:`1px solid #2a2a2a` }}>
+        <div style={{ background:"#121212", borderBottom:`3px solid ${T.orange}`, padding:"28px 32px", textAlign:"center" }}>
+          <img src="/logo.svg" alt="BunkersGest" style={{ width:90, height:"auto", display:"block", margin:"0 auto 10px" }}/>
+          <div style={{ fontWeight:900, fontSize:20, fontFamily:"Arial Black, system-ui, sans-serif", letterSpacing:1 }}>
+            <span style={{ color:"#ffffff" }}>Bunkers</span><span style={{ color:T.orange }}>Gest</span>
+          </div>
+        </div>
+        <div style={{ padding:32 }}>
+          <div style={{ background:`${T.orange}18`, border:`1px solid ${T.orange}44`, borderRadius:8, padding:"12px 16px", marginBottom:20 }}>
+            <div style={{ fontWeight:700, fontSize:13, color:T.orange, marginBottom:4 }}>🔐 Cambio de clave requerido</div>
+            <div style={{ fontSize:12, color:"#ccc", lineHeight:1.5 }}>
+              Hola <strong style={{color:"#fff"}}>{perfil.nombre}</strong>, es tu primer acceso. Por seguridad debes establecer una clave personal que solo tú conozcas.
+            </div>
+          </div>
+          {cambioClaveError && (
+            <div style={{ background:`${T.danger}18`, border:`1px solid ${T.danger}`, borderRadius:6, padding:"10px 14px", fontSize:12, color:T.danger, marginBottom:14 }}>
+              {cambioClaveError}
+            </div>
+          )}
+          <form onSubmit={handleCambiarClave}>
+            <Inp label="Nueva clave" type="password" placeholder="Mínimo 8 caracteres" value={cambioClaveForm.nueva} onChange={v=>setCambioClaveForm(p=>({...p,nueva:v}))} />
+            <Inp label="Confirmar clave" type="password" placeholder="Repite la clave" value={cambioClaveForm.confirmar} onChange={v=>setCambioClaveForm(p=>({...p,confirmar:v}))} />
+            <div style={{marginTop:8}}>
+              <Btn color={T.orange} onClick={handleCambiarClave} disabled={cambioClaveLoading}>
+                {cambioClaveLoading ? "Guardando..." : "Establecer mi clave"}
+              </Btn>
+            </div>
+          </form>
+          <div style={{ marginTop:16, textAlign:"center" }}>
+            <span onClick={handleLogout} style={{ fontSize:11, color:T.muted, cursor:"pointer", textDecoration:"underline" }}>Cerrar sesión</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 
@@ -8757,8 +8814,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       <Inp label="Nombre completo" type="text" value={form.nombre||""} onChange={f("nombre")}/>
       <Inp label="Cédula (usuario de acceso)" type="text" placeholder="Número de cédula" value={form.cedula||""} onChange={f("cedula")}/>
     </Grid>
-    <Grid cols={3}>
-      <Inp label="Contraseña inicial" type="text" placeholder="Mínimo 6 caracteres" value={form.password||""} onChange={f("password")}/>
+    <Grid cols={2}>
       <Sel label="Rol" value={form.rol||"logistica"} onChange={f("rol")}>
         {Object.entries(ROLES).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
       </Sel>
@@ -8774,25 +8830,26 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         {PLANTAS.map(p=><option key={p}>{p}</option>)}
       </Sel>
     )}
-    {form.cedula && form.password && (
-      <div style={{background:`${T.success}18`,border:`1px solid ${T.success}33`,borderRadius:8,padding:"10px 14px",fontSize:12,marginBottom:8}}>
-        <b style={{color:T.success}}>Datos de acceso a entregar:</b>&nbsp;
-        {esAdmin ? <>Correo: <b>{form.email||"—"}</b>&nbsp;·&nbsp;</> : <>Usuario: <b>{form.cedula}</b>&nbsp;·&nbsp;</>}
-        Clave: <b>{form.password}</b>
+    {form.cedula && (
+      <div style={{background:`${T.orange}18`,border:`1px solid ${T.orange}44`,borderRadius:8,padding:"10px 14px",fontSize:12,marginBottom:8}}>
+        <b style={{color:T.orange}}>🔐 Acceso inicial:</b>&nbsp;
+        Usuario: <b>{form.cedula}</b>&nbsp;·&nbsp;Clave temporal: <b>{form.cedula}</b>
+        <span style={{color:T.muted,display:"block",marginTop:4}}>Al primer ingreso el sistema le pedirá al usuario crear su propia clave.</span>
       </div>
     )}
     <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:12 }}>
       <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
       <Btn color={T.orange} disabled={saving} onClick={async()=>{
         const rolSel = form.rol||"logistica";
-        if (!form.cedula||!form.password||!form.nombre) return showToast("Completa nombre, cédula y contraseña", false);
+        if (!form.cedula||!form.nombre) return showToast("Completa nombre y cédula", false);
         if (rolSel==="administrador" && !form.email) return showToast("El correo es obligatorio para Administrador", false);
         setSaving(true);
+        const claveInicial = form.cedula.trim();
         const emailFinal = rolSel==="administrador" ? form.email.trim().toLowerCase() : cedulaToEmail(form.cedula);
         let userId;
         const {data:newUser, error} = await authAdminCall({ op:"createUser", data:{
-          email:emailFinal, password:form.password, email_confirm:true,
-          user_metadata:{nombre:form.nombre, rol:form.rol, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
+          email:emailFinal, password:claveInicial, email_confirm:true,
+          user_metadata:{nombre:form.nombre, rol:rolSel, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
         }});
         if (error) {
           if ((error||"").includes("already been registered")) {
@@ -8800,21 +8857,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             const existing = (list?.users||[]).find(u=>u.email===emailFinal);
             if (!existing) { setSaving(false); return showToast("Error: cédula ya registrada", false); }
             await authAdminCall({ op:"updateUser", userId:existing.id, data:{
-              password:form.password, email_confirm:true,
-              user_metadata:{nombre:form.nombre, rol:form.rol, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
+              password:claveInicial, email_confirm:true,
+              user_metadata:{nombre:form.nombre, rol:rolSel, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
             }});
             userId = existing.id;
           } else { setSaving(false); return showToast("Error: "+error, false); }
         } else { userId = newUser.user.id; }
         const {error:e2} = await dbCall({ table:"perfiles", op:"upsert", data:{
           id:userId, nombre:form.nombre, email:emailFinal,
-          rol:form.rol, planta:form.planta||"PLANTA 1", sede:form.sede||"MALAMBO",
-          cedula:form.cedula, activo:true, permisos:{}
+          rol:rolSel, planta:form.planta||"PLANTA 1", sede:form.sede||"MALAMBO",
+          cedula:form.cedula, activo:true, permisos:{}, debe_cambiar_clave:true
         }});
         setSaving(false);
         if (e2) return showToast("Error perfil: "+e2, false);
         await loadData(); setModal(null); setForm({});
-        showToast(`Usuario ${form.nombre} creado · Cédula: ${form.cedula}`);
+        showToast(`Usuario ${form.nombre} creado · Clave inicial: cédula`);
       }}>{saving?"Creando...":"Crear Usuario"}</Btn>
     </div>
   </Modal>
