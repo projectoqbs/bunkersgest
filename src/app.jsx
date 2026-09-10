@@ -2354,10 +2354,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     <div style={{fontWeight:800,fontSize:20,color:T.navy}}>Panel Operativo</div>
                     <div style={{fontSize:11,color:T.muted}}>QBS · {new Date().toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
                   </div>
-                  {(sedeFiltro==="TODAS"||["administrador","gerencia"].includes(perfil.rol)) && (
-                    <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)}
+                  {["administrador","gerencia"].includes(perfil.rol) && (
+                    <select value={sedeActiva} onChange={e=>setSedeFiltro(e.target.value)}
                       style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,outline:"none",cursor:"pointer"}}>
-                      <option value="TODAS">Todas las sedes</option>
                       {SEDES.map(s=><option key={s}>{s}</option>)}
                     </select>
                   )}
@@ -2379,16 +2378,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   <div style={{ fontSize:11, color:T.muted }}>QBS · {new Date().toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  {(sedeFiltro==="TODAS"||["administrador","gerencia"].includes(perfil.rol)) && (
-                    <select value={sedeFiltro} onChange={e=>setSedeFiltro(e.target.value)}
+                  {["administrador","gerencia"].includes(perfil.rol) && (
+                    <select value={sedeActiva} onChange={e=>setSedeFiltro(e.target.value)}
                       style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.text,fontSize:12,outline:"none",cursor:"pointer"}}>
-                      <option value="TODAS">Todas las sedes</option>
                       {SEDES.map(s=><option key={s}>{s}</option>)}
                     </select>
                   )}
                   {!["administrador","gerencia"].includes(perfil.rol) && (
                     <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",color:T.navy,fontSize:12,fontWeight:700}}>
-                      📍 {sedeFiltro}
+                      📍 {sedeActiva}
                     </div>
                   )}
                 </div>
