@@ -8766,6 +8766,15 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginTop:4}}>
         <div style={{display:"flex",gap:8}}>
+          <Btn color="#6366f1" sm onClick={async()=>{
+            if (!confirm(`¿Restablecer clave de ${editUsuario.nombre}?\n\nLa clave volverá a ser su número de cédula (${cedula}) y el sistema le pedirá crear una nueva clave al próximo ingreso.`)) return;
+            const {error:e1} = await authAdminCall({ op:"updateUser", userId:editUsuario.id, data:{ password: cedula } });
+            if (e1) return showToast("Error al restablecer clave: "+e1, false);
+            const {error:e2} = await dbCall({ table:"perfiles", op:"update", data:{ debe_cambiar_clave: true }, filters:[{col:"id",val:editUsuario.id}] });
+            if (e2) return showToast("Error perfil: "+e2, false);
+            setEditUsuario(null);
+            showToast(`Clave de ${editUsuario.nombre} restablecida · Nueva clave temporal: ${cedula}`);
+          }}>Restablecer clave</Btn>
           <Btn color={editUsuario.activo===false?T.success:T.orange} sm onClick={async()=>{
             const desactivar = editUsuario.activo !== false;
             const label = desactivar ? "deshabilitar" : "habilitar";
