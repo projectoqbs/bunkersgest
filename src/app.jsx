@@ -2028,9 +2028,33 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
               {cambioClaveError}
             </div>
           )}
-          <form onSubmit={handleCambiarClave}>
-            <Inp label="Nueva clave" type="password" placeholder="Mínimo 8 caracteres" value={cambioClaveForm.nueva} onChange={v=>setCambioClaveForm(p=>({...p,nueva:v}))} />
-            <Inp label="Confirmar clave" type="password" placeholder="Repite la clave" value={cambioClaveForm.confirmar} onChange={v=>setCambioClaveForm(p=>({...p,confirmar:v}))} />
+          <form onSubmit={handleCambiarClave} autoComplete="off">
+            {["nueva","confirmar"].map(campo=>(
+              <div key={campo} style={{marginBottom:14}}>
+                <div style={{fontSize:10,fontWeight:700,color:T.muted,letterSpacing:1,textTransform:"uppercase",marginBottom:5}}>
+                  {campo==="nueva" ? "Nueva clave" : "Confirmar clave"}
+                </div>
+                <div style={{position:"relative"}}>
+                  <input
+                    autoComplete="new-password"
+                    type={cambioClaveForm[`ver_${campo}`] ? "text" : "password"}
+                    placeholder={campo==="nueva" ? "Mínimo 8 caracteres" : "Repite la clave"}
+                    value={cambioClaveForm[campo]}
+                    onChange={e=>setCambioClaveForm(p=>({...p,[campo]:e.target.value}))}
+                    style={{width:"100%",background:"#fff",border:`1px solid ${T.border}`,borderRadius:8,
+                      padding:"11px 42px 11px 14px",fontSize:14,color:"#111",outline:"none",boxSizing:"border-box"}}
+                  />
+                  <span
+                    onClick={()=>setCambioClaveForm(p=>({...p,[`ver_${campo}`]:!p[`ver_${campo}`]}))}
+                    style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
+                      cursor:"pointer",color:T.muted,fontSize:16,userSelect:"none"}}
+                    title={cambioClaveForm[`ver_${campo}`] ? "Ocultar clave" : "Mostrar clave"}
+                  >
+                    {cambioClaveForm[`ver_${campo}`] ? "🙈" : "👁"}
+                  </span>
+                </div>
+              </div>
+            ))}
             <div style={{marginTop:8}}>
               <Btn color={T.orange} onClick={handleCambiarClave} disabled={cambioClaveLoading}>
                 {cambioClaveLoading ? "Guardando..." : "Establecer mi clave"}
