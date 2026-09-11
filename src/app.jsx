@@ -1973,7 +1973,7 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
           {authError && <div style={{ background:authError.includes("creada")?`${T.success}18`:`${T.danger}18`, border:`1px solid ${authError.includes("creada")?T.success:T.danger}`, borderRadius:6, padding:"10px 14px", fontSize:12, color:authError.includes("creada")?T.success:T.danger, marginBottom:16 }}>{authError}</div>}
           {authMode==="login" ? (
             <>
-              <Inp label="Cédula o Usuario" type="text" placeholder="Ej: 1234567890" value={authForm.cedula||""} onChange={af("cedula")} />
+              <Inp label="Usuario (cédula o correo corporativo)" type="text" placeholder="Cédula o correo@quimibuques.com" value={authForm.cedula||""} onChange={af("cedula")} />
               <Inp label="Contraseña" type="password" placeholder="••••••••" value={authForm.password||""} onChange={af("password")} />
               <div style={{marginTop:4}}><Btn color={T.orange} onClick={handleLogin}>Iniciar Sesión</Btn></div>
             </>
@@ -8791,13 +8791,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginTop:4}}>
         <div style={{display:"flex",gap:8}}>
           <Btn color="#6366f1" sm onClick={async()=>{
-            if (!confirm(`¿Restablecer clave de ${editUsuario.nombre}?\n\nLa clave volverá a ser su número de cédula (${cedula}) y el sistema le pedirá crear una nueva clave al próximo ingreso.`)) return;
-            const {error:e1} = await authAdminCall({ op:"updateUser", userId:editUsuario.id, data:{ password: cedula } });
+            const usaEmailRol = editUsuario.rol==="administrador" || editUsuario.rol==="coordinador";
+            const claveTemp = usaEmailRol ? (editUsuario.email||"").split("@")[0] : cedula;
+            const desc = usaEmailRol ? `la parte antes del @ de su correo (${claveTemp})` : `su número de cédula (${claveTemp})`;
+            if (!confirm(`¿Restablecer clave de ${editUsuario.nombre}?\n\nLa clave temporal será ${desc}.\nEl sistema le pedirá crear una nueva clave al próximo ingreso.`)) return;
+            const {error:e1} = await authAdminCall({ op:"updateUser", userId:editUsuario.id, data:{ password: claveTemp } });
             if (e1) return showToast("Error al restablecer clave: "+e1, false);
             const {error:e2} = await dbCall({ table:"perfiles", op:"update", data:{ debe_cambiar_clave: true }, filters:[{col:"id",val:editUsuario.id}] });
             if (e2) return showToast("Error perfil: "+e2, false);
             setEditUsuario(null);
-            showToast(`Clave de ${editUsuario.nombre} restablecida · Nueva clave temporal: ${cedula}`);
+            showToast(`Clave de ${editUsuario.nombre} restablecida · Clave temporal: ${claveTemp}`);
           }}>Restablecer clave</Btn>
           <Btn color={editUsuario.activo===false?T.success:T.orange} sm onClick={async()=>{
             const desactivar = editUsuario.activo !== false;
@@ -8840,58 +8843,73 @@ const puedeEditar = (modulo, creado_por, created_at) => {
 })()}
 
 {modal==="usuario" && (()=>{
-  const esAdmin = (form.rol||"logistica") === "administrador";
+  const rolSel = form.rol||"logistica";
+  // Coordinador y administrador usan correo; los demás usan cédula
+  const usaEmail = rolSel==="administrador" || rolSel==="coordinador";
+  const soloCedula = !usaEmail;
   return (
   <Modal title="Crear Nuevo Usuario" onClose={()=>setModal(null)} wide inline>
     <Grid cols={2}>
       <Inp label="Nombre completo" type="text" value={form.nombre||""} onChange={f("nombre")}/>
-      <Inp label="Cédula (usuario de acceso)" type="text" placeholder="Número de cédula" value={form.cedula||""} onChange={f("cedula")}/>
+      <Sel label="Rol" value={rolSel} onChange={f("rol")}>
+        {Object.entries(ROLES).filter(([k])=>k!=="administrador").map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
+      </Sel>
     </Grid>
     <Grid cols={2}>
-      <Sel label="Rol" value={form.rol||"logistica"} onChange={f("rol")}>
-        {Object.entries(ROLES).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
-      </Sel>
       <Sel label="Sede" value={form.sede||"MALAMBO"} onChange={f("sede")}>
         {SEDES.map(s=><option key={s}>{s}</option>)}
       </Sel>
+      {(form.sede||"MALAMBO")==="MALAMBO" && (
+        <Sel label="Planta" value={form.planta||"PLANTA 1"} onChange={f("planta")}>
+          {PLANTAS.map(p=><option key={p}>{p}</option>)}
+        </Sel>
+      )}
     </Grid>
-    {esAdmin && (
-      <Inp label="Correo electrónico (obligatorio para Administrador)" type="email" placeholder="correo@empresa.com" value={form.email||""} onChange={f("email")}/>
+
+    {/* Campos según el rol */}
+    {soloCedula && (
+      <Inp label="Cédula (será el usuario de acceso)" type="text" placeholder="Número de cédula" value={form.cedula||""} onChange={f("cedula")}/>
     )}
-    {(form.sede||"MALAMBO")==="MALAMBO" && (
-      <Sel label="Planta" value={form.planta||"PLANTA 1"} onChange={f("planta")}>
-        {PLANTAS.map(p=><option key={p}>{p}</option>)}
-      </Sel>
+    {usaEmail && (
+      <Inp label="Correo corporativo (será el usuario de acceso)" type="email" placeholder="nombre@quimibuques.com" value={form.email||""} onChange={f("email")}/>
     )}
-    {form.cedula && (
+
+    {/* Resumen de acceso */}
+    {(soloCedula ? form.cedula : form.email) && (
       <div style={{background:`${T.orange}18`,border:`1px solid ${T.orange}44`,borderRadius:8,padding:"10px 14px",fontSize:12,marginBottom:8}}>
-        <b style={{color:T.orange}}>🔐 Acceso inicial:</b>&nbsp;
-        Usuario: <b>{form.cedula}</b>&nbsp;·&nbsp;Clave temporal: <b>{form.cedula}</b>
-        <span style={{color:T.muted,display:"block",marginTop:4}}>Al primer ingreso el sistema le pedirá al usuario crear su propia clave.</span>
+        <b style={{color:T.orange}}>🔐 Datos de acceso inicial a entregar:</b>
+        <div style={{marginTop:6,lineHeight:1.8}}>
+          {soloCedula
+            ? <><b>Usuario:</b> {form.cedula} &nbsp;·&nbsp; <b>Clave temporal:</b> {form.cedula}</>
+            : <><b>Usuario:</b> {form.email} &nbsp;·&nbsp; <b>Clave temporal:</b> {(form.email||"").split("@")[0]}</>
+          }
+        </div>
+        <div style={{color:T.muted,marginTop:4}}>Al primer ingreso el sistema le pedirá crear su propia clave.</div>
       </div>
     )}
+
     <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:12 }}>
       <Btn outline onClick={()=>setModal(null)}>Cancelar</Btn>
       <Btn color={T.orange} disabled={saving} onClick={async()=>{
-        const rolSel = form.rol||"logistica";
-        if (!form.cedula||!form.nombre) return showToast("Completa nombre y cédula", false);
-        if (rolSel==="administrador" && !form.email) return showToast("El correo es obligatorio para Administrador", false);
+        if (!form.nombre) return showToast("Completa el nombre", false);
+        if (soloCedula && !form.cedula) return showToast("Ingresa el número de cédula", false);
+        if (usaEmail && !form.email) return showToast("Ingresa el correo corporativo", false);
         setSaving(true);
-        const claveInicial = form.cedula.trim();
-        const emailFinal = rolSel==="administrador" ? form.email.trim().toLowerCase() : cedulaToEmail(form.cedula);
+        const emailFinal = soloCedula ? cedulaToEmail(form.cedula) : form.email.trim().toLowerCase();
+        const claveInicial = soloCedula ? form.cedula.trim() : (form.email||"").split("@")[0];
         let userId;
         const {data:newUser, error} = await authAdminCall({ op:"createUser", data:{
           email:emailFinal, password:claveInicial, email_confirm:true,
-          user_metadata:{nombre:form.nombre, rol:rolSel, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
+          user_metadata:{nombre:form.nombre, rol:rolSel, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula||""}
         }});
         if (error) {
           if ((error||"").includes("already been registered")) {
             const {data:list} = await authAdminCall({ op:"listUsers" });
             const existing = (list?.users||[]).find(u=>u.email===emailFinal);
-            if (!existing) { setSaving(false); return showToast("Error: cédula ya registrada", false); }
+            if (!existing) { setSaving(false); return showToast("Error: usuario ya registrado", false); }
             await authAdminCall({ op:"updateUser", userId:existing.id, data:{
               password:claveInicial, email_confirm:true,
-              user_metadata:{nombre:form.nombre, rol:rolSel, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula}
+              user_metadata:{nombre:form.nombre, rol:rolSel, planta:form.planta, sede:form.sede||"MALAMBO", cedula:form.cedula||""}
             }});
             userId = existing.id;
           } else { setSaving(false); return showToast("Error: "+error, false); }
@@ -8899,12 +8917,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         const {error:e2} = await dbCall({ table:"perfiles", op:"upsert", data:{
           id:userId, nombre:form.nombre, email:emailFinal,
           rol:rolSel, planta:form.planta||"PLANTA 1", sede:form.sede||"MALAMBO",
-          cedula:form.cedula, activo:true, permisos:{}, debe_cambiar_clave:true
+          cedula:form.cedula||"", activo:true, permisos:{}, debe_cambiar_clave:true
         }});
         setSaving(false);
         if (e2) return showToast("Error perfil: "+e2, false);
         await loadData(); setModal(null); setForm({});
-        showToast(`Usuario ${form.nombre} creado · Clave inicial: cédula`);
+        showToast(`Usuario ${form.nombre} creado`);
       }}>{saving?"Creando...":"Crear Usuario"}</Btn>
     </div>
   </Modal>
