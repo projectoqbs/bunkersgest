@@ -183,7 +183,7 @@ const NAV_META = {
 const NAV_ROL = {
   logistica:   ["dashboard","viajes","pbs","trazabilidad"],
   laboratorio: ["dashboard","tiquetes","pbs","trazabilidad"],
-  operaciones: ["dashboard","pbs","trazabilidad","liquidador_p1"],
+  operaciones: ["dashboard","viajes","tiquetes","pbs","tanques","trazabilidad","liquidador_p1"],
   coordinador: ["dashboard","pbs","tanques","programacion","trazabilidad","liquidador_p1"],
   despacho:    ["dashboard","despacho","pbs","trazabilidad"],
   administrador: [
@@ -2308,7 +2308,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           onMouseEnter={e=>onEnter(id,null)} onMouseLeave={onLeave}>
                           <div style={{...flyoutInner, borderLeftColor: rol.color+"88"}}>
                             <div style={{padding:"8px 16px 8px",fontSize:10,color:T.orange,fontWeight:800,letterSpacing:2,textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.08)",marginBottom:4}}>{grupo.label}</div>
-                            {grupo.subs.map((sub,si)=>{
+                            {grupo.subs.filter(sub => {
+                if (perfil?.rol === "operaciones") {
+                  if (id === "tiquetes" && sub.id === "tiquetes") return false; // ocultar Análisis
+                }
+                return true;
+              }).map((sub,si)=>{
                               const subActive = nav===sub.id;
                               return (
                                 <motion.button key={sub.id}
@@ -2986,7 +2991,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       Enturne de carros para descargue · <b style={{color:COLOR}}>{enPlanta.length}</b> carro(s)
                     </div>
                   </div>
-                  <Btn onClick={()=>{setForm({fecha_llegada:today()});setModal("turno_carro");}}>+ TURNO CARRO</Btn>
+                  {puedeCrear("viajes") && <Btn onClick={()=>{setForm({fecha_llegada:today()});setModal("turno_carro");}}>+ TURNO CARRO</Btn>}
                 </div>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
                   <input value={plantaBusqueda||""} onChange={e=>setPlantaBusqueda(e.target.value)} placeholder="🔍 Buscar placa, producto, guía..." style={{...selStyle,width:240,padding:"6px 12px"}}/>
