@@ -117,7 +117,9 @@ function TInp({value,onChange,disabled,navRow,navCol,navSet}){
   );
 }
 
-export default function LiquidadorPlanta1({supabase,session,perfil,showToast,barcazaFiltro,despachoCtx,dbCall,tanques=[]}){
+export default function LiquidadorPlanta1({supabase,session,perfil,showToast,barcazaFiltro,despachoCtx,dbCall,tanques=[],afoCache={TB:{},TK:{}}}){
+  const TB_USE = Object.keys(afoCache.TB||{}).length > 0 ? afoCache.TB : TB;
+  const TK_USE = Object.keys(afoCache.TK||{}).length > 0 ? afoCache.TK : TK;
   const [tab,setTab]=useState("nuevo");
   const [historial,setHistorial]=useState([]);
   const [loadingHist,setLoadingHist]=useState(false);
@@ -152,7 +154,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
   const trimF=mkTrim(calados.popaFin,calados.proaFin);
 
   function calcB(f,trim,s,t,a){
-    const tabla=TB[f.tanque];if(!tabla||!f.activo)return null;
+    const tabla=TB_USE[f.tanque];if(!tabla||!f.activo)return null;
     const sv=pfn(s),tv=pfn(t),av=pfn(a);
     if(isNaN(sv))return null;
     const m3=interpolarBarcaza(tabla,sv,trim.val,trim.dir);
@@ -165,7 +167,7 @@ export default function LiquidadorPlanta1({supabase,session,perfil,showToast,bar
     return{m3,glsB,vcf,glsN,f13,mt};
   }
   function calcT(f,s,t,a){
-    const tabla=TK[f.tanque];if(!tabla||!f.activo)return null;
+    const tabla=TK_USE[f.tanque];if(!tabla||!f.activo)return null;
     const sv=pfn(s),tv=pfn(t),av=pfn(a);
     if(isNaN(sv))return null;
     const glsB=interpolarTKT(tabla,sv);

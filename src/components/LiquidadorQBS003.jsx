@@ -87,7 +87,8 @@ function TInp({value, onChange, disabled, border, bg, text}) {
   );
 }
 
-export default function LiquidadorQBS003({ supabase, session, perfil, showToast, dbCall, tanques=[] }) {
+export default function LiquidadorQBS003({ supabase, session, perfil, showToast, dbCall, tanques=[], afoCache={} }) {
+  const TABLAS_USE = Object.keys(afoCache).length > 0 ? afoCache : TABLAS_QBS003;
   const TH = {
     bg:'var(--bg,#f8f9fa)', card:'var(--card,#ffffff)', border:'var(--border,#e2e8f0)',
     text:'var(--text,#1e293b)', muted:'var(--muted,#64748b)', navy:'var(--navy,#1e3a5f)',
@@ -121,7 +122,7 @@ export default function LiquidadorQBS003({ supabase, session, perfil, showToast,
     const innage_m = sondaMM/1000;
     const trimCorr_m = interpTrim(TRIM_QBS003[f.key], innage_m, trimSigned);
     const sondaCorr = sondaMM + trimCorr_m*1000;
-    const m3 = interpolarMM(TABLAS_QBS003[f.key], sondaCorr);
+    const m3 = interpolarMM(TABLAS_USE[f.key], sondaCorr);
     if (m3===null) return null;
     const glsB = m3*M3_TO_GAL;
     const vcf = (!isNaN(tempC)&&!isNaN(apiV)) ? calcVCF(apiV,tempC) : null;

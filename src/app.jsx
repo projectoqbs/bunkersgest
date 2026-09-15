@@ -430,9 +430,11 @@ export default function App() {
   const [programaciones, setProgramaciones] = useState([]);
   const [formulaciones, setFormulaciones] = useState([]);
   const [ordenesTrabaio, setOrdenesTrabajo] = useState([]);
-  // Cache aforo Planta 2 — se carga una sola vez al iniciar sesión
+  // Cache aforo — se carga una sola vez al iniciar sesión
   const [afoP2, setAfoP2] = useState({});
   const [afoP2Loading, setAfoP2Loading] = useState(false);
+  const [afoP1, setAfoP1] = useState({TB:{}, TK:{}});
+  const [afoQBS003, setAfoQBS003] = useState({});
   const [otModal, setOtModal] = useState(null); // null | {step:1|2|3, trasiegos, formulacionId, recircHoras}
   const [otEditando, setOtEditando] = useState(null); // {otId, trasiegos:[...]} cuando el coordinador edita una OT
   const [auditLogs, setAuditLogs] = useState([]);
@@ -885,6 +887,8 @@ export default function App() {
       setPlantaFiltro(esGlobal ? null : (data?.planta || (sedeInicial === "MALAMBO" ? "PLANTA 1" : "N/A")));
       loadData();
       precargarAforoP2();
+      precargarAforoP1();
+      precargarAforoQBS003();
     }
   }
 
@@ -913,6 +917,63 @@ export default function App() {
       setAfoP2(tbl);
     }catch(e){console.error("Error precargando aforo P2:",e);}
     setAfoP2Loading(false);
+  }
+
+  async function precargarAforoP1(){
+    if(Object.keys(afoP1.TB).length>0) return;
+    async function fetchTanque(tanque){
+      const PAGE=1000; let rows=[],from=0;
+      while(true){
+        const {data,error}=await supabase.from("aforo").select("sonda,v0,t1,t2,t3,t4,t5")
+          .eq("tanque",tanque).order("sonda").range(from,from+PAGE-1);
+        if(error||!data||data.length===0)break;
+        rows=rows.concat(data);
+        if(data.length<PAGE)break;
+        from+=PAGE;
+      }
+      return rows;
+    }
+    try{
+      const TB_KEYS=["QBS002-1B","QBS002-1E","QBS002-2B","QBS002-2E","QBS002-3B","QBS002-3E","QBS002-4B","QBS002-4E","QBS002-5B","QBS002-5E"];
+      const TK_KEYS=["TKT-1","TKT-2"];
+      const [tbResults,tkResults]=await Promise.all([
+        Promise.all(TB_KEYS.map(async t=>({t,rows:await fetchTanque(t)}))),
+        Promise.all(TK_KEYS.map(async t=>({t,rows:await fetchTanque(t)}))),
+      ]);
+      const TB={},TK={};
+      for(const {t,rows} of tbResults) TB[t.replace("QBS002-","")]=rows.map(r=>[r.sonda,r.t1,r.t2,r.t3,r.t4,r.t5]);
+      for(const {t,rows} of tkResults) TK[t]=rows.map(r=>[r.sonda,r.v0]);
+      setAfoP1({TB,TK});
+    }catch(e){console.error("Error precargando aforo P1:",e);}
+  }
+
+  async function precargarAforoQBS003(){
+    if(Object.keys(afoQBS003).length>0) return;
+    const KEYS=["QBS003-1B","QBS003-1E","QBS003-2B","QBS003-2E","QBS003-3B","QBS003-3E","QBS003-4B","QBS003-4E","QBS003-5B","QBS003-5E","QBS003-6B","QBS003-6E"];
+    async function fetchTanque(tanque){
+      const PAGE=1000;let rows=[],from=0;
+      while(true){
+        const {data,error}=await supabase.from("aforo").select("sonda,v0")
+          .eq("tanque",tanque).order("sonda").range(from,from+PAGE-1);
+        if(error||!data||data.length===0)break;
+        rows=rows.concat(data);
+        if(data.length<PAGE)break;
+        from+=PAGE;
+      }
+      return rows;
+    }
+    try{
+      const results=await Promise.all(KEYS.map(async t=>({t,rows:await fetchTanque(t)})));
+      const tbl={};
+      // Supabase key "QBS003-1B" → old key "T1BR" expected by interpQBS003
+      const Q3_LABEL_TO_OLD={"1B":"T1BR","1E":"T1ER","2B":"T2BR","2E":"T2ER","3B":"T3BR","3E":"T3ER","4B":"T4BR","4E":"T4ER","5B":"T5BR","5E":"T5ER","6B":"T6BR","6E":"T6ER"};
+      for(const {t,rows} of results){
+        const label=t.replace("QBS003-","");
+        const oldKey=Q3_LABEL_TO_OLD[label]||label;
+        tbl[oldKey]=rows.map(r=>[r.sonda,r.v0]);
+      }
+      setAfoQBS003(tbl);
+    }catch(e){console.error("Error precargando aforo QBS003:",e);}
   }
 
   async function loadData() {
@@ -1505,10 +1566,10 @@ function interpQBS003(sondaMM, tabla) {
   return tabla[lo][1] + (tabla[hi][1]-tabla[lo][1]) * (sondaMM-tabla[lo][0]) / (tabla[hi][0]-tabla[lo][0]);
 }
 const QBS003_LABEL_TO_KEY = {"1B":"T1BR","1E":"T1ER","2B":"T2BR","2E":"T2ER","3B":"T3BR","3E":"T3ER","4B":"T4BR","4E":"T4ER","5B":"T5BR","5E":"T5ER","6B":"T6BR","6E":"T6ER"};
-function calcularGalonesQBS003(tanque, sondaMM, api, temp) {
+function calcularGalonesQBS003(tanque, sondaMM, api, temp, cacheQBS003={}) {
   const label = tanque.replace("QBS003-","");
   const key = QBS003_LABEL_TO_KEY[label] || label;
-  const tabla = TABLAS_QBS003[key];
+  const tabla = cacheQBS003[key] || TABLAS_QBS003[key];
   if (!tabla) return null;
   const M3_TO_GAL = 264.172;
   const volM3 = interpQBS003(sondaMM, tabla);
@@ -1527,7 +1588,7 @@ function calcularGalonesQBS003(tanque, sondaMM, api, temp) {
   }
   return Math.round(glsB);
 }
-async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter, campoGalones="galones") {
+async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter, campoGalones="galones", afoQBS003Cache={}) {
   if (!tanque || !ullage) return;
   const ullageNum = Number(ullage);
   // Buscar coincidencia exacta primero
@@ -1550,9 +1611,9 @@ async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter
       galonesB = Number(above.v0);
     }
   }
-  // Fallback: tablas embebidas QBS003
+  // Fallback: cache QBS003
   if (galonesB === null && tanque.startsWith("QBS003-")) {
-    const glsQ3 = calcularGalonesQBS003(tanque, ullageNum, api, temp);
+    const glsQ3 = calcularGalonesQBS003(tanque, ullageNum, api, temp, afoQBS003Cache);
     if (glsQ3 !== null) {
       setter(prev => prev.map((r,j) => j===index ? {...r, [campoGalones]: glsQ3} : r));
     }
@@ -1583,8 +1644,14 @@ async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter
   setter(prev => prev.map((r,j) => j===index ? {...r, [campoGalones]:galonesResult, galones_brutos:Math.round(galonesB), ...(vcfResult?{vcf:vcfResult}:{})} : r));
 }
 async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
-  await calcularGalonesConSetter(tanque, ullage, temp, api, index, esDespues ? setCmtDespues : setCmtAntes);
+  await calcularGalonesConSetter(tanque, ullage, temp, api, index, esDespues ? setCmtDespues : setCmtAntes, "galones", afoQBS003);
 }
+  // Wrapper con cache de Supabase para CMT forms
+  const calcGalonesCMT = useCallback(
+    (tanque,ullage,temp,api,idx,setter,campo="galones")=>
+      calcularGalonesConSetter(tanque,ullage,temp,api,idx,setter,campo,afoQBS003),
+    [afoQBS003]
+  );
   function abrirCmtDesdeOt(ot, productoBase) {
     const sedeActual = ot.sede || perfil?.sede || "MALAMBO";
     const plantaActual = sedeActual === "MALAMBO" ? (perfil?.planta || "PLANTA 1") : "";
@@ -7541,16 +7608,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end",marginBottom:6}}>
                     <div style={{fontSize:10,color:T.orange,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Inicial</div>
-                    <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],sondaInicial:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setCmtRecepcion,"galonesInicial")} style={inputStyle}/></div>
-                    <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={rec.tempInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tempInicial:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setCmtRecepcion,"galonesInicial")} style={inputStyle}/></div>
-                    <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={rec.apiInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],apiInicial:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setCmtRecepcion,"galonesInicial")} style={inputStyle}/></div>
+                    <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],sondaInicial:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setCmtRecepcion,"galonesInicial")} style={inputStyle}/></div>
+                    <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={rec.tempInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tempInicial:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setCmtRecepcion,"galonesInicial")} style={inputStyle}/></div>
+                    <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={rec.apiInicial||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],apiInicial:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setCmtRecepcion,"galonesInicial")} style={inputStyle}/></div>
                     <div><Lbl>{rec.tempInicial&&rec.apiInicial?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" readOnly value={rec.galonesInicial||""} style={{...inputStyle,background:"#e8edf2",color:"#4a5568",cursor:"default"}}/></div>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
                     <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",paddingBottom:4}}>Medida Final</div>
-                    <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],sondaFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
-                    <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={rec.tempFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tempFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
-                    <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={rec.apiFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],apiFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
+                    <div><Lbl>Sonda</Lbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],sondaFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
+                    <div><Lbl>Temp °C</Lbl><input type="number" step="0.1" placeholder="" value={rec.tempFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],tempFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
+                    <div><Lbl>API</Lbl><input type="number" step="0.1" placeholder="" value={rec.apiFinal||""} onChange={e=>{const n=[...cmtRecepcion];n[i]={...n[i],apiFinal:e.target.value};setCmtRecepcion(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setCmtRecepcion,"galonesFinal")} style={inputStyle}/></div>
                     <div><Lbl>{rec.tempFinal&&rec.apiFinal?"Galones Netos":"Galones Brutos"}</Lbl><input type="number" readOnly value={rec.galonesFinal||""} style={{...inputStyle,background:"#e8edf2",color:"#4a5568",cursor:"default"}}/></div>
                   </div>
                   {(()=>{const diff=Number(rec.galonesFinal||0)-Number(rec.galonesInicial||0);return diff>0&&<div style={{marginTop:8,textAlign:"right",fontSize:12,color:T.success,fontWeight:700}}>Recibido: {fmt(diff)} Gls</div>})()}
@@ -7775,9 +7842,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div>
                         <div style={{fontSize:10,color,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6,paddingBottom:3,borderBottom:`1px solid ${color}44`}}>Medida Inicial</div>
                         <div style={{display:"grid",gap:5}}>
-                          <div><CLbl>Sonda</CLbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setRows,"galonesInicial")} style={cInSt}/></div>
-                          <div><CLbl>Temp °C</CLbl><input type="number" step="0.1" value={rec.tempInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setRows,"galonesInicial")} style={cInSt}/></div>
-                          <div><CLbl>API{lab.api?" (Lab)":""}</CLbl><input type="number" step="0.1" value={rec.apiInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiInicial:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setRows,"galonesInicial")} style={lab.api?{...cRoSt,color:T.navy}:cInSt}/></div>
+                          <div><CLbl>Sonda</CLbl><input type="number" value={rec.sondaInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaInicial:e.target.value};setRows(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,e.target.value,rec.tempInicial,rec.apiInicial,i,setRows,"galonesInicial")} style={cInSt}/></div>
+                          <div><CLbl>Temp °C</CLbl><input type="number" step="0.1" value={rec.tempInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempInicial:e.target.value};setRows(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,rec.sondaInicial,e.target.value,rec.apiInicial,i,setRows,"galonesInicial")} style={cInSt}/></div>
+                          <div><CLbl>API{lab.api?" (Lab)":""}</CLbl><input type="number" step="0.1" value={rec.apiInicial||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiInicial:e.target.value};setRows(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,rec.sondaInicial,rec.tempInicial,e.target.value,i,setRows,"galonesInicial")} style={lab.api?{...cRoSt,color:T.navy}:cInSt}/></div>
                           <div><CLbl>{rec.tempInicial&&rec.apiInicial?"Gls Netos":"Gls Brutos"}</CLbl><input type="number" readOnly value={rec.galonesInicial||""} style={{...cRoSt,fontWeight:700,color:T.orange}}/></div>
                         </div>
                       </div>
@@ -7785,9 +7852,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <div>
                         <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6,paddingBottom:3,borderBottom:`1px solid ${T.border}`}}>Medida Final</div>
                         <div style={{display:"grid",gap:5}}>
-                          <div><CLbl>Sonda</CLbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setRows,"galonesFinal")} style={cInSt}/></div>
-                          <div><CLbl>Temp °C</CLbl><input type="number" step="0.1" value={rec.tempFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setRows,"galonesFinal")} style={cInSt}/></div>
-                          <div><CLbl>API{lab.api?" (Lab)":""}</CLbl><input type="number" step="0.1" value={rec.apiFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiFinal:e.target.value};setRows(n);}} onBlur={e=>calcularGalonesConSetter(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setRows,"galonesFinal")} style={lab.api?{...cRoSt,color:T.navy}:cInSt}/></div>
+                          <div><CLbl>Sonda</CLbl><input type="number" value={rec.sondaFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],sondaFinal:e.target.value};setRows(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,e.target.value,rec.tempFinal,rec.apiFinal,i,setRows,"galonesFinal")} style={cInSt}/></div>
+                          <div><CLbl>Temp °C</CLbl><input type="number" step="0.1" value={rec.tempFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],tempFinal:e.target.value};setRows(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,rec.sondaFinal,e.target.value,rec.apiFinal,i,setRows,"galonesFinal")} style={cInSt}/></div>
+                          <div><CLbl>API{lab.api?" (Lab)":""}</CLbl><input type="number" step="0.1" value={rec.apiFinal||""} onChange={e=>{const n=[...rows];n[i]={...n[i],apiFinal:e.target.value};setRows(n);}} onBlur={e=>calcGalonesCMT(rec.tanque,rec.sondaFinal,rec.tempFinal,e.target.value,i,setRows,"galonesFinal")} style={lab.api?{...cRoSt,color:T.navy}:cInSt}/></div>
                           <div><CLbl>{rec.tempFinal&&rec.apiFinal?"Gls Netos":"Gls Brutos"}</CLbl><input type="number" readOnly value={rec.galonesFinal||""} style={{...cRoSt,fontWeight:700,color:isDescarga?T.success:T.muted}}/></div>
                         </div>
                       </div>
@@ -8952,10 +9019,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           <div style={{flex:1, overflow:"hidden", position:"relative"}}>
             <div style={{display: liqP1Sub==="tkt" || liqP1Sub==="qbs002" ? "" : "none", position:"absolute", inset:0, overflowY:"auto"}}>
               <LiquidadorPlanta1 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall}
-                barcazaFiltro={liqP1Sub==="tkt" ? "TANQUES TIERRA" : "QBS002"} tanques={tanques}/>
+                barcazaFiltro={liqP1Sub==="tkt" ? "TANQUES TIERRA" : "QBS002"} tanques={tanques} afoCache={afoP1}/>
             </div>
             <div style={{display: liqP1Sub==="qbs003" ? "" : "none", position:"absolute", inset:0, overflowY:"auto", padding:"24px 32px", boxSizing:"border-box"}}>
-              <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall} tanques={tanques}/>
+              <LiquidadorQBS003 supabase={supabase} session={session} perfil={perfil} showToast={showToast} dbCall={dbCall} tanques={tanques} afoCache={afoQBS003}/>
             </div>
           </div>
         </div>
