@@ -897,7 +897,7 @@ export default function App() {
       const PAGE=1000; let rows=[], from=0;
       while(true){
         const {data,error}=await supabase.from("aforo")
-          .select("ullage_mm,galones_brutos").eq("tanque",tk).order("ullage_mm")
+          .select("sonda,v0").eq("tanque",tk).order("sonda")
           .range(from,from+PAGE-1);
         if(error||!data||data.length===0)break;
         rows=rows.concat(data);
@@ -909,7 +909,7 @@ export default function App() {
     try{
       const results=await Promise.all(TANQUES.map(tk=>fetchTk(tk)));
       const tbl={};
-      for(const {tk,rows} of results) tbl[tk]=rows.map(r=>[r.ullage_mm,r.galones_brutos]);
+      for(const {tk,rows} of results) tbl[tk]=rows.map(r=>[r.sonda,r.v0]);
       setAfoP2(tbl);
     }catch(e){console.error("Error precargando aforo P2:",e);}
     setAfoP2Loading(false);
@@ -1532,22 +1532,22 @@ async function calcularGalonesConSetter(tanque, ullage, temp, api, index, setter
   const ullageNum = Number(ullage);
   // Buscar coincidencia exacta primero
   let galonesB = null;
-  const {data:exact} = await supabase.from("aforo").select("galones_brutos").eq("tanque",tanque).eq("ullage_mm",ullageNum).maybeSingle();
+  const {data:exact} = await supabase.from("aforo").select("v0").eq("tanque",tanque).eq("sonda",ullageNum).maybeSingle();
   if (exact) {
-    galonesB = Number(exact.galones_brutos);
+    galonesB = Number(exact.v0);
   } else {
     // Interpolación: buscar el punto inferior y superior
     const [{data:below},{data:above}] = await Promise.all([
-      supabase.from("aforo").select("ullage_mm,galones_brutos").eq("tanque",tanque).lt("ullage_mm",ullageNum).order("ullage_mm",{ascending:false}).limit(1).maybeSingle(),
-      supabase.from("aforo").select("ullage_mm,galones_brutos").eq("tanque",tanque).gt("ullage_mm",ullageNum).order("ullage_mm",{ascending:true}).limit(1).maybeSingle(),
+      supabase.from("aforo").select("sonda,v0").eq("tanque",tanque).lt("sonda",ullageNum).order("sonda",{ascending:false}).limit(1).maybeSingle(),
+      supabase.from("aforo").select("sonda,v0").eq("tanque",tanque).gt("sonda",ullageNum).order("sonda",{ascending:true}).limit(1).maybeSingle(),
     ]);
     if (below && above) {
-      const ratio = (ullageNum - below.ullage_mm) / (above.ullage_mm - below.ullage_mm);
-      galonesB = Number(below.galones_brutos) + ratio * (Number(above.galones_brutos) - Number(below.galones_brutos));
+      const ratio = (ullageNum - below.sonda) / (above.sonda - below.sonda);
+      galonesB = Number(below.v0) + ratio * (Number(above.v0) - Number(below.v0));
     } else if (below) {
-      galonesB = Number(below.galones_brutos);
+      galonesB = Number(below.v0);
     } else if (above) {
-      galonesB = Number(above.galones_brutos);
+      galonesB = Number(above.v0);
     }
   }
   // Fallback: tablas embebidas QBS003

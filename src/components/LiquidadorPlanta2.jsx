@@ -126,14 +126,14 @@ export default function LiquidadorPlanta2({supabase,session,perfil,showToast,afo
     }
     // Consulta Supabase: fila inferior y superior
     const [r1,r2]=await Promise.all([
-      supabase.from("aforo").select("ullage_mm,galones_brutos").eq("tanque",tanque).lte("ullage_mm",ullage_mm).order("ullage_mm",{ascending:false}).limit(1),
-      supabase.from("aforo").select("ullage_mm,galones_brutos").eq("tanque",tanque).gte("ullage_mm",ullage_mm).order("ullage_mm",{ascending:true}).limit(1),
+      supabase.from("aforo").select("sonda,v0").eq("tanque",tanque).lte("sonda",ullage_mm).order("sonda",{ascending:false}).limit(1),
+      supabase.from("aforo").select("sonda,v0").eq("tanque",tanque).gte("sonda",ullage_mm).order("sonda",{ascending:true}).limit(1),
     ]);
     const lo=r1.data?.[0], hi=r2.data?.[0];
     let val=null;
-    if(lo&&hi) val=interp(ullage_mm,lo.ullage_mm,hi.ullage_mm,lo.galones_brutos,hi.galones_brutos);
-    else if(lo) val=lo.galones_brutos;
-    else if(hi) val=hi.galones_brutos;
+    if(lo&&hi) val=interp(ullage_mm,lo.sonda,hi.sonda,lo.v0,hi.v0);
+    else if(lo) val=lo.v0;
+    else if(hi) val=hi.v0;
     lookupCache[key]=val;
     return val;
   }
