@@ -6206,19 +6206,26 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {/* Filas agrupadas por producto dentro de esta formulación */}
                         {grupos.map(grupo => {
                           const gPlan = grupo.galones_planeado;
-                          // Total CMT para este producto (sin distinguir bodega)
-                          const totalDescProd = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>{
-                            if(prodCarro(carro)!==grupo.productoBase) return s;
-                            return s+glsDescargadosCarro(carro);
-                          },0),0);
-                          // Si hay múltiples secciones con el mismo producto, los CMTs no se pueden
-                          // asignar a una bodega específica. Distribuimos proporcionalmente al planificado.
-                          const gReal = seccionesPorFo.length > 1 ? (()=>{
-                            const totalPlanProd = seccionesPorFo.reduce((a,s)=>a+s.grupos
-                              .filter(g=>g.productoBase===grupo.productoBase)
-                              .reduce((b,g)=>b+g.galones_planeado,0),0);
-                            return totalPlanProd>0 ? Math.round(totalDescProd*gPlan/totalPlanProd) : 0;
-                          })() : totalDescProd;
+                          const gReal = (() => {
+                            if (seccionesPorFo.length <= 1) {
+                              // OT con una sola formulación: sumar todos los CMTs por producto
+                              return cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>{
+                                if(prodCarro(carro)!==grupo.productoBase) return s;
+                                return s+glsDescargadosCarro(carro);
+                              },0),0);
+                            }
+                            // OT multi-formulación: asignar cada CMT a la bodega que aparece en
+                            // tanques_despues del CMT, para no mezclar galones entre bodegas.
+                            const tanqueFo = fo?.tanque || "";
+                            return cmtsDeEstaOT.reduce((sum,c)=>{
+                              const destinos = (c.tanques_despues||[]).map(td=>td.tanque).filter(Boolean);
+                              if (destinos.length > 0 && !destinos.includes(tanqueFo)) return sum;
+                              return sum + (c.carros||[]).reduce((s,carro)=>{
+                                if(prodCarro(carro)!==grupo.productoBase) return s;
+                                return s+glsDescargadosCarro(carro);
+                              },0);
+                            },0);
+                          })();
                           const gFalta = Math.max(0, gPlan - gReal);
                           const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
                           const rowKey = (fid||"x")+"-"+grupo.productoBase;
