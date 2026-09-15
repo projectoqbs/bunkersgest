@@ -5384,9 +5384,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       const cmtsOt = (cmts||[]).filter(c=>c.ot_id===ot.id);
                       const glsCarroCmt = (carro)=>{ const tiq=tiquetes.find(t=>t.id===carro.tiquete); const factor=Number(tiq?.factor_tabla13||0),pn=Number(carro.peso_neto||0); return (factor>0&&pn>0)?Math.round(pn/factor):Number(carro.galones_descargados||0); };
                       const totalDesc = cmtsOt.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,cr)=>s+glsCarroCmt(cr),0),0);
-                      const multiFo = (ot.formulacion_ids||[]).length > 1;
-                      const totalDescD = multiFo ? desc.reduce((a,d)=>a+Number(d.galones_descargado||0),0) : totalDesc;
-                      const pct = totalPlan>0?Math.round(totalDescD/totalPlan*100):0;
+                      const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
                       const fo = formulaciones.find(f=>f.id===ot.formulacion_id);
                       return (
                         <Card key={ot.id} style={{ padding:16 }}>
@@ -5408,7 +5406,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           {ot.estado==="DESCARGANDO" && (
                             <div style={{ marginBottom:8 }}>
                               <div style={{ display:"flex",justifyContent:"space-between",fontSize:11,color:T.muted,marginBottom:4 }}>
-                                <span>Descargues: {fmt(totalDescD)} / {fmt(totalPlan)} gls</span>
+                                <span>Descargues: {fmt(totalDesc)} / {fmt(totalPlan)} gls</span>
                                 <span style={{ fontWeight:700,color:T.orange }}>{pct}%</span>
                               </div>
                               <div style={{ background:T.border,borderRadius:4,height:6 }}>
@@ -5948,13 +5946,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         };
         const prodCarro = (carro)=>normalizarProducto((tiquetes.find(t=>t.id===carro.tiquete))?.producto||"");
         const totalDesc = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>s+glsDescargadosCarro(carro),0),0);
-        // Para OTs con múltiples formulaciones del mismo producto, los galones por bodega
-        // se rastrean en desc[i].galones_descargado (actualizado manualmente). Usar esos para pct.
-        const multiFormulacion = (ot.formulacion_ids||[]).length > 1;
-        const totalDescDisplay = multiFormulacion
-          ? desc.reduce((a,d)=>a+Number(d.galones_descargado||0),0)
-          : totalDesc;
-        const pct = totalPlan>0?Math.round(totalDescDisplay/totalPlan*100):0;
+        const pct = totalPlan>0?Math.round(totalDesc/totalPlan*100):0;
         const estadoColor = e=>e==="ANALIZADA"?T.success:e==="COMPLETADA"?T.success:e==="RECIRCULANDO"?T.orange:e==="DESCARGANDO"?T.orange:e==="TRASIEGOS"?T.navy:e==="RECHAZADA"?T.danger:T.muted;
         const estadoLabel = e=>e==="ANALIZADA"?"COMPLETADA":e;
 
@@ -6186,15 +6178,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   return { fid, fo, grupos, items };
                 }).filter(s=>s.items.length>0);
                 const multiSec = seccionesPorFo.length > 1;
-                const totalDescVisualOuter = multiSec
-                  ? desc.reduce((a,d)=>a+Number(d.galones_descargado||0),0)
-                  : totalDesc;
-                const pctVisualOuter = totalPlan>0 ? Math.round(totalDescVisualOuter/totalPlan*100) : 0;
                 return (
                   <>
                     {ot.estado==="DESCARGANDO" && (
                       <div style={{ background:T.border,borderRadius:4,height:8,marginBottom:12 }}>
-                        <div style={{ width:`${pctVisualOuter}%`,background:T.orange,height:8,borderRadius:4,transition:"width 0.3s" }}/>
+                        <div style={{ width:`${pct}%`,background:T.orange,height:8,borderRadius:4,transition:"width 0.3s" }}/>
                       </div>
                     )}
                     {/* Encabezados */}
@@ -6218,15 +6206,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {/* Filas agrupadas por producto dentro de esta formulación */}
                         {grupos.map(grupo => {
                           const gPlan = grupo.galones_planeado;
-                          // Usar galones_descargado almacenado por fila (actualizado vía campo manual).
-                          // Cuando hay múltiples bodegas con el mismo producto, sumar desde CMTs
-                          // produce el mismo valor en todas las filas (no podemos distinguir por bodega).
-                          const gReal = seccionesPorFo.length > 1
-                            ? grupo.galones_descargado
-                            : cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>{
-                                if(prodCarro(carro)!==grupo.productoBase) return s;
-                                return s+glsDescargadosCarro(carro);
-                              },0),0);
+                          // Total CMT para este producto (sin distinguir bodega)
+                          const totalDescProd = cmtsDeEstaOT.reduce((sum,c)=>sum+(c.carros||[]).reduce((s,carro)=>{
+                            if(prodCarro(carro)!==grupo.productoBase) return s;
+                            return s+glsDescargadosCarro(carro);
+                          },0),0);
+                          // Si hay múltiples secciones con el mismo producto, los CMTs no se pueden
+                          // asignar a una bodega específica. Distribuimos proporcionalmente al planificado.
+                          const gReal = seccionesPorFo.length > 1 ? (()=>{
+                            const totalPlanProd = seccionesPorFo.reduce((a,s)=>a+s.grupos
+                              .filter(g=>g.productoBase===grupo.productoBase)
+                              .reduce((b,g)=>b+g.galones_planeado,0),0);
+                            return totalPlanProd>0 ? Math.round(totalDescProd*gPlan/totalPlanProd) : 0;
+                          })() : totalDescProd;
                           const gFalta = Math.max(0, gPlan - gReal);
                           const gPct = gPlan > 0 ? Math.round(gReal / gPlan * 100) : 0;
                           const rowKey = (fid||"x")+"-"+grupo.productoBase;
@@ -6284,31 +6276,21 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       </div>
                     ))}
                     {/* Fila total */}
-                    {(()=>{
-                      // Si hay múltiples secciones, el total visual debe sumar los galones_descargado
-                      // almacenados por fila (consistente con gReal por fila). De lo contrario usar CMTs.
-                      const totalDescVisual = seccionesPorFo.length > 1
-                        ? desc.reduce((a,d)=>a+Number(d.galones_descargado||0),0)
-                        : totalDesc;
-                      const pctVisual = totalPlan>0 ? Math.round(totalDescVisual/totalPlan*100) : 0;
-                      return (
-                        <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,padding:"10px",background:T.bg,borderRadius:6,marginTop:8,borderTop:`2px solid ${T.orange}`,fontWeight:700,fontSize:12 }}>
-                          <div style={{ color:T.muted }}>TOTAL</div>
-                          <div style={{ textAlign:"right",color:T.text }}>{fmt(totalPlan)}</div>
-                          <div style={{ textAlign:"right",color:T.success }}>{fmt(totalDescVisual)}</div>
-                          <div style={{ textAlign:"right",color:"#ef4444" }}>{fmt(Math.max(0,totalPlan-totalDescVisual))}</div>
-                          <div style={{ textAlign:"center",color:T.orange }}>{pctVisual}%</div>
-                          <div></div>
-                        </div>
-                      );
-                    })()}
-                    {ot.estado==="DESCARGANDO" && pctVisualOuter>=90 && (
+                    <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1.4fr 0.3fr",gap:8,padding:"10px",background:T.bg,borderRadius:6,marginTop:8,borderTop:`2px solid ${T.orange}`,fontWeight:700,fontSize:12 }}>
+                      <div style={{ color:T.muted }}>TOTAL</div>
+                      <div style={{ textAlign:"right",color:T.text }}>{fmt(totalPlan)}</div>
+                      <div style={{ textAlign:"right",color:T.success }}>{fmt(totalDesc)}</div>
+                      <div style={{ textAlign:"right",color:"#ef4444" }}>{fmt(Math.max(0,totalPlan-totalDesc))}</div>
+                      <div style={{ textAlign:"center",color:T.orange }}>{pct}%</div>
+                      <div></div>
+                    </div>
+                    {ot.estado==="DESCARGANDO" && pct>=90 && (
                       <div style={{ marginTop:10, display:"flex", alignItems:"center", gap:12 }}>
                         <button onClick={()=>actualizarOT({estado:"RECIRCULANDO",fecha_fin_descargue:new Date().toISOString(),fecha_inicio_recirculacion:new Date().toISOString(),recirculacion_estado:"en_progreso"})}
                           style={{ background:T.success,border:"none",color:"#071422",borderRadius:6,padding:"8px 20px",cursor:"pointer",fontWeight:700,fontSize:12 }}>
                           ✅ Descargue Finalizado → Iniciar Recirculación
                         </button>
-                        {pctVisualOuter<100 && <span style={{ fontSize:11,color:T.muted }}>({pctVisualOuter}% completado — variación permisible)</span>}
+                        {pct<100 && <span style={{ fontSize:11,color:T.muted }}>({pct}% completado — variación permisible)</span>}
                       </div>
                     )}
                   </>
