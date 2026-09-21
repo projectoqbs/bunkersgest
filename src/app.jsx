@@ -469,7 +469,7 @@ export default function App() {
   const [trazDesde, setTrazDesde] = useState("");
   const [trazHasta, setTrazHasta] = useState("");
   const [trazEstado, setTrazEstado] = useState("DESCARGUE");
-  const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","varPct","pbs","ot","tanques","horaInicio","horaFinal","duracion","pesoIng","pesoSal","pesoNeto","rpm","presion"]));
+  const [trazColsDesc, setTrazColsDesc] = useState(new Set(["placa","fecha","cmt","producto","transportadora","guia","tiquete","api","glsGuia","glsBas","glsBrutos","varPct","pbs","ot","tanques","horaInicio","horaFinal","duracion","pesoIng","pesoSal","pesoNeto","rpm","presion"]));
   const [trazColsPorteo, setTrazColsPorteo] = useState(new Set(["placa","fecha","cmt","transportadora","tqsCarga","inicio","fin","durCargue","inicioDesc","finDesc","durDescargue","contador","pesoIng","pesoSal","bascula","ot","tqsDesc"]));
   const [trazColPanel, setTrazColPanel] = useState(false);
   const [mps, setMps] = useState([ // materias primas en el modal formulación
@@ -5040,14 +5040,13 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   const pb = pbDirecto ? {id:pbDirecto} : pbsList.find(p=>p.placa===cr.placa || p.viaje_id===cr.viaje_id || (tq&&p.viaje_id===tq.viaje_id));
                   const factor = Number(tq?.factor_tabla13||0);
                   const pn = Number(cr.peso_neto||0) || Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
-                  const glsNetos = Number(cr.galones_bascula||0)||(factor>0&&pn>0?Math.round(pn/factor):0);
+                  const glsBas = Number(cr.galones_bascula||0)||(factor>0&&pn>0?Math.round(pn/factor):0);
                   const prodUp = (cm.producto||"").toUpperCase();
                   const esMGORow = prodUp==="MGO"||prodUp.includes("DIESEL");
-                  const glsBrutos = Number(cr.galones_brutos||0) || (esMGORow?(()=>{
+                  const glsBrutos = esMGORow ? (Number(cr.galones_brutos||0) || (()=>{
                     const vcfT = Number(tq?.factor_conversion||0)||calcVCF(Number(tq?.api_corregido||0),Number(tq?.temp_observada||0));
-                    return (vcfT&&glsNetos)?Math.round(glsNetos/vcfT):0;
-                  })():0);
-                  const glsBas = esMGORow ? (glsBrutos||glsNetos) : glsNetos;
+                    return (vcfT&&glsBas)?Math.round(glsBas/vcfT):0;
+                  })()) : 0;
                   rows.push({cm,cr,tq,pb,ot,viaje,tanquesDesc,glsBas,glsBrutos,esMGORow});
                 });
               });
@@ -5150,7 +5149,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           ? [
                               {k:"placa",l:"Placa"},{k:"fecha",l:"Fecha CMT"},{k:"cmt",l:"CMT"},{k:"producto",l:"Producto"},
                               {k:"transportadora",l:"Transportadora"},{k:"guia",l:"Guía"},{k:"tiquete",l:"Tiquete"},
-                              {k:"api",l:"API"},{k:"glsGuia",l:"Gls Guía"},{k:"glsBas",l:"Gls Báscula"},{k:"varPct",l:"Variación %"},
+                              {k:"api",l:"API"},{k:"glsGuia",l:"Gls Guía"},{k:"glsBas",l:"Gls Báscula"},{k:"glsBrutos",l:"Gls Brutos Báscula"},{k:"varPct",l:"Variación %"},
                               {k:"horaInicio",l:"Hora Inicio"},{k:"horaFinal",l:"Hora Final"},{k:"duracion",l:"Duración"},
                               {k:"pesoIng",l:"Peso Ingreso (Kg)"},{k:"pesoSal",l:"Peso Salida (Kg)"},{k:"pesoNeto",l:"Peso Neto (Kg)"},
                               {k:"rpm",l:"RPM"},{k:"presion",l:"Presión (Bar)"},
@@ -5209,6 +5208,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         {C.has("api")            && <th style={thStyle}>API</th>}
                         {C.has("glsGuia")        && <th style={thStyle}>Gls Guía</th>}
                         {C.has("glsBas")         && <th style={thStyle}>Gls Báscula</th>}
+                        {C.has("glsBrutos")      && <th style={thStyle}>Gls Brutos Báscula</th>}
                         {C.has("varPct")         && <th style={thStyle}>Variación %</th>}
                         {C.has("horaInicio")     && <th style={thStyle}>Hora Inicio</th>}
                         {C.has("horaFinal")      && <th style={thStyle}>Hora Final</th>}
@@ -5239,13 +5239,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             </td>}
                             {C.has("api")            && <td style={tdS({color:T.muted})}>{tq?.api_corregido?`${tq.api_corregido}°`:"—"}</td>}
                             {C.has("glsGuia")        && <td style={tdS({color:T.muted})}>{Number(cr.galones_guia||viaje?.volumen_guia||0)>0?fmt(Number(cr.galones_guia||viaje?.volumen_guia)):"—"}</td>}
-                            {C.has("glsBas")         && <td style={tdS({fontWeight:700,color:glsBas>0?(esMGORow?T.orange:T.success):T.muted})}>
-                              {glsBas>0?fmt(glsBas):"—"}
-                              {esMGORow&&glsBas>0&&<div style={{fontSize:9,color:T.orange,marginTop:1}}>brutos</div>}
+                            {C.has("glsBas")         && <td style={tdS({fontWeight:700,color:glsBas>0?T.success:T.muted})}>{glsBas>0?fmt(glsBas):"—"}</td>}
+                            {C.has("glsBrutos")      && <td style={tdS({fontWeight:700,color:glsBrutos>0?T.orange:T.muted})}>
+                              {glsBrutos>0?fmt(glsBrutos):(esMGORow?"—":"n/a")}
                             </td>}
                             {C.has("varPct")         && (()=>{
                               const gGuia=Number(cr.galones_guia||viaje?.volumen_guia||0);
-                              const pct=gGuia>0&&glsBas>0?((glsBas-gGuia)/gGuia*100):null;
+                              const glsComp = esMGORow&&glsBrutos>0 ? glsBrutos : glsBas;
+                              const pct=gGuia>0&&glsComp>0?((glsComp-gGuia)/gGuia*100):null;
                               const color=pct===null?T.muted:Math.abs(pct)<=1?T.success:Math.abs(pct)<=3?T.orange:T.danger;
                               return <td style={tdS({fontWeight:700,color,fontFamily:"monospace"})}>{pct!==null?`${pct>0?"+":""}${pct.toFixed(2)}%`:"—"}</td>;
                             })()}
