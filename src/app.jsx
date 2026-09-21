@@ -3912,7 +3912,23 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                             </div>
                                             {cr.tiquete&&<div style={{color:T.navy}}>Tiquete: <span style={{cursor:"pointer",textDecoration:"underline",fontWeight:700}} onClick={()=>{ const t=tiquetes.find(x=>x.id===cr.tiquete); if(t){setForm({...t});setModal("tiquete");} }}>{cr.tiquete}</span></div>}
                                             {cr.guia&&<div style={{color:T.muted}}>Guía: {cr.guia}</div>}
-                                            {(()=>{const tq=tiquetes.find(x=>x.id===cr.tiquete);const factor=Number(tq?.factor_tabla13||0);const pesoNeto=Number(cr.peso_neto||0);const gls=(factor>0&&pesoNeto>0)?Math.round(pesoNeto/factor):Number(cr.galones_descargados||cr.galones_guia||0);return gls>0?<div style={{color:T.success,fontWeight:700}}>Gls descargados: {fmt(gls)}</div>:null;})()}
+                                            {(()=>{const tq=tiquetes.find(x=>x.id===cr.tiquete);const factor=Number(tq?.factor_tabla13||0);const pesoNeto=Number(cr.peso_neto||0);const gls=(factor>0&&pesoNeto>0)?Math.round(pesoNeto/factor):Number(cr.galones_descargados||cr.galones_guia||0);return gls>0?<div style={{color:T.success,fontWeight:700}}>Gls netos: {fmt(gls)}</div>:null;})()}
+                                            {(()=>{
+                                              const esMGOcr=(p)=>{const u=(p||"").toUpperCase();return u==="MGO"||u.includes("DIESEL");};
+                                              if (!esMGOcr(c.producto)) return null;
+                                              // Usar galones_brutos guardado o recalcular
+                                              const tqCr=tiquetes.find(x=>x.id===cr.tiquete);
+                                              const fCr=Number(tqCr?.factor_tabla13||0), pnCr=Number(cr.peso_neto||0);
+                                              const glsNetosCr=(fCr>0&&pnCr>0)?Math.round(pnCr/fCr):Number(cr.galones_descargados||0);
+                                              const brutos = cr.galones_brutos || calcGlsBrutos(glsNetosCr, cr.api_lab, cr.temp_carro);
+                                              const vcf = calcVCF(cr.api_lab, cr.temp_carro);
+                                              return brutos ? (
+                                                <div style={{marginTop:4,padding:"4px 6px",background:`${T.orange}15`,borderRadius:4,borderLeft:`2px solid ${T.orange}`}}>
+                                                  <div style={{color:T.orange,fontWeight:700}}>Gls brutos: {fmt(brutos)}</div>
+                                                  {vcf&&<div style={{color:T.muted,fontSize:10}}>VCF: {vcf.toFixed(5)} · API: {cr.api_lab}° · T: {cr.temp_carro}°C</div>}
+                                                </div>
+                                              ) : (cr.api_lab||cr.temp_carro) ? <div style={{color:T.muted,fontSize:10}}>Gls brutos: datos incompletos</div> : null;
+                                            })()}
                                             {cr.hora_inicio&&<div style={{color:T.muted}}>Inicio: {cr.hora_inicio} — Fin: {cr.hora_final||"—"}</div>}
                                           </div>
                                         ))}
