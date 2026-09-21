@@ -234,6 +234,24 @@ const fmt = n => Number(n||0).toLocaleString("es-CO");
 const today = () => new Date().toISOString().slice(0,10);
 const genId = (prefix, list) => `${prefix}-${String((list?.length||0)+1).padStart(3,"0")}`;
 
+// ASTM D1250-2004 — Factor de corrección volumétrica (Ctl) para productos generalizados
+// api: gravedad API a 60°F  |  tempC: temperatura observada en °C
+// Retorna VCF; galones_brutos = galones_netos / VCF
+const calcVCF = (api, tempC) => {
+  const a = Number(api), t = Number(tempC);
+  if (!a || isNaN(a) || !t || isNaN(t)) return null;
+  const sg15  = 141.5 / (131.5 + a);
+  const rho15 = sg15 * 999.016;           // kg/m³ aprox a 15 °C
+  const alpha = (346.4220 + 0.4388 * rho15) / (rho15 * rho15);
+  const dT    = t - 15.0;
+  return Math.exp(-alpha * dT * (1 + 0.8 * alpha * dT));
+};
+const calcGlsBrutos = (glsNetos, api, tempC) => {
+  const vcf = calcVCF(api, tempC);
+  if (!vcf || !Number(glsNetos)) return null;
+  return Math.round(Number(glsNetos) / vcf);
+};
+
 // Colores por producto para tanques Varec
 const getProductColor = (producto) => {
   if (!producto) return "#1a1a1a";
@@ -1761,12 +1779,20 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
     if (!form.id && tipoOp !== "TRASIEGO DE PRODUCTO" && tipoOp !== "PORTEO" && totalMovido<=0) { setSaving(false); return showToast("El total después debe ser mayor que antes",false); }
 
     // Calcular y persistir galones_bascula en carros de TODOS los tipos antes de guardar
+    const esMGOProducto = (p) => { const u=(p||"").toUpperCase(); return u==="MGO"||u.includes("DIESEL"); };
     const carrosConGls = cmtCarros.map(carro => {
       const tq = tiquetes.find(t => t.id === carro.tiquete);
       const factor = Number(tq?.factor_tabla13 || 0);
       const pesoNeto = Number(carro.peso_neto||0) || Math.max(0, Number(carro.peso_ingreso||0)-Number(carro.peso_salida||0));
       const glsCalc = factor>0 && pesoNeto>0 ? Math.round(pesoNeto/factor) : "";
-      return glsCalc ? {...carro, galones_bascula: glsCalc} : carro;
+      const result = glsCalc ? {...carro, galones_bascula: glsCalc} : {...carro};
+      // Para MGO calcular y persistir galones_brutos
+      if (esMGOProducto(cmtProducto) && carro.api_lab && carro.temp_carro) {
+        const glsNetos = glsCalc || Number(carro.galones_descargados||0);
+        const brutos = calcGlsBrutos(glsNetos, carro.api_lab, carro.temp_carro);
+        if (brutos) result.galones_brutos = brutos;
+      }
+      return result;
     });
     const porteoCarrosConGls = tipoOp==="PORTEO" ? (() => {
       const factorApi = cmtPorteoCarga.map(r=>Number(r.apiInicial||r.apiFinal||0)).find(a=>a>0) || 0;
@@ -7759,6 +7785,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     style={{width:"100%",background:T.card,border:`1.5px solid ${carro.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 12px",color:carro.pbs_id?T.orange:T.text,fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box",fontWeight:carro.pbs_id?700:400}}
                   /></div>
                 </div>
+                {/* ── Campos MGO: temperatura carro + API lab → galones brutos ── */}
+                {(()=>{ const esMGOp=(p)=>{const u=(p||"").toUpperCase();return u==="MGO"||u.includes("DIESEL");};
+                  if (!esMGOp(cmtProducto)) return null;
+                  const tq = tiquetes.find(t=>t.id===carro.tiquete);
+                  const factor = Number(tq?.factor_tabla13||0);
+                  const pesoNeto = Number(carro.peso_neto||0);
+                  const glsNetos = (factor>0&&pesoNeto>0)?Math.round(pesoNeto/factor):Number(carro.galones_descargados||0);
+                  const glsBrutos = calcGlsBrutos(glsNetos, carro.api_lab, carro.temp_carro);
+                  const vcf = calcVCF(carro.api_lab, carro.temp_carro);
+                  return (
+                    <div style={{marginTop:8,padding:"10px 12px",background:`${T.orange}12`,border:`1px solid ${T.orange}44`,borderRadius:6}}>
+                      <div style={{fontSize:10,fontWeight:700,color:T.orange,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>Conversión MGO — Galones Brutos (ASTM D1250)</div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
+                        <div><Lbl>Temp. Carro (°C)</Lbl><input type="number" step="0.1" placeholder="Ej: 35.5" value={carro.temp_carro||""} onChange={e=>{const n=[...cmtCarros];n[i].temp_carro=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
+                        <div><Lbl>API Laboratorio</Lbl><input type="number" step="0.1" placeholder="Ej: 33.2" value={carro.api_lab||""} onChange={e=>{const n=[...cmtCarros];n[i].api_lab=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
+                        <div><Lbl>VCF</Lbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",fontSize:13,fontFamily:"monospace",color:vcf?T.navy:"#aab4be",fontWeight:700,minHeight:43,display:"flex",alignItems:"center"}}>{vcf?vcf.toFixed(5):"—"}</div></div>
+                        <div><Lbl>Gls Brutos</Lbl><div style={{background:`${T.orange}22`,border:`1.5px solid ${T.orange}88`,borderRadius:6,padding:"10px 12px",fontSize:13,fontFamily:"monospace",color:glsBrutos?T.orange:"#aab4be",fontWeight:700,minHeight:43,display:"flex",alignItems:"center"}}>{glsBrutos?fmt(glsBrutos):"—"}</div></div>
+                      </div>
+                      {glsNetos>0&&!glsBrutos&&<div style={{fontSize:10,color:T.muted,marginTop:6}}>Ingresa Temperatura y API para calcular los galones brutos.</div>}
+                    </div>
+                  );
+                })()}
                 <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
                   <button onClick={()=>setCmtCarros(cmtCarros.filter((_,j)=>j!==i))} style={{background:`${T.danger}15`,border:`1px solid ${T.danger}55`,borderRadius:6,color:T.danger,padding:"5px 14px",cursor:"pointer",fontSize:11,fontFamily:"system-ui,sans-serif"}}>✕ Eliminar carro</button>
                 </div>
