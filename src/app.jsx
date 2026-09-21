@@ -3686,36 +3686,51 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   </div>
                   {cmtVistaCarros ? (()=>{
                     // Vista por carros: flatten todos los carros de todos los CMTs filtrados
+                    const esMGOp=(p)=>{const u=(p||"").toUpperCase();return u==="MGO"||u.includes("DIESEL");};
                     const todosCarros = cmtsFinal.flatMap(cmt=>{
-                      const reg = (cmt.carros||[]).filter(cr=>cr.placa).map(cr=>({
-                        cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
-                        sede: cmt.sede, planta: cmt.planta, producto: cmt.producto,
-                        placa: cr.placa, guia: cr.guia||"", tiquete: cr.tiquete||"",
-                        hora_inicio: cr.hora_inicio||"", hora_final: cr.hora_final||"",
-                        peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
-                        peso_neto: Number(cr.peso_neto||0)||Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0)),
-                        gls_guia: Number(cr.galones_guia||0), gls_bascula: (()=>{
-                          if (Number(cr.galones_bascula||0) > 0) return Number(cr.galones_bascula);
-                          const tiq = tiquetes.find(t=>t.id===cr.tiquete);
-                          const factor = Number(tiq?.factor_tabla13||0);
-                          const pn = Number(cr.peso_neto||0)||Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
-                          return factor>0 && pn>0 ? Math.round(pn/factor) : 0;
-                        })(),
-                      }));
+                      const reg = (cmt.carros||[]).filter(cr=>cr.placa).map(cr=>{
+                        const tiq = tiquetes.find(t=>t.id===cr.tiquete);
+                        const factor = Number(tiq?.factor_tabla13||0);
+                        const pn = Number(cr.peso_neto||0)||Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
+                        const glsNetos = Number(cr.galones_bascula||0) || (factor>0&&pn>0 ? Math.round(pn/factor) : 0);
+                        const esMGO = esMGOp(cmt.producto);
+                        // Para MGO: galones_brutos desde BD o recalculado desde tiquete
+                        const glsBrutos = esMGO ? (Number(cr.galones_brutos||0) || (()=>{
+                          const vcf = Number(tiq?.factor_conversion||0) || calcVCF(Number(tiq?.api_corregido||0), Number(tiq?.temp_observada||0));
+                          return (vcf&&glsNetos) ? Math.round(glsNetos/vcf) : 0;
+                        })()) : 0;
+                        return {
+                          cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
+                          sede: cmt.sede, planta: cmt.planta, producto: cmt.producto, esMGO,
+                          placa: cr.placa, guia: cr.guia||"", tiquete: cr.tiquete||"",
+                          hora_inicio: cr.hora_inicio||"", hora_final: cr.hora_final||"",
+                          peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
+                          peso_neto: pn,
+                          gls_guia: Number(cr.galones_guia||0),
+                          gls_netos: glsNetos,
+                          gls_brutos: glsBrutos,
+                          // columna de comparación: brutos para MGO, netos para otros
+                          gls_desc: esMGO ? glsBrutos : glsNetos,
+                        };
+                      });
                       const porteo = (cmt.porteo_carros||[]).filter(cr=>cr.placa).map(cr=>({
                         cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
-                        sede: cmt.sede, planta: cmt.planta, producto: cmt.producto,
+                        sede: cmt.sede, planta: cmt.planta, producto: cmt.producto, esMGO: false,
                         placa: cr.placa, guia: "", tiquete: "",
                         hora_inicio: cr.hora_inicio_cargue||"", hora_final: cr.hora_final_cargue||"",
                         peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
                         peso_neto: Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0)),
-                        gls_guia: Number(cr.galones_contador||0), gls_bascula: Number(cr.galones_bascula||0),
+                        gls_guia: Number(cr.galones_contador||0),
+                        gls_netos: Number(cr.galones_bascula||0),
+                        gls_brutos: 0,
+                        gls_desc: Number(cr.galones_bascula||0),
                       }));
                       return [...reg,...porteo];
                     });
-                    const totalPesoNeto = todosCarros.reduce((a,r)=>a+r.peso_neto,0);
-                    const totalGlsBascula = todosCarros.reduce((a,r)=>a+r.gls_bascula,0);
-                    const totalGlsGuia = todosCarros.reduce((a,r)=>a+r.gls_guia,0);
+                    const totalPesoNeto  = todosCarros.reduce((a,r)=>a+r.peso_neto,0);
+                    const totalGlsDesc   = todosCarros.reduce((a,r)=>a+r.gls_desc,0);
+                    const totalGlsGuia   = todosCarros.reduce((a,r)=>a+r.gls_guia,0);
+                    const totalVarPct    = totalGlsGuia>0 ? ((totalGlsDesc-totalGlsGuia)/totalGlsGuia*100) : null;
                     return (
                       <div>
                         <div style={{fontSize:11,color:T.muted,marginBottom:8}}>{todosCarros.length} carro(s) encontrados</div>
@@ -3723,7 +3738,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <table style={{width:"100%",borderCollapse:"collapse",background:T.card}}>
                           <thead>
                             <tr style={{background:T.bg}}>
-                              {["N° CMT","Fecha","Tipo","Sede","Planta","Producto","Placa","Guía","Tiquete","H. Inicio","H. Final","Peso Ing.","Peso Sal.","Peso Neto","Gls Guía","Gls Báscula"].map(h=>(
+                              {["N° CMT","Fecha","Tipo","Sede","Planta","Producto","Placa","Guía","Tiquete","H. Inicio","H. Final","Peso Ing.","Peso Sal.","Peso Neto","Gls Guía","Gls Desc.","Var %"].map(h=>(
                                 <th key={h} style={{padding:"9px 10px",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,position:"sticky",top:0,zIndex:2}}>{h}</th>
                               ))}
                             </tr>
@@ -3746,7 +3761,17 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right"}}>{r.peso_salida>0?fmt(r.peso_salida):"—"}</td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",color:T.navy,fontWeight:700}}>{r.peso_neto>0?fmt(r.peso_neto):"—"}</td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right"}}>{r.gls_guia>0?fmt(r.gls_guia):"—"}</td>
-                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",color:T.success,fontWeight:700}}>{r.gls_bascula>0?fmt(r.gls_bascula):"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",fontWeight:700,color:r.esMGO?T.orange:T.success}}>
+                                  {r.gls_desc>0?fmt(r.gls_desc):"—"}
+                                  {r.esMGO&&r.gls_desc>0&&<div style={{fontSize:9,color:T.muted,fontWeight:400}}>brutos</div>}
+                                </td>
+                                {(()=>{
+                                  const varPct = r.gls_guia>0&&r.gls_desc>0 ? ((r.gls_desc-r.gls_guia)/r.gls_guia*100) : null;
+                                  const pos = varPct>0, neg = varPct<0;
+                                  return <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",fontWeight:700,color:pos?T.success:neg?T.danger:T.muted}}>
+                                    {varPct!=null?(pos?"+":"")+varPct.toFixed(2)+"%":"—"}
+                                  </td>;
+                                })()}
                               </tr>
                             ))}
                             {todosCarros.length>0 && (
@@ -3755,7 +3780,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                 <td colSpan={2} style={{padding:"8px 10px",fontSize:11,borderTop:`2px solid ${T.border}`}}></td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right",color:T.navy}}>{fmt(totalPesoNeto)} kg</td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right"}}>{totalGlsGuia>0?fmt(totalGlsGuia)+" gls":""}</td>
-                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right",color:T.success}}>{totalGlsBascula>0?fmt(totalGlsBascula)+" gls":""}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right",color:T.success}}>{totalGlsDesc>0?fmt(totalGlsDesc)+" gls":""}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right",fontWeight:700,color:totalVarPct>0?T.success:totalVarPct<0?T.danger:T.muted}}>{totalVarPct!=null?(totalVarPct>0?"+":"")+totalVarPct.toFixed(2)+"%":""}</td>
                               </tr>
                             )}
                           </tbody>
