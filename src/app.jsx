@@ -1786,11 +1786,13 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       const pesoNeto = Number(carro.peso_neto||0) || Math.max(0, Number(carro.peso_ingreso||0)-Number(carro.peso_salida||0));
       const glsCalc = factor>0 && pesoNeto>0 ? Math.round(pesoNeto/factor) : "";
       const result = glsCalc ? {...carro, galones_bascula: glsCalc} : {...carro};
-      // Para MGO calcular y persistir galones_brutos
-      if (esMGOProducto(cmtProducto) && carro.api_lab && carro.temp_carro) {
+      // Para MGO calcular y persistir galones_brutos usando datos del tiquete de laboratorio
+      if (esMGOProducto(cmtProducto)) {
+        const apiLab  = Number(tq?.api_corregido||0);
+        const tempLab = Number(tq?.temp_observada||0);
+        const vcfTiq  = Number(tq?.factor_conversion||0) || calcVCF(apiLab, tempLab);
         const glsNetos = glsCalc || Number(carro.galones_descargados||0);
-        const brutos = calcGlsBrutos(glsNetos, carro.api_lab, carro.temp_carro);
-        if (brutos) result.galones_brutos = brutos;
+        if (vcfTiq && glsNetos) result.galones_brutos = Math.round(glsNetos / vcfTiq);
       }
       return result;
     });
@@ -3920,14 +3922,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                               const tqCr=tiquetes.find(x=>x.id===cr.tiquete);
                                               const fCr=Number(tqCr?.factor_tabla13||0), pnCr=Number(cr.peso_neto||0);
                                               const glsNetosCr=(fCr>0&&pnCr>0)?Math.round(pnCr/fCr):Number(cr.galones_descargados||0);
-                                              const brutos = cr.galones_brutos || calcGlsBrutos(glsNetosCr, cr.api_lab, cr.temp_carro);
-                                              const vcf = calcVCF(cr.api_lab, cr.temp_carro);
+                                              const apiLab  = Number(tqCr?.api_corregido||0);
+                                              const tempLab = Number(tqCr?.temp_observada||0);
+                                              const vcf = Number(tqCr?.factor_conversion||0) || calcVCF(apiLab, tempLab);
+                                              const brutos = cr.galones_brutos || ((vcf&&glsNetosCr)?Math.round(glsNetosCr/vcf):null);
                                               return brutos ? (
                                                 <div style={{marginTop:4,padding:"4px 6px",background:`${T.orange}15`,borderRadius:4,borderLeft:`2px solid ${T.orange}`}}>
                                                   <div style={{color:T.orange,fontWeight:700}}>Gls brutos: {fmt(brutos)}</div>
-                                                  {vcf&&<div style={{color:T.muted,fontSize:10}}>VCF: {vcf.toFixed(5)} · API: {cr.api_lab}° · T: {cr.temp_carro}°C</div>}
+                                                  {vcf&&<div style={{color:T.muted,fontSize:10}}>VCF: {Number(vcf).toFixed(5)} · API: {apiLab}° · T: {tempLab}°C</div>}
                                                 </div>
-                                              ) : (cr.api_lab||cr.temp_carro) ? <div style={{color:T.muted,fontSize:10}}>Gls brutos: datos incompletos</div> : null;
+                                              ) : null;
                                             })()}
                                             {cr.hora_inicio&&<div style={{color:T.muted}}>Inicio: {cr.hora_inicio} — Fin: {cr.hora_final||"—"}</div>}
                                           </div>
@@ -7801,25 +7805,31 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                     style={{width:"100%",background:T.card,border:`1.5px solid ${carro.pbs_id?T.orange:T.border}`,borderRadius:6,padding:"10px 12px",color:carro.pbs_id?T.orange:T.text,fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box",fontWeight:carro.pbs_id?700:400}}
                   /></div>
                 </div>
-                {/* ── Campos MGO: temperatura carro + API lab → galones brutos ── */}
-                {(()=>{ const esMGOp=(p)=>{const u=(p||"").toUpperCase();return u==="MGO"||u.includes("DIESEL");};
+                {/* ── MGO: galones brutos desde datos del tiquete de laboratorio ── */}
+                {(()=>{
+                  const esMGOp=(p)=>{const u=(p||"").toUpperCase();return u==="MGO"||u.includes("DIESEL");};
                   if (!esMGOp(cmtProducto)) return null;
                   const tq = tiquetes.find(t=>t.id===carro.tiquete);
                   const factor = Number(tq?.factor_tabla13||0);
                   const pesoNeto = Number(carro.peso_neto||0);
                   const glsNetos = (factor>0&&pesoNeto>0)?Math.round(pesoNeto/factor):Number(carro.galones_descargados||0);
-                  const glsBrutos = calcGlsBrutos(glsNetos, carro.api_lab, carro.temp_carro);
-                  const vcf = calcVCF(carro.api_lab, carro.temp_carro);
+                  // API y temperatura vienen del tiquete de laboratorio
+                  const apiLab  = Number(tq?.api_corregido||0);
+                  const tempLab = Number(tq?.temp_observada||0);
+                  // Usar factor_conversion del tiquete si existe, si no recalcular
+                  const vcf = Number(tq?.factor_conversion||0) || calcVCF(apiLab, tempLab);
+                  const glsBrutos = (vcf&&glsNetos) ? Math.round(glsNetos/vcf) : null;
+                  const sinDatos = !apiLab || !tempLab;
                   return (
                     <div style={{marginTop:8,padding:"10px 12px",background:`${T.orange}12`,border:`1px solid ${T.orange}44`,borderRadius:6}}>
                       <div style={{fontSize:10,fontWeight:700,color:T.orange,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>Conversión MGO — Galones Brutos (ASTM D1250)</div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,alignItems:"end"}}>
-                        <div><Lbl>Temp. Carro (°C)</Lbl><input type="number" step="0.1" placeholder="Ej: 35.5" value={carro.temp_carro||""} onChange={e=>{const n=[...cmtCarros];n[i].temp_carro=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
-                        <div><Lbl>API Laboratorio</Lbl><input type="number" step="0.1" placeholder="Ej: 33.2" value={carro.api_lab||""} onChange={e=>{const n=[...cmtCarros];n[i].api_lab=e.target.value;setCmtCarros(n);}} style={{width:"100%",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"10px 12px",color:T.text,fontSize:13,fontFamily:"system-ui,sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
-                        <div><Lbl>VCF</Lbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",fontSize:13,fontFamily:"monospace",color:vcf?T.navy:"#aab4be",fontWeight:700,minHeight:43,display:"flex",alignItems:"center"}}>{vcf?vcf.toFixed(5):"—"}</div></div>
+                        <div><Lbl>API (Tiquete Lab)</Lbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",fontSize:13,fontFamily:"monospace",color:apiLab?T.navy:"#aab4be",fontWeight:700,minHeight:43,display:"flex",alignItems:"center"}}>{apiLab||"—"}</div></div>
+                        <div><Lbl>Temp. Obs. °C (Lab)</Lbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",fontSize:13,fontFamily:"monospace",color:tempLab?T.navy:"#aab4be",fontWeight:700,minHeight:43,display:"flex",alignItems:"center"}}>{tempLab||"—"}</div></div>
+                        <div><Lbl>VCF</Lbl><div style={{background:"#e8edf2",border:`1px solid #c5cfd8`,borderRadius:6,padding:"10px 12px",fontSize:13,fontFamily:"monospace",color:vcf?T.navy:"#aab4be",fontWeight:700,minHeight:43,display:"flex",alignItems:"center"}}>{vcf?Number(vcf).toFixed(5):"—"}</div></div>
                         <div><Lbl>Gls Brutos</Lbl><div style={{background:`${T.orange}22`,border:`1.5px solid ${T.orange}88`,borderRadius:6,padding:"10px 12px",fontSize:13,fontFamily:"monospace",color:glsBrutos?T.orange:"#aab4be",fontWeight:700,minHeight:43,display:"flex",alignItems:"center"}}>{glsBrutos?fmt(glsBrutos):"—"}</div></div>
                       </div>
-                      {glsNetos>0&&!glsBrutos&&<div style={{fontSize:10,color:T.muted,marginTop:6}}>Ingresa Temperatura y API para calcular los galones brutos.</div>}
+                      {sinDatos&&<div style={{fontSize:10,color:T.muted,marginTop:6}}>⚠ El tiquete de laboratorio de este carro no tiene API ni temperatura registrados.</div>}
                     </div>
                   );
                 })()}
