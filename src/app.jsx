@@ -256,7 +256,7 @@ const calcGlsBrutos = (glsNetos, api, tempC) => {
 const getProductColor = (producto) => {
   if (!producto) return "#1a1a1a";
   const upperProd = String(producto).toUpperCase();
-  if (upperProd === "MGO" || upperProd === "DIESEL") return "#3b2200"; // Crudo claro/diesel: marrón oscuro ámbar
+  if (upperProd === "MGO" || upperProd.includes("DIESEL")) return "#0891b2"; // MGO/Diesel: azul turquesa
   if (upperProd === "VLSFO" || upperProd === "HSFO") return "#0d0800"; // Bunker pesado: negro-café
   return "#1a0d00"; // Materia prima cruda: marrón-negro
 };
@@ -4059,6 +4059,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const fillH  = cylH * Math.min(pct, 100) / 100;
               const fillTopY = botY - fillH;
               const fc = color || "#3d3d5c";
+              const esMGOTank = (producto||"").toUpperCase()==="MGO"||(producto||"").toUpperCase().includes("DIESEL");
+              // Tints del líquido: para MGO turquesa, para crudo ámbar oscuro
+              const liquidMidTint   = esMGOTank ? "#063f52" : "#3a1800";
+              const liquidHighlight = esMGOTank ? "#22d3ee" : "#5c3010";
 
               const domePath    = `M ${lx},${topY} Q ${lx+ew*0.08},${peakY+domeH*0.1} ${cx},${peakY} Q ${rx-ew*0.08},${peakY+domeH*0.1} ${rx},${topY} A ${ew/2},${eh/2} 0 0,1 ${lx},${topY} Z`;
               const domeOutline = `M ${lx},${topY} Q ${lx+ew*0.08},${peakY+domeH*0.1} ${cx},${peakY} Q ${rx-ew*0.08},${peakY+domeH*0.1} ${rx},${topY}`;
@@ -4104,19 +4108,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       <stop offset="100%" stopColor="#000000" stopOpacity="0.60"/>
                     </linearGradient>
 
-                    {/* Gradiente líquido horizontal: crudo viscoso opaco con curvatura 3D */}
+                    {/* Gradiente líquido horizontal: curvatura 3D adaptada al producto */}
                     <linearGradient id={`lg-${label}`} x1="0" y1="0" x2="1" y2="0">
                       <stop offset="0%"   stopColor="#000000" stopOpacity="0.70"/>
                       <stop offset="15%"  stopColor="#000000" stopOpacity="0.20"/>
-                      <stop offset="50%"  stopColor="#3a1800" stopOpacity="0.10"/>
+                      <stop offset="50%"  stopColor={liquidMidTint} stopOpacity="0.10"/>
                       <stop offset="75%"  stopColor="#000000" stopOpacity="0.25"/>
                       <stop offset="100%" stopColor="#000000" stopOpacity="0.75"/>
                     </linearGradient>
-                    {/* Superficie crudo: oscura con leve brillo ámbar-metálico, sin transparencia */}
+                    {/* Superficie líquido: brillo adaptado al producto */}
                     <radialGradient id={`ls-${label}`} cx="35%" cy="35%" r="65%">
-                      <stop offset="0%"   stopColor="#5c3010" stopOpacity="0.90"/>
-                      <stop offset="40%"  stopColor={fc}      stopOpacity="1.00"/>
-                      <stop offset="100%" stopColor="#000000" stopOpacity="1.00"/>
+                      <stop offset="0%"   stopColor={liquidHighlight} stopOpacity="0.90"/>
+                      <stop offset="40%"  stopColor={fc}              stopOpacity="1.00"/>
+                      <stop offset="100%" stopColor="#000000"          stopOpacity="1.00"/>
                     </radialGradient>
 
                     {/* Gradiente domo */}
