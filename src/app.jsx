@@ -4721,16 +4721,14 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const libre  = Math.max(0, capOp3(t) - nivel);
               const editando = tankProdEdit?.id === id;
               const label  = id.replace("QBS003-","");
-              const esMGOQ3 = (t.producto||"").toUpperCase()==="MGO"||(t.producto||"").toUpperCase().includes("DIESEL");
-              const bgTank  = esMGOQ3 ? "#b3e8f0" : "#c8d6e5";
-              const brdTank = esMGOQ3 ? "#0891b2" : "#7a9dbf";
+              const prodColor3 = color && color !== "#1a1a1a" ? color : undefined;
               return (
                 <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, flex:1, minWidth:0 }}>
                   <div
                     title={`${label} · ${t.producto||"sin producto"} · ${fmt(nivel)} gls`}
                     onDoubleClick={() => setTankProdEdit({ id, val: t.producto||"" })}
                     style={{ width:"100%", height:140, position:"relative", cursor:"pointer",
-                      background:bgTank, border:`2px solid ${brdTank}`,
+                      background:"#c8d6e5", border:"2px solid #7a9dbf",
                       borderRadius:"6px 6px 4px 4px", overflow:"hidden",
                       boxShadow:"inset 0 2px 6px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.15)" }}>
                     <div style={{ position:"absolute", bottom:0, left:0, right:0,
@@ -4755,9 +4753,11 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                             textTransform:"uppercase", outline:"none", textAlign:"center" }}/>
                       ) : (
                         <span style={{ fontSize:9, fontWeight:800,
-                          color: (t.producto && t.producto!=="—") ? "#fff" : "rgba(255,255,255,0.45)",
+                          color: prodColor3 || (t.producto && t.producto!=="—" ? "#fff" : "rgba(255,255,255,0.45)"),
                           textShadow:"0 1px 3px rgba(0,0,0,0.8)", letterSpacing:0.5,
-                          display:"block", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                          display:"block", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                          background: prodColor3 ? `${prodColor3}33` : "transparent",
+                          borderRadius:3, padding:"0 3px" }}>
                           {t.producto && t.producto !== "—" ? t.producto : "—"}
                         </span>
                       )}
