@@ -6650,7 +6650,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         }} style={{padding:"4px 12px",fontSize:11,fontWeight:700,cursor:"pointer",border:"none",outline:"none",
                           background:current===fam?(fam==="negro"?T.navy:"#0891b2"):T.card,
                           color:current===fam?"#fff":T.muted,transition:"background 0.15s"}}>
-                          {fam==="negro"?"⬛ negro":"🩵 MGO"}
+                          {fam==="negro"
+                            ? <><span style={{display:"inline-block",width:10,height:10,background:"#1e3a5f",borderRadius:2,marginRight:4,verticalAlign:"middle"}}/>negro</>
+                            : <><span style={{display:"inline-block",width:10,height:10,background:"#0891b2",borderRadius:2,marginRight:4,verticalAlign:"middle"}}/>MGO</>
+                          }
                         </button>
                       ))}
                     </div>
