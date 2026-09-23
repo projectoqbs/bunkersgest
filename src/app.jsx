@@ -4721,13 +4721,16 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               const libre  = Math.max(0, capOp3(t) - nivel);
               const editando = tankProdEdit?.id === id;
               const label  = id.replace("QBS003-","");
+              const esMGOQ3 = (t.producto||"").toUpperCase()==="MGO"||(t.producto||"").toUpperCase().includes("DIESEL");
+              const bgTank  = esMGOQ3 ? "#b3e8f0" : "#c8d6e5";
+              const brdTank = esMGOQ3 ? "#0891b2" : "#7a9dbf";
               return (
                 <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, flex:1, minWidth:0 }}>
                   <div
                     title={`${label} · ${t.producto||"sin producto"} · ${fmt(nivel)} gls`}
                     onDoubleClick={() => setTankProdEdit({ id, val: t.producto||"" })}
                     style={{ width:"100%", height:140, position:"relative", cursor:"pointer",
-                      background:"#c8d6e5", border:"2px solid #7a9dbf",
+                      background:bgTank, border:`2px solid ${brdTank}`,
                       borderRadius:"6px 6px 4px 4px", overflow:"hidden",
                       boxShadow:"inset 0 2px 6px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.15)" }}>
                     <div style={{ position:"absolute", bottom:0, left:0, right:0,
@@ -6623,24 +6626,33 @@ const puedeEditar = (modulo, creado_por, created_at) => {
               <div style={{fontWeight:800,fontSize:16,color:T.navy,display:"flex",alignItems:"center",gap:8}}><Wrench size={16}/>Asignación de Tanques por Familia</div>
               <button onClick={()=>setModalTankAdmin(false)} style={{background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:20,lineHeight:1}}>×</button>
             </div>
-            <div style={{fontSize:11,color:T.muted,marginBottom:16}}>Define si cada tanque almacena producto Negro o Blanco (MGO/Diesel). Esta configuración se guarda localmente.</div>
+            <div style={{fontSize:11,color:T.muted,marginBottom:16}}>Define si cada tanque almacena producto Negro (VLSFO) o Blanco (MGO). Actualiza el producto en el sistema.</div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {[...tanques].sort((a,b)=>a.id.localeCompare(b.id)).map(t=>{
-                const current = tankFamilias[t.id] || ((() => { const u=(t.producto||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL")||u==="NACIONAL"||u==="INTERNACIONAL" ? "blanco" : "negro"; })());
+                const u=(t.producto||"").toUpperCase();
+                const esBlancoActual = u.includes("MGO")||u.includes("DIESEL")||u.includes("DISEL")||u==="NACIONAL"||u==="INTERNACIONAL";
+                const current = esBlancoActual ? "blanco" : "negro";
                 return (
                   <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:T.bg,borderRadius:8,border:`1px solid ${T.border}`}}>
                     <span style={{fontWeight:700,color:T.navy,width:90,flexShrink:0,fontSize:12}}>{t.id}</span>
                     <span style={{flex:1,fontSize:11,color:T.muted}}>{t.producto||"Sin producto"} · {((t.nivel||0)/1000).toFixed(1)}k / {((t.capacidad||0)/1000).toFixed(1)}k gls</span>
                     <div style={{display:"flex",gap:0,borderRadius:6,overflow:"hidden",border:`1px solid ${T.border}`}}>
                       {["negro","blanco"].map(fam=>(
-                        <button key={fam} onClick={()=>{
-                          const nuevo = {...tankFamilias, [t.id]:fam};
-                          setTankFamilias(nuevo);
-                          localStorage.setItem("tankFamilias", JSON.stringify(nuevo));
+                        <button key={fam} onClick={async ()=>{
+                          const prodNuevo = fam==="blanco" ? "MGO" : "VLSFO";
+                          const existente = tanques.find(tk=>tk.id===t.id);
+                          const data = { id:t.id, producto: prodNuevo, nivel: existente?.nivel??0, capacidad: existente?.capacidad??40000 };
+                          const { error } = await supabase.from("tanques").upsert(data, {onConflict:"id"});
+                          if (!error) {
+                            setTanques(prev => prev.map(tk => tk.id===t.id ? {...tk, producto: prodNuevo} : tk));
+                            const nuevo = {...tankFamilias, [t.id]:fam};
+                            setTankFamilias(nuevo);
+                            localStorage.setItem("tankFamilias", JSON.stringify(nuevo));
+                          } else { showToast("Error al guardar producto", false); }
                         }} style={{padding:"4px 12px",fontSize:11,fontWeight:700,cursor:"pointer",border:"none",outline:"none",
-                          background:current===fam?(fam==="negro"?T.navy:"#38bdf8"):T.card,
+                          background:current===fam?(fam==="negro"?T.navy:"#0891b2"):T.card,
                           color:current===fam?"#fff":T.muted,transition:"background 0.15s"}}>
-                          {fam==="negro"?"⬛":"⬜"} {fam}
+                          {fam==="negro"?"⬛ negro":"🩵 MGO"}
                         </button>
                       ))}
                     </div>
