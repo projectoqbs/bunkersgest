@@ -6640,9 +6640,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       {["negro","blanco"].map(fam=>(
                         <button key={fam} onClick={async ()=>{
                           const prodNuevo = fam==="blanco" ? "MGO" : "VLSFO";
-                          const existente = tanques.find(tk=>tk.id===t.id);
-                          const data = { id:t.id, producto: prodNuevo, nivel: existente?.nivel??0, capacidad: existente?.capacidad??40000 };
-                          const { error } = await supabase.from("tanques").upsert(data, {onConflict:"id"});
+                          const { error } = await supabase.from("tanques").update({producto: prodNuevo}).eq("id", t.id);
                           if (!error) {
                             setTanques(prev => prev.map(tk => tk.id===t.id ? {...tk, producto: prodNuevo} : tk));
                             const nuevo = {...tankFamilias, [t.id]:fam};
