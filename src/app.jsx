@@ -173,6 +173,7 @@ const NAV_META = {
   usuarios:      { label:"Usuarios",      icon:"👥" },
   programacion:  { label:"Programación",  icon:"📅" },
   liquidador_p1:     { label:"Liquidador Planta 1", icon:"🔢" },
+  resetear:          { label:"Resetear Sistema",    icon:"⚠️" },
   liquidador:        { label:"Liq. QBS002",         icon:"🔢" },
   liquidador_qbs003: { label:"Liq. QBS003",         icon:"🔢" },
   liquidador_p2:     { label:"Liq. Planta 2",       icon:"🔢" },
@@ -198,6 +199,7 @@ const NAV_ROL = {
     "tanques",
     "liquidador_p1",
     "auditoria",
+    "resetear",
   ],
 };
 
@@ -8391,6 +8393,187 @@ const puedeEditar = (modulo, creado_por, created_at) => {
   );
 })()}
 
+
+{/* ═══ RESETEAR SISTEMA ═══ */}
+{nav==="resetear" && perfil?.rol==="administrador" && (()=>{
+  const TABLAS_BORRAR = [
+    { id:"cmts",                  label:"CMTs (descargues y porteos)" },
+    { id:"viajes",                label:"Viajes / Carros en tránsito" },
+    { id:"tiquetes",              label:"Tiquetes de laboratorio" },
+    { id:"pbs",                   label:"PBS (permisos de trabajo)" },
+    { id:"ordenes_trabajo",       label:"Órdenes de trabajo" },
+    { id:"despachos",             label:"Despachos" },
+    { id:"programaciones",        label:"Programaciones" },
+    { id:"formulaciones",         label:"Formulaciones" },
+    { id:"liquidaciones_qbs002",  label:"Liquidaciones QBS002" },
+  ];
+  const [resetFase, setResetFase]   = React.useState("idle"); // idle | confirm1 | confirm2 | running | done | error
+  const [resetTexto, setResetTexto] = React.useState("");
+  const [resetLog,   setResetLog]   = React.useState([]);
+  const [resetError, setResetError] = React.useState("");
+
+  const ejecutarReset = async () => {
+    setResetFase("running");
+    const log = [];
+    let hayError = false;
+
+    for (const t of TABLAS_BORRAR) {
+      const { error, count } = await supabase.from(t.id).delete({ count:"exact" }).gte("created_at","2000-01-01");
+      if (error) {
+        log.push({ label: t.label, ok: false, msg: error.message });
+        hayError = true;
+      } else {
+        log.push({ label: t.label, ok: true, count });
+      }
+    }
+
+    // Resetear niveles de tanques a 0
+    const { error: errTk } = await supabase.from("tanques").update({ nivel: 0 }).gte("id","");
+    log.push({ label:"Niveles de tanques → 0", ok: !errTk, msg: errTk?.message });
+    if (errTk) hayError = true;
+
+    setResetLog(log);
+    if (!hayError) {
+      // Refrescar estado local
+      setCmts([]); setViajes([]); setTiquetes([]); setPbsList([]);
+      setOrdenesTrabajo([]); setDespachos([]); setProgramaciones([]);
+      setFormulaciones([]); setLiquidacionesQbs([]);
+      setTanques(prev => prev.map(t => ({...t, nivel:0})));
+      setResetFase("done");
+    } else {
+      setResetFase("error");
+    }
+  };
+
+  return (
+  <div style={{ maxWidth:680 }}>
+    <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:6 }}>
+      <div style={{ fontSize:32 }}>⚠️</div>
+      <div>
+        <div style={{ fontWeight:900, fontSize:22, color:"#dc2626" }}>Resetear Sistema</div>
+        <div style={{ fontSize:12, color:T.muted }}>Solo disponible para el Administrador · Acción irreversible</div>
+      </div>
+    </div>
+
+    {resetFase==="idle" && (
+      <div style={{ background:"#fef2f2", border:"2px solid #dc2626", borderRadius:12, padding:24, marginTop:20 }}>
+        <div style={{ fontWeight:700, fontSize:14, color:"#dc2626", marginBottom:12 }}>Esta acción eliminará permanentemente:</div>
+        <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:20 }}>
+          {TABLAS_BORRAR.map(t => (
+            <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, color:"#7f1d1d" }}>
+              <span style={{ color:"#dc2626", fontWeight:700 }}>✕</span> {t.label}
+            </div>
+          ))}
+          <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, color:"#7f1d1d", borderTop:"1px solid #fca5a5", paddingTop:8, marginTop:4 }}>
+            <span style={{ color:"#f97316", fontWeight:700 }}>↺</span> Niveles de todos los tanques → 0 gls
+          </div>
+        </div>
+        <div style={{ background:"#fff", borderRadius:8, padding:16, border:"1px solid #fca5a5", marginBottom:16 }}>
+          <div style={{ fontSize:12, color:"#7f1d1d", fontWeight:600, marginBottom:4 }}>Se CONSERVARÁ:</div>
+          {["Configuración de tanques (producto asignado, capacidades)","Usuarios y perfiles","Permisos por rol"].map(l=>(
+            <div key={l} style={{ fontSize:12, color:"#15803d", display:"flex", gap:6 }}><span>✓</span>{l}</div>
+          ))}
+        </div>
+        <button onClick={()=>setResetFase("confirm1")}
+          style={{ background:"#dc2626", color:"#fff", border:"none", borderRadius:8, padding:"12px 28px", fontWeight:800, fontSize:14, cursor:"pointer", width:"100%" }}>
+          Continuar con el reseteo →
+        </button>
+      </div>
+    )}
+
+    {resetFase==="confirm1" && (
+      <div style={{ background:"#fef2f2", border:"2px solid #dc2626", borderRadius:12, padding:24, marginTop:20 }}>
+        <div style={{ fontWeight:800, fontSize:16, color:"#dc2626", marginBottom:16, textAlign:"center" }}>
+          ¿Está absolutamente seguro?
+        </div>
+        <div style={{ fontSize:13, color:"#7f1d1d", marginBottom:20, textAlign:"center" }}>
+          Esta acción <b>no se puede deshacer</b>. Todos los registros operativos serán eliminados de forma permanente.
+        </div>
+        <div style={{ display:"flex", gap:12 }}>
+          <button onClick={()=>setResetFase("idle")}
+            style={{ flex:1, background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"11px 0", fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            Cancelar
+          </button>
+          <button onClick={()=>setResetFase("confirm2")}
+            style={{ flex:1, background:"#dc2626", color:"#fff", border:"none", borderRadius:8, padding:"11px 0", fontWeight:800, fontSize:13, cursor:"pointer" }}>
+            Sí, proceder
+          </button>
+        </div>
+      </div>
+    )}
+
+    {resetFase==="confirm2" && (
+      <div style={{ background:"#fef2f2", border:"2px solid #dc2626", borderRadius:12, padding:24, marginTop:20 }}>
+        <div style={{ fontWeight:800, fontSize:15, color:"#dc2626", marginBottom:12, textAlign:"center" }}>
+          Confirmación final
+        </div>
+        <div style={{ fontSize:13, color:"#7f1d1d", marginBottom:16, textAlign:"center" }}>
+          Escriba <b style={{fontFamily:"monospace",background:"#fee2e2",padding:"2px 8px",borderRadius:4}}>RESETEAR</b> para confirmar
+        </div>
+        <input
+          value={resetTexto}
+          onChange={e=>setResetTexto(e.target.value)}
+          placeholder="Escriba RESETEAR"
+          style={{ width:"100%", boxSizing:"border-box", textAlign:"center", fontFamily:"monospace", fontWeight:800,
+            fontSize:16, padding:"12px", borderRadius:8, border:`2px solid ${resetTexto==="RESETEAR"?"#dc2626":"#fca5a5"}`,
+            background:"#fff", color:"#dc2626", outline:"none", marginBottom:16 }}/>
+        <div style={{ display:"flex", gap:12 }}>
+          <button onClick={()=>{setResetFase("idle");setResetTexto("");}}
+            style={{ flex:1, background:T.card, color:T.text, border:`1px solid ${T.border}`, borderRadius:8, padding:"11px 0", fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            Cancelar
+          </button>
+          <button onClick={ejecutarReset} disabled={resetTexto!=="RESETEAR"}
+            style={{ flex:1, background:resetTexto==="RESETEAR"?"#dc2626":"#fca5a5", color:"#fff", border:"none",
+              borderRadius:8, padding:"11px 0", fontWeight:800, fontSize:13,
+              cursor:resetTexto==="RESETEAR"?"pointer":"not-allowed", transition:"background 0.2s" }}>
+            Ejecutar Reseteo
+          </button>
+        </div>
+      </div>
+    )}
+
+    {resetFase==="running" && (
+      <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:32, marginTop:20, textAlign:"center" }}>
+        <div style={{ fontSize:36, marginBottom:12 }}>⏳</div>
+        <div style={{ fontWeight:700, fontSize:16, color:T.navy }}>Ejecutando reseteo...</div>
+        <div style={{ fontSize:12, color:T.muted, marginTop:6 }}>Por favor espere, no cierre esta ventana</div>
+      </div>
+    )}
+
+    {(resetFase==="done"||resetFase==="error") && (
+      <div style={{ background: resetFase==="done"?"#f0fdf4":"#fef2f2",
+        border:`2px solid ${resetFase==="done"?"#16a34a":"#dc2626"}`,
+        borderRadius:12, padding:24, marginTop:20 }}>
+        <div style={{ fontWeight:800, fontSize:18, color:resetFase==="done"?"#15803d":"#dc2626", textAlign:"center", marginBottom:16 }}>
+          {resetFase==="done"?"✅ Reseteo completado":"❌ Reseteo con errores"}
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:20 }}>
+          {resetLog.map((l,i)=>(
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:10, fontSize:12,
+              color:l.ok?"#15803d":"#dc2626", background:l.ok?"#dcfce7":"#fee2e2",
+              borderRadius:6, padding:"6px 12px" }}>
+              <span style={{ fontWeight:800 }}>{l.ok?"✓":"✕"}</span>
+              <span style={{ flex:1 }}>{l.label}</span>
+              {l.count!=null && <span style={{ fontFamily:"monospace", color:"#6b7280" }}>{l.count} registros</span>}
+              {l.msg && <span style={{ color:"#dc2626", fontSize:11 }}>{l.msg}</span>}
+            </div>
+          ))}
+        </div>
+        {resetFase==="done" && (
+          <div style={{ textAlign:"center", fontSize:13, color:"#15803d", fontWeight:700 }}>
+            El sistema está listo para el lanzamiento. Ingrese las medidas de sonda iniciales en cada tanque.
+          </div>
+        )}
+        <button onClick={()=>{setResetFase("idle");setResetTexto("");setResetLog([]);}}
+          style={{ marginTop:16, display:"block", width:"100%", background:T.navy, color:"#fff",
+            border:"none", borderRadius:8, padding:"10px 0", fontWeight:700, fontSize:13, cursor:"pointer" }}>
+          Cerrar
+        </button>
+      </div>
+    )}
+  </div>
+  );
+})()}
 
 {/* INVENTARIO DIARIO */}
 {nav==="inventario_diario" && (
