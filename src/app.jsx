@@ -458,6 +458,9 @@ export default function App() {
   const [otModal, setOtModal] = useState(null); // null | {step:1|2|3, trasiegos, formulacionId, recircHoras}
   const [otEditando, setOtEditando] = useState(null); // {otId, trasiegos:[...]} cuando el coordinador edita una OT
   const [auditLogs, setAuditLogs] = useState([]);
+  const [resetFase,   setResetFase]   = useState("idle");
+  const [resetTexto,  setResetTexto]  = useState("");
+  const [resetLog,    setResetLog]    = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditFiltro, setAuditFiltro] = useState({ tabla:"", accion:"", usuario:"" });
   const [recircDates, setRecircDates] = useState({}); // {[otId]: {inicio, fin}}
@@ -8407,10 +8410,6 @@ const puedeEditar = (modulo, creado_por, created_at) => {
     { id:"formulaciones",         label:"Formulaciones" },
     { id:"liquidaciones_qbs002",  label:"Liquidaciones QBS002" },
   ];
-  const [resetFase, setResetFase]   = React.useState("idle"); // idle | confirm1 | confirm2 | running | done | error
-  const [resetTexto, setResetTexto] = React.useState("");
-  const [resetLog,   setResetLog]   = React.useState([]);
-  const [resetError, setResetError] = React.useState("");
 
   const ejecutarReset = async () => {
     setResetFase("running");
