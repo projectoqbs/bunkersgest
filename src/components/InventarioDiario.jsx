@@ -1,5 +1,5 @@
 ﻿// InventarioDiario.jsx
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, ReferenceLine, Cell
@@ -117,6 +117,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   const [tanqueSeleccionado, setTanqueSeleccionado] = useState("");
 
   // Balance diario
+  const [balanceFamilia, setBalanceFamilia]   = useState(()=>localStorage.getItem("inv_balanceFamilia")||"todo");
   const [balancePlanta, setBalancePlanta]     = useState(()=>localStorage.getItem("inv_balancePlanta")||"P1");
   const [balanceDesde,  setBalanceDesde]      = useState(()=>localStorage.getItem("inv_balanceDesde")||(()=>{ const d=new Date(); d.setDate(1); return d.toISOString().split("T")[0]; })());
   const [balanceHasta,  setBalanceHasta]      = useState(()=>localStorage.getItem("inv_balanceHasta")||new Date().toISOString().split("T")[0]);
@@ -135,6 +136,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   useEffect(()=>{ localStorage.setItem("inv_activeTab", activeTab); }, [activeTab]);
   useEffect(()=>{ localStorage.setItem("inv_balanceTanqueId", balanceTanqueId); }, [balanceTanqueId]);
   useEffect(()=>{ localStorage.setItem("inv_balancePlanta", balancePlanta); }, [balancePlanta]);
+  useEffect(()=>{ localStorage.setItem("inv_balanceFamilia", balanceFamilia); }, [balanceFamilia]);
   useEffect(()=>{ localStorage.setItem("inv_balanceDesde", balanceDesde); }, [balanceDesde]);
   useEffect(()=>{ localStorage.setItem("inv_balanceHasta", balanceHasta); }, [balanceHasta]);
 
@@ -421,11 +423,20 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
   }
 
   // ── Balance Diario ───────────────────────────────────────────────────────────
+  const isProdBlanco = p => { const u=(p||"").toUpperCase(); return u.includes("MGO")||u.includes("DIESEL"); };
+  const getTankFamilia = tqId => {
+    const tk = (tanques||[]).find(t=>t.id===tqId);
+    return isProdBlanco(tk?.producto) ? "blanco" : "negro";
+  };
+
   function renderBalance(){
     const plantaLabel = balancePlanta==="P1" ? "PLANTA 1" : "PLANTA 2";
-    const tanquesPlanta = balancePlanta==="P1"
+    const tanquesPlantaTodos = balancePlanta==="P1"
       ? [...TANQUES_BARCAZA.map(t=>`QBS002-${t}`), ...TANQUES_TKT]
       : TANQUES_P2;
+    const tanquesPlanta = balanceFamilia==="todo"
+      ? tanquesPlantaTodos
+      : tanquesPlantaTodos.filter(tq=>getTankFamilia(tq)===balanceFamilia);
 
     // ── Inventario teórico: reconstruir nivel por tanque día a día desde CMTs ──
     // 1. Todos los inventarios físicos históricos de esta planta
@@ -564,6 +575,16 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                 <button key={k} onClick={()=>setBalancePlanta(k)}
                   style={{padding:"7px 20px",fontWeight:700,fontSize:12,cursor:"pointer",
                     background:balancePlanta===k?TH.navy:TH.card,color:balancePlanta===k?"#fff":TH.muted,border:"none"}}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:0,borderRadius:8,overflow:"hidden",border:`1px solid ${TH.border}`}}>
+              {[{k:"todo",l:"Todos"},{k:"negro",l:"⬛ Negro"},{k:"blanco",l:"🟦 Blanco (MGO)"}].map(({k,l})=>(
+                <button key={k} onClick={()=>setBalanceFamilia(k)}
+                  style={{padding:"7px 16px",fontWeight:700,fontSize:12,cursor:"pointer",
+                    background:balanceFamilia===k?(k==="blanco"?"#0891b2":k==="negro"?"#334155":TH.navy):TH.card,
+                    color:balanceFamilia===k?"#fff":TH.muted,border:"none"}}>
                   {l}
                 </button>
               ))}
@@ -711,6 +732,37 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                     </tr>
                   );
                 })}
+                {/* Filas de subtotal por familia */}
+                {balanceFamilia==="todo" && (()=>{
+                  const famGrupos = [
+                    {fam:"negro", label:"⬛ NEGRO", bg:"#f5f5f5", col:"#334155"},
+                    {fam:"blanco", label:"🟦 BLANCO (MGO)", bg:"#e0f7ff", col:"#0891b2"},
+                  ];
+                  return famGrupos.map(({fam,label,bg,col})=>{
+                    const tqsFam = tanquesPlanta.filter(tq=>getTankFamilia(tq)===fam);
+                    if(tqsFam.length===0) return null;
+                    return(
+                      <tr key={fam} style={{background:bg}}>
+                        <td style={{padding:"8px 16px",fontWeight:800,color:col,fontSize:11,
+                          position:"sticky",left:0,background:bg,zIndex:1,
+                          borderRight:`2px solid ${TH.border}`,whiteSpace:"nowrap"}}>
+                          {label}
+                        </td>
+                        {fechas.map(f=>{
+                          const total = tqsFam.reduce((s,tq)=>s+(matrix[tq]?.[f]?.gls||0),0);
+                          const esTeorico = tqsFam.some(tq=>matrix[tq]?.[f]?.fuente==="teorico");
+                          return(
+                            <td key={f} style={{padding:"8px 14px",textAlign:"right",borderLeft:`1px solid ${TH.border}`,background:bg}}>
+                              <span style={{fontFamily:"monospace",fontWeight:800,fontSize:12,color:esTeorico?"#6C5CE7":col,fontStyle:esTeorico?"italic":"normal"}}>
+                                {total>0?fmtN(total,0):"—"}
+                              </span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  });
+                })()}
                 {/* Fila total por fecha */}
                 <tr style={{background:"#eaf0f8",borderTop:`2px solid ${TH.navy}`}}>
                   <td style={{padding:"10px 16px",fontWeight:900,color:TH.navy,fontSize:12,
@@ -1029,8 +1081,21 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
               const di=difInfo(glsCalc,f.id);
               const isOk=di&&Math.abs(di.pct||0)<=TOLERANCIA_PCT;
               const rowBg=i%2===0?TH.card:"#f8fafc";
+              const famActual = getTankFamilia(f.id);
+              const famAnterior = i>0 ? getTankFamilia(filasP1[i-1].id) : null;
+              const mostrarSeparador = i===0 || (famAnterior !== null && famActual !== famAnterior);
               return(
-                <tr key={f.id} style={{background:rowBg}}>
+                <React.Fragment key={f.id}>
+                {mostrarSeparador && (
+                  <tr>
+                    <td colSpan={8} style={{padding:"6px 10px",background:famActual==="blanco"?"#e0f7ff":"#f0f0f0",
+                      fontWeight:800,fontSize:10,color:famActual==="blanco"?"#0891b2":"#334155",
+                      textTransform:"uppercase",letterSpacing:1,borderBottom:`1px solid ${TH.border}`}}>
+                      {famActual==="blanco"?"🟦 Producto Blanco (MGO)":"⬛ Producto Negro (VLSFO / Materia Prima)"}
+                    </td>
+                  </tr>
+                )}
+                <tr style={{background:rowBg}}>
                   <td style={{padding:"6px 10px",fontWeight:700,color:TH.navy,borderBottom:`1px solid ${TH.border}`}}>
                     {f.label}
                     {f.tipo==="tkt"&&<span style={{fontSize:9,color:TH.muted,marginLeft:6}}>TIERRA</span>}
@@ -1058,6 +1123,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                      :<span style={{color:TH.warn,fontWeight:700,fontSize:11}}>↑ SOBRANTE</span>}
                   </td>
                 </tr>
+                </React.Fragment>
               );
             })}
           </tbody>
@@ -1085,8 +1151,21 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             const di=difInfo(glsCalc,f.id);
             const isOk=di&&Math.abs(di.pct||0)<=TOLERANCIA_PCT;
             const rowBg=i%2===0?TH.card:"#f8fafc";
+            const famActual2 = getTankFamilia(f.id);
+            const famAnterior2 = i>0 ? getTankFamilia(filasP2[i-1].id) : null;
+            const mostrarSep2 = i===0 || (famAnterior2 !== null && famActual2 !== famAnterior2);
             return(
-              <tr key={f.id} style={{background:rowBg}}>
+              <React.Fragment key={f.id}>
+              {mostrarSep2 && (
+                <tr>
+                  <td colSpan={7} style={{padding:"6px 10px",background:famActual2==="blanco"?"#e0f7ff":"#f0f0f0",
+                    fontWeight:800,fontSize:10,color:famActual2==="blanco"?"#0891b2":"#334155",
+                    textTransform:"uppercase",letterSpacing:1,borderBottom:`1px solid ${TH.border}`}}>
+                    {famActual2==="blanco"?"🟦 Producto Blanco (MGO)":"⬛ Producto Negro (VLSFO / Materia Prima)"}
+                  </td>
+                </tr>
+              )}
+              <tr style={{background:rowBg}}>
                 <td style={{padding:"6px 10px",fontWeight:700,color:TH.navy,borderBottom:`1px solid ${TH.border}`}}>{f.label}</td>
                 <td style={{padding:"4px 6px",borderBottom:`1px solid ${TH.border}`,width:130}}>
                   <NumInput value={f.galones} onChange={e=>{const v=e.target.value;setFilasP2(p=>p.map((r,j)=>j===i?{...r,galones:v}:r));}}/>
@@ -1111,6 +1190,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                    :<span style={{color:TH.warn,fontWeight:700,fontSize:11}}>↑ SOBRANTE</span>}
                 </td>
               </tr>
+              </React.Fragment>
             );
           })}
         </tbody>
