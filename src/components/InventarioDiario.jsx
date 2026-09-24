@@ -651,6 +651,11 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
         {/* ── Matriz inventario físico ── */}
         {loadingBalance ? (
           <div style={{color:TH.muted,padding:24,textAlign:"center"}}>Cargando inventarios...</div>
+        ) : tanquesPlanta.length === 0 ? (
+          <div style={{padding:"24px 0",textAlign:"center",color:TH.muted,fontSize:14}}>
+            No hay tanques de Producto {balanceFamilia==="blanco"?"Blanco (MGO)":"Negro"} asignados en {plantaLabel}.<br/>
+            <span style={{fontSize:12}}>Asigna el producto a los tanques desde el Dashboard.</span>
+          </div>
         ) : fechas.length === 0 ? (
           <div style={{padding:"24px 0",textAlign:"center",color:TH.muted,fontSize:14}}>
             Sin inventarios ni CMTs registrados para {plantaLabel} en el período seleccionado
@@ -938,7 +943,9 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
 
           if(todosLosIds.length===0) return (
             <div style={{padding:"24px 0",textAlign:"center",color:TH.muted,fontSize:13}}>
-              Sin datos de inventario ni CMTs para el período en {plantaLabel}
+              {balanceFamilia!=="todo"
+                ? `No hay tanques de Producto ${balanceFamilia==="blanco"?"Blanco (MGO)":"Negro"} en ${plantaLabel}`
+                : `Sin datos de inventario ni CMTs para el período en ${plantaLabel}`}
             </div>
           );
 
