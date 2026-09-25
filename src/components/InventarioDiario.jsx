@@ -880,6 +880,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             const esPorteo=tipoOp==="PORTEO";
 
             if(esDescargue){
+              // scaleTotal = suma galones_bascula por carro (peso neto / F13) — medida real de báscula
               const scaleTotal=(c.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
               const guiaTotal=(c.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_guia)||0),0);
               const tankEntradas=[];
@@ -891,22 +892,23 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                 if(d>0) tankEntradas.push({tq:ta.tanque,gls:d});
                 else if(d<0) addMov(ta.tanque,-d,'salBarcaza');
               });
+              // Med. Barcaza = diferencia de sonda por tanque (independiente de báscula)
+              tankEntradas.forEach(({tq,gls})=>addMov(tq,gls,'barcaza'));
               if(scaleTotal>0 && tankEntradas.length>0){
-                let acum=0;
+                // Báscula = scaleTotal distribuido proporcional a la sonde diff de cada tanque
+                const totalSonde=tankEntradas.reduce((s,x)=>s+x.gls,0);
+                let acumB=0;
                 for(let i=0;i<tankEntradas.length-1;i++){
-                  addMov(tankEntradas[i].tq,tankEntradas[i].gls,'bascula');
-                  addMov(tankEntradas[i].tq,tankEntradas[i].gls,'barcaza');
-                  acum+=tankEntradas[i].gls;
+                  const b=totalSonde>0?Math.round(scaleTotal*tankEntradas[i].gls/totalSonde):0;
+                  addMov(tankEntradas[i].tq,b,'bascula');
+                  acumB+=b;
                 }
-                const ultimo=tankEntradas[tankEntradas.length-1];
-                const ajuste=Math.max(0,scaleTotal-acum);
-                addMov(ultimo.tq,ajuste,'bascula');
-                addMov(ultimo.tq,ultimo.gls,'barcaza');
+                addMov(tankEntradas[tankEntradas.length-1].tq,Math.max(0,scaleTotal-acumB),'bascula');
                 // Guía distribuida proporcional a báscula
-                const withBasc=tankEntradas.map((x,i)=>({tq:x.tq,basc:i<tankEntradas.length-1?x.gls:ajuste}));
-                distribuirGuia(withBasc,guiaTotal,scaleTotal);
-              } else {
-                tankEntradas.forEach(({tq,gls})=>{ addMov(tq,gls,'bascula'); addMov(tq,gls,'barcaza'); });
+                const withBasc=tankEntradas.map(x=>({tq:x.tq,basc:x.gls}));
+                distribuirGuia(withBasc,guiaTotal,totalSonde);
+              } else if(tankEntradas.length>0){
+                // Sin báscula de carros: guía distribuida por sonde diff
                 const withBasc=tankEntradas.map(x=>({tq:x.tq,basc:x.gls}));
                 distribuirGuia(withBasc,guiaTotal,tankEntradas.reduce((s,x)=>s+x.gls,0));
               }
