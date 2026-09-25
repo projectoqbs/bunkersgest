@@ -1087,7 +1087,6 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                   </tbody>
                 </table>
               </div>
-              )}
               {Object.keys(invFinalPorTanque).length===0 && (
                 <div style={{marginTop:10,fontSize:11,color:TH.muted,textAlign:"center"}}>
                   Sin inventario registrado al final del período — registra un inventario para ver la variación real
