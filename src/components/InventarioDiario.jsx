@@ -860,7 +860,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           // tipo: 'guia' | 'bascula' | 'barcaza' | 'porteo' | 'salida'
           const addMov = (tq,gls,tipo)=>{
             if(!tq||gls<=0) return;
-            if(!movsPorTanque[tq]) movsPorTanque[tq]={guia:0,bascula:0,barcaza:0,porteo:0,salidas:0};
+            if(!movsPorTanque[tq]) movsPorTanque[tq]={guia:0,bascula:0,barcaza:0,porteo:0,trasiego:0,salidas:0};
             if(tipo==='salida') movsPorTanque[tq].salidas+=gls;
             else movsPorTanque[tq][tipo]=(movsPorTanque[tq][tipo]||0)+gls;
           };
@@ -935,18 +935,19 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                 if(d>0) addMov(tc.tanque,d,'salida');
               });
             } else {
+              // TRASIEGO / otros: movimientos internos entre tanques
               (c.tanques_antes||[]).forEach(ta=>{
                 if(!ta.tanque) return;
                 const td=(c.tanques_despues||[]).find(x=>x.tanque===ta.tanque);
                 if(!td) return;
                 const delta=Number(ta.galones||0)-Number(td.galones||0);
                 if(delta>0) addMov(ta.tanque,delta,'salida');
-                else if(delta<0) addMov(ta.tanque,-delta,'barcaza');
+                else if(delta<0) addMov(ta.tanque,-delta,'trasiego');
               });
               (c.tanques_recepcion||[]).forEach(tr=>{
                 if(!tr.tanque) return;
                 const delta=Number(tr.galonesFinal||0)-Number(tr.galonesInicial||0);
-                if(delta>0) addMov(tr.tanque,delta,'barcaza');
+                if(delta>0) addMov(tr.tanque,delta,'trasiego');
               });
             }
           }
@@ -965,11 +966,11 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           const filas = todosLosIds.map(tq=>{
             const inv0=invInicialPorTanque[tq]??null;
             const invF=invFinalPorTanque[tq]??null;
-            const mov=movsPorTanque[tq]||{guia:0,bascula:0,barcaza:0,porteo:0,salidas:0};
-            const entradas=(mov.bascula||0)+(mov.porteo||0);
+            const mov=movsPorTanque[tq]||{guia:0,bascula:0,barcaza:0,porteo:0,trasiego:0,salidas:0};
+            const entradas=(mov.bascula||0)+(mov.porteo||0)+(mov.trasiego||0);
             const teorico=inv0!==null ? inv0+entradas-(mov.salidas||0) : null;
             const variacion=(teorico!==null&&invF!==null) ? invF-teorico : null;
-            return {tq,inv0,entGuia:mov.guia||0,entBascula:mov.bascula||0,entBarcaza:mov.barcaza||0,entPorteo:mov.porteo||0,entradas,salidas:mov.salidas||0,teorico,invF,variacion};
+            return {tq,inv0,entGuia:mov.guia||0,entBascula:mov.bascula||0,entBarcaza:mov.barcaza||0,entPorteo:mov.porteo||0,entTrasiego:mov.trasiego||0,entradas,salidas:mov.salidas||0,teorico,invF,variacion};
           });
 
           const totInv0=filas.reduce((s,r)=>s+(r.inv0??0),0);
@@ -977,6 +978,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           const totBascula=filas.reduce((s,r)=>s+r.entBascula,0);
           const totBarcaza=filas.reduce((s,r)=>s+r.entBarcaza,0);
           const totPorteo=filas.reduce((s,r)=>s+r.entPorteo,0);
+          const totTrasiego=filas.reduce((s,r)=>s+r.entTrasiego,0);
           const totS=filas.reduce((s,r)=>s+r.salidas,0);
           const hasTeorico=filas.some(r=>r.teorico!==null);
           const totTeo=hasTeorico?filas.reduce((s,r)=>s+(r.teorico??0),0):null;
@@ -990,6 +992,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
           const colHB={...colH,color:"#6ee7b7"}; // báscula: verde
           const colHBz={...colH,color:"#93c5fd"}; // barcaza: azul
           const colHP={...colH,color:"#c4b5fd"}; // porteo: violeta
+          const colHT={...colH,color:"#86efac"}; // trasiego: verde claro
           const cell={padding:"8px 10px",fontSize:12,fontFamily:"monospace",textAlign:"right",borderBottom:`1px solid ${TH.border}`,borderLeft:`1px solid ${TH.border}`,whiteSpace:"nowrap"};
           const cellL={...cell,textAlign:"left",fontWeight:700,color:TH.navy,borderLeft:"none",fontFamily:"system-ui,sans-serif"};
           const fmtE=(v,col)=>v>0?<span style={{color:col,fontWeight:700}}>+{fmtN(v,0)}</span>:<span style={{color:TH.border}}>—</span>;
@@ -1013,6 +1016,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                   {col:TH.success,label:"Báscula","desc":"Galones medidos en báscula (descargue)"},
                   {col:"#3b82f6",label:"Med. Barcaza","desc":"Galones por diferencia de sonda en tanque"},
                   {col:"#7c3aed",label:"Porteo","desc":"Galones báscula en operación de porteo"},
+                  {col:"#16a34a",label:"Trasiego","desc":"Galones recibidos por trasiego interno entre tanques"},
                 ].map(({col,label,desc})=>(
                   <span key={label} title={desc} style={{display:"flex",alignItems:"center",gap:5,cursor:"help"}}>
                     <span style={{width:10,height:10,borderRadius:2,background:col,display:"inline-block",flexShrink:0}}/>
@@ -1028,7 +1032,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                     <tr style={{background:"#002a5a"}}>
                       <th rowSpan={2} style={{...colHl,minWidth:110,verticalAlign:"bottom",borderBottom:"1px solid #ffffff22"}}>Tanque</th>
                       <th rowSpan={2} style={{...colH,verticalAlign:"bottom",borderBottom:"1px solid #ffffff22"}}>Inv. Inicial</th>
-                      <th colSpan={4} style={{...colH,textAlign:"center",color:"#6ee7b7",paddingBottom:4,borderBottom:"1px solid #ffffff22",letterSpacing:2}}>+ ENTRADAS</th>
+                      <th colSpan={5} style={{...colH,textAlign:"center",color:"#6ee7b7",paddingBottom:4,borderBottom:"1px solid #ffffff22",letterSpacing:2}}>+ ENTRADAS</th>
                       <th rowSpan={2} style={{...colH,color:"#fca5a5",verticalAlign:"bottom",borderBottom:"1px solid #ffffff22"}}>− Salidas</th>
                       <th rowSpan={2} style={{...colH,verticalAlign:"bottom",borderBottom:"1px solid #ffffff22"}}>Teórico</th>
                       <th rowSpan={2} style={{...colH,color:"#ffe082",verticalAlign:"bottom",borderBottom:"1px solid #ffffff22"}}>Registrado</th>
@@ -1039,6 +1043,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                       <th style={{...colHB,borderTop:"none",paddingTop:2}}>Báscula</th>
                       <th style={{...colHBz,borderTop:"none",paddingTop:2}}>Med. Barcaza</th>
                       <th style={{...colHP,borderTop:"none",paddingTop:2}}>Porteo</th>
+                      <th style={{...colHT,borderTop:"none",paddingTop:2}}>Trasiego</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1053,6 +1058,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                           <td style={cell}>{fmtE(r.entBascula,TH.success)}</td>
                           <td style={cell}>{fmtE(r.entBarcaza,"#3b82f6")}</td>
                           <td style={cell}>{fmtE(r.entPorteo,"#7c3aed")}</td>
+                          <td style={cell}>{fmtE(r.entTrasiego,"#16a34a")}</td>
                           <td style={{...cell,color:r.salidas>0?TH.danger:TH.muted,fontWeight:r.salidas>0?700:400}}>
                             {r.salidas>0?`−${fmtN(r.salidas,0)}`:"—"}
                           </td>
@@ -1074,6 +1080,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                       <td style={{...cell,fontWeight:900,color:totBascula>0?TH.success:TH.muted,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totBascula>0?`+${fmtN(totBascula,0)}`:"—"}</td>
                       <td style={{...cell,fontWeight:900,color:totBarcaza>0?"#3b82f6":TH.muted,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totBarcaza>0?`+${fmtN(totBarcaza,0)}`:"—"}</td>
                       <td style={{...cell,fontWeight:900,color:totPorteo>0?"#7c3aed":TH.muted,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totPorteo>0?`+${fmtN(totPorteo,0)}`:"—"}</td>
+                      <td style={{...cell,fontWeight:900,color:totTrasiego>0?"#16a34a":TH.muted,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totTrasiego>0?`+${fmtN(totTrasiego,0)}`:"—"}</td>
                       <td style={{...cell,fontWeight:900,color:totS>0?TH.danger:TH.muted,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totS>0?`−${fmtN(totS,0)}`:"—"}</td>
                       <td style={{...cell,fontWeight:900,color:TH.navy,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totTeo!==null?fmtN(totTeo,0):"—"}</td>
                       <td style={{...cell,fontWeight:900,color:TH.navy,background:"#e8f0f8",borderTop:`2px solid ${TH.navy}`}}>{totInvF!==null?fmtN(totInvF,0):"—"}</td>
