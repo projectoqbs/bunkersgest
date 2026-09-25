@@ -155,7 +155,7 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
     const [invRes, cmtRes] = await Promise.all([
       dbCall({ table:"inventarios_diarios", op:"select", select:"*", filters:[], single:false }),
       dbCall({ table:"cmts", op:"select",
-        select:"numero_cmt,fecha,tipo_operacion,planta,total_movido,tanques_antes,tanques_despues,tanques_recepcion,porteo_carga_tanques,porteo_descarga_tanques,carros,porteo_carros",
+        select:"numero_cmt,fecha,tipo_operacion,producto,planta,total_movido,tanques_antes,tanques_despues,tanques_recepcion,porteo_carga_tanques,porteo_descarga_tanques,carros,porteo_carros",
         filters:[
           {col:"fecha",op:"gte",val:(()=>{ const d=new Date(desde+"T12:00:00"); d.setDate(d.getDate()-90); return d.toISOString().split("T")[0]; })()},
           {col:"fecha",op:"lte",val:hasta}
@@ -879,10 +879,23 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             const esDescargue=tipoOp.includes("DESCARGUE")&&!tipoOp.includes("MOTONAVE")&&!tipoOp.includes("ENTREGA");
             const esPorteo=tipoOp==="PORTEO";
 
+            const esMGOcmt=(p)=>{ const u=(p||"").toUpperCase(); return u==="MGO"||u.includes("DIESEL"); };
             if(esDescargue){
               // scaleTotal = suma galones_bascula por carro (peso neto / F13) — medida real de báscula
               const scaleTotal=(c.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
-              const guiaTotal=(c.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_guia)||0),0);
+              // guiaTotal: para MGO convertir brutos→netos usando VCF derivado de galones_brutos/galones_bascula por carro
+              const guiaTotalRaw=(c.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_guia)||0),0);
+              const guiaTotal = esMGOcmt(c.producto)
+                ? (c.carros||[]).reduce((s,cr)=>{
+                    const guia=Number(cr.galones_guia||0);
+                    if(!guia) return s;
+                    const brutos=Number(cr.galones_brutos||0);
+                    const netos=Number(cr.galones_bascula||0);
+                    // VCF = netos/brutos si ambos disponibles, sino guía ya es neto
+                    const vcf=(brutos>0&&netos>0) ? netos/brutos : 1;
+                    return s+Math.round(guia*vcf);
+                  }, 0)
+                : guiaTotalRaw;
               const tankEntradas=[];
               (c.tanques_antes||[]).forEach(ta=>{
                 if(!ta.tanque) return;
