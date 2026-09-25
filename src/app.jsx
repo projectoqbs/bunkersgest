@@ -3699,11 +3699,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         const pn = Number(cr.peso_neto||0)||Math.max(0,Number(cr.peso_ingreso||0)-Number(cr.peso_salida||0));
                         const glsNetos = Number(cr.galones_bascula||0) || (factor>0&&pn>0 ? Math.round(pn/factor) : 0);
                         const esMGO = esMGOp(cmt.producto);
-                        // Para MGO: galones_brutos desde BD o recalculado desde tiquete
-                        const glsBrutos = esMGO ? (Number(cr.galones_brutos||0) || (()=>{
-                          const vcf = Number(tiq?.factor_conversion||0) || calcVCF(Number(tiq?.api_corregido||0), Number(tiq?.temp_observada||0));
-                          return (vcf&&glsNetos) ? Math.round(glsNetos/vcf) : 0;
-                        })()) : 0;
+                        // Para MGO: convertir guía brutos → netos usando VCF del tiquete
+                        const vcf = esMGO ? (Number(tiq?.factor_conversion||0) || calcVCF(Number(tiq?.api_corregido||0), Number(tiq?.temp_observada||0))) : 1;
+                        const glsGuia = Number(cr.galones_guia||0);
+                        const glsGuiaNeto = (esMGO && vcf>0 && glsGuia>0) ? Math.round(glsGuia*vcf) : glsGuia;
                         return {
                           cmt: cmt.numero_cmt||cmt.id, fecha: cmt.fecha, tipo: cmt.tipo_operacion,
                           sede: cmt.sede, planta: cmt.planta, producto: cmt.producto, esMGO,
@@ -3711,11 +3710,12 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                           hora_inicio: cr.hora_inicio||"", hora_final: cr.hora_final||"",
                           peso_ingreso: Number(cr.peso_ingreso||0), peso_salida: Number(cr.peso_salida||0),
                           peso_neto: pn,
-                          gls_guia: Number(cr.galones_guia||0),
+                          gls_guia: glsGuia,
+                          gls_guia_neto: glsGuiaNeto,
+                          vcf: vcf||0,
                           gls_netos: glsNetos,
-                          gls_brutos: glsBrutos,
-                          // columna de comparación: brutos para MGO, netos para otros
-                          gls_desc: esMGO ? glsBrutos : glsNetos,
+                          // comparación siempre en netos
+                          gls_desc: glsNetos,
                         };
                       });
                       const porteo = (cmt.porteo_carros||[]).filter(cr=>cr.placa).map(cr=>({
@@ -3732,10 +3732,10 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                       }));
                       return [...reg,...porteo];
                     });
-                    const totalPesoNeto  = todosCarros.reduce((a,r)=>a+r.peso_neto,0);
-                    const totalGlsDesc   = todosCarros.reduce((a,r)=>a+r.gls_desc,0);
-                    const totalGlsGuia   = todosCarros.reduce((a,r)=>a+r.gls_guia,0);
-                    const totalVarPct    = totalGlsGuia>0 ? ((totalGlsDesc-totalGlsGuia)/totalGlsGuia*100) : null;
+                    const totalPesoNeto    = todosCarros.reduce((a,r)=>a+r.peso_neto,0);
+                    const totalGlsDesc     = todosCarros.reduce((a,r)=>a+r.gls_desc,0);
+                    const totalGlsGuiaNeto = todosCarros.reduce((a,r)=>a+(r.gls_guia_neto||r.gls_guia||0),0);
+                    const totalVarPct      = totalGlsGuiaNeto>0 ? ((totalGlsDesc-totalGlsGuiaNeto)/totalGlsGuiaNeto*100) : null;
                     return (
                       <div>
                         <div style={{fontSize:11,color:T.muted,marginBottom:8}}>{todosCarros.length} carro(s) encontrados</div>
@@ -3743,7 +3743,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                         <table style={{width:"100%",borderCollapse:"collapse",background:T.card}}>
                           <thead>
                             <tr style={{background:T.bg}}>
-                              {["N° CMT","Fecha","Tipo","Sede","Planta","Producto","Placa","Guía","Tiquete","H. Inicio","H. Final","Peso Ing.","Peso Sal.","Peso Neto","Gls Guía","Gls Desc.","Var %"].map(h=>(
+                              {["N° CMT","Fecha","Tipo","Sede","Planta","Producto","Placa","Guía","Tiquete","H. Inicio","H. Final","Peso Ing.","Peso Sal.","Peso Neto","Gls Guía (Neto)","VCF","Gls Báscula (Neto)","Var %"].map(h=>(
                                 <th key={h} style={{padding:"9px 10px",fontSize:10,color:T.navy,textTransform:"uppercase",letterSpacing:1,fontWeight:700,borderBottom:`2px solid ${T.border}`,whiteSpace:"nowrap",textAlign:"left",background:T.bg,position:"sticky",top:0,zIndex:2}}>{h}</th>
                               ))}
                             </tr>
@@ -3765,13 +3765,19 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right"}}>{r.peso_ingreso>0?fmt(r.peso_ingreso):"—"}</td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right"}}>{r.peso_salida>0?fmt(r.peso_salida):"—"}</td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",color:T.navy,fontWeight:700}}>{r.peso_neto>0?fmt(r.peso_neto):"—"}</td>
-                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right"}}>{r.gls_guia>0?fmt(r.gls_guia):"—"}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right"}}>
+                                  {(r.gls_guia_neto||r.gls_guia)>0?fmt(r.gls_guia_neto||r.gls_guia):"—"}
+                                  {r.esMGO&&r.gls_guia>0&&r.gls_guia_neto!==r.gls_guia&&<div style={{fontSize:9,color:T.muted,fontWeight:400}}>bruto: {fmt(r.gls_guia)}</div>}
+                                </td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",color:T.muted}}>
+                                  {r.esMGO&&r.vcf>0?r.vcf.toFixed(4):"—"}
+                                </td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",fontWeight:700,color:r.esMGO?T.orange:T.success}}>
                                   {r.gls_desc>0?fmt(r.gls_desc):"—"}
-                                  {r.esMGO&&r.gls_desc>0&&<div style={{fontSize:9,color:T.muted,fontWeight:400}}>brutos</div>}
                                 </td>
                                 {(()=>{
-                                  const varPct = r.gls_guia>0&&r.gls_desc>0 ? ((r.gls_desc-r.gls_guia)/r.gls_guia*100) : null;
+                                  const guiaN = r.gls_guia_neto||r.gls_guia||0;
+                                  const varPct = guiaN>0&&r.gls_desc>0 ? ((r.gls_desc-guiaN)/guiaN*100) : null;
                                   const pos = varPct>0, neg = varPct<0;
                                   return <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderBottom:`1px solid ${T.border}`,textAlign:"right",fontWeight:700,color:pos?T.success:neg?T.danger:T.muted}}>
                                     {varPct!=null?(pos?"+":"")+varPct.toFixed(2)+"%":"—"}
@@ -3784,7 +3790,8 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                                 <td colSpan={11} style={{padding:"8px 10px",fontSize:11,borderTop:`2px solid ${T.border}`,color:T.navy}}>TOTAL ({todosCarros.length} carros)</td>
                                 <td colSpan={2} style={{padding:"8px 10px",fontSize:11,borderTop:`2px solid ${T.border}`}}></td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right",color:T.navy}}>{fmt(totalPesoNeto)} kg</td>
-                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right"}}>{totalGlsGuia>0?fmt(totalGlsGuia)+" gls":""}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right"}}>{totalGlsGuiaNeto>0?fmt(totalGlsGuiaNeto)+" gls":""}</td>
+                                <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`}}></td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right",color:T.success}}>{totalGlsDesc>0?fmt(totalGlsDesc)+" gls":""}</td>
                                 <td style={{padding:"8px 10px",fontSize:11,fontFamily:"monospace",borderTop:`2px solid ${T.border}`,textAlign:"right",fontWeight:700,color:totalVarPct>0?T.success:totalVarPct<0?T.danger:T.muted}}>{totalVarPct!=null?(totalVarPct>0?"+":"")+totalVarPct.toFixed(2)+"%":""}</td>
                               </tr>
