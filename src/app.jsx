@@ -1791,13 +1791,16 @@ async function calcularGalones(tanque, ullage, temp, api, esDespues, index) {
       const pesoNeto = Number(carro.peso_neto||0) || Math.max(0, Number(carro.peso_ingreso||0)-Number(carro.peso_salida||0));
       const glsCalc = factor>0 && pesoNeto>0 ? Math.round(pesoNeto/factor) : "";
       const result = glsCalc ? {...carro, galones_bascula: glsCalc} : {...carro};
-      // Para MGO calcular y persistir galones_brutos usando datos del tiquete de laboratorio
+      // Para MGO: persistir galones_brutos y galones_guia_neto usando VCF del tiquete de laboratorio
       if (esMGOProducto(cmtProducto)) {
         const apiLab  = Number(tq?.api_corregido||0);
         const tempLab = Number(tq?.temp_observada||0);
         const vcfTiq  = Number(tq?.factor_conversion||0) || calcVCF(apiLab, tempLab);
         const glsNetos = glsCalc || Number(carro.galones_descargados||0);
         if (vcfTiq && glsNetos) result.galones_brutos = Math.round(glsNetos / vcfTiq);
+        // guia_neto = galones_guia (brutos) × VCF
+        const glsGuia = Number(carro.galones_guia||0);
+        if (vcfTiq && glsGuia) result.galones_guia_neto = Math.round(glsGuia * vcfTiq);
       }
       return result;
     });

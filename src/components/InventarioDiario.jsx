@@ -883,17 +883,21 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
             if(esDescargue){
               // scaleTotal = suma galones_bascula por carro (peso neto / F13) — medida real de báscula
               const scaleTotal=(c.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_bascula)||0),0);
-              // guiaTotal: para MGO convertir brutos→netos usando VCF derivado de galones_brutos/galones_bascula por carro
+              // guiaTotal: para MGO usar galones_guia_neto (persistido al guardar), sino derivar de brutos/bascula, sino brutos como fallback
               const guiaTotalRaw=(c.carros||[]).reduce((s,cr)=>s+(Number(cr.galones_guia)||0),0);
               const guiaTotal = esMGOcmt(c.producto)
                 ? (c.carros||[]).reduce((s,cr)=>{
                     const guia=Number(cr.galones_guia||0);
                     if(!guia) return s;
+                    // 1. galones_guia_neto persistido al guardar (fuente más precisa)
+                    const guiaNeto=Number(cr.galones_guia_neto||0);
+                    if(guiaNeto>0) return s+guiaNeto;
+                    // 2. derivar VCF desde galones_brutos/galones_bascula
                     const brutos=Number(cr.galones_brutos||0);
                     const netos=Number(cr.galones_bascula||0);
-                    // VCF = netos/brutos si ambos disponibles, sino guía ya es neto
-                    const vcf=(brutos>0&&netos>0) ? netos/brutos : 1;
-                    return s+Math.round(guia*vcf);
+                    if(brutos>0&&netos>0) return s+Math.round(guia*(netos/brutos));
+                    // 3. sin datos: mostrar brutos (no se puede convertir)
+                    return s+guia;
                   }, 0)
                 : guiaTotalRaw;
               const tankEntradas=[];
