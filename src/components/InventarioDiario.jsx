@@ -1014,34 +1014,20 @@ export default function InventarioDiario({ supabase, session, perfil, showToast,
                 BALANCE POR TANQUE · {fmtFecha(balanceDesde)} → {fmtFecha(balanceHasta)} · {plantaLabel}
               </div>
               {/* Leyenda */}
-              <div style={{display:"flex",gap:16,marginBottom:8,fontSize:11,flexWrap:"wrap"}}>
-                <span style={{fontWeight:800,color:"#6ee7b7",fontSize:11}}>+ ENTRADAS:</span>
-                {[
-                  {col:"#ca8a04",label:"Guía","desc":"Galones según documento de transporte"},
-                  {col:TH.success,label:"Báscula","desc":"Galones medidos en báscula (descargue)"},
-                  {col:"#3b82f6",label:"Med. Barcaza","desc":"Galones por diferencia de sonda en tanque"},
-                  {col:"#7c3aed",label:"Porteo","desc":"Galones báscula en operación de porteo"},
-                  {col:"#16a34a",label:"Trasiego","desc":"Galones recibidos por trasiego interno entre tanques"},
-                ].map(({col,label,desc})=>(
-                  <span key={label} title={desc} style={{display:"flex",alignItems:"center",gap:5,cursor:"help"}}>
-                    <span style={{width:10,height:10,borderRadius:2,background:col,display:"inline-block",flexShrink:0}}/>
-                    <span style={{fontWeight:700,color:col}}>{label}</span>
-                  </span>
-                ))}
-              </div>
-              <div style={{display:"flex",gap:16,marginBottom:12,fontSize:11,flexWrap:"wrap"}}>
-                <span style={{fontWeight:800,color:"#fca5a5",fontSize:11}}>− SALIDAS:</span>
-                {[
-                  {col:TH.danger,label:"Báscula","desc":"Galones despachados medidos en báscula"},
-                  {col:"#e11d48",label:"Barcaza","desc":"Galones cargados a barcaza por sonda"},
-                  {col:"#a21caf",label:"Porteo","desc":"Galones cargados báscula en porteo"},
-                  {col:"#ea580c",label:"Trasiego","desc":"Galones enviados a otro tanque por trasiego"},
-                ].map(({col,label,desc})=>(
-                  <span key={`sal-${label}`} title={desc} style={{display:"flex",alignItems:"center",gap:5,cursor:"help"}}>
-                    <span style={{width:10,height:10,borderRadius:2,background:col,display:"inline-block",flexShrink:0}}/>
-                    <span style={{fontWeight:700,color:col}}>{label}</span>
-                  </span>
-                ))}
+              <div style={{display:"flex",gap:20,marginBottom:12,fontSize:11,flexWrap:"wrap",alignItems:"center"}}>
+                <span style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontWeight:800,color:"#6ee7b7"}}>+ ENTRADAS:</span>
+                  {["Guía","Báscula","Med. Barcaza","Porteo","Trasiego"].map(l=>(
+                    <span key={l} style={{fontWeight:600,color:"#6ee7b7"}}>{l}</span>
+                  ))}
+                </span>
+                <span style={{color:TH.border}}>|</span>
+                <span style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontWeight:800,color:"#fca5a5"}}>− SALIDAS:</span>
+                  {["Báscula","Barcaza","Porteo","Trasiego"].map(l=>(
+                    <span key={`s-${l}`} style={{fontWeight:600,color:"#fca5a5"}}>{l}</span>
+                  ))}
+                </span>
               </div>
               <div data-scroll-key="inventario-balance-tabla" style={{overflowX:"auto",borderRadius:10,border:`1px solid ${TH.border}`}}>
                 <table style={{borderCollapse:"collapse",width:"100%",fontSize:12}}>
