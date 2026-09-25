@@ -9064,16 +9064,68 @@ const puedeEditar = (modulo, creado_por, created_at) => {
           );
         })()}
       </div>
-      {selViaje && (
-        <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 16px",marginBottom:14,fontSize:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          <div><span style={{color:T.muted}}>Placa: </span><b style={{color:T.orange}}>{selViaje.placa}</b></div>
-          <div><span style={{color:T.muted}}>Producto: </span><span style={{color:T.text}}>{selViaje.producto}</span></div>
-          <div><span style={{color:T.muted}}>Transportadora: </span><span style={{color:T.text}}>{selViaje.transportadora}</span></div>
-          <div><span style={{color:T.muted}}>F. Cargue: </span><span style={{color:T.text}}>{selViaje.fecha}</span></div>
-          <div><span style={{color:T.muted}}>Guía: </span><span style={{color:T.text}}>{selViaje.guia||"—"}</span></div>
-          <div><span style={{color:T.muted}}>Conductor: </span><span style={{color:T.text}}>{selViaje.conductor||"—"}</span></div>
+      {selViaje && (()=>{
+        // Pre-cargar datos del viaje en form al seleccionar (solo la primera vez)
+        if (form.viaje_id && form._guia_cargada !== form.viaje_id) {
+          setTimeout(()=>setForm(p=>({...p,
+            _guia_cargada: selViaje.id,
+            guia: p.guia !== undefined ? p.guia : (selViaje.guia||""),
+            conductor: p.conductor !== undefined ? p.conductor : (selViaje.conductor||""),
+            transportadora: p.transportadora !== undefined ? p.transportadora : (selViaje.transportadora||""),
+            volumen_guia: p.volumen_guia !== undefined ? p.volumen_guia : (selViaje.volumen_guia||""),
+            gls_netos_guia: p.gls_netos_guia !== undefined ? p.gls_netos_guia : (selViaje.gls_netos_guia||""),
+          })),0);
+        }
+        return (
+        <div style={{marginBottom:14}}>
+          {/* Info fija del viaje */}
+          <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 14px",marginBottom:12,fontSize:12,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+            <div><span style={{color:T.muted}}>Placa: </span><b style={{color:T.orange}}>{selViaje.placa}</b></div>
+            <div><span style={{color:T.muted}}>Producto: </span><b style={{color:T.navy}}>{selViaje.producto}</b></div>
+            <div><span style={{color:T.muted}}>Planta destino: </span><span>{selViaje.planta||"—"}</span></div>
+            <div><span style={{color:T.muted}}>F. Cargue: </span><span>{selViaje.fecha}</span></div>
+            <div colSpan={2}><span style={{color:T.muted}}>Origen: </span><span>{selViaje.planta_origen||"—"}</span></div>
+          </div>
+          {/* Datos de la guía — verificables y editables */}
+          <div style={{background:`${T.orange}08`,border:`1px solid ${T.orange}33`,borderRadius:10,padding:"12px 14px",marginBottom:4}}>
+            <div style={{fontSize:10,fontWeight:800,color:T.orange,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>📋 Verificar datos de la Guía</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <div>
+                <Lbl>N° Guía</Lbl>
+                <Inp value={form.guia!==undefined?form.guia:(selViaje.guia||"")}
+                  onChange={e=>setForm(p=>({...p,guia:e.target.value}))}
+                  placeholder="Número de guía"/>
+              </div>
+              <div>
+                <Lbl>Conductor</Lbl>
+                <Inp value={form.conductor!==undefined?form.conductor:(selViaje.conductor||"")}
+                  onChange={e=>setForm(p=>({...p,conductor:e.target.value}))}
+                  placeholder="Nombre del conductor"/>
+              </div>
+              <div>
+                <Lbl>Transportadora</Lbl>
+                <Inp value={form.transportadora!==undefined?form.transportadora:(selViaje.transportadora||"")}
+                  onChange={e=>setForm(p=>({...p,transportadora:e.target.value}))}
+                  placeholder="Nombre transportadora"/>
+              </div>
+              <div>
+                <Lbl>Volumen Guía (Gls brutos)</Lbl>
+                <Inp type="number" value={form.volumen_guia!==undefined?form.volumen_guia:(selViaje.volumen_guia||"")}
+                  onChange={e=>setForm(p=>({...p,volumen_guia:e.target.value}))}
+                  placeholder="Galones brutos guía"/>
+              </div>
+              <div>
+                <Lbl>Gls Netos Guía</Lbl>
+                <Inp type="number" value={form.gls_netos_guia!==undefined?form.gls_netos_guia:(selViaje.gls_netos_guia||"")}
+                  onChange={e=>setForm(p=>({...p,gls_netos_guia:e.target.value}))}
+                  placeholder="Galones netos guía"/>
+              </div>
+            </div>
+          </div>
+          <div style={{fontSize:10,color:T.muted,marginBottom:10}}>Si los datos físicos de la guía difieren del listado, corrígelos aquí antes de enturnar.</div>
         </div>
-      )}
+        );
+      })()}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
         <div>
           <Lbl>Fecha de Llegada</Lbl>
@@ -9101,19 +9153,27 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         // Turno global: máximo turno_planta entre todos los carros activos (En Planta) + 1
         const {data:turnos} = await supabase.from("viajes").select("turno_planta").eq("estado","En Planta").not("turno_planta","is",null);
         const maxTurno = turnos&&turnos.length>0 ? Math.max(...turnos.map(t=>t.turno_planta||0)) : 0;
-        const {error} = await dbCall({ table:"viajes", op:"update", data:{
+        // Actualizar viaje: estado + turno + datos de guía corregidos si el operador los editó
+        const dataUpdate = {
           fecha_llegada: form.fecha_llegada,
+          hora_llegada: form.hora_llegada||null,
           observacion: form.observacion||null,
           estado: "En Planta",
           turno_planta: maxTurno + 1,
-        }, filters:[{col:"id",val:form.viaje_id}] });
+        };
+        if (form.guia !== undefined)           dataUpdate.guia = form.guia;
+        if (form.conductor !== undefined)      dataUpdate.conductor = form.conductor;
+        if (form.transportadora !== undefined) dataUpdate.transportadora = form.transportadora;
+        if (form.volumen_guia !== undefined)   dataUpdate.volumen_guia = Number(form.volumen_guia)||0;
+        if (form.gls_netos_guia !== undefined) dataUpdate.gls_netos_guia = Number(form.gls_netos_guia)||0;
+        const {error} = await dbCall({ table:"viajes", op:"update", data:dataUpdate, filters:[{col:"id",val:form.viaje_id}] });
         setSaving(false);
         if(error){showToast("Error: "+error,false);return;}
         await loadData();
         setModal(null); setForm({});
         setNav("listado_planta");
         showToast(`✅ ${viajeTarget?.placa} · Turno #${maxTurno+1}`,true);
-      }}>{saving?"Registrando...":"Registrar en Planta"}</Btn>
+      }}>{saving?"Registrando...":"Enturnar — Registrar en Planta"}</Btn>
     </Modal>
   );
 })()}
