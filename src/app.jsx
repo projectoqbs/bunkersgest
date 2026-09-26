@@ -9074,6 +9074,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             transportadora: p.transportadora !== undefined ? p.transportadora : (selViaje.transportadora||""),
             volumen_guia: p.volumen_guia !== undefined ? p.volumen_guia : (selViaje.volumen_guia||""),
             gls_netos_guia: p.gls_netos_guia !== undefined ? p.gls_netos_guia : (selViaje.gls_netos_guia||""),
+            barriles_nsv: p.barriles_nsv !== undefined ? p.barriles_nsv : (selViaje.barriles_nsv||""),
           })),0);
         }
         return (
@@ -9108,17 +9109,28 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   onChange={e=>setForm(p=>({...p,transportadora:e.target.value}))}
                   placeholder="Nombre transportadora"/>
               </div>
-              <div>
-                <Lbl>Volumen Guía (Gls brutos)</Lbl>
-                <Inp type="number" value={form.volumen_guia!==undefined?form.volumen_guia:(selViaje.volumen_guia||"")}
-                  onChange={e=>setForm(p=>({...p,volumen_guia:e.target.value}))}
-                  placeholder="Galones brutos guía"/>
-              </div>
-              <div>
-                <Lbl>Gls Netos Guía</Lbl>
-                <Inp type="number" value={form.gls_netos_guia!==undefined?form.gls_netos_guia:(selViaje.gls_netos_guia||"")}
-                  onChange={e=>setForm(p=>({...p,gls_netos_guia:e.target.value}))}
-                  placeholder="Galones netos guía"/>
+              <div style={{gridColumn:"1/-1",borderTop:`1px dashed ${T.border}`,paddingTop:8,marginTop:2}}>
+                <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Volumen — registra lo que venga en la guía física</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+                  <div>
+                    <Lbl>Barriles NSV (netos)</Lbl>
+                    <Inp type="number" value={form.barriles_nsv!==undefined?form.barriles_nsv:(selViaje.barriles_nsv||"")}
+                      onChange={e=>setForm(p=>({...p,barriles_nsv:e.target.value}))}
+                      placeholder="Barriles netos guía"/>
+                  </div>
+                  <div>
+                    <Lbl>Galones brutos</Lbl>
+                    <Inp type="number" value={form.volumen_guia!==undefined?form.volumen_guia:(selViaje.volumen_guia||"")}
+                      onChange={e=>setForm(p=>({...p,volumen_guia:e.target.value}))}
+                      placeholder="Galones brutos guía"/>
+                  </div>
+                  <div>
+                    <Lbl>Galones netos</Lbl>
+                    <Inp type="number" value={form.gls_netos_guia!==undefined?form.gls_netos_guia:(selViaje.gls_netos_guia||"")}
+                      onChange={e=>setForm(p=>({...p,gls_netos_guia:e.target.value}))}
+                      placeholder="Galones netos guía"/>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -9164,6 +9176,7 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         if (form.guia !== undefined)           dataUpdate.guia = form.guia;
         if (form.conductor !== undefined)      dataUpdate.conductor = form.conductor;
         if (form.transportadora !== undefined) dataUpdate.transportadora = form.transportadora;
+        if (form.barriles_nsv !== undefined)   dataUpdate.barriles_nsv = Number(form.barriles_nsv)||0;
         if (form.volumen_guia !== undefined)   dataUpdate.volumen_guia = Number(form.volumen_guia)||0;
         if (form.gls_netos_guia !== undefined) dataUpdate.gls_netos_guia = Number(form.gls_netos_guia)||0;
         const {error} = await dbCall({ table:"viajes", op:"update", data:dataUpdate, filters:[{col:"id",val:form.viaje_id}] });
