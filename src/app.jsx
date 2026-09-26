@@ -9071,7 +9071,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
             _guia_cargada: selViaje.id,
             guia: p.guia !== undefined ? p.guia : (selViaje.guia||""),
             conductor: p.conductor !== undefined ? p.conductor : (selViaje.conductor||""),
+            cedula: p.cedula !== undefined ? p.cedula : (selViaje.cedula||""),
             transportadora: p.transportadora !== undefined ? p.transportadora : (selViaje.transportadora||""),
+            proveedor: p.proveedor !== undefined ? p.proveedor : (selViaje.proveedor||""),
             volumen_guia: p.volumen_guia !== undefined ? p.volumen_guia : (selViaje.volumen_guia||""),
             gls_netos_guia: p.gls_netos_guia !== undefined ? p.gls_netos_guia : (selViaje.gls_netos_guia||""),
             barriles_nsv: p.barriles_nsv !== undefined ? p.barriles_nsv : (selViaje.barriles_nsv||""),
@@ -9104,10 +9106,22 @@ const puedeEditar = (modulo, creado_por, created_at) => {
                   placeholder="Nombre del conductor"/>
               </div>
               <div>
+                <Lbl>Cédula Conductor</Lbl>
+                <Inp value={form.cedula!==undefined?form.cedula:(selViaje.cedula||"")}
+                  onChange={e=>setForm(p=>({...p,cedula:e.target.value}))}
+                  placeholder="N° cédula"/>
+              </div>
+              <div>
                 <Lbl>Transportadora</Lbl>
                 <Inp value={form.transportadora!==undefined?form.transportadora:(selViaje.transportadora||"")}
                   onChange={e=>setForm(p=>({...p,transportadora:e.target.value}))}
                   placeholder="Nombre transportadora"/>
+              </div>
+              <div>
+                <Lbl>Proveedor del Producto</Lbl>
+                <Inp value={form.proveedor!==undefined?form.proveedor:(selViaje.proveedor||"")}
+                  onChange={e=>setForm(p=>({...p,proveedor:e.target.value}))}
+                  placeholder="Proveedor / Campo origen"/>
               </div>
               <div style={{gridColumn:"1/-1",borderTop:`1px dashed ${T.border}`,paddingTop:8,marginTop:2}}>
                 <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8}}>Volumen — registra lo que venga en la guía física</div>
@@ -9175,7 +9189,9 @@ const puedeEditar = (modulo, creado_por, created_at) => {
         };
         if (form.guia !== undefined)           dataUpdate.guia = form.guia;
         if (form.conductor !== undefined)      dataUpdate.conductor = form.conductor;
+        if (form.cedula !== undefined)         dataUpdate.cedula = form.cedula;
         if (form.transportadora !== undefined) dataUpdate.transportadora = form.transportadora;
+        if (form.proveedor !== undefined)      dataUpdate.proveedor = form.proveedor;
         if (form.barriles_nsv !== undefined)   dataUpdate.barriles_nsv = Number(form.barriles_nsv)||0;
         if (form.volumen_guia !== undefined)   dataUpdate.volumen_guia = Number(form.volumen_guia)||0;
         if (form.gls_netos_guia !== undefined) dataUpdate.gls_netos_guia = Number(form.gls_netos_guia)||0;
